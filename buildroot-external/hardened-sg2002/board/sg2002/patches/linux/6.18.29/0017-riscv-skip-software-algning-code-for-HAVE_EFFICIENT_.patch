@@ -1,0 +1,64 @@
+From: Andy Chiu <tchiu@tenstorrent.com>
+Date: Tue, 1 Sep 2026 14:23:32 -0500
+Subject: [PATCH 17/21] riscv: skip software algning code for
+ HAVE_EFFICIENT_UNALIGNED_ACCESS
+
+We can jump straight into the copy loop if the kernel is compiled for a
+hardware that natively supports misaligned access. The user copy
+bandwidth improvement on K3 and Ascaolon is shown as below:
+
+Misaligned user copy, size: 512B (offset: [0:15] except 0, 8)
+BW Improvement	| Write	| Read	|
+K3		| 6.19%	| 3.43%	|
+Ascalon		| 10.0%	| 11.4%	|
+
+Aligned user copy, size: 512B (offset: 0, 8)
+BW Improvement	| Write	| Read	|
+K3		| 1.69%	| 0.90%	|
+Ascalon		| 1.25%	| 3.32%	|
+
+Suggested-by: Anton Blanchard <antonb@tenstorrent.com>
+Signed-off-by: Andy Chiu <tchiu@tenstorrent.com>
+Link: https://patch.msgid.link/20260901192334.3543340-1-tchiu@tenstorrent.com
+Signed-off-by: Paul Walmsley <pjw@kernel.org>
+---
+ arch/riscv/lib/uaccess.S | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/riscv/lib/uaccess.S b/arch/riscv/lib/uaccess.S
+index 4efea1b33..cf8586a93 100644
+--- a/arch/riscv/lib/uaccess.S
++++ b/arch/riscv/lib/uaccess.S
+@@ -76,6 +76,7 @@ SYM_FUNC_START(fallback_scalar_usercopy_sum_enabled)
+ 	li	a3, 9*SZREG-1 /* size must >= (word_copy stride + SZREG-1) */
+ 	bltu	a2, a3, .Lbyte_copy_tail
+ 
++#if !defined(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)
+ 	/*
+ 	 * Copy first bytes until dst is aligned to word boundary.
+ 	 * a0 - start of dst
+@@ -103,7 +104,7 @@ SYM_FUNC_START(fallback_scalar_usercopy_sum_enabled)
+ 	/* a1 - start of src */
+ 	andi	a3, a1, SZREG-1
+ 	bnez	a3, .Lshift_copy
+-
++#endif
+ .Lword_copy:
+         /*
+ 	 * Both src and dst are aligned, unrolled word copy
+@@ -137,6 +138,7 @@ SYM_FUNC_START(fallback_scalar_usercopy_sum_enabled)
+ 	addi	t0, t0, 8*SZREG /* revert to original value */
+ 	j	.Lbyte_copy_tail
+ 
++#if !defined(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)
+ .Lshift_copy:
+ 
+ 	/*
+@@ -189,6 +191,7 @@ SYM_FUNC_START(fallback_scalar_usercopy_sum_enabled)
+ 
+ 	/* Revert src to original unaligned value  */
+ 	add	a1, a1, a3
++#endif
+ 
+ .Lbyte_copy_tail:
+ 	/*
