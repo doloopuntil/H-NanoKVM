@@ -1,0 +1,33 @@
+From: Andy Chiu <tchiu@tenstorrent.com>
+Date: Mon, 5 Oct 2026 19:02:55 -0600
+Subject: [PATCH 11/16] riscv: do not read csr in vector context switch
+
+CSR operation can be costly as it may introduces serialization. Instead
+of reading from sstatus.vs to the detect voluntary context switch in
+kernel-mode vector, we can read the context depth from riscv_v_flags, as
+it is always non-zero on a trap-introduced context switch.
+
+Signed-off-by: Andy Chiu <tchiu@tenstorrent.com>
+Link: https://patch.msgid.link/20260918215154.2481482-2-tchiu@tenstorrent.com
+Signed-off-by: Paul Walmsley <pjw@kernel.org>
+
+[Adapted to 6.18: dropped the kernel_mode_vector.c hunk, which only removes a comment
+added by a later KVM fix that 6.18 does not have.]
+---
+ arch/riscv/include/asm/vector.h | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/riscv/include/asm/vector.h b/arch/riscv/include/asm/vector.h
+index b61786d43..47174693d 100644
+--- a/arch/riscv/include/asm/vector.h
++++ b/arch/riscv/include/asm/vector.h
+@@ -371,8 +371,7 @@ static inline void __switch_to_vector(struct task_struct *prev,
+ 	struct pt_regs *regs;
+ 
+ 	if (riscv_preempt_v_started(prev)) {
+-		if (riscv_v_is_on()) {
+-			WARN_ON(prev->thread.riscv_v_flags & RISCV_V_CTX_DEPTH_MASK);
++		if (!(current->thread.riscv_v_flags & RISCV_V_CTX_DEPTH_MASK)) {
+ 			riscv_v_disable();
+ 			prev->thread.riscv_v_flags |= RISCV_PREEMPT_V_IN_SCHEDULE;
+ 		}
