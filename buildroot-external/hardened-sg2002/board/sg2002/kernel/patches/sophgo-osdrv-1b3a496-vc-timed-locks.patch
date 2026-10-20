@@ -1,0 +1,71 @@
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Wed, 21 Oct 2026 00:11:33 +0300
+Subject: [PATCH] vc: timed codec locks that wait in milliseconds
+
+vdi_vcodec_timelock and JpgEnterTimeLock waited for a held lock in steps
+of schedule_timeout(usecs_to_jiffies(1000)) and counted each step as one
+millisecond. With HZ=250 a step is a whole 4 ms tick: a lock released
+just after a step was taken up to 4 ms late, and a timeout ran four
+times as long as asked. They now poll the lock every 100-200 us against a
+deadline in jiffies; a timeout of 0 or less still tries once.
+---
+ interdrv/cvi_vc_drv/jpeg/jpuapi/jpuapifunc.c | 14 +++++---------
+ interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi.c   | 18 +++++++-----------
+ 2 files changed, 12 insertions(+), 20 deletions(-)
+
+diff --git a/interdrv/cvi_vc_drv/jpeg/jpuapi/jpuapifunc.c b/interdrv/cvi_vc_drv/jpeg/jpuapi/jpuapifunc.c
+index baf60b6..e20c6af 100644
+--- a/interdrv/cvi_vc_drv/jpeg/jpuapi/jpuapifunc.c
++++ b/interdrv/cvi_vc_drv/jpeg/jpuapi/jpuapifunc.c
+@@ -2259,16 +2259,12 @@ JpgRet JpgEnterTryLock(void)
+ JpgRet JpgEnterTimeLock(int timeout_ms)
+ {
+ 	int ret = 0;
+-	int wait_cnt_ms = 1;
++	const unsigned long deadline = jiffies + msecs_to_jiffies(timeout_ms > 0 ? timeout_ms : 0);
+ 
+-	while (mutex_is_locked(&jpgLock)) {
+-		set_current_state(TASK_INTERRUPTIBLE);
+-		schedule_timeout(usecs_to_jiffies(1000));
+-		if (wait_cnt_ms >= timeout_ms) {
+-			break;
+-		}
+-		wait_cnt_ms++;
+-	}
++	/* Poll the lock against a deadline: a 1 ms sleep is a whole tick
++	 * (4 ms at HZ=250). */
++	while (timeout_ms > 0 && mutex_is_locked(&jpgLock) && time_before(jiffies, deadline))
++		usleep_range(100, 200);
+ 
+ 	ret = mutex_trylock(&jpgLock);
+ 	// mutex_trylock returns 1 if the mutex has been acquired successfully,
+diff --git a/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi.c b/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi.c
+index d14dd78..1ad6391 100644
+--- a/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi.c
++++ b/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi.c
+@@ -1065,18 +1065,14 @@ int vdi_vcodec_timelock(unsigned long core_idx, int timeout_ms)
+ {
+ 	int ret;
+ 
+-	do {
+-		int wait_cnt_ms = 1;
++	{
++		const unsigned long deadline = jiffies + msecs_to_jiffies(timeout_ms > 0 ? timeout_ms : 0);
+ 
+-		while (vcodec_is_locked()) {
+-			set_current_state(TASK_INTERRUPTIBLE);
+-			schedule_timeout(usecs_to_jiffies(1000));
+-			if (wait_cnt_ms >= timeout_ms) {
+-				break;
+-			}
+-			wait_cnt_ms++;
+-		}
+-	} while (0);
++		/* Poll the lock against a deadline: a 1 ms sleep is a whole
++		 * tick (4 ms at HZ=250). */
++		while (timeout_ms > 0 && vcodec_is_locked() && time_before(jiffies, deadline))
++			usleep_range(100, 200);
++	}
+ 
+ 	ret = vcodec_trylock();
+ 	// mutex_trylock returns 1 if the mutex has been acquired successfully,
