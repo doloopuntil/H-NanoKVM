@@ -1,23 +1,26 @@
 #!/usr/bin/env bash
-# Build libsys, libvenc, libvdec, libvpu and libini from the vendor SDK's middleware/v2,
-# with the flags its Makefiles use for musl_riscv64 on SG200X.
-# Usage: build-sdk-middleware.sh SDK_DIR OUTPUT_DIR TOOLCHAIN_BIN [REFERENCE_DIR]
+# Build libsys, libvenc, libvdec, libvpu and libini from sophgo/cvi_mpi, with the flags its
+# Makefiles use for musl_riscv64 on CV181X.
+# Usage: build-sdk-middleware.sh MPI_DIR OSDRV_DIR SDK_DIR OUTPUT_DIR TOOLCHAIN_BIN [REFERENCE_DIR]
+# OSDRV_DIR: sophgo/osdrv of the same release (uapi headers). SDK_DIR: ION uapi of our kernel.
 # REFERENCE_DIR: libraries whose exported symbols each new library must keep.
 set -euo pipefail
 
-[ "$#" -ge 3 ] || {
-	echo "usage: $0 SDK_DIR OUTPUT_DIR TOOLCHAIN_BIN [REFERENCE_DIR]" >&2
+[ "$#" -ge 5 ] || {
+	echo "usage: $0 MPI_DIR OSDRV_DIR SDK_DIR OUTPUT_DIR TOOLCHAIN_BIN [REFERENCE_DIR]" >&2
 	exit 2
 }
-SDK_DIR=$1
-OUTPUT_DIR=$2
-TOOLCHAIN_BIN=$3
-REFERENCE_DIR=${4:-}
+MW=$1
+OSDRV_DIR=$2
+SDK_DIR=$3
+OUTPUT_DIR=$4
+TOOLCHAIN_BIN=$5
+REFERENCE_DIR=${6:-}
 OPT_FLAGS=${SDK_MIDDLEWARE_OPT_FLAGS:--Os}
 PREFIX="$TOOLCHAIN_BIN/riscv64-unknown-linux-musl-"
-MW="$SDK_DIR/middleware/v2"
+UAPI="$OSDRV_DIR/interdrv/v2/include"
 
-for path in "$MW/Makefile.param" "$SDK_DIR/osdrv/interdrv/v2/include/common/uapi/linux" \
+for path in "$MW/Makefile.param" "$UAPI/common/uapi/linux" "$UAPI/chip/cv181x/uapi/linux" \
 	"$SDK_DIR/linux_5.10/drivers/staging/android/uapi/ion_cvitek.h" "${PREFIX}gcc"; do
 	[ -e "$path" ] || {
 		echo "missing: $path" >&2
@@ -35,19 +38,19 @@ trap 'rm -rf "$WORK"' EXIT
 # What the SDK installs as kernel headers for the middleware.
 KINC="$WORK/kinc"
 mkdir -p "$KINC/linux"
-cp "$SDK_DIR"/osdrv/interdrv/v2/include/common/uapi/linux/* "$KINC/linux/"
-cp "$SDK_DIR"/osdrv/interdrv/v2/include/chip/mars/uapi/linux/* "$KINC/linux/"
+cp "$UAPI"/common/uapi/linux/* "$KINC/linux/"
+cp "$UAPI"/chip/cv181x/uapi/linux/* "$KINC/linux/"
 cp "$SDK_DIR"/linux_5.10/drivers/staging/android/uapi/ion*.h "$KINC/linux/"
 
 # No vector extension: nothing we ship needs XTheadVector.
 CFLAGS="$OPT_FLAGS -mcpu=c906fd -march=rv64imafdcxthead -mcmodel=medany -mabi=lp64d"
 CFLAGS="$CFLAGS -std=gnu11 -fPIC -ffunction-sections -fdata-sections -mno-ldd"
-CFLAGS="$CFLAGS -DARCH_SG200X -D__SOC_MARS__ -ffile-prefix-map=$SDK_DIR=/usr/src/sdk"
+CFLAGS="$CFLAGS -DARCH_CV181X -D__CV181X__ -ffile-prefix-map=$MW=/usr/src/cvi_mpi"
 MW_INC=$MW/include
 SYS_INC=$MW/modules/sys/include
 VPU_INC=$MW/modules/vpu/include
 BIN_INC=$MW/modules/bin/include
-ISP_INC=$MW/modules/isp/include/sg200x
+ISP_INC=$MW/modules/isp/include/cv181x
 
 # build NAME SRC_DIR "CFLAGS" cc|ld "LIBS" [EXCLUDED_SOURCE...]
 build() {
@@ -76,7 +79,7 @@ build() {
 }
 
 build sys "$MW/modules/sys/src" "-I$MW_INC -I$KINC -I$SYS_INC -I$VPU_INC -fpack-struct=8 \
--DMMF_VERSION=\"sdk\" -DSDK_VER=\"musl_riscv64\"" cc "" cvi_rpc.c
+-DMMF_VERSION=\"cvi_mpi\" -DSDK_VER=\"musl_riscv64\" -D_FILE_OFFSET_BITS=64" cc "" cvi_rpc.c
 build venc "$MW/modules/venc/src" "-I$MW_INC -I$KINC -I$SYS_INC" ld -lsys
 build vdec "$MW/modules/vdec/src" "-I$MW_INC -I$KINC -I$SYS_INC" ld ""
 build vpu "$MW/modules/vpu/src" "-I$MW_INC -I$ISP_INC -I$KINC -I$SYS_INC -I$BIN_INC \

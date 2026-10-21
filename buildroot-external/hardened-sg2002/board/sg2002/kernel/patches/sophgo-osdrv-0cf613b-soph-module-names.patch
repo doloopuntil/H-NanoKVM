@@ -1,0 +1,561 @@
+diff --git a/interdrv/v2/base/Makefile b/interdrv/v2/base/Makefile
+index 47cbf307..7f332c94 100644
+--- a/interdrv/v2/base/Makefile
++++ b/interdrv/v2/base/Makefile
+@@ -1,6 +1,6 @@
+ include $(PWD)/../Makefile.interdrv.param
+ 
+-$(CVIARCH_L)_base-objs = base.o \
++soph_base-objs = base.o \
+ 				chip/$(CVIARCH_L)/vip_sys.o \
+ 				reg.o \
+ 				cvi_vb_proc.o \
+@@ -10,10 +10,10 @@ $(CVIARCH_L)_base-objs = base.o \
+ 				vb.o
+ 
+ ifneq ($(INTRERDRV_FLAGS), )
+-$(CVIARCH_L)_base-objs += vb_test.o
++soph_base-objs += vb_test.o
+ endif
+ 
+-obj-m += $(CVIARCH_L)_base.o
++obj-m += soph_base.o
+ 
+ ccflags-y += -I$(srctree)/drivers/tee \
+              -I$(PWD)/../include/common/uapi/ \
+diff --git a/interdrv/v2/cif/Makefile b/interdrv/v2/cif/Makefile
+index 9b7b9716..d619970f 100644
+--- a/interdrv/v2/cif/Makefile
++++ b/interdrv/v2/cif/Makefile
+@@ -3,7 +3,7 @@ include $(PWD)/../Makefile.interdrv.param
+ ifneq ($(KERNELRELEASE),)
+ include $(PWD)/chip/$(CVIARCH_L)/chip.mk
+ 
+-obj-m += cvi_mipi_rx.o
++obj-m += soph_mipi_rx.o
+ 
+ ccflags-y += -I$(PWD)/chip/$(CVIARCH_L)/ -I$(PWD)/common/
+ ccflags-y += -I$(PWD)/../include/common/uapi/ -I$(PWD)/../include/chip/$(CVIARCH_L)/uapi/
+diff --git a/interdrv/v2/cif/chip/cv181x/chip.mk b/interdrv/v2/cif/chip/cv181x/chip.mk
+index c230a0af..adac0784 100644
+--- a/interdrv/v2/cif/chip/cv181x/chip.mk
++++ b/interdrv/v2/cif/chip/cv181x/chip.mk
+@@ -1,2 +1,2 @@
+-cvi_mipi_rx-objs += chip/$(CVIARCH_L)/cif.o
+-cvi_mipi_rx-objs += chip/$(CVIARCH_L)/drv/cif_drv.o
++soph_mipi_rx-objs += chip/$(CVIARCH_L)/cif.o
++soph_mipi_rx-objs += chip/$(CVIARCH_L)/drv/cif_drv.o
+diff --git a/interdrv/v2/clock_cooling/Makefile b/interdrv/v2/clock_cooling/Makefile
+index 7311d451..8f813525 100644
+--- a/interdrv/v2/clock_cooling/Makefile
++++ b/interdrv/v2/clock_cooling/Makefile
+@@ -6,9 +6,9 @@ ccflags-y += -I$(src) -I$(src)/$(CVIARCH_L)
+ 
+ ccflags-y +=-Wall -Wextra -Werror -Wno-unused-parameter -Wno-sign-compare
+ 
+-$(CVIARCH_L)_clock_cooling-objs = $(CVIARCH_L)/clock_cooling.o
++soph_clock_cooling-objs = $(CVIARCH_L)/clock_cooling.o
+ 
+-obj-m += $(CVIARCH_L)_clock_cooling.o
++obj-m += soph_clock_cooling.o
+ 
+ all:
+ 	$(MAKE) ARCH=${ARCH} -C $(KERNEL_DIR) M=$(PWD) modules
+diff --git a/interdrv/v2/cvi_vc_drv/Makefile b/interdrv/v2/cvi_vc_drv/Makefile
+index fea63460..a1b8ace1 100644
+--- a/interdrv/v2/cvi_vc_drv/Makefile
++++ b/interdrv/v2/cvi_vc_drv/Makefile
+@@ -29,7 +29,7 @@ VCODEC_DRIVER_HEADER := -I$(PWD)/	\
+ 			-I$(PWD)/$(JPEG_DRIVER_PATH)/cvi_jpg_interface/inc/	\
+ 			-I$(PWD)/$(VCODEC_MODULE_PATH)/include/
+ 
+-cvi_vc_driver-objs :=	$(COMMON_PATH)/rcKernel/cvi_rc_kernel.o	\
++soph_vc_driver-objs :=	$(COMMON_PATH)/rcKernel/cvi_rc_kernel.o	\
+ 			$(COMMON_PATH)/rcKernel/cvi_float_point/cvi_float_point.o	\
+ 			$(COMMON_PATH)/rcKernel/cvi_float_point/cvi_soft_float.o	\
+ 			$(VCODEC_DRIVER_PATH)/sample/main_enc_cvitest.o	\
+@@ -80,7 +80,7 @@ cvi_vc_driver-objs :=	$(COMMON_PATH)/rcKernel/cvi_rc_kernel.o	\
+ 			cvi_vc_drv.o	\
+ 			cvi_vc_drv_proc.o
+ 
+-obj-m = cvi_vc_driver.o
++obj-m = soph_vc_driver.o
+ 
+ ccflags-y += -I$(PWD)/../include/common/uapi/ -I$(PWD)/../include/chip/$(CVIARCH_L)/uapi/
+ ccflags-y += -I$(PWD)/../include/common/kapi/
+@@ -141,7 +141,7 @@ VCODEC_DRIVER_HEADER := -I$(PWD)/	\
+ 			-I$(PWD)/$(VCODEC_MODULE_PATH)/include/	\
+ 			-I$(srctree)/drivers/staging/android/	\
+ 
+-cvi_vc_driver-objs :=	$(VCODEC_DRIVER_PATH)/sample/main_enc_cvitest.o	\
++soph_vc_driver-objs :=	$(VCODEC_DRIVER_PATH)/sample/main_enc_cvitest.o	\
+ 			$(VCODEC_DRIVER_PATH)/sample/helper/main_helper.o	\
+ 			$(VCODEC_DRIVER_PATH)/sample/helper/vpuhelper.o	\
+ 			$(VCODEC_DRIVER_PATH)/sample/helper/bitstream/bitstreamfeeder.o	\
+diff --git a/interdrv/v2/dwa/Makefile b/interdrv/v2/dwa/Makefile
+index 0f8552aa..b1e222b1 100644
+--- a/interdrv/v2/dwa/Makefile
++++ b/interdrv/v2/dwa/Makefile
+@@ -2,10 +2,10 @@ include $(PWD)/../Makefile.interdrv.param
+ 
+ ifneq ($(KERNELRELEASE),)
+ include $(PWD)/chip/$(CVIARCH_L)/chip.mk
+-$(CVIARCH_L)_dwa-y += common/cvi_vip_gdc_proc.o
+-$(CVIARCH_L)_dwa-y += common/dwa_platform.o
++soph_dwa-y += common/cvi_vip_gdc_proc.o
++soph_dwa-y += common/dwa_platform.o
+ 
+-obj-m += $(CVIARCH_L)_dwa.o
++obj-m += soph_dwa.o
+ #ccflags-y += -DPORTING_TEST
+ ccflags-y += -I$(PWD)/chip/$(CVIARCH_L)/ -I$(PWD)/common/
+ ccflags-y += -I$(PWD)/../include/common/uapi/ -I$(PWD)/../include/chip/$(CVIARCH_L)/uapi/
+diff --git a/interdrv/v2/dwa/chip/cv181x/chip.mk b/interdrv/v2/dwa/chip/cv181x/chip.mk
+index 0c1d166e..a5a2abc9 100644
+--- a/interdrv/v2/dwa/chip/cv181x/chip.mk
++++ b/interdrv/v2/dwa/chip/cv181x/chip.mk
+@@ -1,6 +1,6 @@
+-$(CVIARCH_L)_dwa-y += chip/$(CVIARCH_L)/cmdq.o
+-$(CVIARCH_L)_dwa-y += chip/$(CVIARCH_L)/cvi_vip_dwa.o
+-$(CVIARCH_L)_dwa-y += chip/$(CVIARCH_L)/gdc.o
+-$(CVIARCH_L)_dwa-y += chip/$(CVIARCH_L)/ldc.o
+-$(CVIARCH_L)_dwa-y += chip/$(CVIARCH_L)/mesh.o
+-$(CVIARCH_L)_dwa-y += chip/$(CVIARCH_L)/ldc_test.o
++soph_dwa-y += chip/$(CVIARCH_L)/cmdq.o
++soph_dwa-y += chip/$(CVIARCH_L)/cvi_vip_dwa.o
++soph_dwa-y += chip/$(CVIARCH_L)/gdc.o
++soph_dwa-y += chip/$(CVIARCH_L)/ldc.o
++soph_dwa-y += chip/$(CVIARCH_L)/mesh.o
++soph_dwa-y += chip/$(CVIARCH_L)/ldc_test.o
+diff --git a/interdrv/v2/fast_image/Makefile b/interdrv/v2/fast_image/Makefile
+index 0b4014db..23083207 100644
+--- a/interdrv/v2/fast_image/Makefile
++++ b/interdrv/v2/fast_image/Makefile
+@@ -1,7 +1,7 @@
+ include $(PWD)/../Makefile.interdrv.param
+ 
+-$(CVIARCH_L)_fast_image-objs = fast_image.o
+-obj-m += $(CVIARCH_L)_fast_image.o
++soph_fast_image-objs = fast_image.o
++obj-m += soph_fast_image.o
+ 
+ ccflags-y += -I$(src)
+ ccflags-y += -I$(PWD)/../rtos_cmdqu/
+diff --git a/interdrv/v2/fb/Makefile b/interdrv/v2/fb/Makefile
+index f0323451..c0fedb9f 100644
+--- a/interdrv/v2/fb/Makefile
++++ b/interdrv/v2/fb/Makefile
+@@ -1,7 +1,7 @@
+ include $(PWD)/../Makefile.interdrv.param
+ 
+-obj-m += cvi_fb.o
+-cvi_fb-y += cvifb.o
++obj-m += soph_fb.o
++soph_fb-y += cvifb.o
+ 
+ #cvi_fb-objs := cvifb.o
+ #obj-$(CONFIG_FB_CVITEK) += cvi_fb.o
+diff --git a/interdrv/v2/ive/Makefile b/interdrv/v2/ive/Makefile
+index 2d802bcc..ae166cda 100644
+--- a/interdrv/v2/ive/Makefile
++++ b/interdrv/v2/ive/Makefile
+@@ -2,10 +2,10 @@ include $(PWD)/../Makefile.interdrv.param
+ 
+ ifneq ($(KERNELRELEASE),)
+ 
+-obj-m += $(CVIARCH_L)_ive.o
+-$(CVIARCH_L)_ive-y += common/cvi_ive_interface.o
+-$(CVIARCH_L)_ive-y += hal/$(CVIARCH_L)/cvi_reg.o
+-$(CVIARCH_L)_ive-y += hal/$(CVIARCH_L)/cvi_ive_platform.o
++obj-m += soph_ive.o
++soph_ive-y += common/cvi_ive_interface.o
++soph_ive-y += hal/$(CVIARCH_L)/cvi_reg.o
++soph_ive-y += hal/$(CVIARCH_L)/cvi_ive_platform.o
+ 
+ ccflags-y += -I$(PWD)/../include/common/uapi -I$(PWD)/../include/chip/$(CVIARCH_L)/uapi/
+ ccflags-y += -I$(PWD)/../include/common/kapi -I$(PWD)/../sys/common/uapi/
+diff --git a/interdrv/v2/jpeg/Makefile b/interdrv/v2/jpeg/Makefile
+index 7e53e093..c26abd9f 100644
+--- a/interdrv/v2/jpeg/Makefile
++++ b/interdrv/v2/jpeg/Makefile
+@@ -17,8 +17,8 @@ ccflags-y += $(DEBFLAGS) -I$(PWD) -I$(LDDINCDIR) -D$(CHIP_TYPE) -D$(SUB_TYPE) -D
+ KBUILD_EXTRA_SYMBOLS += $(PWD)/../vcodec/Module.symvers
+ 
+ # PWD	:= $(shell pwd)
+-obj-m += $(CVIARCH_L)_jpeg.o
+-$(CVIARCH_L)_jpeg-y += cvi_jpeg.o jpeg_common.o jmm.o hal/$(CVIARCH_L)/cvi_jpeg_cfg.o
++obj-m += soph_jpeg.o
++soph_jpeg-y += cvi_jpeg.o jpeg_common.o jmm.o hal/$(CVIARCH_L)/cvi_jpeg_cfg.o
+ 
+ all:
+ 	$(MAKE) ARCH=${ARCH} -C $(KERNEL_DIR) M=$(PWD) modules
+diff --git a/interdrv/v2/mon/Makefile b/interdrv/v2/mon/Makefile
+index 98a1f2a1..7a7c0b28 100644
+--- a/interdrv/v2/mon/Makefile
++++ b/interdrv/v2/mon/Makefile
+@@ -4,9 +4,9 @@ PWD := $(shell pwd)
+ 
+ ccflags-y += -I$(src)/common -I$(src)/hal/$(CVIARCH_L)
+ 
+-obj-m += $(CVIARCH_L)_mon.o
+-$(CVIARCH_L)_mon-y += common/cvi_mon_interface.o
+-$(CVIARCH_L)_mon-y += hal/$(CVIARCH_L)/mon_platform.o
++obj-m += soph_mon.o
++soph_mon-y += common/cvi_mon_interface.o
++soph_mon-y += hal/$(CVIARCH_L)/mon_platform.o
+ 
+ all:
+ 	$(MAKE) ARCH=${ARCH} -C $(KERNEL_DIR) M=$(PWD) modules
+diff --git a/interdrv/v2/pwm/Makefile b/interdrv/v2/pwm/Makefile
+index b90acf31..4a8e708d 100644
+--- a/interdrv/v2/pwm/Makefile
++++ b/interdrv/v2/pwm/Makefile
+@@ -2,9 +2,9 @@ include $(PWD)/../Makefile.interdrv.param
+ 
+ PWM_PATH = $(CVIARCH_L)
+ 
+-$(CVIARCH_L)_pwm-objs = $(PWM_PATH)/cvi_pwm.o
++soph_pwm-objs = $(PWM_PATH)/cvi_pwm.o
+ 
+-obj-m += $(CVIARCH_L)_pwm.o
++obj-m += soph_pwm.o
+ 
+ all:
+ 	$(MAKE) ARCH=${ARCH} -C $(KERNEL_DIR) M=$(PWD) modules
+diff --git a/interdrv/v2/rgn/Makefile b/interdrv/v2/rgn/Makefile
+index 525e6b16..deb53a0f 100644
+--- a/interdrv/v2/rgn/Makefile
++++ b/interdrv/v2/rgn/Makefile
+@@ -5,9 +5,9 @@ ccflags-y +=-Wall -Wextra -Werror -Wno-unused-parameter -Wno-sign-compare
+ ifneq ($(KERNELRELEASE),)
+ include $(PWD)/chip/$(CVIARCH_L)/chip.mk
+ 
+-$(CVIARCH_L)_rgn-objs += common/rgn_core.o
++soph_rgn-objs += common/rgn_core.o
+ 
+-obj-m += $(CVIARCH_L)_rgn.o
++obj-m += soph_rgn.o
+ 
+ ccflags-y += -I$(PWD)/common/ \
+              -I$(PWD)/../base/ \
+diff --git a/interdrv/v2/rgn/chip/cv181x/chip.mk b/interdrv/v2/rgn/chip/cv181x/chip.mk
+index 87bd226c..4732e849 100644
+--- a/interdrv/v2/rgn/chip/cv181x/chip.mk
++++ b/interdrv/v2/rgn/chip/cv181x/chip.mk
+@@ -1,4 +1,4 @@
+-$(CVIARCH_L)_rgn-objs += chip/$(CVIARCH_L)/rgn.o
+-$(CVIARCH_L)_rgn-objs += chip/$(CVIARCH_L)/vip/rgn_drv.o
+-$(CVIARCH_L)_rgn-objs += chip/$(CVIARCH_L)/proc/rgn_proc.o
++soph_rgn-objs += chip/$(CVIARCH_L)/rgn.o
++soph_rgn-objs += chip/$(CVIARCH_L)/vip/rgn_drv.o
++soph_rgn-objs += chip/$(CVIARCH_L)/proc/rgn_proc.o
+ 
+diff --git a/interdrv/v2/rtc/Makefile b/interdrv/v2/rtc/Makefile
+index 7a9a8145..5886476e 100644
+--- a/interdrv/v2/rtc/Makefile
++++ b/interdrv/v2/rtc/Makefile
+@@ -2,9 +2,9 @@ include $(PWD)/../Makefile.interdrv.param
+ 
+ RTC_PATH = $(CVIARCH_L)
+ 
+-$(CVIARCH_L)_rtc-objs = $(RTC_PATH)/cvi_rtc.o
++soph_rtc-objs = $(RTC_PATH)/cvi_rtc.o
+ 
+-obj-m += $(CVIARCH_L)_rtc.o
++obj-m += soph_rtc.o
+ 
+ ccflags-y +=-Wall -Wextra -Werror -Wno-unused-parameter -Wno-sign-compare
+ 
+diff --git a/interdrv/v2/rtos_cmdqu/Makefile b/interdrv/v2/rtos_cmdqu/Makefile
+index 3fac675f..83c889f1 100644
+--- a/interdrv/v2/rtos_cmdqu/Makefile
++++ b/interdrv/v2/rtos_cmdqu/Makefile
+@@ -7,9 +7,9 @@ ccflags-y += -I$(PWD)/../include/common/kapi/
+ 
+ ccflags-y +=-Wall -Wextra -Werror -Wno-unused-parameter -Wno-sign-compare
+ 
+-$(CVIARCH_L)_rtos_cmdqu-objs =  rtos_cmdqu.o rtos_cmdqu_cb.o cvi_spinlock.o
++soph_rtos_cmdqu-objs =  rtos_cmdqu.o rtos_cmdqu_cb.o cvi_spinlock.o
+ 
+-obj-m += $(CVIARCH_L)_rtos_cmdqu.o
++obj-m += soph_rtos_cmdqu.o
+ 
+ KBUILD_EXTRA_SYMBOLS += $(PWD)/../base/Module.symvers
+ 
+diff --git a/interdrv/v2/saradc/Makefile b/interdrv/v2/saradc/Makefile
+index 50d05847..caab617f 100644
+--- a/interdrv/v2/saradc/Makefile
++++ b/interdrv/v2/saradc/Makefile
+@@ -2,9 +2,9 @@ include $(PWD)/../Makefile.interdrv.param
+ 
+ SARADC_PATH = $(CVIARCH_L)
+ 
+-$(CVIARCH_L)_saradc-objs = $(SARADC_PATH)/cvi_saradc.o
++soph_saradc-objs = $(SARADC_PATH)/cvi_saradc.o
+ 
+-obj-m += $(CVIARCH_L)_saradc.o
++obj-m += soph_saradc.o
+ 
+ ccflags-y += -I$(PWD)/common/
+ 
+diff --git a/interdrv/v2/snsr_i2c/Makefile b/interdrv/v2/snsr_i2c/Makefile
+index e385cc1f..888e5652 100644
+--- a/interdrv/v2/snsr_i2c/Makefile
++++ b/interdrv/v2/snsr_i2c/Makefile
+@@ -1,9 +1,9 @@
+ include $(PWD)/../Makefile.interdrv.param
+ 
+ ifneq ($(KERNELRELEASE),)
+-snsr_i2c-objs += common/snsr_i2c.o
++soph_snsr_i2c-objs += common/snsr_i2c.o
+ 
+-obj-m += snsr_i2c.o
++obj-m += soph_snsr_i2c.o
+ 
+ ccflags-y += -I$(PWD)/chip/$(CVIARCH_L)/ -I$(PWD)/common/ -I$(PWD)/../include/chip/$(CVIARCH_L)/uapi
+ ccflags-y += -I$(PWD)/../include/common/kapi/
+diff --git a/interdrv/v2/sys/Makefile b/interdrv/v2/sys/Makefile
+index 6fd4d6e0..d7965e1c 100644
+--- a/interdrv/v2/sys/Makefile
++++ b/interdrv/v2/sys/Makefile
+@@ -15,12 +15,12 @@ ccflags-y += $(INTRERDRV_FLAGS)
+ 
+ ccflags-y +=-Wall -Wextra -Werror -Wno-unused-parameter -Wno-sign-compare
+ 
+-obj-m += $(CVIARCH_L)_sys.o
+-$(CVIARCH_L)_sys-y += common/sys.o \
++obj-m += soph_sys.o
++soph_sys-y += common/sys.o \
+                     common/sys_context.o
+ 
+ ifneq ($(INTRERDRV_FLAGS), )
+-$(CVIARCH_L)_sys-y += common/sys_test.o
++soph_sys-y += common/sys_test.o
+ endif
+ 
+ all:
+diff --git a/interdrv/v2/tpu/Makefile b/interdrv/v2/tpu/Makefile
+index c45d305b..97ef1dfb 100644
+--- a/interdrv/v2/tpu/Makefile
++++ b/interdrv/v2/tpu/Makefile
+@@ -10,10 +10,10 @@ ccflags-y +=	-I$(src)/../include/uapi \
+ 				-I$(srctree)/drivers/staging/android/ion \
+ 				-I$(src)/../include/common/uapi/linux
+ 
+-obj-m += $(CVIARCH_L)_tpu.o
+-$(CVIARCH_L)_tpu-y += common/cvi_tpu_interface.o
+-$(CVIARCH_L)_tpu-y += hal/$(CVIARCH_L)/tpu_platform.o
+-$(CVIARCH_L)_tpu-y += hal/$(CVIARCH_L)/tpu_pmu.o
++obj-m += soph_tpu.o
++soph_tpu-y += common/cvi_tpu_interface.o
++soph_tpu-y += hal/$(CVIARCH_L)/tpu_platform.o
++soph_tpu-y += hal/$(CVIARCH_L)/tpu_pmu.o
+ 
+ all:
+ 	$(MAKE) ARCH=${ARCH} -C $(KERNEL_DIR) M=$(PWD) modules
+diff --git a/interdrv/v2/vcodec/Makefile b/interdrv/v2/vcodec/Makefile
+index 87bc0dcd..5a54c2ca 100644
+--- a/interdrv/v2/vcodec/Makefile
++++ b/interdrv/v2/vcodec/Makefile
+@@ -7,9 +7,9 @@ ccflags-y += -I$(PWD)/../include/common/kapi/
+ ccflags-y += -I$(PWD) -I$(LDDINCDIR) -DCNM_FPGA_PLATFORM -DCNM_FPGA_PCI_INTERFACE -DCVI_H26X_USE_ION_FW_BUFFER -DUSE_KERNEL_MODE -Wno-date-time -Werror
+ 
+ PWD	:= $(shell pwd)
+-obj-m += $(CVIARCH_L)_vcodec.o
+-$(CVIARCH_L)_vcodec-y += cvi_vcodec.o vcodec_common.o
+-$(CVIARCH_L)_vcodec-y += hal/$(CVIARCH_L)/cvi_vcodec_cfg.o
++obj-m += soph_vcodec.o
++soph_vcodec-y += cvi_vcodec.o vcodec_common.o
++soph_vcodec-y += hal/$(CVIARCH_L)/cvi_vcodec_cfg.o
+ 
+ all:
+ 	$(MAKE) ARCH=${ARCH} -C $(KERNEL_DIR) M=$(PWD) modules
+diff --git a/interdrv/v2/vi/Makefile b/interdrv/v2/vi/Makefile
+index fdea4015..4c161efa 100644
+--- a/interdrv/v2/vi/Makefile
++++ b/interdrv/v2/vi/Makefile
+@@ -3,9 +3,9 @@ include $(PWD)/../Makefile.interdrv.param
+ ifneq ($(KERNELRELEASE),)
+ include $(PWD)/chip/$(CVIARCH_L)/chip.mk
+ 
+-$(CVIARCH_L)_vi-objs += common/vi_core.o
++soph_vi-objs += common/vi_core.o
+ 
+-obj-m += $(CVIARCH_L)_vi.o
++obj-m += soph_vi.o
+ 
+ ccflags-y += -I$(PWD)/chip/$(CVIARCH_L)/ -I$(PWD)/common/
+ ccflags-y += -I$(PWD)/../include/common/uapi/ -I$(PWD)/../include/chip/$(CVIARCH_L)/uapi/
+diff --git a/interdrv/v2/vi/chip/cv181x/chip.mk b/interdrv/v2/vi/chip/cv181x/chip.mk
+index 70b23db7..b57b41af 100644
+--- a/interdrv/v2/vi/chip/cv181x/chip.mk
++++ b/interdrv/v2/vi/chip/cv181x/chip.mk
+@@ -1,20 +1,20 @@
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vi.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vi_ext.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/cmdq.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vi_sdk_layer.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vi_isp_buf_ctrl.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vi_raw_dump.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vip/vi_drv.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vip/vi_subsys_ctrl.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vip/vi_fe_ip_ctrl.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vip/vi_be_ip_ctrl.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vip/vi_raw_ip_ctrl.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vip/vi_rgb_ip_ctrl.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vip/vi_yuv_ip_ctrl.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vip/vi_tun_ip_ctrl.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vip/vi_ip_test_case.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/vip/vi_perf_chk.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/proc/vi_proc.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/proc/vi_dbg_proc.o
+-$(CVIARCH_L)_vi-objs += chip/$(CVIARCH_L)/proc/vi_isp_proc.o
++soph_vi-objs += chip/$(CVIARCH_L)/vi.o
++soph_vi-objs += chip/$(CVIARCH_L)/vi_ext.o
++soph_vi-objs += chip/$(CVIARCH_L)/cmdq.o
++soph_vi-objs += chip/$(CVIARCH_L)/vi_sdk_layer.o
++soph_vi-objs += chip/$(CVIARCH_L)/vi_isp_buf_ctrl.o
++soph_vi-objs += chip/$(CVIARCH_L)/vi_raw_dump.o
++soph_vi-objs += chip/$(CVIARCH_L)/vip/vi_drv.o
++soph_vi-objs += chip/$(CVIARCH_L)/vip/vi_subsys_ctrl.o
++soph_vi-objs += chip/$(CVIARCH_L)/vip/vi_fe_ip_ctrl.o
++soph_vi-objs += chip/$(CVIARCH_L)/vip/vi_be_ip_ctrl.o
++soph_vi-objs += chip/$(CVIARCH_L)/vip/vi_raw_ip_ctrl.o
++soph_vi-objs += chip/$(CVIARCH_L)/vip/vi_rgb_ip_ctrl.o
++soph_vi-objs += chip/$(CVIARCH_L)/vip/vi_yuv_ip_ctrl.o
++soph_vi-objs += chip/$(CVIARCH_L)/vip/vi_tun_ip_ctrl.o
++soph_vi-objs += chip/$(CVIARCH_L)/vip/vi_ip_test_case.o
++soph_vi-objs += chip/$(CVIARCH_L)/vip/vi_perf_chk.o
++soph_vi-objs += chip/$(CVIARCH_L)/proc/vi_proc.o
++soph_vi-objs += chip/$(CVIARCH_L)/proc/vi_dbg_proc.o
++soph_vi-objs += chip/$(CVIARCH_L)/proc/vi_isp_proc.o
+ 
+diff --git a/interdrv/v2/vo/Makefile b/interdrv/v2/vo/Makefile
+index b0fa51b5..9a879706 100644
+--- a/interdrv/v2/vo/Makefile
++++ b/interdrv/v2/vo/Makefile
+@@ -3,11 +3,11 @@ include $(PWD)/../Makefile.interdrv.param
+ ifneq ($(KERNELRELEASE),)
+ include $(PWD)/chip/$(CVIARCH_L)/chip.mk
+ 
+-$(CVIARCH_L)_vo-objs += common/vo_core.o
+-$(CVIARCH_L)_vo-objs += common/vo_rgn_ctrl.o
++soph_vo-objs += common/vo_core.o
++soph_vo-objs += common/vo_rgn_ctrl.o
+ 
+-obj-m += $(CVIARCH_L)_vo.o
+-obj-m += $(CVIARCH_L)_mipi_tx.o
++obj-m += soph_vo.o
++obj-m += soph_mipi_tx.o
+ 
+ ccflags-y +=-Wall -Wextra -Werror -Wno-unused-parameter -Wno-sign-compare
+ 
+diff --git a/interdrv/v2/vo/chip/cv181x/chip.mk b/interdrv/v2/vo/chip/cv181x/chip.mk
+index fec175c6..4d88a6db 100644
+--- a/interdrv/v2/vo/chip/cv181x/chip.mk
++++ b/interdrv/v2/vo/chip/cv181x/chip.mk
+@@ -1,11 +1,11 @@
+ CONFIG_CVI_LOG = 1
+ 
+-$(CVIARCH_L)_vo-objs += chip/$(CVIARCH_L)/vo.o
+-$(CVIARCH_L)_vo-objs += chip/$(CVIARCH_L)/vo_sdk_layer.o
+-$(CVIARCH_L)_vo-objs += chip/$(CVIARCH_L)/proc/vo_disp_proc.o
+-$(CVIARCH_L)_vo-objs += chip/$(CVIARCH_L)/proc/vo_proc.o
++soph_vo-objs += chip/$(CVIARCH_L)/vo.o
++soph_vo-objs += chip/$(CVIARCH_L)/vo_sdk_layer.o
++soph_vo-objs += chip/$(CVIARCH_L)/proc/vo_disp_proc.o
++soph_vo-objs += chip/$(CVIARCH_L)/proc/vo_proc.o
+ 
+-$(CVIARCH_L)_mipi_tx-objs := chip/$(CVIARCH_L)/vo_mipi_tx.o \
++soph_mipi_tx-objs := chip/$(CVIARCH_L)/vo_mipi_tx.o \
+ 					chip/$(CVIARCH_L)/proc/vo_mipi_tx_proc.o
+ 
+ ifeq ($(CONFIG_CVI_LOG), 1)
+diff --git a/interdrv/v2/vpss/Makefile b/interdrv/v2/vpss/Makefile
+index 1bff8dd2..d628c3b1 100644
+--- a/interdrv/v2/vpss/Makefile
++++ b/interdrv/v2/vpss/Makefile
+@@ -2,13 +2,13 @@ include $(PWD)/../Makefile.interdrv.param
+ 
+ ifneq ($(KERNELRELEASE),)
+ include $(PWD)/chip/$(CVIARCH_L)/chip.mk
+-$(CVIARCH_L)_vpss-objs += common/cvi_vip_vpss_proc.o
+-$(CVIARCH_L)_vpss-objs += common/reg.o
+-$(CVIARCH_L)_vpss-objs += common/vpss.o
+-$(CVIARCH_L)_vpss-objs += common/vpss_rgn_ctrl.o
+-$(CVIARCH_L)_vpss-objs += common/vpss_ioctl.o
++soph_vpss-objs += common/cvi_vip_vpss_proc.o
++soph_vpss-objs += common/reg.o
++soph_vpss-objs += common/vpss.o
++soph_vpss-objs += common/vpss_rgn_ctrl.o
++soph_vpss-objs += common/vpss_ioctl.o
+ 
+-obj-m += $(CVIARCH_L)_vpss.o
++obj-m += soph_vpss.o
+ 
+ ccflags-y += -I$(PWD)/chip/$(CVIARCH_L)/ -I$(PWD)/common/
+ ccflags-y += -I$(PWD)/../include/common/uapi/ -I$(PWD)/../include/chip/$(CVIARCH_L)/uapi/
+diff --git a/interdrv/v2/vpss/chip/cv181x/chip.mk b/interdrv/v2/vpss/chip/cv181x/chip.mk
+index 68f9dda7..f45e3f18 100644
+--- a/interdrv/v2/vpss/chip/cv181x/chip.mk
++++ b/interdrv/v2/vpss/chip/cv181x/chip.mk
+@@ -4,16 +4,16 @@ CONFIG_REG_DUMP = 1
+ CONFIG_TILE_MODE = 1
+ CONFIG_RGN_EX = 0
+ 
+-$(CVIARCH_L)_vpss-objs += chip/$(CVIARCH_L)/cvi_vip_img.o
+-$(CVIARCH_L)_vpss-objs += chip/$(CVIARCH_L)/cvi_vip_sc.o
+-$(CVIARCH_L)_vpss-objs += chip/$(CVIARCH_L)/dsi_phy.o
+-$(CVIARCH_L)_vpss-objs += chip/$(CVIARCH_L)/scaler.o
+-$(CVIARCH_L)_vpss-objs += chip/$(CVIARCH_L)/vpss_core.o
++soph_vpss-objs += chip/$(CVIARCH_L)/cvi_vip_img.o
++soph_vpss-objs += chip/$(CVIARCH_L)/cvi_vip_sc.o
++soph_vpss-objs += chip/$(CVIARCH_L)/dsi_phy.o
++soph_vpss-objs += chip/$(CVIARCH_L)/scaler.o
++soph_vpss-objs += chip/$(CVIARCH_L)/vpss_core.o
+ 
+ 
+ ifeq ($(CONFIG_SCLR_TEST), 1)
+ ccflags-y += -DCONFIG_SCLR_TEST
+-$(CVIARCH_L)_vpss-objs += chip/$(CVIARCH_L)/sclr_test.o
++soph_vpss-objs += chip/$(CVIARCH_L)/sclr_test.o
+ endif
+ 
+ ifeq ($(CONFIG_CVI_LOG), 1)
+@@ -30,5 +30,5 @@ endif
+ 
+ ifeq ($(CONFIG_RGN_EX), 1)
+ ccflags-y += -DCONFIG_RGN_EX
+-$(CVIARCH_L)_vpss-objs += chip/$(CVIARCH_L)/cmdq.o
++soph_vpss-objs += chip/$(CVIARCH_L)/cmdq.o
+ endif
+diff --git a/interdrv/v2/wdt/Makefile b/interdrv/v2/wdt/Makefile
+index 1ec7cb81..9c110ce0 100644
+--- a/interdrv/v2/wdt/Makefile
++++ b/interdrv/v2/wdt/Makefile
+@@ -2,9 +2,9 @@ include $(PWD)/../Makefile.interdrv.param
+ 
+ WDT_PATH = $(CVIARCH_L)
+ 
+-$(CVIARCH_L)_wdt-objs = $(WDT_PATH)/cvi_wdt.o
++soph_wdt-objs = $(WDT_PATH)/cvi_wdt.o
+ 
+-obj-m += $(CVIARCH_L)_wdt.o
++obj-m += soph_wdt.o
+ 
+ ccflags-y +=-Wall -Wextra -Werror -Wno-unused-parameter -Wno-sign-compare
+ 
+diff --git a/interdrv/v2/wiegand/Makefile b/interdrv/v2/wiegand/Makefile
+index f495050c..d6c12808 100644
+--- a/interdrv/v2/wiegand/Makefile
++++ b/interdrv/v2/wiegand/Makefile
+@@ -6,7 +6,8 @@ ccflags-y += -I$(src)
+ 
+ ccflags-y +=-Wall -Wextra -Werror -Wno-unused-parameter -Wno-sign-compare
+ 
+-obj-m += cvi_wiegand.o
++soph_wiegand-objs = cvi_wiegand.o
++obj-m += soph_wiegand.o
+ 
+ all:
+ 	$(MAKE) ARCH=${ARCH} -C $(KERNEL_DIR) M=$(PWD) modules

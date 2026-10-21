@@ -238,8 +238,8 @@ verify_sha256 /mnt/system/ko/soph_vc_driver.ko \
 MEDIA_PROVENANCE="$TMP_DIR/source-media-provenance.txt"
 debugfs -R "dump /mnt/system/ko/hardened-source-media-provenance.txt $MEDIA_PROVENANCE" \
 	"$IMAGE" >/dev/null 2>&1 || die "could not extract source-built media provenance"
-grep -qx 'sophgo_vc_commit=5ed7cc28daf7194885d87df2aa534a27a1956c70' "$MEDIA_PROVENANCE" || \
-	die "source-built VC provenance is incorrect"
+grep -qx 'sophgo_osdrv_commit=0cf613bc9abe71e212417ee96b59c1446545a445' "$MEDIA_PROVENANCE" || \
+	die "source-built media module provenance is incorrect"
 grep -qx "device_acceptance=$EXPECTED_MEDIA_DEVICE_ACCEPTANCE" "$MEDIA_PROVENANCE" || \
 	die "source-built media device acceptance provenance is missing"
 grep -qx 'redistribution=disabled-pending-license-grant' "$MEDIA_PROVENANCE" || \

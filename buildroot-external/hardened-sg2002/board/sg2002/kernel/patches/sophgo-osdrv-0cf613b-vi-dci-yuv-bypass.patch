@@ -1,0 +1,17 @@
+diff --git a/interdrv/v2/vi/chip/cv181x/vi.c b/interdrv/v2/vi/chip/cv181x/vi.c
+index af8f8c34..5dadb730 100644
+--- a/interdrv/v2/vi/chip/cv181x/vi.c
++++ b/interdrv/v2/vi/chip/cv181x/vi.c
+@@ -6110,6 +6110,12 @@ static void vi_dci_calc(struct cvi_vi_dev *vdev, enum cvi_isp_raw raw_num, uint3
+ 
+ 	pool = &isp_bufpool[raw_num];
+ 
++	/* YUV bypass pipes (LT6911) get no DCI statistics buffer. */
++	*dci_lv = 0;
++	if (ctx->isp_pipe_cfg[raw_num].is_yuv_bypass_path ||
++	    !pool->sts_mem[0].dci.phy_addr || !pool->sts_mem[1].dci.phy_addr)
++		return;
++
+ 	spin_lock_irqsave(&pool->post_sts_lock, flags);
+ 	if (pool->post_sts_in_use == 1) {
+ 		dci_idx = pool->post_sts_busy_idx ^ 1;

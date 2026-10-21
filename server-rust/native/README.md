@@ -160,15 +160,18 @@ The checked-in `libkvm.so` still lists them as `NEEDED`; CI replaces both
 ## Middleware built from source
 
 CI builds `libsys.so`, `libvenc.so`, `libvdec.so`, `libvpu.so` and
-`libini.so` from the vendor SDK's `middleware/v2` source with
-`scripts/build-sdk-middleware.sh`, and ships those instead of the checked-in
-copies. The checked-in copies are MaixCDK's prebuilts: the source build must
-keep every symbol they export. It compiles against the SDK `osdrv` uapi
-headers, which are byte-identical to the `uapi/` copy those prebuilts were
-built with, so the driver interface is unchanged. The SDK source is slightly
-newer than MaixCDK's:
-- `libsys` adds `ionFree2`;
-- `libvpu` starts the VI debug thread only when `VI_DBG_HANDLER_ENABLE` is set.
+`libini.so` from public `sophgo/cvi_mpi` with `scripts/build-sdk-middleware.sh`,
+and ships those instead of the checked-in copies. The checked-in copies are
+MaixCDK's prebuilts: the source build must keep every symbol they export.
+The libraries, the headers and sample code `libkvm_mmf.so` compiles against,
+and every video kernel module come from one Sophgo release (2024-06-06:
+`cvi_mpi` 5ee2c76, `osdrv` 0cf613b), so user space and the drivers agree on
+every shared struct. Our changes on top:
+- `libvpu` never starts the VI debug thread, which ran `system("cat /proc/...")`
+  on VI errors (`support/sg2002/middleware-patches/`);
+- the kernel side carries `/proc/lt_int` (LT6911 interrupt counter for
+  `kvm_vision`), `vi_log_lv = 0` and the 5.10.265 build fixes
+  (`buildroot-external/hardened-sg2002/board/sg2002/kernel/patches/sophgo-osdrv-0cf613b-*.patch`).
 
 ## dl_lib's CVI/ISP/audio middleware: no longer extracted from raw.12
 

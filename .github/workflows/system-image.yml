@@ -14,6 +14,9 @@ env:
   BUILDROOT_VERSION: "2026.05.1"
   RUST_VERSION: "1.99.0"
   LICHEERV_NANO_SDK_SHA: d88d58feca49ef15f4cc7bd1f27dbf17dc25f85e
+  # One Sophgo weekly release (2024-06-06) for every video kernel module and middleware library.
+  SOPHGO_OSDRV_SHA: 0cf613bc9abe71e212417ee96b59c1446545a445
+  SOPHGO_CVI_MPI_SHA: 5ee2c765bfaac2e6cfc79edabfd25557aa0ef830
   # Pinned in scripts/rehydrate-vendor-kernel-5.10.265-merge.sh, verified against the canonical
   # git.kernel.org stable tree's peeled tag commits.
   STABLE_5_10_4_COMMIT: b1313fe517ca3703119dcc99ef3bbf75ab42bcfb
@@ -221,21 +224,31 @@ jobs:
           sed -i 's/-mcpu=c906fdv -march=rv64imafdcv0p7xthead/-mcpu=c906fd -march=rv64imafdcxthead/g' "$YAML"
           ! grep -q v0p7 "$YAML"
 
-      # Only the middleware sources and the uapi headers it compiles against.
-      - name: Fetch the SDK middleware source
+      # The middleware, the uapi headers of the same Sophgo release, and our kernel's ION uapi.
+      - name: Fetch the Sophgo middleware source
         run: |
-          SDK="$RUNNER_TEMP/sdk-middleware"
-          git init -q "$SDK"
-          git -C "$SDK" remote add origin https://github.com/sipeed/LicheeRV-Nano-Build.git
-          git -C "$SDK" sparse-checkout set --no-cone \
-            /middleware/v2/Makefile.param /middleware/v2/include/ \
-            /middleware/v2/modules/sys/ /middleware/v2/modules/venc/ /middleware/v2/modules/vdec/ \
-            /middleware/v2/modules/vpu/ /middleware/v2/modules/bin/include/ \
-            /middleware/v2/modules/isp/include/ /middleware/v2/3rdparty/inih/ \
-            /osdrv/interdrv/v2/include/ /linux_5.10/drivers/staging/android/uapi/
-          git -C "$SDK" fetch -q --depth 1 --filter=blob:none origin "$LICHEERV_NANO_SDK_SHA"
-          git -C "$SDK" checkout -q FETCH_HEAD
-          [ "$(git -C "$SDK" rev-parse HEAD)" = "$LICHEERV_NANO_SDK_SHA" ]
+          sparse_fetch() {
+            dir="$1" url="$2" sha="$3"
+            shift 3
+            git init -q "$dir"
+            git -C "$dir" remote add origin "$url"
+            git -C "$dir" sparse-checkout set --no-cone "$@"
+            git -C "$dir" fetch -q --depth 1 --filter=blob:none origin "$sha"
+            git -C "$dir" checkout -q FETCH_HEAD
+            [ "$(git -C "$dir" rev-parse HEAD)" = "$sha" ]
+          }
+          sparse_fetch "$RUNNER_TEMP/cvi_mpi" https://github.com/sophgo/cvi_mpi.git \
+            "$SOPHGO_CVI_MPI_SHA" \
+            /Makefile.param /include/ /sample/common/ /component/panel/cv181x/ \
+            /modules/sys/ /modules/venc/ /modules/vdec/ /modules/vpu/ /modules/bin/include/ \
+            /modules/isp/include/cv181x/ /modules/ive/include/ /3rdparty/inih/
+          sparse_fetch "$RUNNER_TEMP/osdrv-uapi" https://github.com/sophgo/osdrv.git \
+            "$SOPHGO_OSDRV_SHA" /interdrv/v2/include/
+          sparse_fetch "$RUNNER_TEMP/sdk-ion" https://github.com/sipeed/LicheeRV-Nano-Build.git \
+            "$LICHEERV_NANO_SDK_SHA" /linux_5.10/drivers/staging/android/uapi/
+          patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
+            < support/sg2002/middleware-patches/cvi-mpi-5ee2c76-no-vi-dbg-thread.patch
+          ! grep -q vi_dbg_handler "$RUNNER_TEMP/cvi_mpi/modules/vpu/src/cvi_vi.c"
 
       # Replaces MaixCDK's prebuilt libsys/libvenc/libvdec/libvpu/libini, so libkvm_mmf.so links
       # against these and the image ships them. They must keep every export of the old prebuilts.
@@ -244,11 +257,34 @@ jobs:
         run: |
           OUT="$GITHUB_WORKSPACE/build/native-libkvm/middleware"
           TOOLCHAIN_BIN="$(scripts/fetch-maixcdk-toolchain.sh "$HOME/MaixCDK")"
-          SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh "$RUNNER_TEMP/sdk-middleware" "$OUT" \
+          SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh "$RUNNER_TEMP/cvi_mpi" \
+            "$RUNNER_TEMP/osdrv-uapi" "$RUNNER_TEMP/sdk-ion" "$OUT" \
             "$TOOLCHAIN_BIN" server-rust/native/dl_lib
           MW_LIB="$HOME/MaixCDK/components/3rd_party/sophgo-middleware/sophgo-middleware/v2/lib"
           cp "$OUT/libsys.so" "$OUT/libvenc.so" "$OUT/libvdec.so" "$OUT/libvpu.so" "$MW_LIB/"
           cp "$OUT/libini.so" "$MW_LIB/3rd/"
+
+      # kvm_mmf compiles against these headers and sample code, so they must match the libraries
+      # above. The LT6911 sensor headers stay MaixCDK's; ./build adds our sample_common_sensor.c.
+      - name: Replace MaixCDK's middleware headers with the cvi_mpi ones
+        run: |
+          MPI="$RUNNER_TEMP/cvi_mpi"
+          UAPI="$RUNNER_TEMP/osdrv-uapi/interdrv/v2/include"
+          MW="$HOME/MaixCDK/components/3rd_party/sophgo-middleware/sophgo-middleware/v2"
+          rm -rf "$MW/include" "$MW/sample/common" "$MW/uapi" "$MW/modules/ive/include" \
+            "$MW/component/panel/cv181x"
+          cp -r "$MPI/include" "$MW/include"
+          mkdir -p "$MW/include/isp/cv181x" "$MW/uapi/linux" "$MW/modules/ive"
+          cp "$MPI"/modules/isp/include/cv181x/*.h "$MW/include/isp/cv181x/"
+          cp -r "$MPI/sample/common" "$MW/sample/common"
+          cp "$UAPI"/common/uapi/linux/*.h "$UAPI"/chip/cv181x/uapi/linux/*.h "$MW/uapi/linux/"
+          cp -r "$MPI/modules/ive/include" "$MW/modules/ive/include"
+          cp -r "$MPI/component/panel/cv181x" "$MW/component/panel/cv181x"
+          grep -q "define MO_TBL_SIZE 2048" "$MW/uapi/linux/vi_uapi.h"
+          # Our sample_common_sensor.c override maps ini sensor names by index into this enum.
+          sns_names() { sed -n '/^static const char \*snsr_type_name/,/^};/p' "$1"; }
+          diff <(sns_names "$MPI/sample/common/sample_common_sensor.c") \
+            <(sns_names support/sg2002/additional/sophgo-middleware/v2/sample/common/sample_common_sensor.c)
 
       # ./build's own first-time logic (no $MAIXCDK_PATH/components/kvm yet, always true on this
       # fresh clone) copies support/sg2002/additional/{kvm,kvm_mmf,vision,peripheral bits} into
@@ -535,9 +571,20 @@ jobs:
           done < support/sg2002/kernel/5.10.265/manifests/media-modules.txt
           [ "$(find "$KO_DIR" -name '*.ko' | wc -l)" -eq "$(scripts/expected-module-count.sh)" ]
 
-      # Rebuild the CVITEK osdrv external kernel modules from source (already cloned by `make
-      # vendor-sdk`). List: external-modules.txt -- the "soph_*" peripheral modules plus
-      # WiFi/Bluetooth/touch drivers under 3rd/.
+      - name: Fetch public sophgo/osdrv source
+        run: |
+          OSDRV="$RUN_ROOT/sophgo-osdrv"
+          git init -q "$OSDRV"
+          git -C "$OSDRV" remote add origin https://github.com/sophgo/osdrv.git
+          git -C "$OSDRV" sparse-checkout set --no-cone /Makefile /interdrv/
+          git -C "$OSDRV" fetch -q --depth 1 --filter=blob:none origin "$SOPHGO_OSDRV_SHA"
+          git -C "$OSDRV" checkout -q FETCH_HEAD
+          [ "$(git -C "$OSDRV" rev-parse HEAD)" = "$SOPHGO_OSDRV_SHA" ]
+
+      # Rebuild the CVITEK osdrv external kernel modules from source, plus the media modules.
+      # List: external-modules.txt -- the "soph_*" peripheral modules plus WiFi/Bluetooth/touch
+      # drivers under 3rd/. interdrv/ (video, codec and the rest) comes from sophgo/osdrv at
+      # SOPHGO_OSDRV_SHA with our patches; extdrv/ (3rd/) from the vendor SDK.
       #
       # rebuild-vendor-external-modules-5.10-baseline.sh only reads the manifest's
       # name/classification columns. RUNTIME_MODULE_DIR is just the empty skeleton built above --
@@ -557,62 +604,13 @@ jobs:
           KERNEL_BASELINE_OUTPUT_DIR="$RUN_ROOT/kernel" \
           EXTERNAL_MODULE_BASELINE_OUTPUT_DIR="$RUN_ROOT/external-modules" \
           EXPECTED_KERNEL_RELEASE="$EXPECTED_KERNEL_RELEASE" \
+          SOPHGO_OSDRV_DIR="$RUN_ROOT/sophgo-osdrv" \
             scripts/rebuild-vendor-external-modules-5.10-baseline.sh
-
-      # Rebuild the 3 media kernel modules from source, closing the last kernel-module gap. A real
-      # three-stage chain:
-      #   1. soph_vcodec.ko: vendor SDK's own osdrv/interdrv/v2/vcodec plus a tracked compat patch.
-      #   2. soph_jpeg.ko: public sophgo/osdrv at a pinned "current" commit, needing stage 1's
-      #      base/sys Module.symvers.
-      #   3. soph_vc_driver.ko: an older osdrv commit (predates an API change the current one
-      #      needs), needing both prior stages' Module.symvers.
-      # Patches: buildroot-external/hardened-sg2002/board/sg2002/kernel/patches/.
-      - name: Fetch public sophgo/osdrv source (both pinned commits)
-        run: |
-          SOPHGO_OSDRV_SOURCE_DIR="$RUN_ROOT/media/sophgo-osdrv-source" \
-            scripts/prepare-sophgo-osdrv-source.sh
-
-      - name: Rebuild soph_vcodec.ko from the vendor SDK's own source
-        run: |
-          MINIMAL_VCODEC_KERNEL_DIR="$RUN_ROOT/kernel" \
-          MINIMAL_VCODEC_OUTPUT_DIR="$RUN_ROOT/media/minimal-vcodec" \
-          MINIMAL_VCODEC_KCFLAGS="-fmacro-prefix-map=$RUN_ROOT/media/minimal-vcodec/work=/usr/src/vendor-vcodec" \
-            scripts/build-minimal-vendor-vcodec-compat.sh
-
-      - name: Rebuild soph_jpeg.ko from the public sophgo/osdrv source
-        run: |
-          SOPHGO_OSDRV_SOURCE_DIR="$RUN_ROOT/media/sophgo-osdrv-source" \
-          SOPHGO_MEDIA_KERNEL_DIR="$RUN_ROOT/kernel" \
-          SOPHGO_MEDIA_OUTPUT_DIR="$RUN_ROOT/media/sophgo-current" \
-          SOPHGO_MEDIA_KERNEL_COMPAT_PATCH="${{ github.workspace }}/buildroot-external/hardened-sg2002/board/sg2002/kernel/patches/sophgo-osdrv-linux-5.10.265-compat.patch" \
-          SOPHGO_MEDIA_EXPECTED_JPEG_SRCVERSION="EBFE55AAD3BE9DD11AF3F51" \
-          SOPHGO_MEDIA_BASE_SYMVERS="$RUN_ROOT/external-modules/osdrv/interdrv/v2/base/Module.symvers" \
-          SOPHGO_MEDIA_SYS_SYMVERS="$RUN_ROOT/external-modules/osdrv/interdrv/v2/sys/Module.symvers" \
-          SOPHGO_MEDIA_KCFLAGS="-fmacro-prefix-map=$RUN_ROOT/media/sophgo-current/osdrv=/usr/src/sophgo-osdrv" \
-            scripts/build-sophgo-media-module-replacements.sh
-
-      - name: Rebuild soph_vc_driver.ko from an older sophgo/osdrv commit
-        run: |
-          SOPHGO_OSDRV_SOURCE_DIR="$RUN_ROOT/media/sophgo-osdrv-source" \
-          HISTORICAL_VC_KERNEL_DIR="$RUN_ROOT/kernel" \
-          HISTORICAL_VC_VCODEC_DIR="$RUN_ROOT/media/minimal-vcodec/work/osdrv/interdrv/v2/vcodec" \
-          HISTORICAL_VC_JPEG_DIR="$RUN_ROOT/media/sophgo-current/osdrv/interdrv/jpeg" \
-          HISTORICAL_VC_KERNEL_COMPAT_PATCH="${{ github.workspace }}/buildroot-external/hardened-sg2002/board/sg2002/kernel/patches/sophgo-osdrv-v2-linux-5.10.265-compat.patch" \
-          HISTORICAL_VC_BASE_SYMVERS="$RUN_ROOT/external-modules/osdrv/interdrv/v2/base/Module.symvers" \
-          HISTORICAL_VC_SYS_SYMVERS="$RUN_ROOT/external-modules/osdrv/interdrv/v2/sys/Module.symvers" \
-          HISTORICAL_VC_OUTPUT_DIR="$RUN_ROOT/media/historical-vc" \
-          HISTORICAL_VC_KCFLAGS="-fmacro-prefix-map=$RUN_ROOT/media/historical-vc/osdrv=/usr/src/sophgo-osdrv-v2" \
-            scripts/build-historical-sophgo-vc-driver.sh
-
-      - name: Upload media-module rebuild evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: media-module-rebuild-report
-          path: |
-            build/rc12-run/media/*/report/**
-          retention-days: 14
-          if-no-files-found: warn
+          # VI, VPSS, VENC and base must share one struct cvi_buffer layout.
+          grep -q "define MO_TBL_SIZE 2048" \
+            "$RUN_ROOT/external-modules/osdrv/interdrv/v2/include/common/kapi/base_ctx.h"
+          strings "$RUN_ROOT/external-modules/artifacts/soph_mipi_rx.ko" > "$RUNNER_TEMP/mipi_rx.strings"
+          grep -qx lt_int "$RUNNER_TEMP/mipi_rx.strings"
 
       # Fill in the skeleton with what was just rebuilt from source (external, media and
       # in-tree) -- every module in the final image ships from source; see
@@ -640,9 +638,9 @@ jobs:
             while IFS= read -r -d '' ko; do replace_by_basename "$ko"; done
           find "$RUN_ROOT/kernel" -type f -name '*.ko' -print0 | \
             while IFS= read -r -d '' ko; do replace_by_basename "$ko"; done
-          replace_by_basename "$RUN_ROOT/media/minimal-vcodec/artifacts/soph_vcodec.ko"
-          replace_by_basename "$RUN_ROOT/media/sophgo-current/artifacts/soph_jpeg.ko"
-          replace_by_basename "$RUN_ROOT/media/historical-vc/artifacts/soph_vc_driver.ko"
+          for media in soph_vcodec.ko soph_jpeg.ko soph_vc_driver.ko; do
+            replace_by_basename "$RUN_ROOT/external-modules/media-artifacts/$media"
+          done
 
           [ "$(find "$KO_DIR" -name '*.ko' | wc -l)" -eq "$(scripts/expected-module-count.sh)" ]
 
@@ -656,22 +654,18 @@ jobs:
       # EXPECTED_RUNTIME_KERNEL_RELEASE override checks for
       # (validate-latest-buildroot-sg2002-rootfs.sh).
       #
-      # sophgo_current_commit/sophgo_vc_commit are read back from
-      # prepare-sophgo-osdrv-source.sh's own report rather than repeated here as a second literal
-      # copy, so the two pins can't silently drift apart.
+      # sophgo_osdrv_commit is read back from the module rebuild's own report rather than
+      # repeated here as a second literal copy.
       - name: Regenerate the kernel and media-module provenance records
         run: |
           KO_DIR="$RUN_ROOT/runtime/system/ko"
           kernel_release="$(sed -n 's/^#define UTS_RELEASE "\(.*\)"$/\1/p' \
             "$RUN_ROOT/kernel/include/generated/utsrelease.h")"
           read -r kernel_source_commit < "$RUN_ROOT/kernel/report/source-commit.txt"
-          OSDRV_COMMITS="$RUN_ROOT/media/sophgo-osdrv-source-audit/commits.txt"
-          sophgo_current_commit="$(sed -n 's/^osdrv_commit=//p' "$OSDRV_COMMITS")"
-          sophgo_vc_commit="$(sed -n 's/^historical_vc_commit=//p' "$OSDRV_COMMITS")"
+          read -r sophgo_osdrv_commit < "$RUN_ROOT/external-modules/report/sophgo-osdrv-commit.txt"
           cat > "$KO_DIR/hardened-source-media-provenance.txt" <<EOF
           kernel_release=$kernel_release
-          sophgo_current_commit=$sophgo_current_commit
-          sophgo_vc_commit=$sophgo_vc_commit
+          sophgo_osdrv_commit=$sophgo_osdrv_commit
           soph_vcodec_sha256=$(sha256sum "$KO_DIR/soph_vcodec.ko" | awk '{print $1}')
           soph_jpeg_sha256=$(sha256sum "$KO_DIR/soph_jpeg.ko" | awk '{print $1}')
           soph_vc_driver_sha256=$(sha256sum "$KO_DIR/soph_vc_driver.ko" | awk '{print $1}')

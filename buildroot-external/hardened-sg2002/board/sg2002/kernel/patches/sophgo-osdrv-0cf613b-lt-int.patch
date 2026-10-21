@@ -1,0 +1,117 @@
+diff --git a/interdrv/v2/cif/chip/cv181x/cif.c b/interdrv/v2/cif/chip/cv181x/cif.c
+index 024daec5..aa5c63f0 100644
+--- a/interdrv/v2/cif/chip/cv181x/cif.c
++++ b/interdrv/v2/cif/chip/cv181x/cif.c
+@@ -34,6 +34,96 @@
+ #include <vip_common.h>
+ #include <base_cb.h>
+ #include <cif_cb.h>
++#include <linux/gpio.h>
++
++/* LT6911 INT edge counter for kvm_vision (/proc/lt_int), ported from the LicheeRV SDK. */
++#define LT_INT_GPIO 353
++static atomic_t lt_int_count = ATOMIC_INIT(0);
++static int lt_int_irq = -1;
++static bool lt_int_gpio_ok;
++static struct proc_dir_entry *lt_int_proc;
++
++static int lt_int_show(struct seq_file *m, void *v)
++{
++	seq_printf(m, "%d\n", atomic_read(&lt_int_count));
++	return 0;
++}
++
++static int lt_int_open(struct inode *inode, struct file *file)
++{
++	return single_open(file, lt_int_show, NULL);
++}
++
++static ssize_t lt_int_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)
++{
++	char kbuf[16];
++	int value;
++
++	if (count > sizeof(kbuf) - 1)
++		return -EINVAL;
++	if (copy_from_user(kbuf, buf, count))
++		return -EFAULT;
++	kbuf[count] = '\0';
++	if (kstrtoint(strim(kbuf), 10, &value))
++		return -EINVAL;
++	atomic_set(&lt_int_count, value);
++	return count;
++}
++
++static const struct proc_ops lt_int_fops = {
++	.proc_open = lt_int_open,
++	.proc_read = seq_read,
++	.proc_lseek = seq_lseek,
++	.proc_release = single_release,
++	.proc_write = lt_int_write,
++};
++
++static irqreturn_t lt_int_isr(int irq, void *data)
++{
++	pr_debug("LT6911 INT\n");
++	atomic_add(gpio_get_value(LT_INT_GPIO) ? 1 : 10, &lt_int_count);
++	return IRQ_HANDLED;
++}
++
++static void lt_int_init(struct device *dev)
++{
++	int rc;
++
++	lt_int_proc = proc_create("lt_int", 0600, NULL, &lt_int_fops);
++	if (!lt_int_proc)
++		dev_err(dev, "lt_int: can't create proc entry\n");
++
++	rc = gpio_request(LT_INT_GPIO, "LT-INT");
++	if (rc) {
++		dev_err(dev, "lt_int: gpio %d request failed, %d\n", LT_INT_GPIO, rc);
++		return;
++	}
++	lt_int_gpio_ok = true;
++
++	lt_int_irq = gpio_to_irq(LT_INT_GPIO);
++	if (lt_int_irq < 0) {
++		dev_err(dev, "lt_int: no irq for gpio %d, %d\n", LT_INT_GPIO, lt_int_irq);
++		return;
++	}
++	rc = request_irq(lt_int_irq, lt_int_isr, IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
++			 "LT-INT", NULL);
++	if (rc) {
++		dev_err(dev, "lt_int: request_irq %d failed, %d\n", lt_int_irq, rc);
++		lt_int_irq = -1;
++	}
++}
++
++static void lt_int_exit(void)
++{
++	if (lt_int_irq >= 0)
++		free_irq(lt_int_irq, NULL);
++	lt_int_irq = -1;
++	if (lt_int_gpio_ok)
++		gpio_free(LT_INT_GPIO);
++	lt_int_gpio_ok = false;
++	proc_remove(lt_int_proc);
++	lt_int_proc = NULL;
++}
+ 
+ #define MIPI_IF
+ #define DVP_IF
+@@ -3289,6 +3379,7 @@ static int cvi_cif_probe(struct platform_device *pdev)
+ 	if (!cif_proc_entry)
+ 		dev_err(&pdev->dev, "cif: can't init procfs.\n");
+ #endif
++	lt_int_init(&pdev->dev);
+ 
+ 	return 0;
+ }
+@@ -3312,6 +3403,7 @@ static int cvi_cif_remove(struct platform_device *pdev)
+ 		return 0;
+ 	}
+ 
++	lt_int_exit();
+ 	misc_deregister(&dev->miscdev);
+ 	dev_set_drvdata(&pdev->dev, NULL);
+ 

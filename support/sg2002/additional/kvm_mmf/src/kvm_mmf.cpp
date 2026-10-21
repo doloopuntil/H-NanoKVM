@@ -23,6 +23,7 @@
 #include "cvi_sns_ctrl.h"
 #include "cvi_ive.h"
 #include "cvi_sys.h"
+#include <linux/sys_uapi.h>
 #include "sample_comm.h"
 #include "kvm_mmf.hpp"
 #include "global_config.h"
@@ -339,6 +340,9 @@ static SAMPLE_VI_CONFIG_S g_stViConfig;
 static SAMPLE_INI_CFG_S g_stIniCfg;
 static CVI_S32 _mmf_vpss_deinit_new(VPSS_GRP VpssGrp);
 
+// Exported by libsys; no cvi_mpi header declares it.
+extern "C" int ionFree(struct sys_ion_data *para);
+
 static int _free_leak_memory_of_ion(void)
 {
 	#define MAX_LINE_LENGTH 256
@@ -362,7 +366,7 @@ static int _free_leak_memory_of_ion(void)
 			// starts; releasing them here makes VI init fail.
 			if (strcmp(buffer_name, "VI_DMA_BUF"))
 				continue;
-			struct sys_ion_data_new ion_data = {
+			struct sys_ion_data ion_data = {
 				.cached = 1,
 				.dmabuf_fd = (uint32_t)-1,
 			};

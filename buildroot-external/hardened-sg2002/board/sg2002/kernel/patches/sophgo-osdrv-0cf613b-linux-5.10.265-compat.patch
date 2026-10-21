@@ -1,0 +1,186 @@
+diff --git a/interdrv/v2/Makefile.interdrv.param b/interdrv/v2/Makefile.interdrv.param
+index 928b457f..fc246101 100644
+--- a/interdrv/v2/Makefile.interdrv.param
++++ b/interdrv/v2/Makefile.interdrv.param
+@@ -1 +1,3 @@
+ #ccflags-y += -save-temps=obj
++# 5.10.265 minmax.h trips -Wtype-limits inside kernel headers.
++ccflags-y += -Wno-type-limits
+diff --git a/interdrv/v2/cif/chip/cv181x/cif.c b/interdrv/v2/cif/chip/cv181x/cif.c
+index f5a94801..024daec5 100644
+--- a/interdrv/v2/cif/chip/cv181x/cif.c
++++ b/interdrv/v2/cif/chip/cv181x/cif.c
+@@ -14,7 +14,7 @@
+ #include <linux/clk.h>
+ #include <linux/cvi_defines.h>
+ #ifdef __CV181X__
+-#include "pinctrl-cv181x.h"
++#include "pinctrl-mars.h"
+ #elif defined(__CV180X__)
+ #include "pinctrl-cv180x.h"
+ #endif
+diff --git a/interdrv/v2/cvi_vc_drv/jpeg/jdi/linux/driver/jmm.h b/interdrv/v2/cvi_vc_drv/jpeg/jdi/linux/driver/jmm.h
+index 4bfe69d8..df6a1d32 100644
+--- a/interdrv/v2/cvi_vc_drv/jpeg/jdi/linux/driver/jmm.h
++++ b/interdrv/v2/cvi_vc_drv/jpeg/jdi/linux/driver/jmm.h
+@@ -90,7 +90,9 @@ typedef struct _jpu_mm_struct {
+ 	} while (0)
+ #define VMEM_HEIGHT(_tree) (_tree == NULL ? -1 : _tree->height)
+ 
++#ifndef MAX
+ #define MAX(_a, _b) (_a >= _b ? _a : _b)
++#endif
+ #if 0
+ typedef enum { LEFT, RIGHT } rotation_dir_t;
+ 
+diff --git a/interdrv/v2/cvi_vc_drv/jpeg/jdi/mm.c b/interdrv/v2/cvi_vc_drv/jpeg/jdi/mm.c
+index 18c336a4..55505897 100644
+--- a/interdrv/v2/cvi_vc_drv/jpeg/jdi/mm.c
++++ b/interdrv/v2/cvi_vc_drv/jpeg/jdi/mm.c
+@@ -30,7 +30,9 @@ typedef struct link_struct {
+ 	struct link_struct *prev;
+ } link_t;
+ 
++#ifndef MAX
+ #define MAX(_a, _b) (_a >= _b ? _a : _b)
++#endif
+ 
+ typedef enum { LEFT, RIGHT } rotation_dir_t;
+ 
+diff --git a/interdrv/v2/cvi_vc_drv/module/src/cvi_venc.c b/interdrv/v2/cvi_vc_drv/module/src/cvi_venc.c
+index 10e85e04..77e47ce2 100644
+--- a/interdrv/v2/cvi_vc_drv/module/src/cvi_venc.c
++++ b/interdrv/v2/cvi_vc_drv/module/src/cvi_venc.c
+@@ -49,7 +49,9 @@
+ #define VCODEC_SHARE_MEM_SIZE                                                  \
+ 	(VCODEC_VENC_SHARE_MEM_SIZE + VCODEC_VDEC_SHARE_MEM_SIZE)
+ 
++#ifndef MIN
+ #define MIN(a, b) (((a) < (b)) ? (a) : (b))
++#endif
+ 
+ #define SET_DEFAULT_RC_PARAM(RC)                                               \
+ 	do {                                                                   \
+diff --git a/interdrv/v2/cvi_vc_drv/vcodec/vdi/mm.c b/interdrv/v2/cvi_vc_drv/vcodec/vdi/mm.c
+index 5c275903..0931fc9e 100644
+--- a/interdrv/v2/cvi_vc_drv/vcodec/vdi/mm.c
++++ b/interdrv/v2/cvi_vc_drv/vcodec/vdi/mm.c
+@@ -24,7 +24,9 @@
+ 		}                                                              \
+ 	} while (0)
+ #define HEIGHT(_tree) (_tree == NULL ? -1 : _tree->height)
++#ifndef MAX
+ #define MAX(_a, _b) (_a >= _b ? _a : _b)
++#endif
+ 
+ typedef enum { LEFT, RIGHT } rotation_dir_t;
+ 
+diff --git a/interdrv/v2/cvi_vc_drv/vcodec/vpuapi/coda9/980_roi_rc_lib/hevc_enc_rc.h b/interdrv/v2/cvi_vc_drv/vcodec/vpuapi/coda9/980_roi_rc_lib/hevc_enc_rc.h
+index 25571fe1..0c30bc8f 100644
+--- a/interdrv/v2/cvi_vc_drv/vcodec/vpuapi/coda9/980_roi_rc_lib/hevc_enc_rc.h
++++ b/interdrv/v2/cvi_vc_drv/vcodec/vpuapi/coda9/980_roi_rc_lib/hevc_enc_rc.h
+@@ -6,8 +6,12 @@
+ #define MAX_GOP_SIZE 8
+ #define PARA_CHANGE_RC_SEQ_INIT
+ 
++#ifndef MAX
+ #define MAX(a, b) (((a) > (b)) ? (a) : (b))
++#endif
++#ifndef MIN
+ #define MIN(a, b) (((a) < (b)) ? (a) : (b))
++#endif
+ #define CLIP3(a, b, c) (MIN(b, MAX(a, c)))
+ #define ABS(a) ((a >= 0) ? a : -a)
+ 
+diff --git a/interdrv/v2/jpeg/jmm.h b/interdrv/v2/jpeg/jmm.h
+index 5ac13751..5bd98768 100644
+--- a/interdrv/v2/jpeg/jmm.h
++++ b/interdrv/v2/jpeg/jmm.h
+@@ -140,7 +140,9 @@ struct jpu_mm_struct {
+ 			JPU_DBG_MEM("VMEM_ASSERT at %s:%d\n", __FILE__, __LINE__);	\
+ 	} while (0)
+ #define VMEM_HEIGHT(_tree) (_tree == NULL ? -1 : _tree->height)
++#ifndef MAX
+ #define MAX(_a, _b) (_a >= _b ? _a : _b)
++#endif
+ 
+ struct avl_node_data_struct {
+ 	int key;
+diff --git a/interdrv/v2/rgn/common/rgn_common.h b/interdrv/v2/rgn/common/rgn_common.h
+index 842dcf3d..99bbcfbf 100644
+--- a/interdrv/v2/rgn/common/rgn_common.h
++++ b/interdrv/v2/rgn/common/rgn_common.h
+@@ -10,8 +10,12 @@
+ #include <linux/io.h>
+ 
+ 
++#ifndef MIN
+ #define MIN(a, b) (((a) < (b))?(a):(b))
++#endif
++#ifndef MAX
+ #define MAX(a, b) (((a) > (b))?(a):(b))
++#endif
+ #define RGN_64_ALIGN(x) (((x) + 0x3F) & ~0x3F)   // for 64byte alignment
+ #define RGN_256_ALIGN(x) (((x) + 0xFF) & ~0xFF)   // for 256byte alignment
+ #define RGN_ALIGN(x) (((x) + 0xF) & ~0xF)   // for 16byte alignment
+diff --git a/interdrv/v2/vcodec/vmm.h b/interdrv/v2/vcodec/vmm.h
+index 2087154a..7d243d1d 100644
+--- a/interdrv/v2/vcodec/vmm.h
++++ b/interdrv/v2/vcodec/vmm.h
+@@ -62,7 +62,9 @@ typedef struct _video_mm_struct {
+ 	} while (0)
+ #define VMEM_HEIGHT(_tree) (_tree == NULL ? -1 : _tree->height)
+ 
++#ifndef MAX
+ #define MAX(_a, _b) (_a >= _b ? _a : _b)
++#endif
+ 
+ typedef enum { LEFT, RIGHT } rotation_dir_t;
+ 
+diff --git a/interdrv/v2/vi/common/vi_common.h b/interdrv/v2/vi/common/vi_common.h
+index 99427113..22074638 100644
+--- a/interdrv/v2/vi/common/vi_common.h
++++ b/interdrv/v2/vi/common/vi_common.h
+@@ -30,8 +30,12 @@ extern int vi_dump_reg;
+ 	}
+ #endif
+ 
++#ifndef MIN
+ #define MIN(a, b) (((a) < (b))?(a):(b))
++#endif
++#ifndef MAX
+ #define MAX(a, b) (((a) > (b))?(a):(b))
++#endif
+ #define VI_64_ALIGN(x) (((x) + 0x3F) & ~0x3F)   // for 64byte alignment
+ #define VI_256_ALIGN(x) (((x) + 0xFF) & ~0xFF)   // for 256byte alignment
+ #define VI_ALIGN(x) (((x) + 0xF) & ~0xF)   // for 16byte alignment
+diff --git a/interdrv/v2/vo/chip/cv181x/vo.c b/interdrv/v2/vo/chip/cv181x/vo.c
+index 2b5d8dc5..fd49fee3 100644
+--- a/interdrv/v2/vo/chip/cv181x/vo.c
++++ b/interdrv/v2/vo/chip/cv181x/vo.c
+@@ -21,7 +21,7 @@
+ #include "vo_mipi_tx.h"
+ #include <proc/vo_proc.h>
+ #include <proc/vo_disp_proc.h>
+-#include "pinctrl-cv181x.h"
++#include "pinctrl-mars.h"
+ //#include "mw/vpu_base.h"
+ #include <base_cb.h>
+ #include <vpss_cb.h>
+diff --git a/interdrv/v2/vpss/common/vpss_common.h b/interdrv/v2/vpss/common/vpss_common.h
+index e1bb210e..6eafafc2 100644
+--- a/interdrv/v2/vpss/common/vpss_common.h
++++ b/interdrv/v2/vpss/common/vpss_common.h
+@@ -4,8 +4,12 @@
+ #define VIP_ALIGNMENT 0x40
+ #define GOP_ALIGNMENT 0x10
+ 
++#ifndef MIN
+ #define MIN(a, b) (((a) < (b))?(a):(b))
++#endif
++#ifndef MAX
+ #define MAX(a, b) (((a) > (b))?(a):(b))
++#endif
+ #define UPPER(x, y) (((x) + ((1 << (y)) - 1)) >> (y))   // for alignment
+ 
+ #define VIP_64_ALIGN(x) (((x) + 0x3F) & ~0x3F)   // for 64byte alignment

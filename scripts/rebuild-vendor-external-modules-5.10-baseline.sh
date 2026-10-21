@@ -20,7 +20,19 @@ PROVENANCE_MANIFEST="$MODULE_PROVENANCE_DIR/report/module-provenance.tsv"
 REFERENCE_OSDRV_PATH="$VENDOR_SDK_DIR/osdrv"
 REFERENCE_SOURCE_DATE_EPOCH="1782670640"
 EXPECTED_KERNEL_RELEASE="${EXPECTED_KERNEL_RELEASE:-}"
-CANDIDATE_PATCH="$ROOT_DIR/buildroot-external/hardened-sg2002/board/sg2002/kernel/patches/vendor-osdrv-linux-5.10.265-compat.patch"
+# Candidate mode: interdrv/ and the top Makefile come from this sophgo/osdrv checkout.
+SOPHGO_OSDRV_DIR="${SOPHGO_OSDRV_DIR:-}"
+PATCH_DIR="$ROOT_DIR/buildroot-external/hardened-sg2002/board/sg2002/kernel/patches"
+CANDIDATE_PATCHES=(
+	"$PATCH_DIR/sophgo-osdrv-0cf613b-soph-module-names.patch"
+	"$PATCH_DIR/sophgo-osdrv-0cf613b-linux-5.10.265-compat.patch"
+	"$PATCH_DIR/sophgo-osdrv-0cf613b-lt-int.patch"
+	"$PATCH_DIR/sophgo-osdrv-0cf613b-vi-log-level.patch"
+	"$PATCH_DIR/sophgo-osdrv-0cf613b-vi-dci-yuv-bypass.patch"
+)
+# Built with interdrv in candidate mode; packaged separately from the 30-module inventory.
+MEDIA_MODULES=(soph_vcodec.ko soph_jpeg.ko soph_vc_driver.ko)
+MEDIA_ARTIFACT_DIR="$OUTPUT_DIR/media-artifacts"
 
 require_command() {
 	command -v "$1" >/dev/null 2>&1 || {
@@ -66,10 +78,13 @@ if [ -n "$EXPECTED_KERNEL_RELEASE" ] && \
 fi
 if [ -n "$EXPECTED_KERNEL_RELEASE" ]; then
 	build_mode=candidate
-	[ -f "$CANDIDATE_PATCH" ] || {
-		echo "missing external-module candidate patch: $CANDIDATE_PATCH" >&2
-		exit 1
-	}
+	for path in "$SOPHGO_OSDRV_DIR/interdrv/v2" "$SOPHGO_OSDRV_DIR/Makefile" "${CANDIDATE_PATCHES[@]}"
+	do
+		[ -e "$path" ] || {
+			echo "missing external-module candidate input: $path" >&2
+			exit 1
+		}
+	done
 else
 	build_mode=byte-exact-baseline
 fi
@@ -93,12 +108,28 @@ rsync -a \
 	--exclude='modules.order' \
 	"$VENDOR_SDK_DIR/osdrv/" "$SOURCE_DIR/"
 
+TARGETS=(
+	sys base pwm rtc wdt tpu mon clock_cooling saradc wiegand
+	vi snsr_i2c cif vpss dwa rgn vo rtos_cmdqu fast_image ive fb
+	wireless tp wiegand-gpio
+)
+CHIP_ENV=(CHIP_ARCH=SG200X CHIP_CODE=MARS)
+
 if [ "$build_mode" = candidate ]; then
-	patch --directory="$SOURCE_DIR" --strip=1 --forward --fuzz=0 --dry-run \
-		--input="$CANDIDATE_PATCH"
-	patch --directory="$SOURCE_DIR" --strip=1 --forward --fuzz=0 \
-		--input="$CANDIDATE_PATCH"
-	sha256sum "$CANDIDATE_PATCH" > "$REPORT_DIR/candidate-patch-sha256.txt"
+	# The SDK keeps extdrv/; all video and codec modules come from one sophgo/osdrv commit.
+	rsync -a --delete --exclude='.git' "$SOPHGO_OSDRV_DIR/interdrv/" "$SOURCE_DIR/interdrv/"
+	cp "$SOPHGO_OSDRV_DIR/Makefile" "$SOURCE_DIR/Makefile"
+	git -C "$SOPHGO_OSDRV_DIR" rev-parse HEAD > "$REPORT_DIR/sophgo-osdrv-commit.txt"
+	for patch_file in "${CANDIDATE_PATCHES[@]}"
+	do
+		patch --directory="$SOURCE_DIR" --strip=1 --forward --fuzz=0 --dry-run \
+			--input="$patch_file"
+		patch --directory="$SOURCE_DIR" --strip=1 --forward --fuzz=0 \
+			--input="$patch_file"
+	done
+	sha256sum "${CANDIDATE_PATCHES[@]}" > "$REPORT_DIR/candidate-patch-sha256.txt"
+	TARGETS+=(vcodec jpeg cvi_vc_drv)
+	CHIP_ENV=(CVIARCH=CV181X CHIP_ARCH=CV181X SDK_VER=musl_riscv64)
 fi
 
 sha256sum \
@@ -106,12 +137,6 @@ sha256sum \
 	"$KERNEL_BASELINE_DIR/Module.symvers" \
 	"$KERNEL_BASELINE_DIR/arch/riscv/boot/Image" \
 	"$KERNEL_BASELINE_DIR/vmlinux" > "$REPORT_DIR/kernel-input-before.sha256"
-
-TARGETS=(
-	sys base pwm rtc wdt tpu mon clock_cooling saradc wiegand
-	vi snsr_i2c cif vpss dwa rgn vo rtos_cmdqu fast_image ive fb
-	wireless tp wiegand-gpio
-)
 
 (
 	cd "$SOURCE_DIR"
@@ -127,8 +152,7 @@ TARGETS=(
 			TZ=UTC \
 			SOURCE_DATE_EPOCH="$REFERENCE_SOURCE_DATE_EPOCH" \
 			BUILD_PATH="$BUILD_CONFIG_DIR" \
-			CHIP_ARCH=SG200X \
-			CHIP_CODE=MARS \
+			"${CHIP_ENV[@]}" \
 			MW_VER=v2 \
 			ARCH=riscv \
 			CROSS_COMPILE="${TOOLCHAIN_PREFIX}" \
@@ -147,6 +171,20 @@ cmp -s "$REPORT_DIR/kernel-input-before.sha256" "$REPORT_DIR/kernel-input-after.
 	echo "external-module build modified clean kernel baseline inputs" >&2
 	exit 1
 }
+
+if [ "$build_mode" = candidate ]; then
+	mkdir -p "$MEDIA_ARTIFACT_DIR"
+	for module in "${MEDIA_MODULES[@]}"
+	do
+		[ -f "$INSTALL_DIR/$module" ] || {
+			echo "media module was not built: $module" >&2
+			exit 1
+		}
+		mv "$INSTALL_DIR/$module" "$MEDIA_ARTIFACT_DIR/$module"
+		"$STRIP" --strip-unneeded "$MEDIA_ARTIFACT_DIR/$module"
+	done
+	find "$MEDIA_ARTIFACT_DIR" -type f -exec touch -d '@0' {} +
+fi
 
 EXPECTED_LIST="$REPORT_DIR/expected-modules.txt"
 BUILT_LIST="$REPORT_DIR/built-modules.txt"
@@ -223,7 +261,7 @@ cat > "$REPORT_DIR/summary.md" <<EOF
 - vermagic failures: **$vermagic_failures**
 - kernel baseline input mutation: **none**
 
-The build uses the pinned board config, Xuantie GCC/binutils, SG200X/MARS
+The build uses the pinned board config, Xuantie GCC/binutils, the source tree's chip
 middleware settings, and the selected clean kernel output. Every module is
 normalized with the same pinned \`strip --strip-unneeded\` packaging transform
 before comparison with the accepted raw.10 module. The original osdrv source
