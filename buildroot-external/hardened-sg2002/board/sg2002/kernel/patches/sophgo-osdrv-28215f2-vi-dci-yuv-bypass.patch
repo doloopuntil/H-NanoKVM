@@ -1,8 +1,8 @@
-diff --git a/interdrv/v2/vi/chip/cv181x/vi.c b/interdrv/v2/vi/chip/cv181x/vi.c
-index af8f8c34..5dadb730 100644
---- a/interdrv/v2/vi/chip/cv181x/vi.c
-+++ b/interdrv/v2/vi/chip/cv181x/vi.c
-@@ -6110,6 +6110,12 @@ static void vi_dci_calc(struct cvi_vi_dev *vdev, enum cvi_isp_raw raw_num, uint3
+diff --git a/interdrv/vi/chip/cv181x/vi.c b/interdrv/vi/chip/cv181x/vi.c
+index 628cf2ea..54d8ed61 100644
+--- a/interdrv/vi/chip/cv181x/vi.c
++++ b/interdrv/vi/chip/cv181x/vi.c
+@@ -6160,6 +6160,12 @@ static void vi_dci_calc(struct cvi_vi_dev *vdev, enum cvi_isp_raw raw_num, uint3
  
  	pool = &isp_bufpool[raw_num];
  

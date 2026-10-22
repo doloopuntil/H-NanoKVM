@@ -159,19 +159,24 @@ The checked-in `libkvm.so` still lists them as `NEEDED`; CI replaces both
 
 ## Middleware built from source
 
-CI builds `libsys.so`, `libvenc.so`, `libvdec.so`, `libvpu.so` and
-`libini.so` from public `sophgo/cvi_mpi` with `scripts/build-sdk-middleware.sh`,
-and ships those instead of the checked-in copies. The checked-in copies are
-MaixCDK's prebuilts: the source build must keep every symbol they export.
+CI builds `libsys.so`, `libvenc.so`, `libvdec.so`, `libvi.so`, `libvpss.so`,
+`libvo.so`, `libgdc.so`, `librgn.so` and `libini.so` from public `sophgo/cvi_mpi`
+with `scripts/build-sdk-middleware.sh`, and ships those instead of the checked-in
+copies. The checked-in `libvpu.so` is split into `libvi`/`libvpss`/`libvo`/
+`libgdc`/`librgn` and is removed from the image. The checked-in copies are
+MaixCDK's prebuilts: the source build must keep every symbol they export,
+except a short list in the script that Sophgo removed and nothing here uses.
 The libraries, the headers and sample code `libkvm_mmf.so` compiles against,
-and every video kernel module come from one Sophgo release (2024-06-06:
-`cvi_mpi` 5ee2c76, `osdrv` 0cf613b), so user space and the drivers agree on
-every shared struct. Our changes on top:
-- `libvpu` never starts the VI debug thread, which ran `system("cat /proc/...")`
+the sensor list (`sophgo/SensorSupportList`) and every video kernel module come
+from one Sophgo release (2024-10-14: `cvi_mpi` ebaaf1b, `osdrv` 28215f2), so
+user space and the drivers agree on every shared struct. Our changes on top:
+- `libvi` never starts the VI debug thread, which ran `system("cat /proc/...")`
   on VI errors (`support/sg2002/middleware-patches/`);
 - the kernel side carries `/proc/lt_int` (LT6911 interrupt counter for
-  `kvm_vision`), `vi_log_lv = 0` and the 5.10.265 build fixes
-  (`buildroot-external/hardened-sg2002/board/sg2002/kernel/patches/sophgo-osdrv-0cf613b-*.patch`).
+  `kvm_vision`), `vi_log_lv = 0`, a guard that skips DCI statistics on the
+  LT6911 YUV bypass pipe, a stub for an ION statistics call our 5.10 ION lacks,
+  and the 5.10.265 build fixes
+  (`buildroot-external/hardened-sg2002/board/sg2002/kernel/patches/sophgo-osdrv-28215f2-*.patch`).
 
 ## dl_lib's CVI/ISP/audio middleware: no longer extracted from raw.12
 

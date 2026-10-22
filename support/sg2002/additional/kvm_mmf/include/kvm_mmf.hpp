@@ -3,9 +3,12 @@
 
 #include "stdint.h"
 
+// Packs a returned frame may carry; H.264 frames carry 1 or 3.
+#define MMF_STREAM_MAX_PACKS 8
+
 typedef struct {
-    uint8_t *data[8];
-    int data_size[8];
+    uint8_t *data[MMF_STREAM_MAX_PACKS];
+    int data_size[MMF_STREAM_MAX_PACKS];
     int count;
 } mmf_stream_t;
 

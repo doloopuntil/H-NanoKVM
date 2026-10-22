@@ -1,8 +1,8 @@
-diff --git a/interdrv/v2/cif/chip/cv181x/cif.c b/interdrv/v2/cif/chip/cv181x/cif.c
-index 024daec5..aa5c63f0 100644
---- a/interdrv/v2/cif/chip/cv181x/cif.c
-+++ b/interdrv/v2/cif/chip/cv181x/cif.c
-@@ -34,6 +34,96 @@
+diff --git a/interdrv/cif/chip/cv181x/cif.c b/interdrv/cif/chip/cv181x/cif.c
+index e07411dd..03a6c8b8 100644
+--- a/interdrv/cif/chip/cv181x/cif.c
++++ b/interdrv/cif/chip/cv181x/cif.c
+@@ -38,6 +38,96 @@
  #include <vip_common.h>
  #include <base_cb.h>
  #include <cif_cb.h>
@@ -99,7 +99,7 @@ index 024daec5..aa5c63f0 100644
  
  #define MIPI_IF
  #define DVP_IF
-@@ -3289,6 +3379,7 @@ static int cvi_cif_probe(struct platform_device *pdev)
+@@ -3293,6 +3383,7 @@ static int cvi_cif_probe(struct platform_device *pdev)
  	if (!cif_proc_entry)
  		dev_err(&pdev->dev, "cif: can't init procfs.\n");
  #endif
@@ -107,7 +107,7 @@ index 024daec5..aa5c63f0 100644
  
  	return 0;
  }
-@@ -3312,6 +3403,7 @@ static int cvi_cif_remove(struct platform_device *pdev)
+@@ -3316,6 +3407,7 @@ static int cvi_cif_remove(struct platform_device *pdev)
  		return 0;
  	}
  

@@ -1,16 +1,15 @@
-diff --git a/modules/vpu/src/cvi_vi.c b/modules/vpu/src/cvi_vi.c
-index 6c872e2..87e79fb 100644
---- a/modules/vpu/src/cvi_vi.c
-+++ b/modules/vpu/src/cvi_vi.c
-@@ -121,6 +121,7 @@ struct cvi_gdc_mesh g_vi_mesh[VI_MAX_CHN_NUM];
- 
- struct cvi_vi_ctx *gViCtx;
- 
-+/* Debug thread removed; the symbol stays exported for ABI compatibility. */
- struct vi_dbg_th_info_s {
- 	CVI_U8    th_enable;
+diff --git a/modules/vi/src/cvi_vi.c b/modules/vi/src/cvi_vi.c
+index bd72d3e..b7b92ed 100644
+--- a/modules/vi/src/cvi_vi.c
++++ b/modules/vi/src/cvi_vi.c
+@@ -125,52 +125,13 @@ struct vi_dbg_th_info_s {
+ 	CVI_U8    dbg_th_disable;
  	pthread_t vi_dbg_thread;
-@@ -131,46 +132,6 @@ struct vi_dbg_th_info_s gViDbgTH;
+ };
++/* The debug thread is removed; the symbol stays exported for ABI compatibility. */
+ struct vi_dbg_th_info_s gViDbgTH;
+ 
+ /**************************************************************************
   *   Internal APIs for vi only
   **************************************************************************/
  
@@ -26,9 +25,9 @@ index 6c872e2..87e79fb 100644
 -
 -	fd = get_vi_fd();
 -
--	gViDbgTH.th_enable = CVI_TRUE;
+-	// gViDbgTH.dbg_th_disable = CVI_TRUE;
 -
--	while (gViDbgTH.th_enable) {
+-	while (!gViDbgTH.dbg_th_disable) {
 -		FD_ZERO(&rfds);
 -		FD_SET(fd, &rfds);
 -
@@ -44,7 +43,7 @@ index 6c872e2..87e79fb 100644
 -		}
 -
 -		//Cat vi_dbg/mipi_rx if error
--		if (FD_ISSET(fd, &rfds) && gViDbgTH.th_enable) {
+-		if (FD_ISSET(fd, &rfds) && !gViDbgTH.dbg_th_disable) {
 -			system("cat /proc/mipi-rx");
 -			system("cat /proc/cvitek/vi_dbg");
 -		}
@@ -57,12 +56,12 @@ index 6c872e2..87e79fb 100644
  static CVI_S32 _vi_proc_mmap(void)
  {
  	struct vdev *d;
-@@ -1465,20 +1426,6 @@ CVI_S32 CVI_VI_EnableChn(VI_PIPE ViPipe, VI_CHN ViChn)
+@@ -1498,20 +1459,6 @@ CVI_S32 CVI_VI_EnableChn(VI_PIPE ViPipe, VI_CHN ViChn)
  			CVI_TRACE_VI(CVI_DBG_ERR, "vi_sdk_enable_chn ioctl failed\n");
  			return CVI_ERR_VI_FAILED_NOT_ENABLED;
  		}
 -
--		{
+-		if (!gViDbgTH.dbg_th_disable) {
 -			struct sched_param param;
 -			pthread_attr_t attr;
 -
@@ -78,15 +77,7 @@ index 6c872e2..87e79fb 100644
  	}
  
  	return CVI_SUCCESS;
-@@ -1519,16 +1466,12 @@ CVI_S32 CVI_VI_DisableChn(VI_PIPE ViPipe, VI_CHN ViChn)
- 		}
- 
- 		if (all_chn_disabled) {
--			gViDbgTH.th_enable = CVI_FALSE;
--
- 			s32Ret = vi_sdk_disable_chn(fd, ViPipe, ViChn);
- 			if (s32Ret != CVI_SUCCESS) {
- 				CVI_TRACE_VI(CVI_DBG_ERR, "vi_sdk_disable_chn ioctl failed\n");
+@@ -1560,8 +1507,6 @@ CVI_S32 CVI_VI_DisableChn(VI_PIPE ViPipe, VI_CHN ViChn)
  				return CVI_ERR_VI_FAILED_NOT_ENABLED;
  			}
  

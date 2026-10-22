@@ -83,7 +83,7 @@ CVI_S32 CVI_MIPI_SetClkEdge(CVI_S32 devno, CVI_U32 is_up)
 	return mipi_ioctl(CVI_MIPI_SET_OUTPUT_CLK_EDGE, &edge);
 }
 
-// libvpu references it from its register-dump debug code only.
+// libvi references it from its register-dump debug code only.
 CVI_S32 CVI_ISP_GetVDTimeOut(VI_PIPE ViPipe, ISP_VD_TYPE_E enIspVDType, CVI_U32 u32MilliSec)
 {
 	(void)ViPipe;
@@ -92,7 +92,7 @@ CVI_S32 CVI_ISP_GetVDTimeOut(VI_PIPE ViPipe, ISP_VD_TYPE_E enIspVDType, CVI_U32 
 	return CVI_FAILURE;
 }
 
-// libcvi_bin's PQ bin state, used by libvpu's VPSS. No bin is ever loaded here.
+// libcvi_bin's PQ bin state, used by libvpss. No bin is ever loaded here.
 CVI_BOOL get_loadbin_state(void)
 {
 	return CVI_FALSE;

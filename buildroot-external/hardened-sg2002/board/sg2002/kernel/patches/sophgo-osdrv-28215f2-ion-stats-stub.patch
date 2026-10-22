@@ -1,0 +1,17 @@
+diff --git a/interdrv/sys/common/sys.c b/interdrv/sys/common/sys.c
+index dcc7a77e..56d71361 100644
+--- a/interdrv/sys/common/sys.c
++++ b/interdrv/sys/common/sys.c
+@@ -376,7 +376,11 @@ static int32_t sys_ion_alloc_user(struct cvi_sys_device *ndev, unsigned long arg
+ int32_t sys_ion_get_memory_statics(uint64_t *total_size,
+ 	uint64_t *free_size, uint64_t *max_avail_size)
+ {
+-	return cvi_ion_get_memory_statics(total_size, free_size, max_avail_size);
++	/* The vendor 5.10 ION has no cvi_ion_get_memory_statics(); nothing we ship asks. */
++	*total_size = 0;
++	*free_size = 0;
++	*max_avail_size = 0;
++	return -EOPNOTSUPP;
+ }
+ EXPORT_SYMBOL_GPL(sys_ion_get_memory_statics);
+ 

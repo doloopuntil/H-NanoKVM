@@ -14,9 +14,11 @@ env:
   BUILDROOT_VERSION: "2026.05.1"
   RUST_VERSION: "1.99.0"
   LICHEERV_NANO_SDK_SHA: d88d58feca49ef15f4cc7bd1f27dbf17dc25f85e
-  # One Sophgo weekly release (2024-06-06) for every video kernel module and middleware library.
-  SOPHGO_OSDRV_SHA: 0cf613bc9abe71e212417ee96b59c1446545a445
-  SOPHGO_CVI_MPI_SHA: 5ee2c765bfaac2e6cfc79edabfd25557aa0ef830
+  # One Sophgo weekly release (2024-10-14) for every video kernel module and middleware library,
+  # and the sensor list (enum and names) that release's sample code reads.
+  SOPHGO_OSDRV_SHA: 28215f2d37b108de7a29ed26006878135749c886
+  SOPHGO_CVI_MPI_SHA: ebaaf1bf46a6ff77d2ce3e6fa3e7673fc1d71dda
+  SOPHGO_SENSOR_LIST_SHA: 7e900fc6caf002dd37c995b425f8892c5080d49e
   # Pinned in scripts/rehydrate-vendor-kernel-5.10.265-merge.sh, verified against the canonical
   # git.kernel.org stable tree's peeled tag commits.
   STABLE_5_10_4_COMMIT: b1313fe517ca3703119dcc99ef3bbf75ab42bcfb
@@ -240,18 +242,22 @@ jobs:
           sparse_fetch "$RUNNER_TEMP/cvi_mpi" https://github.com/sophgo/cvi_mpi.git \
             "$SOPHGO_CVI_MPI_SHA" \
             /Makefile.param /include/ /sample/common/ /component/panel/cv181x/ \
-            /modules/sys/ /modules/venc/ /modules/vdec/ /modules/vpu/ /modules/bin/include/ \
-            /modules/isp/include/cv181x/ /modules/ive/include/ /3rdparty/inih/
+            /modules/sys/ /modules/venc/ /modules/vdec/ /modules/vi/ /modules/vpss/ /modules/vo/ \
+            /modules/gdc/ /modules/rgn/ /modules/bin/include/ /modules/isp/include/cv181x/ \
+            /modules/ive/include/ /3rdparty/inih/
           sparse_fetch "$RUNNER_TEMP/osdrv-uapi" https://github.com/sophgo/osdrv.git \
-            "$SOPHGO_OSDRV_SHA" /interdrv/v2/include/
+            "$SOPHGO_OSDRV_SHA" /interdrv/include/
+          sparse_fetch "$RUNNER_TEMP/sensor-list" https://github.com/sophgo/SensorSupportList.git \
+            "$SOPHGO_SENSOR_LIST_SHA" /common/
           sparse_fetch "$RUNNER_TEMP/sdk-ion" https://github.com/sipeed/LicheeRV-Nano-Build.git \
             "$LICHEERV_NANO_SDK_SHA" /linux_5.10/drivers/staging/android/uapi/
           patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
-            < support/sg2002/middleware-patches/cvi-mpi-5ee2c76-no-vi-dbg-thread.patch
-          ! grep -q vi_dbg_handler "$RUNNER_TEMP/cvi_mpi/modules/vpu/src/cvi_vi.c"
+            < support/sg2002/middleware-patches/cvi-mpi-ebaaf1b-no-vi-dbg-thread.patch
+          ! grep -q vi_dbg_handler "$RUNNER_TEMP/cvi_mpi/modules/vi/src/cvi_vi.c"
 
       # Replaces MaixCDK's prebuilt libsys/libvenc/libvdec/libvpu/libini, so libkvm_mmf.so links
-      # against these and the image ships them. They must keep every export of the old prebuilts.
+      # against these and the image ships them. libvpu is split into libvi/libvpss/libvo/libgdc/
+      # librgn; together they must keep every export of the old prebuilts.
       # Same toolchain as the MaixCDK build below, which reuses the fetched copy.
       - name: Build the Sophgo middleware from source
         run: |
@@ -261,7 +267,8 @@ jobs:
             "$RUNNER_TEMP/osdrv-uapi" "$RUNNER_TEMP/sdk-ion" "$OUT" \
             "$TOOLCHAIN_BIN" server-rust/native/dl_lib
           MW_LIB="$HOME/MaixCDK/components/3rd_party/sophgo-middleware/sophgo-middleware/v2/lib"
-          cp "$OUT/libsys.so" "$OUT/libvenc.so" "$OUT/libvdec.so" "$OUT/libvpu.so" "$MW_LIB/"
+          cp "$OUT/libsys.so" "$OUT/libvenc.so" "$OUT/libvdec.so" "$OUT/libvi.so" "$OUT/libvpss.so" \
+            "$OUT/libvo.so" "$OUT/libgdc.so" "$OUT/librgn.so" "$MW_LIB/"
           cp "$OUT/libini.so" "$MW_LIB/3rd/"
 
       # kvm_mmf compiles against these headers and sample code, so they must match the libraries
@@ -269,7 +276,7 @@ jobs:
       - name: Replace MaixCDK's middleware headers with the cvi_mpi ones
         run: |
           MPI="$RUNNER_TEMP/cvi_mpi"
-          UAPI="$RUNNER_TEMP/osdrv-uapi/interdrv/v2/include"
+          UAPI="$RUNNER_TEMP/osdrv-uapi/interdrv/include"
           MW="$HOME/MaixCDK/components/3rd_party/sophgo-middleware/sophgo-middleware/v2"
           rm -rf "$MW/include" "$MW/sample/common" "$MW/uapi" "$MW/modules/ive/include" \
             "$MW/component/panel/cv181x"
@@ -281,10 +288,27 @@ jobs:
           cp -r "$MPI/modules/ive/include" "$MW/modules/ive/include"
           cp -r "$MPI/component/panel/cv181x" "$MW/component/panel/cv181x"
           grep -q "define MO_TBL_SIZE 2048" "$MW/uapi/linux/vi_uapi.h"
-          # Our sample_common_sensor.c override maps ini sensor names by index into this enum.
-          sns_names() { sed -n '/^static const char \*snsr_type_name/,/^};/p' "$1"; }
-          diff <(sns_names "$MPI/sample/common/sample_common_sensor.c") \
-            <(sns_names support/sg2002/additional/sophgo-middleware/v2/sample/common/sample_common_sensor.c)
+          mkdir -p "$MW/component/isp/common"
+          cp "$RUNNER_TEMP"/sensor-list/common/sensor_list.[ch] "$MW/component/isp/common/"
+          # Sensor names come from sensor_list.c, indexed by its own enum: the override must not
+          # carry a table of its own.
+          ! grep -q "snsr_type_name\[SAMPLE_SNS_TYPE_BUTT\] =" \
+            support/sg2002/additional/sophgo-middleware/v2/sample/common/sample_common_sensor.c
+          # Sophgo's name table has drifted from its enum before: check LT6911's slot.
+          cat > "$RUNNER_TEMP/lt6911.c" <<'EOF'
+          #include <string.h>
+          #include "sensor_list.h"
+          int main(void)
+          {
+          	const char *n = snsr_type_name[LONTIUM_LT6911_2M_60FPS_8BIT];
+
+          	return !n || strcmp(n, "LONTIUM_LT6911_2M_60FPS_8BIT") != 0;
+          }
+          EOF
+          gcc -DARCH_CV181X -D__CV181X__ -I"$MW/include" -I"$MW/include/isp/cv181x" -I"$MW/uapi" \
+            -I"$MW/component/isp/common" "$RUNNER_TEMP/lt6911.c" \
+            "$MW/component/isp/common/sensor_list.c" -o "$RUNNER_TEMP/lt6911"
+          "$RUNNER_TEMP/lt6911"
 
       # ./build's own first-time logic (no $MAIXCDK_PATH/components/kvm yet, always true on this
       # fresh clone) copies support/sg2002/additional/{kvm,kvm_mmf,vision,peripheral bits} into
@@ -608,7 +632,7 @@ jobs:
             scripts/rebuild-vendor-external-modules-5.10-baseline.sh
           # VI, VPSS, VENC and base must share one struct cvi_buffer layout.
           grep -q "define MO_TBL_SIZE 2048" \
-            "$RUN_ROOT/external-modules/osdrv/interdrv/v2/include/common/kapi/base_ctx.h"
+            "$RUN_ROOT/external-modules/osdrv/interdrv/include/common/kapi/base_ctx.h"
           strings "$RUN_ROOT/external-modules/artifacts/soph_mipi_rx.ko" > "$RUNNER_TEMP/mipi_rx.strings"
           grep -qx lt_int "$RUNNER_TEMP/mipi_rx.strings"
 
@@ -846,9 +870,12 @@ jobs:
         run: |
           cp build/native-libkvm/libkvm.so server-rust/native/dl_lib/libkvm.so
           cp build/native-libkvm/libkvm_mmf.so server-rust/native/dl_lib/libkvm_mmf.so
-          for lib in libsys.so libvenc.so libvdec.so libvpu.so libini.so; do
+          for lib in libsys.so libvenc.so libvdec.so libvi.so libvpss.so libvo.so libgdc.so librgn.so \
+            libini.so; do
             cp "build/native-libkvm/middleware/$lib" "server-rust/native/dl_lib/$lib"
           done
+          # Split into libvi/libvpss/libvo/libgdc/librgn; the old prebuilt must not ship.
+          rm server-rust/native/dl_lib/libvpu.so
 
       - name: Build Hardened kvmapp bridge
         run: |

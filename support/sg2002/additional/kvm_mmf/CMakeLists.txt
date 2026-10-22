@@ -18,11 +18,13 @@ set(middleware_include_dir .
     ${middleware_src_path}/v2/uapi
     ${middleware_src_path}/v2/3rdparty/inih
     ${middleware_src_path}/v2/modules/ive/include/
+    ${middleware_src_path}/v2/component/isp/common
 )
 list(APPEND ADD_INCLUDE ${middleware_include_dir})
 set_property(SOURCE ${middleware_include_dir} PROPERTY GENERATED 1)
 
 append_srcs_dir(middleware_src_dir  ${middleware_src_path}/v2/sample/common
+                                    ${middleware_src_path}/v2/component/isp/common
                                     ${middleware_src_path}/v2/component/isp/sensor/sg200x/lontium_lt6911
                                     )
 # No ISP: src/kvm_mmf_noisp.c replaces lt6911_cmos.c; the ISP parts of the
@@ -47,7 +49,11 @@ if(CONFIG_SOPHGO_MIDDLEWARE_C_LIBRARY STREQUAL "musl")
     set(middleware_dynamic_lib_file     ${mmf_lib_dir}/libsys.so
                                         ${mmf_lib_dir}/libvdec.so
                                         ${mmf_lib_dir}/libvenc.so
-                                        ${mmf_lib_dir}/libvpu.so
+                                        ${mmf_lib_dir}/libvi.so
+                                        ${mmf_lib_dir}/libvpss.so
+                                        ${mmf_lib_dir}/libvo.so
+                                        ${mmf_lib_dir}/libgdc.so
+                                        ${mmf_lib_dir}/librgn.so
                                         ${mmf_lib_dir}/3rd/libini.so)
 elseif(CONFIG_SOPHGO_MIDDLEWARE_C_LIBRARY STREQUAL "glibc")
     set(middleware_dynamic_lib_file     ${mmf_lib_dir}/libcvi_vb.so
@@ -61,7 +67,8 @@ list(APPEND ADD_DYNAMIC_LIB ${middleware_dynamic_lib_file})
 set_property(SOURCE ${middleware_dynamic_lib_file} PROPERTY GENERATED 1)
 
 list(APPEND ADD_DEFINITIONS_PRIVATE -DSENSOR_LONTIUM_LT6911
-                                -DSENSOR2_TYPE=LONTIUM_LT6911_2M_60FPS_8BIT)
+                                -DSENSOR2_TYPE=LONTIUM_LT6911_2M_60FPS_8BIT
+                                -DARCH_CV181X -D__CV181X__)
 # Video path: speed over the MinSizeRel default (-Os).
 list(APPEND ADD_DEFINITIONS_PRIVATE -O2)
 

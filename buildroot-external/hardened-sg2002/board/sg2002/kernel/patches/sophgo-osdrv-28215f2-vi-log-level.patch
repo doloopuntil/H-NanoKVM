@@ -1,7 +1,7 @@
-diff --git a/interdrv/v2/vi/chip/cv181x/vi.c b/interdrv/v2/vi/chip/cv181x/vi.c
-index 5b43ee7f..af8f8c34 100644
---- a/interdrv/v2/vi/chip/cv181x/vi.c
-+++ b/interdrv/v2/vi/chip/cv181x/vi.c
+diff --git a/interdrv/vi/chip/cv181x/vi.c b/interdrv/vi/chip/cv181x/vi.c
+index 5f15f9fe..628cf2ea 100644
+--- a/interdrv/vi/chip/cv181x/vi.c
++++ b/interdrv/vi/chip/cv181x/vi.c
 @@ -52,7 +52,7 @@
  /*******************************************************
   *  Global variables
@@ -10,10 +10,10 @@ index 5b43ee7f..af8f8c34 100644
 +u32 vi_log_lv = 0;
  module_param(vi_log_lv, int, 0644);
  
- #ifdef PORTING_TEST //test only
-diff --git a/interdrv/v2/vpss/chip/cv181x/vpss_core.c b/interdrv/v2/vpss/chip/cv181x/vpss_core.c
---- a/interdrv/v2/vpss/chip/cv181x/vpss_core.c
-+++ b/interdrv/v2/vpss/chip/cv181x/vpss_core.c
+ 
+diff --git a/interdrv/vpss/chip/cv181x/vpss_core.c b/interdrv/vpss/chip/cv181x/vpss_core.c
+--- a/interdrv/vpss/chip/cv181x/vpss_core.c
++++ b/interdrv/vpss/chip/cv181x/vpss_core.c
 @@ -35,7 +35,7 @@
  #include "sclr_test.h"
  

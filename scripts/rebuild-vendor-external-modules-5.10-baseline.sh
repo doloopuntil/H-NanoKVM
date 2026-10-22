@@ -24,11 +24,12 @@ EXPECTED_KERNEL_RELEASE="${EXPECTED_KERNEL_RELEASE:-}"
 SOPHGO_OSDRV_DIR="${SOPHGO_OSDRV_DIR:-}"
 PATCH_DIR="$ROOT_DIR/buildroot-external/hardened-sg2002/board/sg2002/kernel/patches"
 CANDIDATE_PATCHES=(
-	"$PATCH_DIR/sophgo-osdrv-0cf613b-soph-module-names.patch"
-	"$PATCH_DIR/sophgo-osdrv-0cf613b-linux-5.10.265-compat.patch"
-	"$PATCH_DIR/sophgo-osdrv-0cf613b-lt-int.patch"
-	"$PATCH_DIR/sophgo-osdrv-0cf613b-vi-log-level.patch"
-	"$PATCH_DIR/sophgo-osdrv-0cf613b-vi-dci-yuv-bypass.patch"
+	"$PATCH_DIR/sophgo-osdrv-28215f2-soph-module-names.patch"
+	"$PATCH_DIR/sophgo-osdrv-28215f2-linux-5.10.265-compat.patch"
+	"$PATCH_DIR/sophgo-osdrv-28215f2-lt-int.patch"
+	"$PATCH_DIR/sophgo-osdrv-28215f2-vi-log-level.patch"
+	"$PATCH_DIR/sophgo-osdrv-28215f2-vi-dci-yuv-bypass.patch"
+	"$PATCH_DIR/sophgo-osdrv-28215f2-ion-stats-stub.patch"
 )
 # Built with interdrv in candidate mode; packaged separately from the 30-module inventory.
 MEDIA_MODULES=(soph_vcodec.ko soph_jpeg.ko soph_vc_driver.ko)
@@ -78,7 +79,7 @@ if [ -n "$EXPECTED_KERNEL_RELEASE" ] && \
 fi
 if [ -n "$EXPECTED_KERNEL_RELEASE" ]; then
 	build_mode=candidate
-	for path in "$SOPHGO_OSDRV_DIR/interdrv/v2" "$SOPHGO_OSDRV_DIR/Makefile" "${CANDIDATE_PATCHES[@]}"
+	for path in "$SOPHGO_OSDRV_DIR/interdrv/include" "$SOPHGO_OSDRV_DIR/Makefile" "${CANDIDATE_PATCHES[@]}"
 	do
 		[ -e "$path" ] || {
 			echo "missing external-module candidate input: $path" >&2

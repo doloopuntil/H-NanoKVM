@@ -31,6 +31,8 @@
 #define MMF_VI_MAX_CHN 			2		// manually limit the max channel number of vi
 #define MMF_RGN_MAX_NUM			16
 #define MMF_VENC_MAX_CHN		4
+// QueryStatus reports the driver's MAX_NUM_PACKS, not the frame's pack count.
+#define MMF_VENC_MAX_QUERY_PACKS	64
 
 #define MMF_VB_VI_ID			0
 
@@ -2249,7 +2251,7 @@ int mmf_enc_jpg_pop(int ch, uint8_t **data, int *size)
 	memset(&stStatus, 0, sizeof(stStatus));
 	s32Ret = CVI_VENC_QueryStatus(ch, &stStatus);
 	if (s32Ret != CVI_SUCCESS || stStatus.u32CurPacks == 0 ||
-		stStatus.u32CurPacks > 8) {
+		stStatus.u32CurPacks > MMF_VENC_MAX_QUERY_PACKS) {
 		printf("CVI_VENC_QueryStatus failed or invalid pack count: ret=%#x count=%u\n",
 			s32Ret, stStatus.u32CurPacks);
 		priv.enc_jpg_running = 0;
@@ -2734,7 +2736,7 @@ int mmf_venc_pop(int ch, mmf_stream_t *stream) {
 		printf("CVI_VENC_QueryStatus find not pack\r\n");
 		return -1;
 	}
-	if (stStatus.u32CurPacks > 8) {
+	if (stStatus.u32CurPacks > MMF_VENC_MAX_QUERY_PACKS) {
 		printf("pack count is too large! cnt:%u\r\n", stStatus.u32CurPacks);
 		return -1;
 	}
@@ -2758,7 +2760,7 @@ int mmf_venc_pop(int ch, mmf_stream_t *stream) {
 	info->stream_acquired = 1;
 
 	stream->count = venc_stream->u32PackCount;
-	if (stream->count < 1 || stream->count > 8) {
+	if (stream->count < 1 || stream->count > MMF_STREAM_MAX_PACKS) {
 		printf("invalid returned pack count! cnt:%d\r\n", stream->count);
 		mmf_venc_free(ch);
 		memset(stream, 0, sizeof(*stream));
