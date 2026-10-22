@@ -2,7 +2,7 @@ use axum::{
     Json,
     body::Bytes,
     extract::{
-        Path as AxumPath, Query,
+        Path as AxumPath, Query, State,
         ws::{CloseFrame as AxumCloseFrame, Message as AxumWsMessage, WebSocket, WebSocketUpgrade},
     },
     http::{HeaderMap, StatusCode, header},
@@ -42,6 +42,8 @@ use crate::{
     api::{hid, picoclaw_sessions, stream},
     auth::token::random_token,
     error::ApiResponse,
+    http::proxy::ClientInfo,
+    state::AppState,
     system::command::{self, AllowedCommand},
     ws::hid as hid_ws,
 };
@@ -843,9 +845,17 @@ pub async fn load_image(headers: HeaderMap, body: Bytes) -> Result<Response> {
 }
 
 pub async fn gateway_ws(
+    State(state): State<AppState>,
+    client: ClientInfo,
+    headers: HeaderMap,
     Query(query): Query<GatewayQuery>,
     ws: WebSocketUpgrade,
 ) -> Result<Response> {
+    // As for every other authenticated WebSocket: a cross-site page can take
+    // no session lock, run no Startup job and reach no upstream gateway.
+    if !crate::ws::origin::validate_ws_origin(&headers, &state.config, &client) {
+        return Err(AppError::Forbidden("invalid websocket origin".to_string()));
+    }
     let session_id = gateway_session_id(&query);
     if let Err(err) = ensure_session_lock(&session_id) {
         return Ok(picoclaw_error_data_status(StatusCode::CONFLICT, err));
@@ -947,6 +957,10 @@ pub fn has_valid_loopback_internal_token(
         .unwrap_or("");
     constant_time_eq(provided, &token)
 }
+
+#[cfg(test)]
+#[path = "picoclaw_gateway_origin_tests.rs"]
+mod gateway_origin_tests;
 
 fn require_session_id(headers: &HeaderMap) -> std::result::Result<String, PicoclawErrorData> {
     let session_id = headers
