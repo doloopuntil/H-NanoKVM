@@ -24,6 +24,7 @@
 #include "oled_ctrl.h"
 #include "oled_ui.h"
 #include "hdmi.h"
+#include "ap_key.h"
 
 #define IP_Change_time 				5000
 #define QR_Change_time 				5000
@@ -63,7 +64,7 @@ typedef struct {
 	int8_t key_thread_running = 0;
 	int8_t sys_thread_running = 0;
 	int8_t wifi_config_process = -1;	// 1:QR;2:Test;3:IP;
-	char wifi_ap_pass[9] = {0};
+	char wifi_ap_pass[AP_KEY_CHARS + 1] = {0};
     uint8_t oled_sleep_state = 0;	// 0:wakeup; 1:sleep;
 	int8_t reconvery_update = 0;	// 0:Undetected; 1:Needs Update; 2:Update finish; -1:not need to update
 	uint8_t ping_allow = 1;
