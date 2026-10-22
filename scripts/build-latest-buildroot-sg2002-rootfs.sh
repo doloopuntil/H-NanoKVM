@@ -7,7 +7,6 @@ PROBE_ROOT="${LATEST_BUILDROOT_PROBE_ROOT:-$ROOT/build/latestbuildroot}"
 UPSTREAM_DIR="${LATEST_BUILDROOT_SOURCE_DIR:-$PROBE_ROOT/buildroot-${BUILDROOT_VERSION}-raw11-security}"
 OUTPUT_DIR="${HARDENED_SG2002_BUILDROOT_OUTPUT_DIR:-$PROBE_ROOT/sg2002-config-${BUILDROOT_VERSION}-raw11}"
 HOST_DEPS_ROOT="${BUILDROOT_PORT_HOST_DEPS:-$ROOT/build/host-deps}"
-VENDOR_SDK_DIR="${HARDENED_SG2002_VENDOR_SDK_DIR:-$ROOT/build/vendor/LicheeRV-Nano-Build}"
 VENDOR_RUNTIME_DIR="${NANOKVM_VENDOR_RUNTIME_SOURCE_DIR:-$ROOT/build/latestbuildroot/vendor-runtime-source-media-v1}"
 KVMAPP_DIR="${NANOKVM_KVMAPP_SOURCE_DIR:-$ROOT/build/kvmapp-rust/kvmapp}"
 USER_HOME="$HOME"
@@ -50,11 +49,12 @@ if grep -qx 'BR2_PACKAGE_HARDENED_NANOKVM_KVMAPP=y' "$OUTPUT_DIR/.config"; then
 fi
 
 if grep -qx 'BR2_PACKAGE_HARDENED_SG2002_VENDOR_RUNTIME=y' "$OUTPUT_DIR/.config"; then
-  if [ ! -d "$VENDOR_RUNTIME_DIR/system/ko" ]; then
-    HARDENED_SG2002_VENDOR_SDK_DIR="$VENDOR_SDK_DIR" \
-    NANOKVM_VENDOR_RUNTIME_SOURCE_DIR="$VENDOR_RUNTIME_DIR" \
-      "$ROOT/scripts/prepare-latest-buildroot-sg2002-vendor-runtime.sh"
-  fi
+  # Staged by .github/workflows/system-image.yml; there is no local builder.
+  [ -d "$VENDOR_RUNTIME_DIR/system/ko" ] || {
+    echo "missing vendor runtime staging: $VENDOR_RUNTIME_DIR" >&2
+    echo "stage it as system-image.yml does and set NANOKVM_VENDOR_RUNTIME_SOURCE_DIR" >&2
+    exit 1
+  }
 fi
 
 exec env -i \

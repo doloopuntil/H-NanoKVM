@@ -162,8 +162,8 @@ regenerated from already-pinned values the same way.
 
 **raw.12 is no longer fetched anywhere in this pipeline.** One
 diagnostic, not a structural or content dependency worth keeping, was
-removed while closing this: `build-historical-sophgo-vc-driver.sh` used
-to diff `soph_vc_driver.ko`'s module parameters against an "old"
+removed while closing this: the old local `soph_vc_driver.ko` build script
+(since retired with the rest of the mixed codec chain) used to diff `soph_vc_driver.ko`'s module parameters against an "old"
 reference copy pulled from raw.12 -- a real comparison, since `modinfo`
 needs an actual valid module, not something a placeholder could satisfy.
 That comparison is gone rather than kept as a narrower exception.
@@ -203,7 +203,7 @@ supplied the same content instead:
 | External source | What it provides | Redundant with the vendor SDK? |
 | --- | --- | --- |
 | `sophgo/host-tools` | The actual riscv64 cross-compiler toolchain, used to build the kernel and every kernel module | No -- this is the compiler itself; a prebuilt rootfs can't substitute for a toolchain. Confirmed by grepping every script that references it: all of them use `TOOLCHAIN_BIN=.../host-tools/gcc/riscv64-linux-musl-x86_64/bin` to invoke `gcc`/`ld`/`strip` directly. |
-| `sipeed/NanoKVM` upstream | 4 OpenCV modules (`core`/`highgui`/`imgcodecs`/`imgproc`) | No -- confirmed by reading `scripts/prepare-latest-buildroot-sg2002-vendor-runtime.sh`, the historical script that originally extracted content from `vendor-sdk-stock`'s own rootfs: its own OpenCV set is `video`/`dnn`/`calib3d`/`features2d`/`flann`/`protobuf` at `/usr/lib/` -- exactly the 6 modules already proven unused and deleted, not the 4 this pipeline needs. `vendor-sdk-stock` never had the right OpenCV variant. |
+| `sipeed/NanoKVM` upstream | 4 OpenCV modules (`core`/`highgui`/`imgcodecs`/`imgproc`) | No -- confirmed by reading the historical local runtime-extraction script (since removed) that originally extracted content from `vendor-sdk-stock`'s own rootfs: its own OpenCV set is `video`/`dnn`/`calib3d`/`features2d`/`flann`/`protobuf` at `/usr/lib/` -- exactly the 6 modules already proven unused and deleted, not the 4 this pipeline needs. `vendor-sdk-stock` never had the right OpenCV variant. |
 | `sophgo/osdrv` and `sophgo/cvi_mpi` (public, one dated release) | Every `interdrv` kernel module and the five middleware libraries | No -- one release for both keeps the user/kernel structs and the shared `struct cvi_buffer` consistent; the vendor SDK's copies are an older snapshot of the same tree. |
 | `git.kernel.org` stable tree | Real upstream Linux 5.10.265 fixes for the kernel rehydration | Not applicable -- the whole point is pulling genuine upstream fixes the vendor's own kernel snapshot doesn't have. |
 | `buildroot.org` | The Buildroot release tarball itself | Not applicable -- an unrelated upstream project, not vendor SDK content. |
