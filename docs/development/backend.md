@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-30
+last-checked: 2026-11-07
 ---
 
 # Rust backend
@@ -86,7 +86,10 @@ The full SD image is built from source in CI; see
   access, Restricted local-only service allowlist, and Paranoid local-only HTTPS
   with online updates intentionally blocked. Restricted and Paranoid block
   H.264 WebRTC; use H.264 Direct or MJPEG in those modes.
-- MJPEG stream and frame-detect endpoints through `libkvm`.
+- MJPEG stream and frame-detect endpoints through `libkvm`. With frame
+  detection on, an unchanged screen (`libkvm` result 5) sends nothing and is
+  not a capture failure, so the stream resumes at the next changed frame
+  without the failure backoff.
 - H.264 Direct and H.264 WebRTC routes are implemented. Direct streaming is the
   preferred low-CPU mode and has been verified on hardware. WebRTC websocket
   signaling is available only when the effective firewall mode permits it.
