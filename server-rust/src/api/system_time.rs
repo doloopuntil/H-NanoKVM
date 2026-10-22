@@ -151,6 +151,10 @@ fn validate_config(mut config: TimeConfig) -> Result<TimeConfig> {
 }
 
 fn normalize_timezone(value: &str) -> Result<String> {
+    normalize_timezone_in(value, Path::new(ZONEINFO_DIR))
+}
+
+fn normalize_timezone_in(value: &str, zoneinfo: &Path) -> Result<String> {
     let timezone = value.trim().trim_start_matches('/').to_string();
     if timezone.is_empty() || timezone.len() > 128 {
         return Err(AppError::BadRequest("invalid timezone".to_string()));
@@ -165,13 +169,23 @@ fn normalize_timezone(value: &str) -> Result<String> {
         return Err(AppError::BadRequest("invalid timezone".to_string()));
     }
 
-    let path = Path::new(ZONEINFO_DIR).join(&timezone);
-    ensure_subpath(Path::new(ZONEINFO_DIR), &path)?;
-    if !path.is_file() {
+    let path = zoneinfo.join(&timezone);
+    ensure_subpath(zoneinfo, &path)?;
+    // zoneinfo also holds text files such as leapseconds; only a compiled
+    // zone may become /etc/localtime.
+    if !path.is_file() || !is_compiled_zone(&path) {
         return Err(AppError::BadRequest("unknown timezone".to_string()));
     }
 
     Ok(timezone)
+}
+
+fn is_compiled_zone(path: &Path) -> bool {
+    let mut magic = [0_u8; 4];
+    fs::File::open(path)
+        .and_then(|mut file| std::io::Read::read_exact(&mut file, &mut magic))
+        .is_ok()
+        && &magic == b"TZif"
 }
 
 fn normalize_servers<'a, I>(servers: I) -> Result<Vec<String>>
@@ -515,6 +529,21 @@ mod tests {
             Some("10.0.87.5")
         );
         assert_eq!(parse_route_gateway("00000000"), None);
+    }
+
+    #[test]
+    fn only_a_compiled_zone_is_a_timezone() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::create_dir_all(dir.path().join("Europe")).unwrap();
+        fs::write(dir.path().join("Europe/Tallinn"), b"TZif2 compiled zone").unwrap();
+        fs::write(dir.path().join("leapseconds"), b"# leap second table").unwrap();
+        assert_eq!(
+            normalize_timezone_in("Europe/Tallinn", dir.path()).unwrap(),
+            "Europe/Tallinn"
+        );
+        for value in ["leapseconds", "Europe", "Europe/Nowhere", "../etc/passwd"] {
+            assert!(normalize_timezone_in(value, dir.path()).is_err(), "{value}");
+        }
     }
 
     #[test]
