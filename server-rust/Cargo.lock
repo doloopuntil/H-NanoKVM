@@ -1473,6 +1473,7 @@ dependencies = [
  "nix",
  "rcgen",
  "rtc",
+ "rustix",
  "serde",
  "serde_json",
  "serde_norway",
