@@ -10,6 +10,11 @@ import { MenuItem } from '@/components/menu-item.tsx';
 import { MenuHeader } from '@/components/menu-rows.tsx';
 
 import { Run } from './run';
+import { Unlock } from './unlock';
+
+// What the unlock dialog is for. The file is chosen first, inside the click, and the password
+// asked after.
+type Pending = { kind: 'upload'; file: File } | { kind: 'run'; type: string };
 
 export const Script = () => {
   const { t } = useTranslation();
@@ -17,6 +22,8 @@ export const Script = () => {
   const [scripts, setScripts] = useState<string[]>([]);
   const [currentScript, setCurrentScript] = useState('');
   const [isRunning, setIsRunning] = useState(false);
+  const [runTicket, setRunTicket] = useState('');
+  const [pending, setPending] = useState<Pending | null>(null);
 
   const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<any>(null);
@@ -38,16 +45,17 @@ export const Script = () => {
   }
 
   function uploadFile(e: ChangeEvent<HTMLInputElement>) {
-    if (!e.target?.files?.length) return;
-    const file = e.target.files[0];
+    if (!e.target?.files?.length || isUploading) return;
+    setPending({ kind: 'upload', file: e.target.files[0] });
+  }
 
-    if (isUploading) return;
+  function upload(file: File, ticket: string) {
     setIsUploading(true);
 
     const formData = new FormData();
     formData.append('file', file);
 
-    attempt(() => api.uploadScript(formData))
+    attempt(() => api.uploadScript(formData, ticket))
       .then((rsp) => {
         if (!rsp) return;
 
@@ -62,11 +70,21 @@ export const Script = () => {
 
   function runScript(type: string) {
     if (!currentScript) return;
+    setPending({ kind: 'run', type });
+  }
 
-    if (type === 'foreground') {
+  function unlocked(ticket: string) {
+    const action = pending;
+    setPending(null);
+    if (!action) return;
+
+    if (action.kind === 'upload') {
+      upload(action.file, ticket);
+    } else if (action.type === 'foreground') {
+      setRunTicket(ticket);
       setIsRunning(true);
     } else {
-      attempt(() => api.runScript(currentScript, type));
+      attempt(() => api.runScript(currentScript, action.type, ticket));
     }
   }
 
@@ -172,7 +190,8 @@ export const Script = () => {
         onOpenChange={handleOpenChange}
       />
 
-      {isRunning && <Run script={currentScript} setIsRunning={setIsRunning} />}
+      {pending && <Unlock onUnlock={unlocked} onCancel={() => setPending(null)} />}
+      {isRunning && <Run script={currentScript} ticket={runTicket} setIsRunning={setIsRunning} />}
     </>
   );
 };

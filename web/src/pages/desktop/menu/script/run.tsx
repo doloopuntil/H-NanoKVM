@@ -8,17 +8,18 @@ import { DialogAction } from '@/components/dialog-parts.tsx';
 
 type RunProps = {
   script: string;
+  ticket: string;
   setIsRunning: (isRunning: boolean) => void;
 };
 
-export const Run = ({ script, setIsRunning }: RunProps) => {
+export const Run = ({ script, ticket, setIsRunning }: RunProps) => {
   const { t } = useTranslation();
   const [state, setState] = useState('running');
   const [log, setLog] = useState('');
 
   useEffect(() => {
     api
-      .runScript(script, 'foreground')
+      .runScript(script, 'foreground', ticket)
       .then((rsp) => {
         if (rsp.code !== 0) {
           setLog(rsp.msg);
@@ -29,8 +30,8 @@ export const Run = ({ script, setIsRunning }: RunProps) => {
         setState('success');
         setLog(rsp.data.log);
       })
-      .catch(() => {
-        setLog(t('script.runFailed'));
+      .catch((err) => {
+        setLog(err?.response?.data?.msg || t('script.runFailed'));
         setState('failed');
       });
     // runs the script once, when the dialog opens
