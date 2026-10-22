@@ -2,7 +2,7 @@ use axum::{
     Json,
     body::Bytes,
     extract::{
-        Path as AxumPath, Query, State,
+        Extension, Path as AxumPath, Query, State,
         ws::{CloseFrame as AxumCloseFrame, Message as AxumWsMessage, WebSocket, WebSocketUpgrade},
     },
     http::{HeaderMap, StatusCode, header},
@@ -38,7 +38,10 @@ use crate::{
     api::{hid, picoclaw_policy, picoclaw_sessions, stream},
     auth::token::random_token,
     error::ApiResponse,
-    http::proxy::ClientInfo,
+    http::{
+        middleware::{CurrentSession, TransportSession},
+        proxy::ClientInfo,
+    },
     state::AppState,
     system::{
         command::{self, AllowedCommand},
@@ -93,6 +96,7 @@ const CODE_SESSION_ID_MISSING: &str = "SESSION_ID_MISSING";
 const CODE_SESSION_ID_INVALID: &str = "SESSION_ID_INVALID";
 
 const CLOSE_NORMAL: u16 = 1000;
+const CLOSE_SESSION_ENDED: u16 = 1008;
 const CLOSE_MESSAGE_TOO_BIG: u16 = 1009;
 const CLOSE_PICOCLAW_TAKEN_OVER: u16 = 4004;
 const CLOSE_UPSTREAM_CLOSED: u16 = 4005;
@@ -109,6 +113,10 @@ const DEFAULT_SCROLL_STEP: Duration = Duration::from_millis(20);
 static RUNTIME_STATUS: LazyLock<RwLock<RuntimeStatus>> =
     LazyLock::new(|| RwLock::new(RuntimeStatus::checking()));
 static INTERNAL_TOKEN_CACHE: LazyLock<RwLock<Option<String>>> = LazyLock::new(|| RwLock::new(None));
+
+/// Tests that take the process-wide Pico session lock run one at a time.
+#[cfg(test)]
+pub(crate) static SESSION_LOCK_TESTS: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 static SESSION_LOCK: LazyLock<Mutex<PicoSessionLock>> =
     LazyLock::new(|| Mutex::new(PicoSessionLock::default()));
 
@@ -848,6 +856,7 @@ pub async fn load_image(headers: HeaderMap, body: Bytes) -> Result<Response> {
 pub async fn gateway_ws(
     State(state): State<AppState>,
     client: ClientInfo,
+    current: Option<Extension<CurrentSession>>,
     headers: HeaderMap,
     Query(query): Query<GatewayQuery>,
     ws: WebSocketUpgrade,
@@ -857,6 +866,8 @@ pub async fn gateway_ws(
     if !crate::ws::origin::validate_ws_origin(&headers, &state.config, &client) {
         return Err(AppError::Forbidden("invalid websocket origin".to_string()));
     }
+    // The chat lives as long as the login that opened it.
+    let transport = TransportSession::capture(&state.config, current)?;
     let session_id = gateway_session_id(&query);
     if let Err(err) = ensure_session_lock(&session_id) {
         return Ok(picoclaw_error_data_status(StatusCode::CONFLICT, err));
@@ -920,7 +931,9 @@ pub async fn gateway_ws(
 
     update_runtime_gateway_state(true, "ready", None, Some(&session_id));
     Ok(ws
-        .on_upgrade(move |socket| handle_gateway_socket(session_id, socket, upstream, settings))
+        .on_upgrade(move |socket| {
+            handle_gateway_socket(session_id, socket, upstream, settings, transport)
+        })
         .into_response())
 }
 
@@ -1091,6 +1104,7 @@ async fn handle_gateway_socket(
     socket: WebSocket,
     upstream: GatewayUpstream,
     settings: GatewaySettings,
+    transport: TransportSession,
 ) {
     let (mut downstream_tx, mut downstream_rx) = socket.split();
     let (mut upstream_tx, mut upstream_rx) = upstream.split();
@@ -1104,6 +1118,10 @@ async fn handle_gateway_socket(
 
     let close = loop {
         tokio::select! {
+            biased;
+            _ = transport.ended() => {
+                break GatewayClose::new(CLOSE_SESSION_ENDED, "session ended");
+            }
             _ = &mut read_deadline => {
                 break GatewayClose::upstream("gateway read timeout");
             }
