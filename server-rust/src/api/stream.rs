@@ -63,6 +63,9 @@ const DIRECT_WRITE_TIMEOUT: Duration = Duration::from_secs(2);
 const DIRECT_PING_INTERVAL: Duration = Duration::from_secs(15);
 /// A direct client that sends nothing, not even a pong, for this long is gone.
 const DIRECT_READ_IDLE: Duration = Duration::from_secs(30);
+/// At most one keyframe request per interval: a peer flooding RTCP PLI/FIR would otherwise force
+/// a keyframe for every viewer several times a second. Loss recovery once a second is still prompt.
+const H264_KEYFRAME_REQUEST_INTERVAL: Duration = Duration::from_secs(1);
 
 static SCREEN: LazyLock<Mutex<Screen>> = LazyLock::new(|| Mutex::new(Screen::default()));
 static LATEST_MJPEG_FRAME: LazyLock<Mutex<Option<LatestMjpegFrame>>> =
@@ -86,6 +89,7 @@ static H264_DIRECT_FIRST_SUCCESS_LOGGED: AtomicBool = AtomicBool::new(false);
 static H264_DIRECT_FIRST_ERROR_LOGGED: AtomicBool = AtomicBool::new(false);
 static H264_CAPTURE_DISABLED: AtomicBool = AtomicBool::new(false);
 static H264_CONSECUTIVE_FAILURES: AtomicUsize = AtomicUsize::new(0);
+static H264_LAST_KEYFRAME_REQUEST: Mutex<Option<Instant>> = Mutex::new(None);
 static CAPTURE_STATUS: LazyLock<Mutex<CaptureStatusStore>> =
     LazyLock::new(|| Mutex::new(CaptureStatusStore::default()));
 
@@ -1003,8 +1007,22 @@ pub fn request_h264_keyframe(reason: &'static str) {
     if h264_capture_disabled() {
         return;
     }
+    {
+        let mut last = H264_LAST_KEYFRAME_REQUEST
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let now = Instant::now();
+        if !keyframe_request_due(*last, now) {
+            return;
+        }
+        *last = Some(now);
+    }
     info!(reason, "requesting h264 keyframe");
     kvm::request_keyframe();
+}
+
+fn keyframe_request_due(last: Option<Instant>, now: Instant) -> bool {
+    last.is_none_or(|last| now.saturating_duration_since(last) >= H264_KEYFRAME_REQUEST_INTERVAL)
 }
 
 pub async fn read_h264_capture_frame(
@@ -1254,45 +1272,20 @@ fn h264_direct_packet(is_keyframe: bool, timestamp_micros: u64, data: &[u8]) -> 
 #[cfg(test)]
 mod tests {
     #[test]
-    fn an_unchanged_mjpeg_frame_is_neither_sent_nor_a_failure() {
-        use super::{MJPEG_FRAME_UNCHANGED, MjpegRead, classify_mjpeg_read};
-        // Frame detection reports a still screen as 5, with or without bytes.
-        assert_eq!(
-            classify_mjpeg_read(MJPEG_FRAME_UNCHANGED, 0),
-            MjpegRead::Unchanged
-        );
-        assert_eq!(
-            classify_mjpeg_read(MJPEG_FRAME_UNCHANGED, 4096),
-            MjpegRead::Unchanged
-        );
-        assert_eq!(classify_mjpeg_read(0, 4096), MjpegRead::Frame);
-        assert_eq!(classify_mjpeg_read(0, 0), MjpegRead::Failure);
-        for result in [-1, -2, -3] {
-            assert_eq!(classify_mjpeg_read(result, 4096), MjpegRead::Failure);
+    fn keyframe_requests_are_spaced_by_their_interval() {
+        use super::{H264_KEYFRAME_REQUEST_INTERVAL, keyframe_request_due};
+        use std::time::{Duration, Instant};
+        let now = Instant::now();
+        assert!(keyframe_request_due(None, now));
+        // A PLI/FIR flood inside the interval gets no further keyframes.
+        for gap in [0, 125, 500, 999] {
+            let last = now.checked_sub(Duration::from_millis(gap));
+            if last.is_some() {
+                assert!(!keyframe_request_due(last, now), "{gap} ms");
+            }
         }
-    }
-
-    use super::{
-        H264_SOURCE, H264_WEBRTC_CONSUMERS, H264ConsumerKind, H264DirectProducerAction, H264Frame,
-        H264Subscription, KeyframeGate, Screen, StreamMode, h264_direct_packet,
-        h264_direct_producer_action, normalize_screen, serve_h264_direct,
-    };
-    use crate::api::direct_flow::MAX_CONTROL_BYTES;
-    use axum::extract::ws::WebSocketUpgrade;
-    use bytes::Bytes;
-    use futures_util::{SinkExt, StreamExt};
-    use std::{
-        sync::{Arc, Mutex, atomic::Ordering},
-        time::{Duration, Instant},
-    };
-    use tokio::{sync::broadcast, time};
-
-    fn frame(keyframe: bool, tag: &'static [u8]) -> H264Frame {
-        H264Frame {
-            data: Bytes::from_static(tag),
-            keyframe,
-            timestamp_micros: 7,
-            packet: None,
+        if let Some(last) = now.checked_sub(H264_KEYFRAME_REQUEST_INTERVAL) {
+            assert!(keyframe_request_due(Some(last), now));
         }
     }
 
@@ -1340,6 +1333,49 @@ mod tests {
         .await;
         assert!(failed.is_err());
         assert_eq!(untouched.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn an_unchanged_mjpeg_frame_is_neither_sent_nor_a_failure() {
+        use super::{MJPEG_FRAME_UNCHANGED, MjpegRead, classify_mjpeg_read};
+        // Frame detection reports a still screen as 5, with or without bytes.
+        assert_eq!(
+            classify_mjpeg_read(MJPEG_FRAME_UNCHANGED, 0),
+            MjpegRead::Unchanged
+        );
+        assert_eq!(
+            classify_mjpeg_read(MJPEG_FRAME_UNCHANGED, 4096),
+            MjpegRead::Unchanged
+        );
+        assert_eq!(classify_mjpeg_read(0, 4096), MjpegRead::Frame);
+        assert_eq!(classify_mjpeg_read(0, 0), MjpegRead::Failure);
+        for result in [-1, -2, -3] {
+            assert_eq!(classify_mjpeg_read(result, 4096), MjpegRead::Failure);
+        }
+    }
+
+    use super::{
+        H264_SOURCE, H264_WEBRTC_CONSUMERS, H264ConsumerKind, H264DirectProducerAction, H264Frame,
+        H264Subscription, KeyframeGate, Screen, StreamMode, h264_direct_packet,
+        h264_direct_producer_action, normalize_screen, serve_h264_direct,
+    };
+    use crate::api::direct_flow::MAX_CONTROL_BYTES;
+    use axum::extract::ws::WebSocketUpgrade;
+    use bytes::Bytes;
+    use futures_util::{SinkExt, StreamExt};
+    use std::{
+        sync::{Arc, Mutex, atomic::Ordering},
+        time::{Duration, Instant},
+    };
+    use tokio::{sync::broadcast, time};
+
+    fn frame(keyframe: bool, tag: &'static [u8]) -> H264Frame {
+        H264Frame {
+            data: Bytes::from_static(tag),
+            keyframe,
+            timestamp_micros: 7,
+            packet: None,
+        }
     }
 
     #[test]
