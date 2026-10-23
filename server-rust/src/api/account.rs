@@ -145,7 +145,7 @@ pub async fn login(
         let mut limiter = state.login_limiter.write().await;
         let locked = limiter.record_failure(&source_ip, &req.username);
         if locked {
-            tracing::warn!(source_ip, username = %req.username, "login lockout threshold reached");
+            tracing::warn!(source_ip, username = ?req.username, "login lockout threshold reached");
             audit::login_failure(&req.username, &source_ip, "lockout");
         } else {
             audit::login_failure(&req.username, &source_ip, "invalid_credentials");
@@ -340,7 +340,7 @@ pub(crate) async fn verify_password_limited(
             .await
             .record_failure(source_ip, &limiter_key)
         {
-            tracing::warn!(source_ip, username, "password re-check lockout reached");
+            tracing::warn!(source_ip, username = ?username, "password re-check lockout reached");
         }
         return Err(AppError::InvalidCredentials);
     }
