@@ -9,16 +9,12 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
-use data_encoding::HEXLOWER;
 use flate2::read::GzDecoder;
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map as JsonMap, Value as JsonValue, json};
-use sha2::{Digest, Sha256};
 use std::{
-    ffi::OsString,
-    fs,
-    io::{self, Read},
+    fs, io,
     net::SocketAddr,
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
@@ -44,18 +40,23 @@ use crate::{
     error::ApiResponse,
     http::proxy::ClientInfo,
     state::AppState,
-    system::command::{self, AllowedCommand},
+    system::{
+        command::{self, AllowedCommand},
+        package_download::{self, Pinned},
+    },
     ws::hid as hid_ws,
 };
 
 const PICOCLAW_BINARY_PATH: &str = "/usr/bin/picoclaw";
 const PICOCLAW_CACHE_DIR: &str = "/root/.picoclaw-cache";
-// The release is pinned together with the SHA-256 of its tarball (from the release's
+// The release is pinned together with its size and the SHA-256 of its tarball (from the release's
 // picoclaw_<version>_checksums.txt), so a changed upload fails the install. To move to a new
-// version, change the tag in the URL and the digest together.
-const PICOCLAW_DOWNLOAD_URL: &str =
-    "https://github.com/sipeed/picoclaw/releases/download/v0.3.1/picoclaw_Linux_riscv64.tar.gz";
-const PICOCLAW_SHA256: &str = "5124e553c8fb6f90cd57f7478a37409d2d98531cb028ca6ead6cc6867650d58a";
+// version, change the tag in the URL, the size and the digest together.
+pub(crate) const PACKAGE: Pinned = Pinned {
+    url: "https://github.com/sipeed/picoclaw/releases/download/v0.3.1/picoclaw_Linux_riscv64.tar.gz",
+    size: 22_914_731,
+    sha256: "5124e553c8fb6f90cd57f7478a37409d2d98531cb028ca6ead6cc6867650d58a",
+};
 const ETC_INIT_PICOCLAW_SCRIPT: &str = "/etc/init.d/S96picoclaw";
 const KVMAPP_PICOCLAW_SCRIPT: &str = "/kvmapp/system/init.d/S96picoclaw";
 const DEFAULT_GATEWAY_HOST: &str = "127.0.0.1";
@@ -441,7 +442,7 @@ pub async fn install_runtime() -> Result<Response> {
         return Ok(Json(ApiResponse::ok(RuntimeInstallResult {
             installed: false,
             binary: PICOCLAW_BINARY_PATH.to_string(),
-            download: PICOCLAW_DOWNLOAD_URL.to_string(),
+            download: PACKAGE.url.to_string(),
             output: "picoclaw installation is already in progress".to_string(),
             status: current,
         }))
@@ -454,7 +455,7 @@ pub async fn install_runtime() -> Result<Response> {
         return Ok(Json(ApiResponse::ok(RuntimeInstallResult {
             installed: true,
             binary: PICOCLAW_BINARY_PATH.to_string(),
-            download: PICOCLAW_DOWNLOAD_URL.to_string(),
+            download: PACKAGE.url.to_string(),
             output: "picoclaw is already installed".to_string(),
             status: runtime_status(),
         }))
@@ -502,7 +503,7 @@ pub async fn install_runtime() -> Result<Response> {
     Ok(Json(ApiResponse::ok(RuntimeInstallResult {
         installed: false,
         binary: PICOCLAW_BINARY_PATH.to_string(),
-        download: PICOCLAW_DOWNLOAD_URL.to_string(),
+        download: PACKAGE.url.to_string(),
         output: "picoclaw installation started".to_string(),
         status: runtime_status(),
     }))
@@ -546,7 +547,7 @@ pub async fn uninstall_runtime() -> Result<Response> {
     Ok(Json(ApiResponse::ok(RuntimeInstallResult {
         installed: false,
         binary: PICOCLAW_BINARY_PATH.to_string(),
-        download: PICOCLAW_DOWNLOAD_URL.to_string(),
+        download: PACKAGE.url.to_string(),
         output: "picoclaw uninstalled successfully".to_string(),
         status: runtime_status(),
     }))
@@ -2528,10 +2529,7 @@ async fn run_install_runtime() -> Result<()> {
 
     set_install_progress("downloading", 10, None);
     let archive_path = cache.join("picoclaw.tar.gz");
-    download_to(PICOCLAW_DOWNLOAD_URL, &archive_path).await?;
-
-    set_install_progress("verifying", 82, None);
-    verify_sha256(&archive_path, PICOCLAW_SHA256)?;
+    package_download::fetch(&PACKAGE, &archive_path, PICOCLAW_DOWNLOAD_TIMEOUT).await?;
 
     set_install_progress("extracting", 85, None);
     let extracted = {
@@ -2582,63 +2580,6 @@ fn set_install_progress(stage: &str, progress: i32, last_error: Option<String>) 
         checked_at: Some(now_string()),
         current_session: None,
     });
-}
-
-async fn download_to(url: &str, target: &Path) -> Result<()> {
-    let args = vec![
-        OsString::from("-f"),
-        OsString::from("-L"),
-        OsString::from("-sS"),
-        OsString::from("--connect-timeout"),
-        OsString::from("20"),
-        OsString::from("--max-time"),
-        OsString::from("600"),
-        OsString::from("--output"),
-        target.as_os_str().to_os_string(),
-        OsString::from(url),
-    ];
-    let curl = command::run_allowed(AllowedCommand::Curl, args, PICOCLAW_DOWNLOAD_TIMEOUT).await;
-    if let Ok(output) = curl
-        && output.status == 0
-    {
-        return Ok(());
-    }
-
-    let args = vec![
-        OsString::from("-q"),
-        OsString::from("-O"),
-        target.as_os_str().to_os_string(),
-        OsString::from(url),
-    ];
-    let output =
-        command::run_allowed(AllowedCommand::Wget, args, PICOCLAW_DOWNLOAD_TIMEOUT).await?;
-    if output.status == 0 {
-        Ok(())
-    } else {
-        Err(AppError::Internal(command_error(
-            "download picoclaw",
-            output,
-        )))
-    }
-}
-
-fn verify_sha256(path: &Path, expected: &str) -> Result<()> {
-    let mut file = fs::File::open(path)?;
-    let mut hasher = Sha256::new();
-    let mut buf = [0_u8; 64 * 1024];
-    loop {
-        let n = file.read(&mut buf)?;
-        if n == 0 {
-            break;
-        }
-        hasher.update(&buf[..n]);
-    }
-    let actual = HEXLOWER.encode(&hasher.finalize());
-    if actual == expected.to_ascii_lowercase() {
-        Ok(())
-    } else {
-        Err(AppError::Internal(format!("sha256 mismatch: got {actual}")))
-    }
 }
 
 fn extract_picoclaw_binary(archive_path: &Path, destination: &Path) -> Result<PathBuf> {
@@ -3677,37 +3618,9 @@ fn command_output_text(output: &crate::system::command::CommandOutput) -> String
     String::from_utf8_lossy(&output.stdout).trim().to_string()
 }
 
-fn command_error(message: &str, output: crate::system::command::CommandOutput) -> String {
-    let detail = command_output_text(&output);
-    if detail.is_empty() {
-        message.to_string()
-    } else {
-        format!("{message}: {detail}")
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn verifies_the_pinned_digest_of_a_file() {
-        let path = std::env::temp_dir().join(format!("picoclaw-sha-{}", std::process::id()));
-        fs::write(&path, b"abc").unwrap();
-        // SHA-256 of "abc"
-        let digest = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
-        assert!(verify_sha256(&path, digest).is_ok());
-        assert!(verify_sha256(&path, &digest.to_uppercase()).is_ok());
-        assert!(verify_sha256(&path, &"0".repeat(64)).is_err());
-        let _ = fs::remove_file(path);
-    }
-
-    #[test]
-    fn pinned_digest_is_a_sha256() {
-        assert_eq!(PICOCLAW_SHA256.len(), 64);
-        assert!(PICOCLAW_SHA256.bytes().all(|b| b.is_ascii_hexdigit()));
-        assert!(PICOCLAW_DOWNLOAD_URL.ends_with("/picoclaw_Linux_riscv64.tar.gz"));
-    }
 
     #[test]
     fn anthropic_models_get_a_null_temperature_in_extra_body() {
