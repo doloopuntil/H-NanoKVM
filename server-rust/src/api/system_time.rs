@@ -359,7 +359,11 @@ fn write_ntp_conf(servers: &[String]) -> Result<()> {
         content.push_str(server);
         content.push_str(" iburst\n");
     }
-    content.push_str("\nrestrict default kod nomodify notrap nopeer noquery\n");
+    // The same restrictions as S49ntp, which renders this file again when it
+    // starts ntpd: a client only. noserve also drops server replies, so each
+    // configured server gets its own entry from "restrict source".
+    content.push_str("\nrestrict default nomodify notrap nopeer noquery noserve\n");
+    content.push_str("restrict source nomodify notrap noquery\n");
     content.push_str("restrict 127.0.0.1\n");
     content.push_str("restrict ::1\n");
     write_file_atomic(Path::new(NTP_CONF_FILE), content.as_bytes(), 0o644)
