@@ -31,7 +31,7 @@ CANDIDATE_PATCHES=(
 	"$PATCH_DIR/sophgo-osdrv-28215f2-vi-dci-yuv-bypass.patch"
 	"$PATCH_DIR/sophgo-osdrv-28215f2-sys-carveout-allocator.patch"
 )
-# Built with interdrv in candidate mode; packaged separately from the 30-module inventory.
+# Built with interdrv in candidate mode; packaged separately from the 29-module inventory.
 MEDIA_MODULES=(soph_vcodec.ko soph_jpeg.ko soph_vc_driver.ko)
 MEDIA_ARTIFACT_DIR="$OUTPUT_DIR/media-artifacts"
 
@@ -110,7 +110,7 @@ rsync -a \
 	"$VENDOR_SDK_DIR/osdrv/" "$SOURCE_DIR/"
 
 TARGETS=(
-	sys base pwm rtc wdt tpu mon clock_cooling saradc wiegand
+	sys base pwm rtc wdt mon clock_cooling saradc wiegand
 	vi snsr_i2c cif vpss dwa rgn vo rtos_cmdqu fast_image ive fb
 	wireless tp wiegand-gpio
 )

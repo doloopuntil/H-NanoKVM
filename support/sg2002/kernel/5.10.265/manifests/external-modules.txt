@@ -22,7 +22,6 @@ soph_rtos_cmdqu.ko
 soph_saradc.ko
 soph_snsr_i2c.ko
 soph_sys.ko
-soph_tpu.ko
 soph_vi.ko
 soph_vo.ko
 soph_vpss.ko

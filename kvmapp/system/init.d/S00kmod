@@ -18,7 +18,6 @@ then
 	insmod soph_rgn.ko
 	insmod soph_wdt.ko
 	insmod soph_clock_cooling.ko
-	insmod soph_tpu.ko
 	insmod soph_vcodec.ko
 	insmod soph_jpeg.ko
 	insmod soph_vc_driver.ko MaxVencChnNum=9 MaxVdecChnNum=9
