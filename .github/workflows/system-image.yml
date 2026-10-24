@@ -14,11 +14,11 @@ env:
   BUILDROOT_VERSION: "2026.05.1"
   RUST_VERSION: "1.99.0"
   LICHEERV_NANO_SDK_SHA: d88d58feca49ef15f4cc7bd1f27dbf17dc25f85e
-  # One Sophgo weekly release (2024-10-14) for every video kernel module and middleware library,
+  # One Sophgo weekly release (2026-08-24) for every video kernel module and middleware library,
   # and the sensor list (enum and names) that release's sample code reads.
-  SOPHGO_OSDRV_SHA: 28215f2d37b108de7a29ed26006878135749c886
-  SOPHGO_CVI_MPI_SHA: ebaaf1bf46a6ff77d2ce3e6fa3e7673fc1d71dda
-  SOPHGO_SENSOR_LIST_SHA: 7e900fc6caf002dd37c995b425f8892c5080d49e
+  SOPHGO_OSDRV_SHA: 1b3a49649d18488ecf54fb4fcb6c27599e433fdc
+  SOPHGO_CVI_MPI_SHA: 693a72a1d52f2e08ea767e0a72905e81f10572a5
+  SOPHGO_SENSOR_LIST_SHA: e2824e1d07f516c41238e123fefbab71a34843bc
   # Pinned in scripts/rehydrate-vendor-kernel-5.10.265-merge.sh, verified against the canonical
   # git.kernel.org stable tree's peeled tag commits.
   STABLE_5_10_4_COMMIT: b1313fe517ca3703119dcc99ef3bbf75ab42bcfb
@@ -252,7 +252,7 @@ jobs:
           sparse_fetch "$RUNNER_TEMP/sdk-ion" https://github.com/sipeed/LicheeRV-Nano-Build.git \
             "$LICHEERV_NANO_SDK_SHA" /linux_5.10/drivers/staging/android/uapi/
           patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
-            < support/sg2002/middleware-patches/cvi-mpi-ebaaf1b-no-vi-dbg-thread.patch
+            < support/sg2002/middleware-patches/cvi-mpi-693a72a-no-vi-dbg-thread.patch
           ! grep -q vi_dbg_handler "$RUNNER_TEMP/cvi_mpi/modules/vi/src/cvi_vi.c"
 
       # Replaces MaixCDK's prebuilt libsys/libvenc/libvdec/libvpu/libini, so libkvm_mmf.so links
@@ -281,6 +281,8 @@ jobs:
           rm -rf "$MW/include" "$MW/sample/common" "$MW/uapi" "$MW/modules/ive/include" \
             "$MW/component/panel/cv181x"
           cp -r "$MPI/include" "$MW/include"
+          # cvi_mpi's own uapi copy (cv180x cvi_defines.h): <linux/...> must come from osdrv.
+          rm -rf "$MW/include/linux"
           mkdir -p "$MW/include/isp/cv181x" "$MW/uapi/linux" "$MW/modules/ive"
           cp "$MPI"/modules/isp/include/cv181x/*.h "$MW/include/isp/cv181x/"
           cp -r "$MPI/sample/common" "$MW/sample/common"

@@ -1,11 +1,11 @@
 diff --git a/interdrv/cif/chip/cv181x/cif.c b/interdrv/cif/chip/cv181x/cif.c
-index e07411dd..03a6c8b8 100644
+index 0269fe6..b1a529e 100644
 --- a/interdrv/cif/chip/cv181x/cif.c
 +++ b/interdrv/cif/chip/cv181x/cif.c
-@@ -38,6 +38,96 @@
- #include <vip_common.h>
+@@ -39,6 +39,96 @@
  #include <base_cb.h>
  #include <cif_cb.h>
+ #include <snsr_i2c.h>
 +#include <linux/gpio.h>
 +
 +/* LT6911 INT edge counter for kvm_vision (/proc/lt_int), ported from the LicheeRV SDK. */
@@ -99,7 +99,7 @@ index e07411dd..03a6c8b8 100644
  
  #define MIPI_IF
  #define DVP_IF
-@@ -3293,6 +3383,7 @@ static int cvi_cif_probe(struct platform_device *pdev)
+@@ -3346,6 +3436,7 @@ static int cvi_cif_probe(struct platform_device *pdev)
  	if (!cif_proc_entry)
  		dev_err(&pdev->dev, "cif: can't init procfs.\n");
  #endif
@@ -107,7 +107,7 @@ index e07411dd..03a6c8b8 100644
  
  	return 0;
  }
-@@ -3316,6 +3407,7 @@ static int cvi_cif_remove(struct platform_device *pdev)
+@@ -3369,6 +3460,7 @@ static int cvi_cif_remove(struct platform_device *pdev)
  		return 0;
  	}
  

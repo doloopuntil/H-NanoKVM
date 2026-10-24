@@ -168,15 +168,15 @@ MaixCDK's prebuilts: the source build must keep every symbol they export,
 except a short list in the script that Sophgo removed and nothing here uses.
 The libraries, the headers and sample code `libkvm_mmf.so` compiles against,
 the sensor list (`sophgo/SensorSupportList`) and every video kernel module come
-from one Sophgo release (2024-10-14: `cvi_mpi` ebaaf1b, `osdrv` 28215f2), so
+from one Sophgo release (2026-08-24: `cvi_mpi` 693a72a, `osdrv` 1b3a496), so
 user space and the drivers agree on every shared struct. Our changes on top:
 - `libvi` never starts the VI debug thread, which ran `system("cat /proc/...")`
   on VI errors (`support/sg2002/middleware-patches/`);
 - the kernel side carries `/proc/lt_int` (LT6911 interrupt counter for
-  `kvm_vision`), `vi_log_lv = 0`, a guard that skips DCI statistics on the
-  LT6911 YUV bypass pipe, a stub for an ION statistics call our 5.10 ION lacks,
-  and the 5.10.265 build fixes
-  (`buildroot-external/hardened-sg2002/board/sg2002/kernel/patches/sophgo-osdrv-28215f2-*.patch`).
+  `kvm_vision`), quiet VI and VPSS logging, a guard that skips DCI statistics
+  on the LT6911 YUV bypass pipe, the `soph_sys` media-memory allocator that
+  replaces ION, and the 5.10.265 build fixes
+  (`buildroot-external/hardened-sg2002/board/sg2002/kernel/patches/sophgo-osdrv-1b3a496-*.patch`).
 
 ## dl_lib's CVI/ISP/audio middleware: no longer extracted from raw.12
 

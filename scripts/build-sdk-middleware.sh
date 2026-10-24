@@ -46,7 +46,11 @@ cp "$SDK_DIR"/linux_5.10/drivers/staging/android/uapi/ion*.h "$KINC/linux/"
 CFLAGS="$OPT_FLAGS -mcpu=c906fd -march=rv64imafdcxthead -mcmodel=medany -mabi=lp64d"
 CFLAGS="$CFLAGS -std=gnu11 -fPIC -ffunction-sections -fdata-sections -mno-ldd"
 CFLAGS="$CFLAGS -DARCH_CV181X -D__CV181X__ -ffile-prefix-map=$MW=/usr/src/cvi_mpi"
-MW_INC=$MW/include
+# cvi_mpi's include/ carries its own copy of the uapi headers (a cv180x cvi_defines.h among
+# them); leave it out so <linux/...> resolves to the osdrv headers above.
+MW_INC="$WORK/mwinc"
+cp -r "$MW/include" "$MW_INC"
+rm -rf "$MW_INC/linux"
 SYS_INC=$MW/modules/sys/include
 BIN_INC=$MW/modules/bin/include
 ISP_INC=$MW/modules/isp/include/cv181x
@@ -95,7 +99,8 @@ build vo "$MW/modules/vo/src" "-I$MW_INC -I$ISP_INC -I$KINC -I$SYS_INC -I$BIN_IN
 -I$GDC_INC" ld ""
 build gdc "$MW/modules/gdc/src" "-I$MW_INC -I$ISP_INC -I$SYS_INC -I$BIN_INC -I$KINC -I$GDC_INC \
 -I$VI_INC -I$VPSS_INC -I$RGN_INC" ld ""
-build rgn "$MW/modules/rgn/src" "-I$MW_INC -I$KINC -I$SYS_INC -I$BIN_INC -I$RGN_INC" ld ""
+# osd_cmpr.h includes "cvi_type.h" from the uapi directory itself.
+build rgn "$MW/modules/rgn/src" "-I$MW_INC -I$KINC -I$KINC/linux -I$SYS_INC -I$BIN_INC -I$RGN_INC" ld ""
 build ini "$MW/3rdparty/inih" "" ld ""
 
 exports() {

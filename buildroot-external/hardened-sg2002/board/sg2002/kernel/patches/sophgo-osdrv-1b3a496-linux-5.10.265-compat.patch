@@ -1,5 +1,5 @@
 diff --git a/interdrv/Makefile.interdrv.param b/interdrv/Makefile.interdrv.param
-index ae95fb2a..40db130e 100644
+index ae95fb2..40db130 100644
 --- a/interdrv/Makefile.interdrv.param
 +++ b/interdrv/Makefile.interdrv.param
 @@ -4,4 +4,6 @@ ccflags-y += -D__CV181X__
@@ -12,7 +12,7 @@ index ae95fb2a..40db130e 100644
 +# 5.10.265 minmax.h trips -Wtype-limits inside kernel headers.
 +ccflags-y += -Wno-type-limits
 diff --git a/interdrv/cif/chip/cv181x/cif.c b/interdrv/cif/chip/cv181x/cif.c
-index 138fe202..e07411dd 100644
+index 2e14aa5..0269fe6 100644
 --- a/interdrv/cif/chip/cv181x/cif.c
 +++ b/interdrv/cif/chip/cv181x/cif.c
 @@ -14,7 +14,7 @@
@@ -25,7 +25,7 @@ index 138fe202..e07411dd 100644
  #include "pinctrl-cv180x.h"
  #endif
 diff --git a/interdrv/cvi_vc_drv/jpeg/jdi/linux/driver/jmm.h b/interdrv/cvi_vc_drv/jpeg/jdi/linux/driver/jmm.h
-index 4bfe69d8..df6a1d32 100644
+index 4bfe69d..df6a1d3 100644
 --- a/interdrv/cvi_vc_drv/jpeg/jdi/linux/driver/jmm.h
 +++ b/interdrv/cvi_vc_drv/jpeg/jdi/linux/driver/jmm.h
 @@ -90,7 +90,9 @@ typedef struct _jpu_mm_struct {
@@ -39,7 +39,7 @@ index 4bfe69d8..df6a1d32 100644
  typedef enum { LEFT, RIGHT } rotation_dir_t;
  
 diff --git a/interdrv/cvi_vc_drv/jpeg/jdi/mm.c b/interdrv/cvi_vc_drv/jpeg/jdi/mm.c
-index 18c336a4..55505897 100644
+index 18c336a..5550589 100644
 --- a/interdrv/cvi_vc_drv/jpeg/jdi/mm.c
 +++ b/interdrv/cvi_vc_drv/jpeg/jdi/mm.c
 @@ -30,7 +30,9 @@ typedef struct link_struct {
@@ -53,7 +53,7 @@ index 18c336a4..55505897 100644
  typedef enum { LEFT, RIGHT } rotation_dir_t;
  
 diff --git a/interdrv/cvi_vc_drv/module/src/cvi_venc.c b/interdrv/cvi_vc_drv/module/src/cvi_venc.c
-index 96f4af50..a3b6b565 100644
+index db35473..7d582d9 100644
 --- a/interdrv/cvi_vc_drv/module/src/cvi_venc.c
 +++ b/interdrv/cvi_vc_drv/module/src/cvi_venc.c
 @@ -49,7 +49,9 @@
@@ -67,7 +67,7 @@ index 96f4af50..a3b6b565 100644
  #define SET_DEFAULT_RC_PARAM(RC)                                               \
  	do {                                                                   \
 diff --git a/interdrv/cvi_vc_drv/vcodec/vdi/mm.c b/interdrv/cvi_vc_drv/vcodec/vdi/mm.c
-index 5c275903..0931fc9e 100644
+index 5c27590..0931fc9 100644
 --- a/interdrv/cvi_vc_drv/vcodec/vdi/mm.c
 +++ b/interdrv/cvi_vc_drv/vcodec/vdi/mm.c
 @@ -24,7 +24,9 @@
@@ -81,7 +81,7 @@ index 5c275903..0931fc9e 100644
  typedef enum { LEFT, RIGHT } rotation_dir_t;
  
 diff --git a/interdrv/cvi_vc_drv/vcodec/vpuapi/coda9/980_roi_rc_lib/hevc_enc_rc.h b/interdrv/cvi_vc_drv/vcodec/vpuapi/coda9/980_roi_rc_lib/hevc_enc_rc.h
-index 25571fe1..0c30bc8f 100644
+index f2f3bc2..47b8935 100644
 --- a/interdrv/cvi_vc_drv/vcodec/vpuapi/coda9/980_roi_rc_lib/hevc_enc_rc.h
 +++ b/interdrv/cvi_vc_drv/vcodec/vpuapi/coda9/980_roi_rc_lib/hevc_enc_rc.h
 @@ -6,8 +6,12 @@
@@ -98,7 +98,7 @@ index 25571fe1..0c30bc8f 100644
  #define ABS(a) ((a >= 0) ? a : -a)
  
 diff --git a/interdrv/jpeg/jmm.h b/interdrv/jpeg/jmm.h
-index 5ac13751..5bd98768 100644
+index 5ac1375..5bd9876 100644
 --- a/interdrv/jpeg/jmm.h
 +++ b/interdrv/jpeg/jmm.h
 @@ -140,7 +140,9 @@ struct jpu_mm_struct {
@@ -112,7 +112,7 @@ index 5ac13751..5bd98768 100644
  struct avl_node_data_struct {
  	int key;
 diff --git a/interdrv/rgn/common/rgn_common.h b/interdrv/rgn/common/rgn_common.h
-index 2450d206..86c54b10 100644
+index 2450d20..86c54b1 100644
 --- a/interdrv/rgn/common/rgn_common.h
 +++ b/interdrv/rgn/common/rgn_common.h
 @@ -10,8 +10,12 @@
@@ -129,7 +129,7 @@ index 2450d206..86c54b10 100644
  #define RGN_256_ALIGN(x) (((x) + 0xFF) & ~0xFF)   // for 256byte alignment
  #define RGN_ALIGN(x) (((x) + 0xF) & ~0xF)   // for 16byte alignment
 diff --git a/interdrv/vcodec/vmm.h b/interdrv/vcodec/vmm.h
-index 2087154a..7d243d1d 100644
+index 2087154..7d243d1 100644
 --- a/interdrv/vcodec/vmm.h
 +++ b/interdrv/vcodec/vmm.h
 @@ -62,7 +62,9 @@ typedef struct _video_mm_struct {
@@ -143,7 +143,7 @@ index 2087154a..7d243d1d 100644
  typedef enum { LEFT, RIGHT } rotation_dir_t;
  
 diff --git a/interdrv/vi/common/vi_common.h b/interdrv/vi/common/vi_common.h
-index 99427113..22074638 100644
+index 9942711..2207463 100644
 --- a/interdrv/vi/common/vi_common.h
 +++ b/interdrv/vi/common/vi_common.h
 @@ -30,8 +30,12 @@ extern int vi_dump_reg;
@@ -160,7 +160,7 @@ index 99427113..22074638 100644
  #define VI_256_ALIGN(x) (((x) + 0xFF) & ~0xFF)   // for 256byte alignment
  #define VI_ALIGN(x) (((x) + 0xF) & ~0xF)   // for 16byte alignment
 diff --git a/interdrv/vo/chip/cv181x/vo.c b/interdrv/vo/chip/cv181x/vo.c
-index 7e3bbed8..c904e0ae 100644
+index d8fe7ea..0f18fa4 100644
 --- a/interdrv/vo/chip/cv181x/vo.c
 +++ b/interdrv/vo/chip/cv181x/vo.c
 @@ -21,7 +21,7 @@
@@ -173,7 +173,7 @@ index 7e3bbed8..c904e0ae 100644
  #include <base_cb.h>
  #include <vpss_cb.h>
 diff --git a/interdrv/vpss/common/vpss_common.h b/interdrv/vpss/common/vpss_common.h
-index e1bb210e..6eafafc2 100644
+index e1bb210..6eafafc 100644
 --- a/interdrv/vpss/common/vpss_common.h
 +++ b/interdrv/vpss/common/vpss_common.h
 @@ -4,8 +4,12 @@

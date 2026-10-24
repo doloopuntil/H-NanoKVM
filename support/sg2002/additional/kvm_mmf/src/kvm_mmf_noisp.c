@@ -73,6 +73,14 @@ CVI_S32 CVI_MIPI_SetMipiAttr(CVI_S32 ViPipe, const CVI_VOID *devAttr)
 	return mipi_ioctl(CVI_MIPI_SET_DEV_ATTR, (void *)devAttr);
 }
 
+// cvi_mpi's sample code passes the sensor's I2C bus and address to the MIPI driver.
+CVI_S32 CVI_MIPI_Set_SnsI2cInfo(CVI_S32 ViPipe, const CVI_VOID *stSnsI2cInfo)
+{
+	if (ViPipe < 0 || ViPipe > KVM_MIPI_MAX_PIPE || stSnsI2cInfo == CVI_NULL)
+		return CVI_FAILURE;
+	return mipi_ioctl(CVI_MIPI_SET_SNS_I2C_INFO, (void *)stSnsI2cInfo);
+}
+
 CVI_S32 CVI_MIPI_SetClkEdge(CVI_S32 devno, CVI_U32 is_up)
 {
 	struct clk_edge_s edge = {

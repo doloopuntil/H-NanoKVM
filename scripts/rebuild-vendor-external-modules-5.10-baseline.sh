@@ -24,12 +24,13 @@ EXPECTED_KERNEL_RELEASE="${EXPECTED_KERNEL_RELEASE:-}"
 SOPHGO_OSDRV_DIR="${SOPHGO_OSDRV_DIR:-}"
 PATCH_DIR="$ROOT_DIR/buildroot-external/hardened-sg2002/board/sg2002/kernel/patches"
 CANDIDATE_PATCHES=(
-	"$PATCH_DIR/sophgo-osdrv-28215f2-soph-module-names.patch"
-	"$PATCH_DIR/sophgo-osdrv-28215f2-linux-5.10.265-compat.patch"
-	"$PATCH_DIR/sophgo-osdrv-28215f2-lt-int.patch"
-	"$PATCH_DIR/sophgo-osdrv-28215f2-vi-log-level.patch"
-	"$PATCH_DIR/sophgo-osdrv-28215f2-vi-dci-yuv-bypass.patch"
-	"$PATCH_DIR/sophgo-osdrv-28215f2-sys-carveout-allocator.patch"
+	"$PATCH_DIR/sophgo-osdrv-1b3a496-soph-module-names.patch"
+	"$PATCH_DIR/sophgo-osdrv-1b3a496-linux-5.10.265-compat.patch"
+	"$PATCH_DIR/sophgo-osdrv-1b3a496-pwm-from-28215f2.patch"
+	"$PATCH_DIR/sophgo-osdrv-1b3a496-lt-int.patch"
+	"$PATCH_DIR/sophgo-osdrv-1b3a496-vi-log-level.patch"
+	"$PATCH_DIR/sophgo-osdrv-1b3a496-vi-dci-yuv-bypass.patch"
+	"$PATCH_DIR/sophgo-osdrv-1b3a496-sys-carveout-allocator.patch"
 )
 # Built with interdrv in candidate mode; packaged separately from the 29-module inventory.
 MEDIA_MODULES=(soph_vcodec.ko soph_jpeg.ko soph_vc_driver.ko)
