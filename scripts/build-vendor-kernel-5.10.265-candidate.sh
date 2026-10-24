@@ -197,12 +197,14 @@ MEMMAP_SOURCE="$VENDOR_SDK_DIR/build/boards/sg200x/sg2002_licheervnano_sd/memmap
 MEMMAP_CONVERTER="$VENDOR_SDK_DIR/build/scripts/mmap_conv.py"
 MEMMAP_HEADER="$BOARD_INPUT_DIR/cvi_board_memmap.h"
 REFERENCE_MEMMAP_HEADER="${KERNEL_5_10_265_MEMMAP_REFERENCE:-$ROOT_DIR/support/sg2002/kernel/5.10.265/reference/cvi_board_memmap.h}"
+DTS_OVERRIDES="$ROOT_DIR/support/sg2002/kernel/5.10.265/dts/hardened-overrides.dtsi"
 NORMALIZED_REFERENCE_MEMMAP="$BOARD_INPUT_DIR/reference-cvi_board_memmap.h"
 require_file "$DTC"
 require_dir "$DEFAULT_DTS_DIR"
 require_file "$MEMMAP_SOURCE"
 require_file "$MEMMAP_CONVERTER"
 require_file "$REFERENCE_MEMMAP_HEADER"
+require_file "$DTS_OVERRIDES"
 mkdir -p "$CVITEK_DTB_DIR" "$BOARD_INPUT_DIR"
 "$MEMMAP_CONVERTER" --type h "$MEMMAP_SOURCE" "$MEMMAP_HEADER"
 cp "$REFERENCE_MEMMAP_HEADER" "$NORMALIZED_REFERENCE_MEMMAP"
@@ -219,6 +221,7 @@ sha256sum "$MEMMAP_SOURCE" "$MEMMAP_CONVERTER" "$MEMMAP_HEADER" \
 find "$DEFAULT_DTS_DIR" -maxdepth 1 -type f -name '*.dtsi' -print0 | \
 	LC_ALL=C sort -z | xargs -0 sha256sum \
 	> "$REPORT_DIR/default-board-dtsi-sha256.txt"
+sha256sum "$DTS_OVERRIDES" > "$REPORT_DIR/board-dts-overrides-sha256.txt"
 
 for board in sg2000_duo_sd sg2002_duo_sd sg2002_licheervnano_sd
 do
@@ -232,6 +235,7 @@ do
 		-I"$CVITEK_DTS_DIR" -I"$DTC_INCLUDE_DIR" \
 		-undef -D__DTS__ -x assembler-with-cpp \
 		-o "$preprocessed" "$board_dts"
+	cat "$DTS_OVERRIDES" >> "$preprocessed"
 	"$DTC" -O dtb -o "$board_dtb" -b 0 \
 		-i"$DEFAULT_DTS_DIR" -i"$CVITEK_DTS_DIR" -i"$DTC_INCLUDE_DIR" \
 		-Wno-interrupt_provider -Wno-unit_address_vs_reg \

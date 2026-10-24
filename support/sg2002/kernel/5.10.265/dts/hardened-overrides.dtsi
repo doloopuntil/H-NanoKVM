@@ -1,0 +1,7 @@
+// Appended to every board DT after the SDK sources.
+// No ION in the kernel: soph_sys allocates media memory from the same region.
+&{/sys} {
+	memory-region = <&ion_reserved>;
+};
+
+/delete-node/ &{/cvitek-ion};

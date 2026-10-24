@@ -477,7 +477,7 @@ jobs:
       - name: Build the hardened 5.10.265 kernel candidate
         run: |
           KERNEL_5_10_265_OUTPUT_DIR="$RUN_ROOT/kernel" \
-          KERNEL_5_10_265_CONFIG_FRAGMENT="support/sg2002/kernel/5.10.265/configs/phase3-04-init-on-alloc.config" \
+          KERNEL_5_10_265_CONFIG_FRAGMENT="support/sg2002/kernel/5.10.265/configs/phase4-01-no-ion.config" \
             scripts/build-vendor-kernel-5.10.265-candidate.sh
 
       # Tarred because artifacts drop permissions, symlinks and sub-second mtimes. The module builds
