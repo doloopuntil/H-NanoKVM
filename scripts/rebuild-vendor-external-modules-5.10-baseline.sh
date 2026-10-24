@@ -29,7 +29,7 @@ CANDIDATE_PATCHES=(
 	"$PATCH_DIR/sophgo-osdrv-28215f2-lt-int.patch"
 	"$PATCH_DIR/sophgo-osdrv-28215f2-vi-log-level.patch"
 	"$PATCH_DIR/sophgo-osdrv-28215f2-vi-dci-yuv-bypass.patch"
-	"$PATCH_DIR/sophgo-osdrv-28215f2-ion-stats-stub.patch"
+	"$PATCH_DIR/sophgo-osdrv-28215f2-sys-carveout-allocator.patch"
 )
 # Built with interdrv in candidate mode; packaged separately from the 30-module inventory.
 MEDIA_MODULES=(soph_vcodec.ko soph_jpeg.ko soph_vc_driver.ko)

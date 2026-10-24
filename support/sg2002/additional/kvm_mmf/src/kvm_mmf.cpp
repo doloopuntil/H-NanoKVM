@@ -354,7 +354,7 @@ static int _free_leak_memory_of_ion(void)
     int alloc_buf_size;
 	uint64_t phy_addr;
 
-    fp = fopen("/sys/kernel/debug/ion/cvi_carveout_heap_dump/summary", "r");
+    fp = fopen("/proc/cvitek/sys_mem", "r");
     if (fp == NULL) {
         fprintf(stderr, "Error opening file\n");
         return 1;

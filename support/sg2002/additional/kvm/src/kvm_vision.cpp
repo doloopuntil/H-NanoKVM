@@ -589,7 +589,7 @@ uint8_t chack_ion()
 	char output[64] = {0};
     char Cmd[150]={0};
 	snprintf(Cmd, sizeof(Cmd),
-		"cat /sys/kernel/debug/ion/cvi_carveout_heap_dump/summary | "
+		"cat /proc/cvitek/sys_mem | "
 		"grep \"usage rate:\" | awk -F '[:%%]' '{print $2}'");
     FILE* fp = popen( Cmd, "r" );
     if (fp == NULL) {

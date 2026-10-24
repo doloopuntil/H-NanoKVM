@@ -1,0 +1,649 @@
+diff --git a/interdrv/base/base.c b/interdrv/base/base.c
+index 2c58fe8..abcee3c 100644
+--- a/interdrv/base/base.c
++++ b/interdrv/base/base.c
+@@ -844,6 +844,9 @@ static int base_probe(struct platform_device *pdev)
+ 		CVI_TRACE_BASE(CVI_BASE_DBG_ERR, "power proc init failed\n");
+ 	}
+ 
++	if (!proc_create_single("sys_mem", 0400, proc_dir, sys_mem_proc_show))
++		CVI_TRACE_BASE(CVI_BASE_DBG_ERR, "sys_mem proc init failed\n");
++
+ 	spin_lock_init(&ndev->lock);
+ 	INIT_LIST_HEAD(&ndev->ps_list);
+ 	ndev->state = BASE_STATE_NORMAL;
+diff --git a/interdrv/cvi_vc_drv/jpeg/jdi/jdi.h b/interdrv/cvi_vc_drv/jpeg/jdi/jdi.h
+index 7cf2f23..129e21c 100644
+--- a/interdrv/cvi_vc_drv/jpeg/jdi/jdi.h
++++ b/interdrv/cvi_vc_drv/jpeg/jdi/jdi.h
+@@ -6,8 +6,11 @@
+ #include <linux/kernel.h>
+ #include <linux/printk.h>
+ #include <linux/types.h>
+-#include "ion/ion.h"
+-#include "ion/cvitek/cvitek_ion_alloc.h"
++#include <linux/device.h>
++#include <linux/dma-direction.h>
++#include <linux/miscdevice.h>
++#include <linux/mutex.h>
++#include <linux/sched.h>
+ #include "sys.h"
+ #include "../jpuapi/jpuconfig.h"
+ #include "../jpuapi/regdefine.h"
+diff --git a/interdrv/cvi_vc_drv/vcodec/vdi/vdi.h b/interdrv/cvi_vc_drv/vcodec/vdi/vdi.h
+index 4dd2b2f..919088e 100644
+--- a/interdrv/cvi_vc_drv/vcodec/vdi/vdi.h
++++ b/interdrv/cvi_vc_drv/vcodec/vdi/vdi.h
+@@ -16,8 +16,11 @@
+ #include "vputypes.h"
+ #include <linux/types.h>
+ #ifdef CVI_H26X_USE_ION_MEM
+-#include "ion/ion.h"
+-#include "ion/cvitek/cvitek_ion_alloc.h"
++#include <linux/device.h>
++#include <linux/dma-direction.h>
++#include <linux/miscdevice.h>
++#include <linux/mutex.h>
++#include <linux/sched.h>
+ #endif
+ /************************************************************************/
+ /* COMMON REGISTERS                                                     */
+diff --git a/interdrv/fast_image/fast_image.c b/interdrv/fast_image/fast_image.c
+index bde324e..5eb8dbf 100644
+--- a/interdrv/fast_image/fast_image.c
++++ b/interdrv/fast_image/fast_image.c
+@@ -24,8 +24,11 @@
+ #include <linux/interrupt.h>
+ #include <linux/delay.h>
+ #include <linux/of_device.h>
+-#include "ion/ion.h"
+-#include "ion/cvitek/cvitek_ion_alloc.h"
++#include <linux/device.h>
++#include <linux/dma-direction.h>
++#include <linux/miscdevice.h>
++#include <linux/mutex.h>
++#include <linux/sched.h>
+ #include "sys.h"
+ #include "rtos_cmdqu.h"
+ #include "fast_image.h"
+diff --git a/interdrv/include/common/kapi/sys_k.h b/interdrv/include/common/kapi/sys_k.h
+index af5ca37..c598c77 100644
+--- a/interdrv/include/common/kapi/sys_k.h
++++ b/interdrv/include/common/kapi/sys_k.h
+@@ -8,6 +8,9 @@ extern "C" {
+ #endif /* End of #ifdef __cplusplus */
+ 
+ void sys_save_modules_cb(void *base_m_cb);
++struct seq_file;
++/* /proc/cvitek/sys_mem, registered by soph_base. */
++int sys_mem_proc_show(struct seq_file *m, void *v);
+ 
+ #ifdef __cplusplus
+ #if __cplusplus
+diff --git a/interdrv/sys/common/sys.c b/interdrv/sys/common/sys.c
+index dcc7a77..aed3950 100644
+--- a/interdrv/sys/common/sys.c
++++ b/interdrv/sys/common/sys.c
+@@ -1,5 +1,10 @@
+-#include <linux/dma-buf.h>
++#include <linux/genalloc.h>
++#include <linux/io.h>
++#include <linux/of.h>
++#include <linux/of_reserved_mem.h>
+ #include <linux/platform_device.h>
++#include <linux/seq_file.h>
++#include <linux/slab.h>
+ #include <linux/module.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/uaccess.h>
+@@ -42,231 +47,214 @@ extern int32_t sys_test_proc_init(void);
+ extern int32_t sys_test_proc_deinit(void);
+ #endif
+ 
++/* Carveout allocator over the ion reserved region; replaces the vendor ION heap. */
++struct sys_mem_buf {
++	struct list_head list;
++	uint64_t paddr;
++	size_t size;
++	void *vaddr;
++	bool cached;
++	char name[MAX_ION_BUFFER_NAME];
++};
++
++static struct gen_pool *sys_mem_pool;
++static phys_addr_t sys_mem_base;
++static size_t sys_mem_size, sys_mem_used, sys_mem_peak;
++static struct list_head sys_mem_bufs = LIST_HEAD_INIT(sys_mem_bufs);
++static DEFINE_MUTEX(sys_mem_lock);
++
+ static int ion_debug_alloc_free;
+ module_param(ion_debug_alloc_free, int, 0644);
+ 
+-static int32_t _sys_ion_alloc_nofd(uint64_t *addr_p, void **addr_v, uint32_t u32Len,
+-	uint32_t is_cached, uint8_t *name)
++/* The region FreeRTOS may have used before Linux; not zeroed, as the ION heap did. */
++static size_t sys_mem_rtos_size(void)
+ {
+-	int32_t ret = 0;
+-	struct ion_buffer *ionbuf;
+-	uint8_t *owner_name = NULL;
+-	void *vmap_addr = NULL;
+-	struct mem_mapping mem_info;
+-
+-	ionbuf = cvi_ion_alloc_nofd(ION_HEAP_TYPE_CARVEOUT, u32Len, is_cached);
+-	if (IS_ERR(ionbuf)) {
+-		pr_err("ion allocated len=0x%x failed\n", u32Len);
+-		return -ENOMEM;
+-	}
++	struct device_node *np;
++	u32 size = 0;
+ 
+-	owner_name = vmalloc(MAX_ION_BUFFER_NAME);
+-	if (name)
+-		strncpy(owner_name, name, MAX_ION_BUFFER_NAME);
+-	else
+-		strncpy(owner_name, "anonymous", MAX_ION_BUFFER_NAME);
++	np = of_find_compatible_node(NULL, NULL, "cvitek,rtos_image");
++	if (!np)
++		return 0;
++	if (of_property_read_u32(np, "ion-size", &size))
++		size = 0;
++	of_node_put(np);
++	return size;
++}
+ 
+-	ionbuf->name = owner_name;
++static int sys_mem_init(struct device *dev)
++{
++	struct device_node *np, *rmem_np;
++	struct reserved_mem *rmem;
++	size_t skip;
++	void *va;
+ 
+-	ret = ion_buf_begin_cpu_access(ionbuf);
+-	if (ret < 0) {
+-		pr_err("cvi_ion_alloc() ion_buf_begin_cpu_access failed\n");
+-		cvi_ion_free_nofd(ionbuf);
+-		return ret;
++	/* memory-region on our own node, else on the vendor ION carveout node. */
++	rmem_np = of_parse_phandle(dev->of_node, "memory-region", 0);
++	if (!rmem_np) {
++		np = of_find_compatible_node(NULL, NULL, "cvitek,carveout");
++		rmem_np = np ? of_parse_phandle(np, "memory-region", 0) : NULL;
++		of_node_put(np);
++	}
++	rmem = rmem_np ? of_reserved_mem_lookup(rmem_np) : NULL;
++	of_node_put(rmem_np);
++	if (!rmem || !rmem->size) {
++		dev_err(dev, "no ion reserved memory region\n");
++		return -ENODEV;
+ 	}
+ 
+-	vmap_addr = ionbuf->vaddr;
+-	pr_debug("_sys_ion_alloc_nofd v=%p\n", vmap_addr);
+-	if (IS_ERR(vmap_addr)) {
+-		ret = -EINVAL;
+-		ion_buf_end_cpu_access(ionbuf);
+-		cvi_ion_free_nofd(ionbuf);
+-		return ret;
++	skip = min_t(size_t, PAGE_ALIGN(sys_mem_rtos_size()), rmem->size);
++	if (rmem->size > skip) {
++		va = memremap(rmem->base + skip, rmem->size - skip, MEMREMAP_WB);
++		if (!va)
++			return -ENOMEM;
++		memset(va, 0, rmem->size - skip);
++		arch_sync_dma_for_device(rmem->base + skip, rmem->size - skip, DMA_TO_DEVICE);
++		memunmap(va);
+ 	}
+ 
+-	//push into memory manager
+-	mem_info.dmabuf = NULL;
+-	mem_info.dmabuf_fd = -1;
+-	mem_info.vir_addr = vmap_addr;
+-	mem_info.phy_addr = ionbuf->paddr;
+-	mem_info.fd_pid = current->pid;
+-	mem_info.ionbuf = ionbuf;
+-	if (sys_ctx_mem_put(&mem_info)) {
+-		pr_err("allocate mm put failed\n");
+-		ion_buf_end_cpu_access(ionbuf);
+-		cvi_ion_free_nofd(ionbuf);
++	sys_mem_pool = gen_pool_create(PAGE_SHIFT, -1);
++	if (!sys_mem_pool)
++		return -ENOMEM;
++	gen_pool_set_algo(sys_mem_pool, gen_pool_best_fit, NULL);
++	if (gen_pool_add(sys_mem_pool, rmem->base, rmem->size, -1)) {
++		gen_pool_destroy(sys_mem_pool);
++		sys_mem_pool = NULL;
+ 		return -ENOMEM;
+ 	}
++	sys_mem_base = rmem->base;
++	sys_mem_size = rmem->size;
++	dev_info(dev, "carveout 0x%llx, %zu bytes\n", (u64)sys_mem_base, sys_mem_size);
++	return 0;
++}
++
++static void sys_mem_exit(void)
++{
++	struct sys_mem_buf *buf, *n;
+ 
+-	if (ion_debug_alloc_free) {
+-		pr_info("%s: ionbuf->name=%s\n", __func__, ionbuf->name);
+-		pr_info("%s: mem_info.dmabuf=%p\n", __func__, mem_info.dmabuf);
+-		pr_info("%s: mem_info.dmabuf_fd=%d\n", __func__, mem_info.dmabuf_fd);
+-		pr_info("%s: mem_info.vir_addr=%p\n", __func__, mem_info.vir_addr);
+-		pr_info("%s: mem_info.phy_addr=0x%llx\n", __func__, mem_info.phy_addr);
+-		pr_info("%s: mem_info.fd_pid=%d\n", __func__, mem_info.fd_pid);
+-		pr_info("%s: current->pid=%d\n", __func__, current->pid);
+-		pr_info("%s: current->comm=%s\n", __func__, current->comm);
++	if (!sys_mem_pool)
++		return;
++	list_for_each_entry_safe(buf, n, &sys_mem_bufs, list) {
++		if (buf->cached)
++			memunmap(buf->vaddr);
++		else
++			iounmap((void __iomem *)buf->vaddr);
++		gen_pool_free(sys_mem_pool, buf->paddr, buf->size);
++		list_del(&buf->list);
++		kfree(buf);
+ 	}
+-	*addr_p = ionbuf->paddr;
+-	*addr_v = vmap_addr;
+-	return ret;
++	gen_pool_destroy(sys_mem_pool);
++	sys_mem_pool = NULL;
+ }
+ 
+-static int32_t _sys_ion_alloc(int32_t *p_fd, uint64_t *addr_p, void **addr_v, uint32_t u32Len,
++static int32_t sys_mem_alloc(uint64_t *addr_p, void **addr_v, uint32_t u32Len,
+ 	uint32_t is_cached, uint8_t *name)
+ {
+-	int32_t dmabuf_fd = 0, ret = 0;
+-	struct dma_buf *dmabuf;
+-	struct ion_buffer *ionbuf;
+-	uint8_t *owner_name = NULL;
+-	void *vmap_addr = NULL;
+-	struct mem_mapping mem_info;
++	struct sys_mem_buf *buf;
++	size_t size = PAGE_ALIGN(u32Len);
++	unsigned long paddr;
+ 
+-	dmabuf_fd = cvi_ion_alloc(ION_HEAP_TYPE_CARVEOUT, u32Len, is_cached);
+-	if (dmabuf_fd < 0) {
+-		pr_err("ion allocated len=0x%x failed\n", u32Len);
++	if (!sys_mem_pool)
++		return -ENODEV;
++	if (!size)
++		return -EINVAL;
++
++	buf = kzalloc(sizeof(*buf), GFP_KERNEL);
++	if (!buf)
+ 		return -ENOMEM;
+-	}
+ 
+-	dmabuf = dma_buf_get(dmabuf_fd);
+-	if (!dmabuf) {
+-		pr_err("allocated get dmabuf failed\n");
+-		cvi_ion_free(current->pid, dmabuf_fd);
++	paddr = gen_pool_alloc(sys_mem_pool, size);
++	if (!paddr) {
++		pr_err("ion allocated len=0x%x failed\n", u32Len);
++		kfree(buf);
+ 		return -ENOMEM;
+ 	}
+ 
+-	ionbuf = (struct ion_buffer *)dmabuf->priv;
+-	owner_name = vmalloc(MAX_ION_BUFFER_NAME);
+-	if (name)
+-		strncpy(owner_name, name, MAX_ION_BUFFER_NAME);
++	if (is_cached)
++		buf->vaddr = memremap(paddr, size, MEMREMAP_WB);
+ 	else
+-		strncpy(owner_name, "anonymous", MAX_ION_BUFFER_NAME);
+-
+-	ionbuf->name = owner_name;
+-
+-	ret = dma_buf_begin_cpu_access(dmabuf, DMA_TO_DEVICE);
+-	if (ret < 0) {
+-		pr_err("cvi_ion_alloc() dma_buf_begin_cpu_access failed\n");
+-		dma_buf_put(dmabuf);
+-		cvi_ion_free(current->pid, dmabuf_fd);
+-		return ret;
+-	}
+-
+-	vmap_addr = ionbuf->vaddr;
+-	pr_debug("_sys_ion_alloc v=%p\n", vmap_addr);
+-	if (IS_ERR(vmap_addr)) {
+-		dma_buf_end_cpu_access(dmabuf, DMA_TO_DEVICE);
+-		dma_buf_put(dmabuf);
+-		cvi_ion_free(current->pid, dmabuf_fd);
+-		ret = -EINVAL;
+-		return ret;
+-	}
+-
+-	//push into memory manager
+-	mem_info.dmabuf = (void *)dmabuf;
+-	mem_info.dmabuf_fd = dmabuf_fd;
+-	mem_info.vir_addr = vmap_addr;
+-	mem_info.phy_addr = ionbuf->paddr;
+-	mem_info.fd_pid = current->pid;
+-	if (sys_ctx_mem_put(&mem_info)) {
+-		pr_err("allocate mm put failed\n");
+-		dma_buf_end_cpu_access(dmabuf, DMA_TO_DEVICE);
+-		dma_buf_put(dmabuf);
+-		cvi_ion_free(current->pid, dmabuf_fd);
++		buf->vaddr = (void __force *)ioremap(paddr, size);
++	if (!buf->vaddr) {
++		gen_pool_free(sys_mem_pool, paddr, size);
++		kfree(buf);
+ 		return -ENOMEM;
+ 	}
+ 
+-	if (ion_debug_alloc_free) {
+-		pr_info("%s: ionbuf->name=%s\n", __func__, ionbuf->name);
+-		pr_info("%s: mem_info.dmabuf=%p\n", __func__, mem_info.dmabuf);
+-		pr_info("%s: mem_info.dmabuf_fd=%d\n", __func__, mem_info.dmabuf_fd);
+-		pr_info("%s: mem_info.vir_addr=%p\n", __func__, mem_info.vir_addr);
+-		pr_info("%s: mem_info.phy_addr=0x%llx\n", __func__, mem_info.phy_addr);
+-		pr_info("%s: mem_info.fd_pid=%d\n", __func__, mem_info.fd_pid);
+-		pr_info("%s: current->pid=%d\n", __func__, current->pid);
+-		pr_info("%s: current->comm=%s\n", __func__, current->comm);
+-	}
+-	*p_fd = dmabuf_fd;
+-	*addr_p = ionbuf->paddr;
+-	*addr_v = vmap_addr;
+-	return ret;
+-}
++	buf->paddr = paddr;
++	buf->size = size;
++	buf->cached = is_cached;
++	strscpy(buf->name, name ? (char *)name : "anonymous", sizeof(buf->name));
+ 
+-static int32_t _sys_ion_free(uint64_t addr_p)
+-{
+-	struct mem_mapping mem_info;
+-	struct ion_buffer *ionbuf;
+-	struct dma_buf *dmabuf;
++	mutex_lock(&sys_mem_lock);
++	list_add_tail(&buf->list, &sys_mem_bufs);
++	sys_mem_used += size;
++	if (sys_mem_used > sys_mem_peak)
++		sys_mem_peak = sys_mem_used;
++	mutex_unlock(&sys_mem_lock);
+ 
+-	//get from memory manager
+-	memset(&mem_info, 0, sizeof(struct mem_mapping));
+-	mem_info.phy_addr = addr_p;
+-	if (sys_ctx_mem_get(&mem_info)) {
+-		pr_err("dmabuf_fd get failed, addr:0x%llx\n", addr_p);
+-		return -ENOMEM;
+-	}
++	if (ion_debug_alloc_free)
++		pr_info("%s: %s paddr=0x%llx size=%zu cached=%d pid=%d (%s)\n", __func__,
++			buf->name, buf->paddr, size, is_cached, current->pid, current->comm);
+ 
+-	dmabuf = (struct dma_buf *)(mem_info.dmabuf);
+-#if 1
+-	ionbuf = (struct ion_buffer *)dmabuf->priv;
+-	if (ionbuf->name && ion_debug_alloc_free) {
+-		pr_info("%s: ionbuf->name: %s\n", __func__, ionbuf->name);
+-		vfree(ionbuf->name);
+-		ionbuf->name = NULL;
+-	}
+-#endif
+-
+-	if (ion_debug_alloc_free) {
+-		pr_info("%s: mem_info.dmabuf=%p\n", __func__, mem_info.dmabuf);
+-		pr_info("%s: mem_info.dmabuf_fd=%d\n", __func__, mem_info.dmabuf_fd);
+-		pr_info("%s: mem_info.vir_addr=%p\n", __func__, mem_info.vir_addr);
+-		pr_info("%s: mem_info.phy_addr=0x%llx\n", __func__, mem_info.phy_addr);
+-		pr_info("%s: mem_info.fd_pid=%d\n", __func__, mem_info.fd_pid);
+-		pr_info("%s: current->pid=%d\n", __func__, current->pid);
+-		pr_info("%s: current->comm=%s\n", __func__, current->comm);
+-	}
+-	dma_buf_end_cpu_access(dmabuf, DMA_TO_DEVICE);
+-	dma_buf_put(dmabuf);
+-
+-	cvi_ion_free(mem_info.fd_pid, mem_info.dmabuf_fd);
++	*addr_p = paddr;
++	*addr_v = buf->vaddr;
+ 	return 0;
+ }
+ 
+-static int32_t _sys_ion_free_nofd(uint64_t addr_p)
++static int32_t sys_mem_free(uint64_t addr_p)
+ {
+-	struct mem_mapping mem_info;
+-	struct ion_buffer *ionbuf;
++	struct sys_mem_buf *buf, *found = NULL;
+ 
+-	//get from memory manager
+-	memset(&mem_info, 0, sizeof(struct mem_mapping));
+-	mem_info.phy_addr = addr_p;
+-	if (sys_ctx_mem_get(&mem_info)) {
+-		pr_err("dmabuf_fd get failed, addr:0x%llx\n", addr_p);
+-		return -ENOMEM;
++	mutex_lock(&sys_mem_lock);
++	list_for_each_entry(buf, &sys_mem_bufs, list) {
++		if (buf->paddr == addr_p) {
++			found = buf;
++			list_del(&buf->list);
++			sys_mem_used -= buf->size;
++			break;
++		}
+ 	}
++	mutex_unlock(&sys_mem_lock);
+ 
+-	ionbuf = (struct ion_buffer *)(mem_info.ionbuf);
+-	pr_debug("%s: ionbuf->name: %s\n", __func__, ionbuf->name);
+-
+-	if (ion_debug_alloc_free) {
+-		pr_info("%s: mem_info.vir_addr=%p\n", __func__, mem_info.vir_addr);
+-		pr_info("%s: mem_info.phy_addr=0x%llx\n", __func__, mem_info.phy_addr);
+-		pr_info("%s: mem_info.fd_pid=%d\n", __func__, mem_info.fd_pid);
+-		pr_info("%s: current->pid=%d\n", __func__, current->pid);
+-		pr_info("%s: current->comm=%s\n", __func__, current->comm);
++	if (!found) {
++		pr_err("ion buffer not found, addr:0x%llx\n", addr_p);
++		return -ENOMEM;
+ 	}
+ 
+-	if (ionbuf->name) {
+-		vfree(ionbuf->name);
+-		ionbuf->name = NULL;
+-	}
++	if (ion_debug_alloc_free)
++		pr_info("%s: %s paddr=0x%llx pid=%d (%s)\n", __func__,
++			found->name, found->paddr, current->pid, current->comm);
+ 
+-	ion_buf_end_cpu_access(ionbuf);
+-	cvi_ion_free_nofd(ionbuf);
++	if (found->cached)
++		memunmap(found->vaddr);
++	else
++		iounmap((void __iomem *)found->vaddr);
++	gen_pool_free(sys_mem_pool, found->paddr, found->size);
++	kfree(found);
++	return 0;
++}
+ 
++/* Same text as the vendor ION debugfs summary, which kvm_mmf and kvm_vision parse. */
++int sys_mem_proc_show(struct seq_file *m, void *v)
++{
++	struct sys_mem_buf *buf;
++	u64 rate = 0;
++
++	mutex_lock(&sys_mem_lock);
++	if (sys_mem_size)
++		rate = DIV_ROUND_UP_ULL((u64)sys_mem_used * 100, sys_mem_size);
++	seq_puts(m, "Summary:\n");
++	seq_printf(m, "[0] carveout heap size:%zu bytes, used:%zu bytes\n",
++		   sys_mem_size, sys_mem_used);
++	seq_printf(m, "usage rate:%llu%%, memory usage peak %zu bytes\n", rate, sys_mem_peak);
++	seq_printf(m, "\nDetails:\n%16s %16s %16s %16s %16s\n", "heap_id",
++		   "alloc_buf_size", "phy_addr", "kmap_cnt", "buffer name");
++	list_for_each_entry(buf, &sys_mem_bufs, list)
++		seq_printf(m, "%16d %16zu %16llx %16d %16s\n", 0, buf->size, buf->paddr, 1, buf->name);
++	mutex_unlock(&sys_mem_lock);
++	seq_puts(m, "\n");
+ 	return 0;
+ }
++EXPORT_SYMBOL_GPL(sys_mem_proc_show);
+ 
+ static int32_t sys_init_user(struct cvi_sys_device *ndev, unsigned long arg)
+ {
+@@ -297,13 +285,13 @@ int32_t sys_exit()
+ 
+ int32_t sys_ion_free(uint64_t u64PhyAddr)
+ {
+-	return _sys_ion_free(u64PhyAddr);
++	return sys_mem_free(u64PhyAddr);
+ }
+ EXPORT_SYMBOL_GPL(sys_ion_free);
+ 
+ int32_t sys_ion_free_nofd(uint64_t u64PhyAddr)
+ {
+-	return _sys_ion_free_nofd(u64PhyAddr);
++	return sys_mem_free(u64PhyAddr);
+ }
+ EXPORT_SYMBOL_GPL(sys_ion_free_nofd);
+ 
+@@ -320,26 +308,24 @@ static int32_t sys_ion_free_user(struct cvi_sys_device *ndev, unsigned long arg)
+ 		return ret;
+ 	}
+ 
+-	return _sys_ion_free(ioctl_arg.addr_p);
++	return sys_mem_free(ioctl_arg.addr_p);
+ }
+ 
+ int32_t sys_ion_alloc(uint64_t *p_paddr, void **pp_vaddr, uint8_t *buf_name, uint32_t buf_len, bool is_cached)
+ {
+-	int32_t dma_fd = 0;
+-
+-	return _sys_ion_alloc(&dma_fd, p_paddr, pp_vaddr, buf_len, is_cached, buf_name);
++	return sys_mem_alloc(p_paddr, pp_vaddr, buf_len, is_cached, buf_name);
+ }
+ EXPORT_SYMBOL_GPL(sys_ion_alloc);
+ 
+ int32_t sys_ion_alloc_nofd(uint64_t *p_paddr, void **pp_vaddr, uint8_t *buf_name, uint32_t buf_len, bool is_cached)
+ {
+-	return _sys_ion_alloc_nofd(p_paddr, pp_vaddr, buf_len, is_cached, buf_name);
++	return sys_mem_alloc(p_paddr, pp_vaddr, buf_len, is_cached, buf_name);
+ }
+ EXPORT_SYMBOL_GPL(sys_ion_alloc_nofd);
+ 
+ static int32_t sys_ion_alloc_user(struct cvi_sys_device *ndev, unsigned long arg)
+ {
+-	int32_t ret = 0, dma_fd = 0;
++	int32_t ret = 0;
+ 	uint64_t addr_p = 0;
+ 	void *addr_v = NULL;
+ 	struct sys_ion_data ioctl_arg;
+@@ -352,15 +338,16 @@ static int32_t sys_ion_alloc_user(struct cvi_sys_device *ndev, unsigned long arg
+ 		return ret;
+ 	}
+ 
+-	ret = _sys_ion_alloc(&dma_fd, &addr_p, &addr_v,
++	ret = sys_mem_alloc(&addr_p, &addr_v,
+ 					ioctl_arg.size, ioctl_arg.cached, ioctl_arg.name);
+ 	if (ret < 0) {
+-		pr_err("_sys_ion_alloc failed\n");
++		pr_err("sys_mem_alloc failed\n");
+ 		return ret;
+ 	}
+ 
+ 	ioctl_arg.addr_p = addr_p;
+-	ioctl_arg.dmabuf_fd = dma_fd;
++	/* No dma-buf: userspace maps buffers through /dev/mem by physical address. */
++	ioctl_arg.dmabuf_fd = -1;
+ 
+ 	ret = copy_to_user((struct sys_ion_data __user *)arg,
+ 			     &ioctl_arg,
+@@ -373,10 +360,31 @@ static int32_t sys_ion_alloc_user(struct cvi_sys_device *ndev, unsigned long arg
+ 	return 0;
+ }
+ 
++static void sys_mem_largest_free(struct gen_pool *pool, struct gen_pool_chunk *chunk, void *data)
++{
++	size_t *largest = data;
++	unsigned long nbits = (chunk->end_addr - chunk->start_addr + 1) >> pool->min_alloc_order;
++	unsigned long start = 0, end;
++
++	while ((start = find_next_zero_bit(chunk->bits, nbits, start)) < nbits) {
++		end = find_next_bit(chunk->bits, nbits, start);
++		*largest = max_t(size_t, *largest, (end - start) << pool->min_alloc_order);
++		start = end;
++	}
++}
++
+ int32_t sys_ion_get_memory_statics(uint64_t *total_size,
+ 	uint64_t *free_size, uint64_t *max_avail_size)
+ {
+-	return cvi_ion_get_memory_statics(total_size, free_size, max_avail_size);
++	size_t largest = 0;
++
++	if (!sys_mem_pool)
++		return -ENODEV;
++	*total_size = gen_pool_size(sys_mem_pool);
++	*free_size = gen_pool_avail(sys_mem_pool);
++	gen_pool_for_each_chunk(sys_mem_pool, sys_mem_largest_free, &largest);
++	*max_avail_size = largest;
++	return 0;
+ }
+ EXPORT_SYMBOL_GPL(sys_ion_get_memory_statics);
+ 
+@@ -516,7 +524,13 @@ EXPORT_SYMBOL_GPL(sys_unbind);
+ 
+ int32_t sys_ion_dump(void)
+ {
+-	return sys_ctx_mem_dump();
++	struct sys_mem_buf *buf;
++
++	mutex_lock(&sys_mem_lock);
++	list_for_each_entry(buf, &sys_mem_bufs, list)
++		pr_info("%s paddr=0x%llx size=%zu\n", buf->name, buf->paddr, buf->size);
++	mutex_unlock(&sys_mem_lock);
++	return 0;
+ }
+ EXPORT_SYMBOL_GPL(sys_ion_dump);
+ 
+@@ -894,9 +908,14 @@ static int cvi_sys_probe(struct platform_device *pdev)
+ 	spin_lock_init(&ndev->close_lock);
+ 	ndev->use_count = 0;
+ 
++	ret = sys_mem_init(dev);
++	if (ret < 0)
++		return ret;
++
+ 	ret = cvi_sys_register_misc(ndev);
+ 	if (ret < 0) {
+ 		pr_err("register misc error\n");
++		sys_mem_exit();
+ 		return ret;
+ 	}
+ 
+@@ -915,6 +934,7 @@ static int cvi_sys_remove(struct platform_device *pdev)
+ 	sys_exit();
+ 
+ 	misc_deregister(&ndev->miscdev);
++	sys_mem_exit();
+ 	platform_set_drvdata(pdev, NULL);
+ 
+ 	return 0;
+diff --git a/interdrv/sys/common/uapi/sys.h b/interdrv/sys/common/uapi/sys.h
+index 5cad521..a324741 100644
+--- a/interdrv/sys/common/uapi/sys.h
++++ b/interdrv/sys/common/uapi/sys.h
+@@ -6,8 +6,11 @@
+ 
+ #include <linux/cvi_comm_sys.h>
+ #include "base.h"
+-#include "ion/ion.h"
+-#include "ion/cvitek/cvitek_ion_alloc.h"
++#include <linux/device.h>
++#include <linux/dma-direction.h>
++#include <linux/miscdevice.h>
++#include <linux/mutex.h>
++#include <linux/sched.h>
+ 
+ int32_t sys_exit(void);
+ int32_t sys_init(void);
