@@ -82,8 +82,9 @@ trap 'rm -rf "$TMP_DIR"' EXIT INT TERM
 EXPECTED_LIST="$REPORT_DIR/expected-modules.txt"
 find "$VENDOR_RUNTIME_DIR/system/ko" -type f -name '*.ko' -printf '%P\n' | \
 	LC_ALL=C sort > "$EXPECTED_LIST"
-if [ "$(wc -l < "$EXPECTED_LIST")" -ne 57 ]; then
-	echo "candidate vendor runtime does not contain 57 modules" >&2
+expected_count="$("$ROOT_DIR/scripts/expected-module-count.sh")"
+if [ "$(wc -l < "$EXPECTED_LIST")" -ne "$expected_count" ]; then
+	echo "candidate vendor runtime does not contain $expected_count modules" >&2
 	exit 1
 fi
 

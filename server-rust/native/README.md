@@ -271,15 +271,15 @@ own `rootfs.sd`. No file shipped in the final image comes from raw.12.
 ## The module-tree structure: also closed, needed no image at all
 
 The last raw.12 fetch in the pipeline was purely structural: the
-`/mnt/system/ko` tree's basenames and `3rd/` nesting (8 of 57 modules nest
+`/mnt/system/ko` tree's basenames and `3rd/` nesting (WiFi, Bluetooth and touch modules nest
 there), used only to know where each freshly-rebuilt kernel module belongs
 -- module *content* was never sourced from raw.12 once the kernel-module
 rebuild work closed that gap. Turns out this didn't need any image at all:
 `support/sg2002/kernel/5.10.265/manifests/external-modules.txt` already
-encodes the full destination path for all 30 external modules (`3rd/`
-prefixes included), `in-tree-modules.txt` gives the other 24 (all flat),
-and the 3 media module names are already known constants -- the complete
-57-module structure, entirely from files already tracked in this repo.
+encodes the full destination path for every external module (`3rd/`
+prefixes included), `in-tree-modules.txt` gives the in-tree ones (all flat),
+and `media-modules.txt` the media ones -- the complete module structure,
+entirely from files already tracked in this repo.
 `rebuild-vendor-external-modules-5.10-baseline.sh`'s own build output was
 already placing artifacts at these exact relative paths; nothing needed
 extracting them from somewhere else in the first place.

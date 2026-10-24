@@ -459,7 +459,7 @@ jobs:
           if-no-files-found: error
 
   # Split out of build-image for the same reason as build-kernel. Produces the finished
-  # /mnt/system/ko tree (57 modules plus provenance records).
+  # /mnt/system/ko tree (the modules in the three manifests, plus provenance records).
   build-modules:
     needs: [vendor-sdk-source, build-kernel]
     runs-on: ubuntu-latest
@@ -511,7 +511,7 @@ jobs:
           test -f "$RUN_ROOT/kernel/include/generated/utsrelease.h"
           df -h /
 
-      # /mnt/system/ko's tree structure (which of the 57 modules nest under 3rd/) is already fully
+      # /mnt/system/ko's tree structure (which modules nest under 3rd/) is already fully
       # known from the tracked manifests, and the module-rebuild scripts already place their own
       # artifacts at these same relative paths -- no image to extract it from is needed. Placeholder
       # files here just give "Substitute freshly-built modules" below something to
@@ -530,11 +530,13 @@ jobs:
           while IFS= read -r relative; do
             touch "$KO_DIR/$(basename "$relative")"
           done < support/sg2002/kernel/5.10.265/manifests/in-tree-modules.txt
-          touch "$KO_DIR/soph_vcodec.ko" "$KO_DIR/soph_jpeg.ko" "$KO_DIR/soph_vc_driver.ko"
-          [ "$(find "$KO_DIR" -name '*.ko' | wc -l)" -eq 57 ]
+          while IFS= read -r module; do
+            touch "$KO_DIR/$module"
+          done < support/sg2002/kernel/5.10.265/manifests/media-modules.txt
+          [ "$(find "$KO_DIR" -name '*.ko' | wc -l)" -eq "$(scripts/expected-module-count.sh)" ]
 
-      # Rebuild the 30 CVITEK osdrv external kernel modules from source (already cloned by `make
-      # vendor-sdk`). List: external-modules.txt -- 22 "soph_*" peripheral modules plus
+      # Rebuild the CVITEK osdrv external kernel modules from source (already cloned by `make
+      # vendor-sdk`). List: external-modules.txt -- the "soph_*" peripheral modules plus
       # WiFi/Bluetooth/touch drivers under 3rd/.
       #
       # rebuild-vendor-external-modules-5.10-baseline.sh only reads the manifest's
@@ -612,12 +614,12 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
-      # Fill in the skeleton with what was just rebuilt from source (30 external + 3 media + 24
+      # Fill in the skeleton with what was just rebuilt from source (external, media and
       # in-tree) -- every module in the final image ships from source; see
       # server-rust/native/README.md for the full provenance trail.
       #
       # Must overwrite by existing path, not $KO_DIR/$(basename): the tree nests WiFi/BT/touch
-      # modules under ko/3rd/, and basename-only copies would silently duplicate them (57 -> 65)
+      # modules under ko/3rd/, and basename-only copies would silently duplicate them
       # instead of overwriting the skeleton placeholder in place.
       - name: Substitute freshly-built modules into the runtime staging dir
         run: |
@@ -642,7 +644,7 @@ jobs:
           replace_by_basename "$RUN_ROOT/media/sophgo-current/artifacts/soph_jpeg.ko"
           replace_by_basename "$RUN_ROOT/media/historical-vc/artifacts/soph_vc_driver.ko"
 
-          [ "$(find "$KO_DIR" -name '*.ko' | wc -l)" -eq 57 ]
+          [ "$(find "$KO_DIR" -name '*.ko' | wc -l)" -eq "$(scripts/expected-module-count.sh)" ]
 
       # Generated fresh from values already known at this point in the build, rather than carried
       # forward from any prebuilt image. device_acceptance must be exactly pending-recovery-sd --
@@ -704,13 +706,13 @@ jobs:
             esac
             cp "$module" "$DEPMOD_MODULE_DIR/$(basename "$module")"
           done < <(find "$KO_DIR" -type f -name '*.ko' | LC_ALL=C sort)
-          [ "$(find "$DEPMOD_MODULE_DIR" -name '*.ko' | wc -l)" -eq 57 ]
+          [ "$(find "$DEPMOD_MODULE_DIR" -name '*.ko' | wc -l)" -eq "$(scripts/expected-module-count.sh)" ]
           depmod -e -F "$RUN_ROOT/kernel/System.map" -b "$DEPMOD_ROOT" "$kernel_release" \
             2> "$RUN_ROOT/depmod.stderr" || { cat "$RUN_ROOT/depmod.stderr" >&2; exit 1; }
           if grep -nE 'needs unknown symbol|disagrees about version|not an ELF' "$RUN_ROOT/depmod.stderr"; then
             exit 1
           fi
-          echo "kernel_release=$kernel_release: 57 modules, vermagic and symbols OK"
+          echo "kernel_release=$kernel_release: $(scripts/expected-module-count.sh) modules, vermagic and symbols OK"
 
       - name: Upload module-rebuild evidence
         if: always()
@@ -939,7 +941,7 @@ jobs:
             tar -I zstd -xf "$RUNNER_TEMP/$name/$name.tar.zst" -C "$GITHUB_WORKSPACE"
           done
           test -f "$RUN_ROOT/kernel/arch/riscv/boot/Image"
-          [ "$(find "$RUN_ROOT/runtime/system/ko" -name '*.ko' | wc -l)" -eq 57 ]
+          [ "$(find "$RUN_ROOT/runtime/system/ko" -name '*.ko' | wc -l)" -eq "$(scripts/expected-module-count.sh)" ]
 
       - name: Build the Buildroot rootfs with the hardened kernel modules
         run: |

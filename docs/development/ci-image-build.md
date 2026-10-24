@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-22
+last-checked: 2026-10-24
 source: .github/workflows/system-image.yml
 ---
 
@@ -74,9 +74,9 @@ everything that already succeeded.
   kernel source and builds it. Uploads `kernel-build` (source plus build
   tree, for the module builds) and `kernel-boot` (the `Image`, the DTB and
   `utsrelease.h`, for the boot FIT).
-- **`build-modules`** (`needs: vendor-sdk-source, build-kernel`) -- builds the 30
-  external and 3 media kernel modules against that tree, substitutes them
-  and the 24 in-tree modules into the `/mnt/system/ko` skeleton, and writes
+- **`build-modules`** (`needs: vendor-sdk-source, build-kernel`) -- builds the
+  external and media kernel modules against that tree, substitutes them
+  and the in-tree modules into the `/mnt/system/ko` skeleton, and writes
   the provenance records, then checks all 57 against the kernel's vermagic and
   `System.map` with `depmod -e`. Uploads `kernel-modules`. The kernel tree must be
   unpacked at the same absolute path it was built at, which holds because
@@ -102,7 +102,7 @@ scope" below). **The pipeline no longer fetches this archive at all.**
 
 | Content | How it's sourced now | Evidence |
 | --- | --- | --- |
-| All 57 kernel modules (24 in-tree, 30 external, 3 media) | Rebuilt from source: in-tree modules from this pipeline's own kernel build; 30 external CVITEK/WiFi/BT/touch modules from the vendor SDK's `osdrv` tree; 3 media modules from a 3-stage chain across the vendor SDK and public `sophgo/osdrv` at two pinned commits | `support/sg2002/kernel/5.10.265/manifests/external-modules.txt`; workflow steps "Rebuild external CVITEK kernel modules from source" through "Substitute freshly-built modules into the runtime staging dir" |
+| All kernel modules (in-tree, external and media; the manifests list them and `scripts/expected-module-count.sh` adds them up) | Rebuilt from source: in-tree modules from this pipeline's own kernel build; the external CVITEK/WiFi/BT/touch modules from the vendor SDK's `osdrv` tree; the media modules from a 3-stage chain across the vendor SDK and public `sophgo/osdrv` at two pinned commits | `support/sg2002/kernel/5.10.265/manifests/external-modules.txt`; workflow steps "Rebuild external CVITEK kernel modules from source" through "Substitute freshly-built modules into the runtime staging dir" |
 | `libkvm.so` / `libkvm_mmf.so` | Built from source by the `build-native-libkvm` job: `support/sg2002` compiled with a pinned MaixCDK and its musl toolchain (the LT6911 chip-ID probe removed). The video-path components (`kvm`, `kvm_mmf`, `vision`) build at `-O2`; the rest keeps MaixCDK's `MinSizeRel` (`-Os`). `libkvm_mmf.so` starts LT6911 capture without the ISP and links no ISP/3A library. The Rust backend links against the result. Never depended on raw.12 either way | job `build-native-libkvm`; `server-rust/scripts/build-linked-libkvm.sh` |
 | 4 OpenCV modules (`core`/`highgui`/`imgcodecs`/`imgproc`) | Sourced from `sipeed/NanoKVM` upstream (GPL-3.0), verified near-byte-identical (same MaixCDK toolchain build) | workflow step "Source OpenCV core/highgui/imgcodecs/imgproc from upstream"; `server-rust/native/README.md` |
 | 6 OpenCV/protobuf modules (`video`/`dnn`/`calib3d`/`features2d`/`flann`/`protobuf`) | Deleted entirely -- proven via exhaustive symbol-table analysis that `libkvm.so` calls nothing from them, after a `patchelf --remove-needed` patch | `server-rust/native/README.md` ("libkvm.so: removed video NEEDED entry") |
@@ -146,15 +146,15 @@ this, the pipeline downloads no published Hardened artifact at all.
 
 ### The module-tree structure: closed too, no image needed at all
 
-The kernel module *paths* (8 of 57 nest under `3rd/`) used to come from
+The kernel module *paths* (some nest under `3rd/`) used to come from
 raw.12's own `system/ko/` tree, purely so the pipeline knew where each
 freshly-rebuilt `.ko` belonged -- module content itself was never sourced
 from raw.12 once the kernel-module rebuild work closed that gap. This
 turned out not to need any image at all:
 `support/sg2002/kernel/5.10.265/manifests/external-modules.txt` already
-encodes the full destination path for all 30 external modules (`3rd/`
-included), `in-tree-modules.txt` gives the other 24, and the 3 media
-module names are already known constants -- the complete structure,
+encodes the full destination path for every external module (`3rd/`
+included), `in-tree-modules.txt` gives the in-tree ones, and
+`media-modules.txt` the media ones -- the complete structure,
 entirely from files already tracked in this repo. `system-image.yml`
 now builds this as an empty-file skeleton straight from the manifests, no
 network fetch involved; `hardened-source-media-provenance.txt` is

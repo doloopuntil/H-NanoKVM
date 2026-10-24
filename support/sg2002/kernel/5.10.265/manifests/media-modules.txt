@@ -1,0 +1,3 @@
+soph_vcodec.ko
+soph_jpeg.ko
+soph_vc_driver.ko
