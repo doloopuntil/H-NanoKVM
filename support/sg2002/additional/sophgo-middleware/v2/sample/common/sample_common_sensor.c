@@ -409,6 +409,26 @@ CVI_S32 SAMPLE_COMM_SNS_GetSize(SAMPLE_SNS_TYPE_E enMode, PIC_SIZE_E *penSize)
 /*
  * Brief: get picture size(w*h), according enPicSize
  */
+/* One decimal dimension from a file the server writes; the fallback when missing or invalid. */
+static CVI_U32 kvm_read_dimension(const char *path, CVI_U32 fallback)
+{
+	char buf[16];
+	char *end;
+	unsigned long value;
+	size_t len;
+	FILE *fp = fopen(path, "r");
+
+	if (!fp)
+		return fallback;
+	len = fread(buf, 1, sizeof(buf) - 1, fp);
+	fclose(fp);
+	buf[len] = '\0';
+	value = strtoul(buf, &end, 10);
+	if (end == buf || value == 0 || value > 8192)
+		return fallback;
+	return (CVI_U32)value;
+}
+
 CVI_S32 SAMPLE_COMM_SNS_GetPicSize(PIC_SIZE_E enPicSize, SIZE_S *pstSize)
 {
 	switch (enPicSize) {
@@ -570,45 +590,10 @@ CVI_S32 SAMPLE_COMM_SNS_GetPicSize(PIC_SIZE_E enPicSize, SIZE_S *pstSize)
 		pstSize->u32Width = 1024;
 		pstSize->u32Height = 1280;
 		break;
-	case PIC_CUSTOMIZE:  /* env * env */
+	case PIC_CUSTOMIZE:
 	{
-		uint8_t RW_Data[35];
-		FILE *fp;
-		int file_size;
-		if(access("/kvmapp/kvm/width", F_OK) == 0){
-			fp = fopen("/kvmapp/kvm/width", "r");
-			fseek(fp, 0, SEEK_END);
-			file_size = ftell(fp); 
-			fseek(fp, 0, SEEK_SET);
-			fread(RW_Data, sizeof(char), file_size, fp);
-			fclose(fp);
-			RW_Data[file_size] = 0;
-			pstSize->u32Width = atoi((char*)RW_Data);
-		} else {
-			pstSize->u32Width = 1920;
-		}
-		if(access("/kvmapp/kvm/height", F_OK) == 0){
-			fp = fopen("/kvmapp/kvm/height", "r");
-			fseek(fp, 0, SEEK_END);
-			file_size = ftell(fp); 
-			fseek(fp, 0, SEEK_SET);
-			fread(RW_Data, sizeof(char), file_size, fp);
-			fclose(fp);
-			RW_Data[file_size] = 0;
-			pstSize->u32Height = atoi((char*)RW_Data);
-		} else {
-			pstSize->u32Height = 1080;
-		}
-
-		// if(getenv("KVM_CSI_HEIGHT") == NULL || getenv("KVM_CSI_WIDTH") == NULL){
-		// 	pstSize->u32Width  = 1920;
-		// 	pstSize->u32Height = 1080;
-		// 	printf("KVM_CSI_H/W = NULL%d\n");
-		// } else {
-		// 	pstSize->u32Width  = atoi(getenv("KVM_CSI_HEIGHT"));
-		// 	pstSize->u32Height = atoi(getenv("KVM_CSI_WIDTH"));
-		// }
-		
+		pstSize->u32Width = kvm_read_dimension("/kvmapp/kvm/width", 1920);
+		pstSize->u32Height = kvm_read_dimension("/kvmapp/kvm/height", 1080);
 		printf("pstSize->u32Width = %d\n", pstSize->u32Width);
 		printf("pstSize->u32Height = %d\n", pstSize->u32Height);
 		break;
