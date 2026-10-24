@@ -68,6 +68,21 @@ index 7d582d9..57fb189 100644
  			}
  		}
  
+diff --git a/interdrv/cvi_vc_drv/vcodec/sample/main_enc_cvitest.c b/interdrv/cvi_vc_drv/vcodec/sample/main_enc_cvitest.c
+index 3468973..f5174d6 100644
+--- a/interdrv/cvi_vc_drv/vcodec/sample/main_enc_cvitest.c
++++ b/interdrv/cvi_vc_drv/vcodec/sample/main_enc_cvitest.c
+@@ -1231,7 +1231,9 @@ RETRY:
+ 	}
+ 
+ #if (defined CVI_H26X_USE_ION_MEM && defined BITSTREAM_ION_CACHED_MEM)
+-	for (i = 0; i < (int)pTestEnc->bsBufferCount; i++) {
++	/* Only at a GOP start, for lines left by the buffer's previous user: reads and writes
++	 * during encoding invalidate or flush their own ranges. */
++	for (i = 0; pTestEnc->frameIdx == 0 && i < (int)pTestEnc->bsBufferCount; i++) {
+ 		if (pTestEnc->vbStream[i].size != 0)
+ 			vdi_invalidate_ion_cache(pTestEnc->vbStream[i].phys_addr,
+ 			pTestEnc->vbStream[i].virt_addr, pTestEnc->vbStream[i].size);
 diff --git a/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi.c b/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi.c
 index 355e8ee..aed1ff7 100644
 --- a/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi.c
