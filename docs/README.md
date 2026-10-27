@@ -38,6 +38,7 @@ For people running the device.
 - [Web UI](development/web.md)
 - [Web UI layout rules](development/web-ui-layout-rules.md), including the copy rules
 - [CI image build](development/ci-image-build.md): rebuilding the SD image from source
+- [Kernel 6.x migration plan](development/kernel-6x-migration-plan.md): moving from the vendor 5.10 kernel to mainline 6.18 (plan, not implemented)
 - [Testing](development/testing.md)
 - [Rust dependency audit](development/dependency-audit.md)
 - [riscv64 thread stack alignment](development/riscv-musl-stack-alignment.md): why the
