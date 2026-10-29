@@ -28,13 +28,61 @@ Nothing here has been run on hardware.
 | Mailbox | Keep the **mainline `cv1800` mailbox driver**. Drop the vendor `soph_rtos_cmdqu`. |
 | Allocator | Keep the **carveout allocator** in `soph_sys` (your `sys-carveout-allocator` patch). Do not switch to the CMA dma-heap design. |
 | Goal | No new closed binaries; keep building everything possible from source (see section 4.4). |
+| Integration shape | **Two `BR2_EXTERNAL` trees** in one build (section 1.1). |
 
-Still open, with a recommendation (section 9 lists all open questions):
+### 1.1 The two external trees
 
-- **Integration shape:** recommended option A, keep `hardened-sg2002` and add the
-  licheerv tree as a **second `BR2_EXTERNAL`** for kernel and boot chain.
-  (B: add NanoKVM as a board inside licheerv. C: copy licheerv's patches into
-  this repo.)
+```sh
+make BR2_EXTERNAL=<repo>/buildroot-external/hardened-sg2002:<path>/buildroot-external-licheervnano \
+     <defconfig>
+```
+
+| Tree | Path | `external.desc` name | Supplies |
+| --- | --- | --- | --- |
+| Hardened | `buildroot-external/hardened-sg2002` (a **subdirectory** of this repo, not the repo root) | `HARDENED_SG2002` | musl userland, `kvmapp`, vendor-runtime and firmware packages, BusyBox/OpenSSL CVE patches, NanoKVM genimage layout, the top-level defconfig, and the new media-module package |
+| licheerv | root of `buildroot-external-licheervnano` | `SIPEED_LICHEERV_NANO` | Linux 6.18 patch series, U-Boot 2025.10, OpenSBI 1.8.1, FSBL and FIP packages, `soph-tpu` and `aic8800-modules` as module-package templates |
+
+Base: Buildroot 2026.05.1. The defconfig lives in Hardened's `configs/` and sets
+`BR2_GLOBAL_PATCH_DIR` to both `board/sg2002/patches` (Hardened) and
+`board/licheervnano` (licheerv).
+
+Collision check, 2026-10-29 [V]: no collisions.
+
+- Package directories: Hardened has `hardened-aic8800-sdio-firmware`,
+  `hardened-cvitek-riscv64-musl-sysroot`, `hardened-nanokvm-kvmapp`,
+  `hardened-sg2002-codec-firmware`, `hardened-sg2002-vendor-runtime`. licheerv has
+  `aic8800-modules`, `cv1800-mbox-demo`, `sg2002-8051-demo`, `soph-tpu`, and under
+  `boot/` `fip-sg200x`, `fsbl-sg200x`, `licheervnano-firmware`. No shared names.
+- Kconfig symbols (6 and 7) are all distinct; no make variable is assigned by both
+  trees' `.mk` files.
+- None of the 12 names matches a directory under `package/` or `boot/` in Buildroot
+  2026.05.1 (compared against all 2,987).
+- Global patch directories cover different packages: Hardened `busybox` and
+  `libopenssl`; licheerv `linux`, `uboot` and `opensbi`.
+
+Handle these in the combined defconfig (not name collisions):
+
+- **AIC8800 firmware:** Hardened's package installs the lxowalle repo to
+  `/usr/lib/firmware/aic8800_sdio/`; licheerv's `licheervnano-firmware` installs
+  varyhin's copy to `/lib/firmware/aic8800_sdio/aic8800_and_aic8800D80/`. With a
+  merged `/usr` these share one directory tree. Select **one** source (Hardened's
+  fits the source-only goal). The `aic8800-modules` kernel package is still taken
+  from licheerv.
+- **Root filesystem overlays:** both trees ship `/etc/ssh/sshd_config`. Use
+  Hardened's overlay only, or order them deliberately. licheerv's overlay also
+  carries the AIC8800 `modprobe.d` and `modules-load.d` snippets
+  (`options aic8800_fdrv aicwf_dbg_level=1 ps_on=0`; load `aic8800_bsp`,
+  `aic8800_fdrv`, `aic8800_btlpm`, `i2c-dev`); copy them across if Wi-Fi is enabled
+  (PCIe).
+- **Prebuilt boot blobs:** selecting `BR2_TARGET_FIP_SG200X` depends on
+  `licheervnano-firmware`, which installs prebuilt `ddr_param.bin` and
+  `cvirtos.bin` from varyhin's repo. See open question Q3.
+- `board/licheervnano/` also contains a `rootfs-overlay` directory; as a patch
+  directory it is treated as a package name with no matching package, which is
+  harmless.
+
+Alternatives considered and not chosen: add NanoKVM as a board inside the licheerv
+tree (B); copy licheerv's patches into this repo (C).
 
 ## 2. What the hardware is
 
@@ -585,7 +633,7 @@ consider upstreaming it.
 
 | ID | Item | How to resolve |
 | --- | --- | --- |
-| Q1 | Integration shape (A recommended) | Decide before Phase 1. |
+| Q1 | ~~Integration shape~~ | **Decided:** two externals (section 1.1). |
 | Q2 | Boot payload: raw `Image` vs FIT, and `/boot` size | Measure a trimmed kernel in Phase 1. |
 | Q3 | FIP blobs: SDK-built vs licheerv/varyhin prebuilt `ddr_param.bin`, `cvirtos.bin` | Check the SDK build outputs in Phase 1; prefer SDK. |
 | Q4 | Which RTOS image, hence which reserved region (`0x8fe00000` vs `0x83f40000`) | Follows Q3; the DT must match. |
