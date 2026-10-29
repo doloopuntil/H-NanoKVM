@@ -29,6 +29,8 @@ Nothing here has been run on hardware.
 | Allocator | Keep the **carveout allocator** in `soph_sys` (your `sys-carveout-allocator` patch). Do not switch to the CMA dma-heap design. |
 | Goal | No new closed binaries; keep building everything possible from source (see section 4.4). |
 | Integration shape | **Two `BR2_EXTERNAL` trees** in one build (section 1.1). |
+| Boot payload | **FIT** (kernel + DTBs in one file, the successor of today's `boot.sd`). The FIPs are separate and unchanged in role (section 6.5). |
+| FIP contents | **Built from source** (`ddr_param.bin`, `cvirtos.bin`, FSBL, OpenSBI, U-Boot). No prebuilt blobs from the licheerv/varyhin packages. |
 
 ### 1.1 The two external trees
 
@@ -251,7 +253,8 @@ records a hardware run on 2026-06-02; the TPU DT patch still says unverified).
   `cvirtos.bin` at `0x83f40000` (768 KiB, no-map). That differs from the vendor
   RTOS at `0x8fe00000`. Which RTOS image is used decides which region is reserved.
 - `licheervnano-firmware.mk` installs **prebuilt `ddr_param.bin` and
-  `cvirtos.bin`** from varyhin's repo at `3bf6e4d`. Adopting that package as-is
+  `cvirtos.bin`** (varyhin's `cvirtos.bin` is only 13,480 bytes, a minimal blob,
+  not the vendor FreeRTOS image, and his notes call both "closed vendor blobs") from varyhin's repo at `3bf6e4d`. Adopting that package as-is
   adds binaries that the vendor-SDK build currently produces from source [I:
   verify the SDK build really produces both from source].
 - `linux.fragment` enables CMA 64 MiB, dma-heaps, mailbox, LEDs and audio; it
@@ -343,20 +346,34 @@ Changes needed:
 1. Replace `arch_sync_dma_for_device` with `dma_sync_single_for_device` /
    `_for_cpu` (the licheerv `soph-tpu` port did the same and was validated on
    hardware, on CMA memory). T-Head cache operations in 6.18 work on **physical**
-   addresses (`th.dcache.cpa/ipa/cipa`) [V], which should make this work on a
+   addresses (`th.dcache.cpa/ipa/cipa`) [V], so this should also work on a
    `no-map` region; **untested** [U].
-2. `memremap(..., MEMREMAP_WB)` on a `no-map` (non-System-RAM) region does not
-   give a cached mapping: `kernel/iomem.c` only reuses the linear map for RAM,
-   otherwise falls back to `arch_memremap_wb` (device attributes on riscv) [V by
-   reading, I for the exact riscv outcome]. Decide what `is_cached` means for the
-   kernel-side pointer; user mappings come from `/dev/mem` and are separate.
+2. Vendor reality check [V]: the vendor `ion_reserved` node (`ion-region`,
+   `size` only, no `reg`, no `no-map`) is an ordinary **reserved RAM** region that
+   the kernel places top-down at the end of its 254 MiB memory node, which is where
+   `0x8b300000` comes from. It stays in the linear map, so the 5.10 allocator's
+   `memremap(MEMREMAP_WB)` simply returned the cached linear address. The RTOS
+   region (`0x8fe00000`, 2 MiB) is **outside** the vendor memory node, so the
+   vendor DT needs no reservation for it. Two ways to reproduce this in 6.18:
+   - **(a) reserved, mapped RAM** (no `no-map`): `memremap(WB)` returns the cached
+     linear address, the same case licheerv's `soph-tpu` port validated on
+     hardware. Cost: `/dev/mem` counts it as System RAM, so `STRICT_DEVMEM` must be
+     off. This is the lowest-risk match to 5.10 behaviour.
+   - **(b) `no-map`**: `/dev/mem` works with `STRICT_DEVMEM`, but `memremap(WB)` on
+     non-RAM falls back to `arch_memremap_wb` (device attributes on riscv; `kernel/
+     iomem.c` [V by reading, I for the riscv outcome]), so the kernel-side
+     "cached" pointer would not be cached. User mappings come from `/dev/mem` and
+     are separate.
+   Prefer (a) for Phase 2 and revisit (b) only if you want `STRICT_DEVMEM`.
 3. `/dev/mem`: riscv uses the generic `STRICT_DEVMEM` check, which blocks System
-   RAM. A `no-map` region should be allowed; a `shared-dma-pool` (mapped) region
-   would count as RAM and be blocked unless `STRICT_DEVMEM=n` [I]. The 5.10 system
-   already needs `/dev/mem`; record this in `docs/reference/security-model.md`.
-4. DT: add `reserved-memory` for the media region (75 MiB at `0x8b300000` unless
-   re-planned) and the RTOS region. Give `soph_sys` a `memory-region`. Omit the
-   `cvitek,rtos_image` node so `sys_mem_rtos_size()` skips nothing.
+   RAM [I]. The 5.10 system already needs `/dev/mem`; record this in
+   `docs/reference/security-model.md`.
+4. DT: add a fixed-address `reserved-memory` node for the media region (75 MiB at
+   `0x8b300000` unless re-planned; give it an explicit `reg` so it is
+   deterministic) and either shrink the memory node to 254 MiB like the vendor DT or
+   keep 256 MiB and reserve the RTOS region `0x8fe00000` (2 MiB, `no-map`). Give
+   `soph_sys` a `memory-region`. Omit the `cvitek,rtos_image` node so
+   `sys_mem_rtos_size()` skips nothing.
 5. Drop licheerv's 64 MiB CMA and dma-heaps (they compete for the same RAM) or
    shrink them; keep `ERRATA_THEAD_MAE` and `ERRATA_THEAD_CMO` on (verify in the
    final `.config`).
@@ -411,7 +428,7 @@ cores. Not in scope for this migration.
 
 | Interface | Used by | 5.10 | 6.18 action |
 | --- | --- | --- | --- |
-| `/sys/class/gpio/gpioNNN` (503-507, 451, 502, 506) | `S15kvmhwd`, `vm.rs`, `kvm_system` | fixed bases | enable `GPIO_SYSFS` as a stopgap; move to name-based lookup (`gpio-line-names` + libgpiod, or a startup resolver) |
+| `/sys/class/gpio/gpioNNN` (503-507, 451, 502, 506) | `S15kvmhwd` (35 refs), `vm.rs` (11), `kvm_vision.cpp` (HDMI reset 451); `kvm_system` only has comments | fixed bases (port A 480, B 448, ... [I]) | bases are dynamic in 6.18 (start at 512, count down; `dwapb` passes base -1) and sysfs GPIO needs `EXPERT` + `GPIO_SYSFS`. Stopgap: enable it and check the numbers. Target: `gpio-line-names` in the DT, char-device access by name, `gpio-hog` for lines that must stay at a fixed level (OLED reset, HDMI reset, Wi-Fi enable). Test what a released output line does (keeps its level or not) [U]. Also drop the alpha entry in `vm.rs` |
 | `/sys/class/cvi-base/base_uid` | `S03usbdev` MACs/serial | osdrv `soph_base` | unchanged (comes from the module) |
 | `/proc/cvitek/*` (`vb`, `sys_mem`, `vi_dbg`) | diagnostics | osdrv | unchanged |
 | `/dev/cvi-*` | middleware | osdrv | unchanged; confirm with strace |
@@ -439,7 +456,19 @@ Image is about 27 MiB with the arch default config.
 
 ### 6.5 Boot chain, image size and updates
 
-- **Size constraint.** `/boot` is 32 MiB on current images (16 MiB on old cards;
+Naming: a **FIP** (Firmware Image Package) is the BootROM/FSBL container with the
+FSBL, DDR parameters, RTOS, OpenSBI and U-Boot (`fip.bin`, `fip.od.bin`,
+`fip.std.bin`). A **FIT** (Flattened Image Tree) is U-Boot's container for kernel
+and DTBs (`boot.sd` today). They are separate files; the overdrive/standard FIP
+pair is unaffected by the FIT decision.
+
+Decision: use a **FIT** for the kernel payload. Remaining work: `mkimage` and an
+`.its` in the build (Buildroot host `uboot-tools` with FIT support), U-Boot FIT
+and compression support, and a boot script or extlinux entry that boots it
+[U: confirm licheerv's U-Boot config]. Keep the load and decompression addresses
+apart (licheerv's overlap bug). Pick the compression by measuring boot time.
+
+- **Size constraint** (a FIT with compression eases this). `/boot` is 32 MiB on current images (16 MiB on old cards;
   "a card keeps the boot size it was flashed with"). The 5.10 kernel package was
   11.7 MB. A 6.18 Image of about 27 MiB plus three FIPs (about 3.6 MB in the old
   budget) does not leave room. Trim the config first; if still large, use a
@@ -634,12 +663,12 @@ consider upstreaming it.
 | ID | Item | How to resolve |
 | --- | --- | --- |
 | Q1 | ~~Integration shape~~ | **Decided:** two externals (section 1.1). |
-| Q2 | Boot payload: raw `Image` vs FIT, and `/boot` size | Measure a trimmed kernel in Phase 1. |
-| Q3 | FIP blobs: SDK-built vs licheerv/varyhin prebuilt `ddr_param.bin`, `cvirtos.bin` | Check the SDK build outputs in Phase 1; prefer SDK. |
-| Q4 | Which RTOS image, hence which reserved region (`0x8fe00000` vs `0x83f40000`) | Follows Q3; the DT must match. |
+| Q2 | ~~Boot payload~~ | **Decided:** FIT (section 6.5). Still measure `/boot` headroom and boot time. |
+| Q3 | ~~FIP blobs~~ | **Decided:** build from source. Verify in Phase 1 that the SDK/FSBL build produces `ddr_param.bin` and `cvirtos.bin` (the Hardened `vendor-sdk-stock` already builds a FIP). |
+| Q4 | RTOS image and its address | Follows Q3: SDK-built FreeRTOS at `0x8fe00000`. Three things must agree: the FSBL `BLCP_2ND_RUNADDR` (`CVIMMAP_FSBL_C906L_START_ADDR`), the RTOS linker origin (`CVIMMAP_FREERTOS_ADDR` in `cv181x_lscript.ld`), and the DT. All derive from the board `memmap.py`, so build them together. Drop licheerv's `0x83f40000` region. |
 | Q5 | Where the BOOT-button USB reflash mode lives | Read the wiki's open-source image tree and the FSBL; test on the Lite. |
 | Q6 | Which optional media modules to keep (`vo dwa rgn ive mon fb`) | Phase 0 strace. |
-| Q7 | GPIO strategy: libgpiod vs sysfs | Phase 4; sysfs works as a stopgap. |
+| Q7 | GPIO strategy | Phase 1: sysfs stopgap (needs `EXPERT` + `GPIO_SYSFS`) and `gpio-line-names` in the DT from day one. Phase 4: char-device access by line name; `gpio-hog` for static lines. See section 6.4. |
 | Q8 | `STRICT_DEVMEM` and the carveout region type | Phase 2 cache/`/dev/mem` test. |
 | R1 | Cache coherency and memory attributes on the carveout (stale/corrupt frames) | Phase 2 cache test; Phase 3 soak. |
 | R2 | `snsr_i2c` vendor I2C extensions (LT6911 path) | Read the module; may need a small I2C adapter shim. |
