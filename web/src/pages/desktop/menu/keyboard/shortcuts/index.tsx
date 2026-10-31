@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Divider } from 'antd';
-import { CommandIcon } from 'lucide-react';
+import { ZapIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/hid.ts';
@@ -106,7 +106,7 @@ export const Shortcuts = () => {
 
   return (
     <MenuSubmenu
-      icon={<CommandIcon size={18} />}
+      icon={<ZapIcon size={18} />}
       label={t('keyboard.shortcut.title')}
       content={content}
       open={isOpen}
