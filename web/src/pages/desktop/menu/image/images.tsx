@@ -3,11 +3,11 @@ import { Button, Divider, Tooltip, Typography } from 'antd';
 import clsx from 'clsx';
 import {
   CableIcon,
-  EjectIcon,
-  HardDriveDownloadIcon,
+  ImportIcon,
   LoaderCircleIcon,
   PackageIcon,
   PackageSearchIcon,
+  ShareIcon,
   Trash2Icon
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -364,7 +364,7 @@ export const Images = ({
             )}
             <div
               className={clsx(
-                'rounded border border-solid px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none',
+                'mr-1 rounded border border-solid px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none',
                 isImageCdrom(image)
                   ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
                   : 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
@@ -381,12 +381,12 @@ export const Images = ({
               >
                 <div className="flex h-[24px] w-[24px] items-center justify-center rounded">
                   {mountedImage === image ? (
-                    <EjectIcon
+                    <ShareIcon
                       size={16}
                       className="text-red-500 opacity-60 group-hover:opacity-100"
                     />
                   ) : (
-                    <HardDriveDownloadIcon
+                    <ImportIcon
                       size={16}
                       className="text-blue-500 opacity-60 group-hover:opacity-100"
                     />
