@@ -569,11 +569,11 @@ const StatusCard = ({ status }: { status: WireguardStatus }) => {
       {status.running && (
         <span className="flex items-center gap-3 text-xs text-neutral-400">
           <span className="flex items-center gap-1">
-            <ArrowDownIcon size={16} />
+            <ArrowDownIcon size={12} />
             {formatBytes(status.rxBytes)}
           </span>
           <span className="flex items-center gap-1">
-            <ArrowUpIcon size={16} />
+            <ArrowUpIcon size={12} />
             {formatBytes(status.txBytes)}
           </span>
         </span>
