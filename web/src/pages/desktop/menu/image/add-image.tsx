@@ -131,7 +131,7 @@ export const AddImage = ({
         />
       )}
       {isDisabled && !isDiskShared && (
-        <Alert type="warning" showIcon message={t('download.disabled')} />
+        <Alert type="warning" showIcon title={t('download.disabled')} />
       )}
 
       {isBusy ? (

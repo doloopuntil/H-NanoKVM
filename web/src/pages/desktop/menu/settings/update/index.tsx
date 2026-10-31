@@ -308,7 +308,7 @@ export const Update = ({ setIsLocked }: UpdateProps) => {
       content: systemStaged.destructive ? (
         <div className="space-y-3">
           <div>{t('settings.update.system.rawInstallConfirmDesc')}</div>
-          <Alert type="error" showIcon message={t('settings.update.system.rawInstallWarning')} />
+          <Alert type="error" showIcon title={t('settings.update.system.rawInstallWarning')} />
         </div>
       ) : (
         t('settings.update.system.installConfirmDesc')

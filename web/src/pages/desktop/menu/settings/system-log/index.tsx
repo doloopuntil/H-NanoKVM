@@ -373,7 +373,7 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
                 </div>
 
                 {logTruncated && (
-                  <Alert type="info" showIcon message={t('settings.systemLog.viewer.truncated')} />
+                  <Alert type="info" showIcon title={t('settings.systemLog.viewer.truncated')} />
                 )}
 
                 <pre className="max-h-[360px] min-h-[260px] overflow-auto rounded bg-black/50 p-3 font-mono text-xs leading-relaxed text-neutral-200">

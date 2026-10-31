@@ -80,7 +80,7 @@ export const TlsConfirm = () => {
       open={secondsLeft !== null}
       centered
       closable={false}
-      maskClosable={false}
+      mask={{ closable: false }}
       keyboard={false}
       title={
         isReverting

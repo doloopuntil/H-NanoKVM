@@ -7,7 +7,7 @@ type CardOptions = { key?: string; description?: string };
 
 function card(type: 'error' | 'warning', content: string, options: CardOptions) {
   notification[type]({
-    message: content,
+    title: content,
     description: options.description,
     key: options.key,
     duration: ERROR_SECONDS,

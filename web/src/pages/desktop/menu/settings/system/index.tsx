@@ -122,7 +122,7 @@ export const System = ({ section, setIsLocked }: SystemProps) => {
           )}
           {section === 'services' && (
             <div className="flex flex-col space-y-6">
-              {certificateBlocked && <Alert type="warning" showIcon message={certificateBlocked} />}
+              {certificateBlocked && <Alert type="warning" showIcon title={certificateBlocked} />}
 
               <SettingSection title={t('settings.system.sections.webInterface')}>
                 <Tls />

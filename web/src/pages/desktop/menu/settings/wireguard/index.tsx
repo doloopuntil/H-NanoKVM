@@ -8,6 +8,7 @@ import {
   InputNumber,
   Modal,
   Select,
+  Space,
   Switch,
   Tag,
   Typography
@@ -207,10 +208,10 @@ export const Wireguard = () => {
         >
           <Section title={t('settings.network.connection')}>
             {status && !status.toolInstalled && (
-              <Alert type="warning" showIcon message={t('settings.wireguard.unavailable')} />
+              <Alert type="warning" showIcon title={t('settings.wireguard.unavailable')} />
             )}
             {status?.firewallBlocked && (
-              <Alert type="warning" showIcon message={t('settings.wireguard.blocked')} />
+              <Alert type="warning" showIcon title={t('settings.wireguard.blocked')} />
             )}
 
             <SettingRow
@@ -227,7 +228,7 @@ export const Wireguard = () => {
             </SettingRow>
 
             {status && !status.privateKeySet && (
-              <Alert type="info" showIcon message={t('settings.wireguard.needsKey')} />
+              <Alert type="info" showIcon title={t('settings.wireguard.needsKey')} />
             )}
 
             {saved.enabled && status && <StatusCard status={status} />}
@@ -376,16 +377,18 @@ export const Wireguard = () => {
               description={t('settings.wireguard.peer.keepaliveDescription')}
               inline
             >
-              <InputNumber
-                className="w-24 sm:w-20 [&_.ant-input-number-input]:!text-right"
-                controls={false}
-                min={0}
-                max={65535}
-                precision={0}
-                value={draft.keepalive}
-                addonAfter="s"
-                onChange={(keepalive) => patch({ keepalive })}
-              />
+              <Space.Compact>
+                <InputNumber
+                  className="w-24 sm:w-20 [&_.ant-input-number-input]:!text-right"
+                  controls={false}
+                  min={0}
+                  max={65535}
+                  precision={0}
+                  value={draft.keepalive}
+                  onChange={(keepalive) => patch({ keepalive })}
+                />
+                <Space.Addon className="w-8 text-center">s</Space.Addon>
+              </Space.Compact>
             </SettingRow>
           </Section>
 

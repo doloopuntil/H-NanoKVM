@@ -65,11 +65,11 @@ export const H264Webrtc = () => {
     const showConnectionFailureNotification = () => {
       notificationApi.error({
         key: WEBRTC_CONNECTION_FAILED_NOTIFICATION_KEY,
-        message: translationRef.current('screen.webrtcConnectionFailed.title'),
+        title: translationRef.current('screen.webrtcConnectionFailed.title'),
         description: translationRef.current('screen.webrtcConnectionFailed.description'),
         placement: 'topRight',
         closable: false,
-        duration: null
+        duration: false
       });
     };
 

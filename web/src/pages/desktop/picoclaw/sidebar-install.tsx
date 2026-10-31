@@ -38,7 +38,7 @@ export const SidebarInstall = ({
           <Progress
             percent={installProgress || 0}
             showInfo={false}
-            trailColor="rgba(255,255,255,0.07)"
+            railColor="rgba(255,255,255,0.07)"
             status="active"
           />
         </div>

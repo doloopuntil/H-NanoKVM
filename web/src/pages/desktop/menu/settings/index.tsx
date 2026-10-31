@@ -322,7 +322,7 @@ export const Settings = () => {
             : { maxWidth: '1024px' }
         }
         styles={{
-          content: {
+          container: {
             padding: 0,
             ...(isTouchLayout ? { height: '100dvh', overflow: 'hidden', borderRadius: 0 } : {})
           },

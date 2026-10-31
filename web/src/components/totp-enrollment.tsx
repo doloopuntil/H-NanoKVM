@@ -314,7 +314,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
       {/* Codes are derived from the clock, so enrolling before NTP succeeds
           would produce a secret whose codes could never be confirmed. */}
       {status && !status.clockSynced && !status.enabled && (
-        <Alert type="warning" showIcon message={t('settings.account.totp.clockUnsynced')} />
+        <Alert type="warning" showIcon title={t('settings.account.totp.clockUnsynced')} />
       )}
 
       <SettingRow
@@ -370,7 +370,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
       </SettingRow>
 
       {isEnabled && status?.backupCodesRemaining === 0 && (
-        <Alert type="warning" showIcon message={t('settings.account.totp.noBackupCodes')} />
+        <Alert type="warning" showIcon title={t('settings.account.totp.noBackupCodes')} />
       )}
 
       <Modal
