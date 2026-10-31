@@ -21,7 +21,7 @@ export const MobilePointerMode = () => {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 text-sm text-neutral-100">
-          <MousePointer2Icon size={15} />
+          <MousePointer2Icon size={14} />
           <span>{t('mouse.mobile.touchSync')}</span>
         </div>
         <div className="mt-0.5 whitespace-normal text-xs leading-4 text-neutral-500">

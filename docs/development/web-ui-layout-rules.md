@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: app 2.1.0
-last-checked: 2026-10-30
+last-checked: 2026-10-31
 ---
 
 # Web UI layout rules for the Settings pages
@@ -229,6 +229,11 @@ and the dialog and toast helpers in `web/src/lib/feedback.ts`.
     space under its last line (45px) as above its title (44px). Taller pages, such
     as Device (788px to 1038px, by board), scroll inside the window. Measure again
     and change the number if the Monitor page gets taller or shorter.
+37. Icons come from `lucide-react` (the GitHub, Apple and Windows logos from
+    `@ant-design/icons`) and use one of these sizes: 10 or 12 for a badge or inline
+    mark, 14 for a settings tab, an input prefix or a help icon, 16 for a button or
+    a small row, 18 for a menu row, 20 for a row action (eject, delete), 24 for a
+    loading or empty state. The cursor drawn over the remote screen is the exception.
 
 ## Menu bar popovers
 

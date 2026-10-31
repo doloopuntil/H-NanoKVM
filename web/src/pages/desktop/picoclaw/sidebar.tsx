@@ -91,7 +91,7 @@ export const Sidebar = () => {
         {sidebarMode === 'loading' ? (
           <div className="flex flex-1 flex-col items-center pt-10">
             <div className="flex flex-col items-center gap-3">
-              <LoaderCircleIcon className="animate-spin text-neutral-500" size={22} />
+              <LoaderCircleIcon className="animate-spin text-neutral-500" size={24} />
               <span className="text-xs text-neutral-500">{connectionLabel}</span>
             </div>
           </div>
@@ -129,7 +129,7 @@ export const Sidebar = () => {
           />
         ) : !runtimeStatus?.ready ? (
           <EmptyState
-            icon={<PlayIcon className="text-blue-400" size={22} />}
+            icon={<PlayIcon className="text-blue-400" size={24} />}
             title={t('picoclaw.start.title')}
             description={t('picoclaw.start.description')}
           >

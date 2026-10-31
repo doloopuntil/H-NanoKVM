@@ -55,7 +55,7 @@ export const SidebarHistory = ({
     if (sessions.length === 0) {
       return (
         <EmptyState
-          icon={<HistoryIcon size={22} />}
+          icon={<HistoryIcon size={24} />}
           title={t('picoclaw.history.emptyTitle')}
           description={t('picoclaw.history.emptyDescription')}
         />

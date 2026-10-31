@@ -21,7 +21,7 @@ export const SidebarInstall = ({
 
   return (
     <EmptyState
-      icon={<DownloadIcon className="text-blue-400" size={22} />}
+      icon={<DownloadIcon className="text-blue-400" size={24} />}
       title={t('picoclaw.install.requiredTitle')}
       description={
         isInstalling
@@ -43,7 +43,7 @@ export const SidebarInstall = ({
           />
         </div>
       ) : (
-        <Button icon={<DownloadIcon size={13} />} onClick={() => void onInstall()} type="primary">
+        <Button icon={<DownloadIcon size={14} />} onClick={() => void onInstall()} type="primary">
           {t('picoclaw.install.install')}
         </Button>
       )}

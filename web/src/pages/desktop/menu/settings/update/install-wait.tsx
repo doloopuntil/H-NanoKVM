@@ -84,7 +84,7 @@ export const InstallWait = ({ open, onFailed }: InstallWaitProps) => {
     >
       <div className="box-border space-y-4 py-2">
         <div className="flex items-center space-x-3">
-          <LoaderCircleIcon className="animate-spin text-blue-400" size={20} />
+          <LoaderCircleIcon className="animate-spin text-blue-400" size={24} />
           <span className="text-sm text-neutral-300">
             {wentDown
               ? t('settings.update.system.rawWaitRestarting')
