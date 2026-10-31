@@ -29,6 +29,7 @@ EXPECTED_SYSTEM_SECURITY_PATCH_LEVEL="${EXPECTED_SYSTEM_SECURITY_PATCH_LEVEL:-}"
 
 [ -f "$IMAGE" ] || die "rootfs image does not exist: $IMAGE"
 command -v debugfs >/dev/null 2>&1 || die "debugfs is required"
+"$ROOT/scripts/check-busybox-mode.sh" "$IMAGE" || die "the image carries a privileged BusyBox"
 
 ROOTFS_STATS="$(LC_ALL=C debugfs -R stats "$IMAGE" 2>&1 || true)"
 printf '%s\n' "$ROOTFS_STATS" | grep -Eq "^Filesystem UUID:[[:space:]]+$EXPECTED_ROOTFS_UUID$" || \
