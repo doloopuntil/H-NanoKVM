@@ -58,7 +58,7 @@ export const AddImage = ({
       disabled: !isRemoteEnabled,
       label: (
         <div className="flex items-center space-x-1">
-          <LinkIcon size={14} />
+          <LinkIcon size={16} />
           <span>{t('image.fromUrl')}</span>
         </div>
       )
@@ -67,7 +67,7 @@ export const AddImage = ({
       value: 'file',
       label: (
         <div className="flex items-center space-x-1">
-          <UploadIcon size={14} />
+          <UploadIcon size={16} />
           <span>{t('image.fromFile')}</span>
         </div>
       )

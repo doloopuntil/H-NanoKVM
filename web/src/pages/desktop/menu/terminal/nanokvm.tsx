@@ -11,7 +11,7 @@ export const Nanokvm = () => {
   }
 
   return (
-    <MenuRow icon={<SquareTerminalIcon size={18} />} onClick={openTerminal}>
+    <MenuRow icon={<SquareTerminalIcon size={16} />} onClick={openTerminal}>
       {t('terminal.nanokvm')}
     </MenuRow>
   );

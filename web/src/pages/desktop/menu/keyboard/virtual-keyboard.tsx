@@ -10,7 +10,7 @@ export const VirtualKeyboard = () => {
   const setIsKeyboardOpen = useSetAtom(isKeyboardOpenAtom);
 
   return (
-    <MenuRow icon={<KeyboardIcon size={18} />} onClick={() => setIsKeyboardOpen((o) => !o)}>
+    <MenuRow icon={<KeyboardIcon size={16} />} onClick={() => setIsKeyboardOpen((o) => !o)}>
       {t('keyboard.virtual')}
     </MenuRow>
   );

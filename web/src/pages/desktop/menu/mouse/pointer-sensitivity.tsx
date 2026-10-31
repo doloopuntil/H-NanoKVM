@@ -39,6 +39,6 @@ export const PointerSensitivity = () => {
   );
 
   return (
-    <MenuSubmenu icon={<MoveIcon size={18} />} label={t('mouse.sensitivity')} content={content} />
+    <MenuSubmenu icon={<MoveIcon size={16} />} label={t('mouse.sensitivity')} content={content} />
   );
 };

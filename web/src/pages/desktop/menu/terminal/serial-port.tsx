@@ -60,7 +60,7 @@ export const SerialPort = () => {
 
   return (
     <>
-      <MenuRow icon={<SquareTerminalIcon size={18} />} onClick={openModal}>
+      <MenuRow icon={<SquareTerminalIcon size={16} />} onClick={openModal}>
         {t('terminal.serial')}
       </MenuRow>
 

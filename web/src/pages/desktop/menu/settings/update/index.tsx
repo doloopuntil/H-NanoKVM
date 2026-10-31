@@ -692,7 +692,7 @@ export const Update = ({ setIsLocked }: UpdateProps) => {
                     {applicationBusy && (
                       <Spin
                         size="small"
-                        indicator={<LoaderCircleIcon className="animate-spin" size={14} />}
+                        indicator={<LoaderCircleIcon className="animate-spin" size={16} />}
                       />
                     )}
                     {applicationText}
@@ -901,7 +901,7 @@ const StatusRow = ({ busy = false, error = false, title, text, buttons }: Status
             {busy && (
               <Spin
                 size="small"
-                indicator={<LoaderCircleIcon className="animate-spin" size={14} />}
+                indicator={<LoaderCircleIcon className="animate-spin" size={16} />}
               />
             )}
             {text}

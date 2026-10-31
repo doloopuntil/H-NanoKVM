@@ -49,7 +49,7 @@ export const Quality = ({ quality, setQuality }: QualityProps) => {
 
   return (
     <MenuSubmenu
-      icon={<SquareActivityIcon size={18} />}
+      icon={<SquareActivityIcon size={16} />}
       label={t('screen.quality')}
       content={content}
     />

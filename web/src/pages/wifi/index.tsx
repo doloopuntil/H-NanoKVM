@@ -101,7 +101,7 @@ export const Wifi = () => {
 
             <Form.Item name="apPassword">
               <Input.Password
-                prefix={<KeyRoundIcon size={14} />}
+                prefix={<KeyRoundIcon size={16} />}
                 placeholder={t('wifi.ap.passPlaceholder')}
               />
             </Form.Item>
@@ -144,19 +144,19 @@ export const Wifi = () => {
           </div>
 
           <Form.Item name="ssid">
-            <Input prefix={<WifiIcon size={14} />} placeholder="SSID" />
+            <Input prefix={<WifiIcon size={16} />} placeholder="SSID" />
           </Form.Item>
 
           <Form.Item name="password">
             <Input.Password
-              prefix={<LockIcon size={14} />}
+              prefix={<LockIcon size={16} />}
               placeholder={t('auth.placeholderPassword')}
             />
           </Form.Item>
 
           <Form.Item>
             {state === 'success' ? (
-              <Button className="w-full" type="primary" icon={<CheckIcon size={14} />}>
+              <Button className="w-full" type="primary" icon={<CheckIcon size={16} />}>
                 {t('wifi.finishBtn')}
               </Button>
             ) : (

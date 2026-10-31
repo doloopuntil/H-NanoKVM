@@ -85,5 +85,5 @@ export const Screen = () => {
     </div>
   );
 
-  return <MenuItem title={t('screen.title')} icon={<MonitorIcon size={18} />} content={content} />;
+  return <MenuItem title={t('screen.title')} icon={<MonitorIcon size={16} />} content={content} />;
 };

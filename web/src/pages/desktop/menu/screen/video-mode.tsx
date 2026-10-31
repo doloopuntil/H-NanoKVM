@@ -154,7 +154,7 @@ export const VideoMode = () => {
 
   return (
     <MenuSubmenu
-      icon={<TvMinimalPlayIcon size={18} />}
+      icon={<TvMinimalPlayIcon size={16} />}
       label={t('screen.video')}
       content={content}
       onOpenChange={(open) => {

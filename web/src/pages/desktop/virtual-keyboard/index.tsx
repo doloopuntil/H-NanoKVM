@@ -316,7 +316,7 @@ export const VirtualKeyboard = () => {
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-neutral-600 hover:bg-neutral-200"
             onClick={() => setIsKeyboardOpen(false)}
           >
-            <XIcon size={18} />
+            <XIcon size={16} />
           </button>
         </div>
 
@@ -394,7 +394,7 @@ export const VirtualKeyboard = () => {
                 className="flex h-[20px] w-[20px] cursor-pointer items-center justify-center rounded text-neutral-600 hover:bg-neutral-300 hover:text-white"
                 onClick={() => setIsKeyboardOpen(false)}
               >
-                <XIcon size={18} />
+                <XIcon size={16} />
               </div>
             </div>
           </div>

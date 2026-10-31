@@ -204,7 +204,7 @@ export const Paste = () => {
 
   return (
     <>
-      <MenuRow icon={<ClipboardIcon size={18} />} onClick={() => setIsModalOpen(true)}>
+      <MenuRow icon={<ClipboardIcon size={16} />} onClick={() => setIsModalOpen(true)}>
         {t('keyboard.paste')}
       </MenuRow>
 

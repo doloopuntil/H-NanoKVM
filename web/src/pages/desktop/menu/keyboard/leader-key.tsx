@@ -103,7 +103,7 @@ export const LeaderKey = () => {
 
   return (
     <>
-      <MenuRow icon={<CommandIcon size={18} />} onClick={openModal}>
+      <MenuRow icon={<CommandIcon size={16} />} onClick={openModal}>
         {t('keyboard.leaderKey.title')}
       </MenuRow>
 
@@ -131,7 +131,7 @@ export const LeaderKey = () => {
                   isDocCollapsed ? 'rotate-0' : 'rotate-90'
                 )}
               >
-                <ChevronRightIcon size={18} />
+                <ChevronRightIcon size={16} />
               </div>
             </div>
 

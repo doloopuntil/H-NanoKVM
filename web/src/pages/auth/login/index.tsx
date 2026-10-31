@@ -287,7 +287,7 @@ export const Login = (): ReactElement => {
                 rules={[{ required: true, message: t('auth.noEmptyUsername'), min: 1 }]}
               >
                 <Input
-                  prefix={<UserRoundIcon size={14} />}
+                  prefix={<UserRoundIcon size={16} />}
                   placeholder={t('auth.placeholderUsername')}
                 />
               </Form.Item>
@@ -297,7 +297,7 @@ export const Login = (): ReactElement => {
                 rules={[{ required: true, message: t('auth.noEmptyPassword'), min: 1 }]}
               >
                 <Input
-                  prefix={<LockIcon size={14} />}
+                  prefix={<LockIcon size={16} />}
                   type="password"
                   placeholder={t('auth.placeholderPassword')}
                 />
@@ -317,7 +317,7 @@ export const Login = (): ReactElement => {
               ]}
             >
               <Input
-                prefix={<ShieldUserIcon size={14} />}
+                prefix={<ShieldUserIcon size={16} />}
                 autoFocus
                 autoComplete="one-time-code"
                 inputMode={useBackupCode ? 'text' : 'numeric'}
@@ -335,7 +335,7 @@ export const Login = (): ReactElement => {
               rules={[{ required: true, message: t('auth.noEmptyPassword'), min: 1 }]}
             >
               <Input
-                prefix={<LockIcon size={14} />}
+                prefix={<LockIcon size={16} />}
                 type="password"
                 placeholder={t('auth.placeholderPassword2')}
               />

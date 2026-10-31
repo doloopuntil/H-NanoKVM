@@ -47,7 +47,7 @@ export const Resolution = () => {
                 placement="right"
                 overlayInnerStyle={{ width: '300px' }}
               >
-                <CircleQuestionMarkIcon size={14} />
+                <CircleQuestionMarkIcon size={16} />
               </Tooltip>
             </div>
           ) : (
@@ -63,6 +63,6 @@ export const Resolution = () => {
   );
 
   return (
-    <MenuSubmenu icon={<RatioIcon size={18} />} label={t('screen.resolution')} content={content} />
+    <MenuSubmenu icon={<RatioIcon size={16} />} label={t('screen.resolution')} content={content} />
   );
 };

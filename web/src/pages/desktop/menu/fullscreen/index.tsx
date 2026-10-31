@@ -42,7 +42,7 @@ export const Fullscreen = () => {
         className="hidden h-[30px] w-[30px] cursor-pointer items-center justify-center rounded text-neutral-300 hover:bg-neutral-700/80 hover:text-white sm:flex"
         onClick={handleFullscreen}
       >
-        {isFullscreen ? <MinimizeIcon size={18} /> : <MaximizeIcon size={18} />}
+        {isFullscreen ? <MinimizeIcon size={16} /> : <MaximizeIcon size={16} />}
       </div>
     </Tooltip>
   );

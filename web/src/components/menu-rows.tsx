@@ -78,7 +78,7 @@ export const MenuOption = forwardRef<HTMLDivElement, MenuOptionProps>(
       {...props}
     >
       <div className="flex h-[14px] w-[20px] shrink-0 items-end text-blue-500">
-        {selected && <CheckIcon size={14} />}
+        {selected && <CheckIcon size={16} />}
       </div>
       {icon && <div className="mr-1.5 flex shrink-0 items-center justify-center">{icon}</div>}
       <div className="flex items-center">{children}</div>

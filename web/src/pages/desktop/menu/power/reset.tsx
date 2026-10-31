@@ -29,7 +29,7 @@ export const Reset = ({ showConfirm, isLoading, setIsLoading }: ResetProps) => {
   }
 
   const row = (
-    <MenuRow icon={<RotateCcwIcon size={18} />} onClick={showConfirm ? undefined : reset}>
+    <MenuRow icon={<RotateCcwIcon size={16} />} onClick={showConfirm ? undefined : reset}>
       {t('power.reset')}
     </MenuRow>
   );

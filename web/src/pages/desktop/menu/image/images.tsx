@@ -301,9 +301,9 @@ export const Images = ({
           size="small"
           icon={
             isReconnecting ? (
-              <LoaderCircleIcon className="animate-spin" size={14} />
+              <LoaderCircleIcon className="animate-spin" size={16} />
             ) : (
-              <CableIcon size={14} />
+              <CableIcon size={16} />
             )
           }
           loading={isReconnecting}
@@ -319,7 +319,7 @@ export const Images = ({
     if (isLoading) {
       return (
         <div className="flex items-center justify-center space-x-2 py-5 text-neutral-400">
-          <LoaderCircleIcon className="animate-spin" size={18} />
+          <LoaderCircleIcon className="animate-spin" size={16} />
           <span className="text-sm">{t('image.loading')}</span>
         </div>
       );
@@ -328,7 +328,7 @@ export const Images = ({
     if (images.length === 0) {
       return (
         <div className="flex items-center justify-center space-x-2 py-5 text-neutral-500">
-          <PackageSearchIcon size={18} />
+          <PackageSearchIcon size={16} />
           <span className="text-sm">
             {isListFailed ? t('common.actionFailed') : t('image.empty')}
           </span>
@@ -350,9 +350,9 @@ export const Images = ({
           >
             <div className="flex h-[24px] w-[24px] items-center justify-center">
               {mountingImage === image ? (
-                <LoaderCircleIcon className="animate-spin" size={18} />
+                <LoaderCircleIcon className="animate-spin" size={16} />
               ) : (
-                <PackageIcon size={18} />
+                <PackageIcon size={16} />
               )}
             </div>
 
@@ -381,7 +381,10 @@ export const Images = ({
               >
                 <div className="flex h-[24px] w-[24px] items-center justify-center rounded">
                   {mountedImage === image ? (
-                    <EjectIcon size={20} className="text-red-500 opacity-60 group-hover:opacity-100" />
+                    <EjectIcon
+                      size={20}
+                      className="text-red-500 opacity-60 group-hover:opacity-100"
+                    />
                   ) : (
                     <HardDriveDownloadIcon
                       size={20}

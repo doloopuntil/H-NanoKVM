@@ -46,7 +46,7 @@ export const MouseMode = () => {
 
   return (
     <MenuSubmenu
-      icon={<SquareDashedMousePointerIcon size={18} />}
+      icon={<SquareDashedMousePointerIcon size={16} />}
       label={t('mouse.mode')}
       content={content}
     />

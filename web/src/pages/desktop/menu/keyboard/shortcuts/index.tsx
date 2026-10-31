@@ -106,7 +106,7 @@ export const Shortcuts = () => {
 
   return (
     <MenuSubmenu
-      icon={<ZapIcon size={18} />}
+      icon={<ZapIcon size={16} />}
       label={t('keyboard.shortcut.title')}
       content={content}
       open={isOpen}

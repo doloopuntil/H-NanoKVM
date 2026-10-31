@@ -565,7 +565,7 @@ export const DNS = forwardRef<NetworkSectionHandle, DNSProps>(
                         }}
                         onClick={tag.onClose}
                       >
-                        <XIcon size={12} />
+                        <XIcon size={16} />
                       </span>
                     )}
                   </span>
