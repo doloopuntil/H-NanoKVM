@@ -39,6 +39,7 @@ verify_prepare_hash() {
 }
 
 require_line 'BR2_REPRODUCIBLE=y' "$DEFCONFIG"
+require_line 'BR2_ROOTFS_POST_FAKEROOT_SCRIPT="$(BR2_EXTERNAL_HARDENED_SG2002_PATH)/board/sg2002/post-fakeroot.sh"' "$DEFCONFIG"
 require_line 'BR2_STRIP_EXCLUDE_FILES="NanoKVM-Server nanokvm-hwmon kvm_system libkvm.so libkvm_mmf.so soph_vcodec.ko soph_jpeg.ko soph_vc_driver.ko"' "$DEFCONFIG"
 require_line '# BR2_TARGET_ENABLE_ROOT_LOGIN is not set' "$DEFCONFIG"
 reject_text 'BR2_TARGET_GENERIC_ROOT_PASSWD=' "$DEFCONFIG"
