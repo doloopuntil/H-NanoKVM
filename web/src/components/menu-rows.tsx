@@ -31,7 +31,7 @@ type MenuRowProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & {
   children: ReactNode;
 };
 
-// A row that does something, or opens something: an 18px icon and a label, 30px tall.
+// A row that does something, or opens something: a 16px icon in an 18px box and a label, 30px tall.
 export const MenuRow = forwardRef<HTMLDivElement, MenuRowProps>(
   ({ icon, active, danger, disabled, className, children, ...props }, ref) => (
     <div

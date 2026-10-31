@@ -230,10 +230,11 @@ and the dialog and toast helpers in `web/src/lib/feedback.ts`.
     as Device (788px to 1038px, by board), scroll inside the window. Measure again
     and change the number if the Monitor page gets taller or shorter.
 37. Icons come from `lucide-react` (the GitHub, Apple and Windows logos from
-    `@ant-design/icons`) and use one of these sizes: 10 or 12 for a badge or inline
-    mark, 14 for a settings tab, an input prefix or a help icon, 16 for a button or
-    a small row, 18 for a menu row, 20 for a row action (eject, delete), 24 for a
-    loading or empty state. The cursor drawn over the remote screen is the exception.
+    `@ant-design/icons`) and are 16px, to go with the 14px text. Exceptions: 10 or
+    12 for a badge or a mark inside a chip or a line of text, and 24 for a loading,
+    empty or feature state. The cursor drawn over the remote screen has its own size.
+    A hit area can be larger than the icon (24px for a row action, 18px for the
+    icon box of a menu row); the icon stays 16px inside it.
 
 ## Menu bar popovers
 
@@ -243,8 +244,8 @@ surface from the Settings pages and are built from `components/menu-rows.tsx`:
 - Every popover starts with `MenuHeader`: the title of the entry and a hairline.
   What sits on the right of the title (the Upload button of Scripts, the
   Confirmation switch of Power) is its children.
-- A row that does something or opens something is a `MenuRow`: an 18px icon and
-  a label, 30px tall. A row that opens a list of options is a `MenuSubmenu`, which
+- A row that does something or opens something is a `MenuRow`: a 16px icon in an
+  18px box and a label, 30px tall. A row that opens a list of options is a `MenuSubmenu`, which
   has the same box. An entry that is switched on shows in blue (`active`).
 - A list of options is `MenuOption` rows: a blue check in front of the chosen
   one, nothing else marks the choice. An option may carry a small icon.
@@ -280,7 +281,7 @@ The Images dialog (`menu/image/`) is the one dialog that departs from the rules 
   an `Alert` (rule 24), and a failure is a `toast` (rule 26).
 - The image list shows three rows (`max-h-[120px]`) and scrolls beyond that, with a thin scrollbar on a
   transparent track. Each row ends with a mount icon (`HardDriveDownloadIcon`, blue) or an eject
-  icon (red) and a delete icon, 20px, with the drawn icons 8px apart and 8px from the type chip.
+  icon (red) and a delete icon, 16px in 24px hit areas, with the drawn icons 8px apart and 8px from the type chip.
 - On a phone the dialog is not centred, so that the keyboard does not cover the URL box.
 
 The PicoClaw sidebar is part of the menu bar and follows the same rules where it can:
