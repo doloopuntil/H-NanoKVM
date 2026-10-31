@@ -10,6 +10,7 @@ LOCAL_IPV4_CIDRS="10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 169.254.0.0/16"
 LOCAL_IPV4_LOOPBACK_CIDRS="127.0.0.0/8"
 LOCAL_IPV6_CIDRS="fc00::/7 fe80::/10"
 LOCAL_IPV6_LOOPBACK_CIDRS="::1/128"
+USB_MANAGEMENT=/etc/kvm/usb_management
 
 firewall_mode() {
     [ -r "$CONFIG_FILE" ] || {
@@ -312,6 +313,17 @@ apply_paranoid() {
     apply_paranoid_ipv6
 }
 
+# usb0 leads to the computer under control. In every mode its new connections stop at the head of
+# the chain, ahead of any rule that would take them by address, unless the operator opened
+# management to it by creating $USB_MANAGEMENT.
+close_usb_management() {
+    [ -e "$USB_MANAGEMENT" ] && return 0
+    iptables -I INPUT 1 -i usb0 -m state --state NEW -j DROP 2>/dev/null || true
+    if command -v ip6tables >/dev/null 2>&1; then
+        ip6tables -I INPUT 1 -i usb0 -m state --state NEW -j DROP 2>/dev/null || true
+    fi
+}
+
 start() {
     printf 'Starting firewall: '
     case "$(firewall_mode)" in
@@ -321,12 +333,14 @@ start() {
         paranoid) apply_paranoid ;;
         *) apply_moderate ;;
     esac
+    close_usb_management
     echo OK
 }
 
 stop() {
     printf 'Stopping firewall: '
     apply_baseline
+    close_usb_management
     echo 'baseline'
 }
 
