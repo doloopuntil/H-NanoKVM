@@ -534,7 +534,7 @@ export const DNS = forwardRef<NetworkSectionHandle, DNSProps>(
 
             <div className="flex min-w-0 flex-col space-y-2 sm:shrink-0 sm:items-end">
               <Select
-                className="w-full sm:w-96 [&_.ant-select-selection-overflow]:justify-end"
+                className="w-full sm:w-96 [&_.ant-select-content]:justify-end"
                 mode="tags"
                 open={false}
                 tokenSeparators={[',', ' ']}

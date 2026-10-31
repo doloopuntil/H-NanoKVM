@@ -92,7 +92,7 @@ body {
   max-width: 100%;
 }
 
-.settings-modal-mobile .ant-alert-message,
+.settings-modal-mobile .ant-alert-title,
 .settings-modal-mobile .ant-alert-description,
 .settings-modal-mobile .ant-typography {
   overflow-wrap: anywhere;

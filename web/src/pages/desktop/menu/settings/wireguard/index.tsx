@@ -360,7 +360,7 @@ export const Wireguard = () => {
               inline
             >
               <Select
-                className="w-36 sm:w-56 [&_.ant-select-selection-overflow]:justify-end [&_.ant-select-selection-placeholder]:text-right"
+                className="w-36 sm:w-56 [&_.ant-select-content]:justify-end [&_.ant-select-placeholder]:text-right"
                 mode="tags"
                 open={false}
                 tokenSeparators={[',', ' ']}

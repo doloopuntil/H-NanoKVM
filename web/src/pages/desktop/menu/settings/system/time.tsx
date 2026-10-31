@@ -181,7 +181,7 @@ export const TimeSettings = forwardRef<SystemActionHandle, TimeSettingsProps>(
               inline
             >
               <Select
-                className="w-44 sm:w-72 [&_.ant-select-selection-overflow]:justify-end"
+                className="w-44 sm:w-72 [&_.ant-select-content]:justify-end"
                 mode="tags"
                 open={false}
                 disabled={!config.ntpEnabled}
@@ -253,7 +253,7 @@ export const TimeSettings = forwardRef<SystemActionHandle, TimeSettingsProps>(
                     .toLowerCase()
                     .includes(input.toLowerCase())
                 }
-                className="w-44 text-right sm:w-72 [&_.ant-select-selection-search-input]:text-right"
+                className="w-44 text-right sm:w-72 [&_.ant-select-input]:text-right"
               />
             </SettingRow>
           </SettingSection>
