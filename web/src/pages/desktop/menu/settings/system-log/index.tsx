@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/system-log.ts';
 import type { SystemLogConfig } from '@/api/system-log.ts';
+import { rightAlignedNumber } from '@/lib/antd-styles.ts';
 import { toast } from '@/lib/feedback.ts';
 import { useSettingsLoadState } from '@/hooks/useSettingsLoad.ts';
 import { SectionDivider, SettingRow } from '@/components/setting-rows.tsx';
@@ -243,7 +244,8 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
                   disabled={!config.remoteEnabled}
                   value={config.remotePort}
                   onChange={(value) => patchConfig({ remotePort: value || 514 })}
-                  className="w-20 [&_.ant-input-number-input]:text-right"
+                  className="w-20"
+                  styles={rightAlignedNumber}
                 />
               </SettingRow>
             </div>
@@ -281,7 +283,8 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
                     controls={false}
                     value={config.bufferKb}
                     onChange={(value) => patchConfig({ bufferKb: value || 200 })}
-                    className="w-20 [&_.ant-input-number-input]:text-right"
+                    className="w-20"
+                    styles={rightAlignedNumber}
                   />
                   <Space.Addon className="w-12 text-center">KiB</Space.Addon>
                 </Space.Compact>
@@ -297,7 +300,8 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
                   controls={false}
                   value={config.rotations}
                   onChange={(value) => patchConfig({ rotations: value || 0 })}
-                  className="w-16 [&_.ant-input-number-input]:text-right"
+                  className="w-16"
+                  styles={rightAlignedNumber}
                 />
               </SettingRow>
               <SettingRow

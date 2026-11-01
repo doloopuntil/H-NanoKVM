@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/system-time.ts';
 import type { TimeConfig, TimeConfigResponse } from '@/api/system-time.ts';
+import { rightAlignedTags } from '@/lib/antd-styles.ts';
 import { toast } from '@/lib/feedback.ts';
 import { useSettingsLoadState } from '@/hooks/useSettingsLoad.ts';
 import { SectionDivider, SettingRow, SettingSection } from '@/components/setting-rows.tsx';
@@ -181,7 +182,7 @@ export const TimeSettings = forwardRef<SystemActionHandle, TimeSettingsProps>(
               inline
             >
               <Select
-                className="w-44 pr-1.75 sm:w-72 [&_.ant-select-content]:mr-0 [&_.ant-select-content]:justify-end [&_.ant-select-content-item-suffix]:-ml-1"
+                className={`w-44 sm:w-72 ${rightAlignedTags}`}
                 mode="tags"
                 open={false}
                 disabled={!config.ntpEnabled}

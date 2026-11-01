@@ -210,7 +210,9 @@ and the dialog and toast helpers in `web/src/lib/feedback.ts`.
 32. Tailwind 4 runs with its preflight. The layers are declared in
     `assets/styles/index.css` as `theme, base, antd, components, utilities`, and
     antd renders into the `antd` layer (`StyleProvider layer` in `main.tsx`), so
-    preflight never restyles antd and a utility overrides antd without `!`.
+    preflight never restyles antd and a utility overrides antd without `!`. Use `!`
+    only against an inline style, which no layer beats (Radix sets `display: table`
+    on the Settings scroll area).
     Preflight makes every box border-box, gives every border a solid style
     (`border-b border-white/[0.06]` draws a line on its own) and removes default
     margins, padding and list markers: a list is `my-2 list-disc pl-10` (or
@@ -242,17 +244,20 @@ and the dialog and toast helpers in `web/src/lib/feedback.ts`.
     state. The cursor drawn over the remote screen has its own size.
     A hit area can be larger than the icon (24px for a row action, 18px for the
     icon box of a menu row); the icon stays 16px inside it.
-37. The app uses antd 6, which renamed parts of its DOM. A CSS override that reaches into
-    antd's markup must use the new names: `.ant-select-content` (the flex row of a
-    multiple select's tags), `.ant-select-content-value` (the value of a single select),
+37. The app uses antd 6, which names the parts of its components. Style a part through
+    the component's `styles` or `classNames` prop where antd names it (`rightAlignedNumber`
+    in `lib/antd-styles.ts` styles a number input's `input`). Where a part has no name, a
+    Tailwind selector into the markup is fine, using antd 6's class names:
+    `.ant-select-content` (the flex row of a multiple select's tags),
+    `.ant-select-content-value` (the value of a single select),
     `.ant-select-placeholder`, `.ant-select-input`, `.ant-alert-title` and
     `.ant-modal-container` (there is no `.ant-modal-content`). The classes are not
     type-checked, so a stale one only shows as a layout change: look at the page. Also:
     - A `Tooltip` or `Popover` `className` styles the popup, not the trigger; put the
       class on the child (see `LabelTip`).
     - A multiple select (tags) adds padding and an empty slot after the last tag; the three
-      tag fields cancel both (`!pr-[7px]`, `-ml-1` on `.ant-select-content-item-suffix`) so
-      their tags stay flush right (rule 8).
+      tag fields cancel both with the shared `rightAlignedTags` classes
+      (`lib/antd-styles.ts`) so their tags stay flush right (rule 8).
     - A dialog focuses its close button when it opens, so the button shows a focus ring.
       This is accepted.
     - Use the v6 prop names: `title` on `Alert` and notifications, `actions` for a

@@ -4,6 +4,7 @@ import { useAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/vm.ts';
+import { rightAlignedNumber } from '@/lib/antd-styles.ts';
 import { attempt } from '@/lib/feedback.ts';
 import { isHdmiEnabledAtom } from '@/jotai/screen.ts';
 import { useSettingsLoad } from '@/hooks/useSettingsLoad.ts';
@@ -96,7 +97,8 @@ export const Hdmi = () => {
       >
         <Space.Compact>
           <InputNumber
-            className="w-20 [&_.ant-input-number-input]:text-right"
+            className="w-20"
+            styles={rightAlignedNumber}
             min={0}
             max={10080}
             precision={0}

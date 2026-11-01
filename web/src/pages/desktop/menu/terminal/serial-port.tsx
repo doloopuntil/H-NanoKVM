@@ -4,6 +4,7 @@ import { useSetAtom } from 'jotai';
 import { SquareTerminalIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import { rightAlignedNumber } from '@/lib/antd-styles.ts';
 import { isKeyboardEnableAtom } from '@/jotai/keyboard.ts';
 import { DialogAction } from '@/components/dialog-parts.tsx';
 import { MenuRow } from '@/components/menu-rows.tsx';
@@ -95,7 +96,8 @@ export const SerialPort = () => {
 
           <SettingRow label={t('terminal.baudrate')} inline>
             <InputNumber
-              className="w-32 [&_.ant-input-number-input]:text-right"
+              className="w-32"
+              styles={rightAlignedNumber}
               controls={false}
               min={1}
               value={baudrate}

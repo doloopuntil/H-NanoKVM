@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/system-wireguard.ts';
 import type { WireguardConfig, WireguardStatus } from '@/api/system-wireguard.ts';
+import { rightAlignedNumber, rightAlignedTags } from '@/lib/antd-styles.ts';
 import { discardOnEscape } from '@/lib/discard.ts';
 import { attempt, confirm, toast } from '@/lib/feedback.ts';
 import { useSettingsLoadState } from '@/hooks/useSettingsLoad.ts';
@@ -340,7 +341,8 @@ export const Wireguard = () => {
               inline
             >
               <InputNumber
-                className="w-20 [&_.ant-input-number-input]:text-right"
+                className="w-20"
+                styles={rightAlignedNumber}
                 controls={false}
                 min={1}
                 max={65535}
@@ -359,7 +361,7 @@ export const Wireguard = () => {
               inline
             >
               <Select
-                className="w-36 pr-1.75 sm:w-56 [&_.ant-select-content]:mr-0 [&_.ant-select-content]:justify-end [&_.ant-select-content-item-suffix]:-ml-1 [&_.ant-select-placeholder]:text-right"
+                className={`w-36 sm:w-56 ${rightAlignedTags}`}
                 mode="tags"
                 open={false}
                 tokenSeparators={[',', ' ']}
@@ -378,7 +380,8 @@ export const Wireguard = () => {
             >
               <Space.Compact>
                 <InputNumber
-                  className="w-24 sm:w-20 [&_.ant-input-number-input]:text-right"
+                  className="w-24 sm:w-20"
+                  styles={rightAlignedNumber}
                   controls={false}
                   min={0}
                   max={65535}

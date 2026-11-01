@@ -51,7 +51,8 @@ Details and known failures: [docs/development/testing.md](docs/development/testi
 - **Tailwind 4 and antd share cascade layers**
   (`@layer theme, base, antd, components, utilities` in `web/src/assets/styles/index.css`;
   antd joins through `StyleProvider layer` in `main.tsx`). Preflight is on and
-  cannot restyle antd; utilities override antd without `!`. Keep that order.
+  cannot restyle antd; utilities override antd without `!`, which only beats inline
+  styles. Keep that order. Style antd's inner parts through its `styles` prop where antd names them.
 - **Image workflow**: do not reintroduce downloads of published Hardened
   artifacts (the raw.12 system, the 2.0.42 app archive); `libkvm` and
   `kvm_system` are built from source. The `build/rc12-run` path name is a

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/network.ts';
 import type { DNSMode } from '@/api/network.ts';
+import { rightAlignedTags } from '@/lib/antd-styles.ts';
 import { useSettingsLoad } from '@/hooks/useSettingsLoad.ts';
 import { EditableInfoRow, InfoRow, SectionDivider } from '@/components/setting-rows.tsx';
 
@@ -534,7 +535,7 @@ export const DNS = forwardRef<NetworkSectionHandle, DNSProps>(
 
             <div className="flex min-w-0 flex-col gap-2 sm:shrink-0 sm:items-end">
               <Select
-                className="w-full pr-1.75 sm:w-96 [&_.ant-select-content]:mr-0 [&_.ant-select-content]:justify-end [&_.ant-select-content-item-suffix]:-ml-1"
+                className={`w-full sm:w-96 ${rightAlignedTags}`}
                 mode="tags"
                 open={false}
                 tokenSeparators={[',', ' ']}
