@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-31
+last-checked: 2026-11-01
 ---
 
 # Testing
@@ -35,16 +35,39 @@ corepack pnpm --dir web build
 `translations.test.ts` guards every language file against the English one and
 the copy rules. See [Web UI](web.md).
 
-To check a page without a device, build the UI and serve `web/dist` from a small
-local server that answers the `/api/...` calls the page makes; MSW's mocked mode
-(`pnpm mocked`) is an alternative in a normal browser.
+To look at a page without a device, use the screenshot check below, or MSW's mocked
+mode (`pnpm mocked`) in a normal browser.
+
+### Screenshot check
+
+`web/scripts/ui-check/` serves a built `dist` with mocked `/api/...` answers
+(`mock-api.mjs`) and screenshots it in Chromium through Playwright, at 1280px and at
+390px in the touch layout: the sign-in pages, the menu bar popovers, the Shortcuts,
+Leader key and image tips dialogs, and every Settings page, scrolled. Run it on the
+build before and after a styling change and compare:
+
+```sh
+corepack pnpm --dir web exec playwright install chromium   # once
+corepack pnpm --dir web build
+corepack pnpm --dir web ui:shots dist /tmp/ui-after
+# build the base branch in a worktree, then:
+corepack pnpm --dir web ui:shots /path/to/base/web/dist /tmp/ui-before
+corepack pnpm --dir web ui:compare /tmp/ui-before /tmp/ui-after --out /tmp/ui-diff
+```
+
+`ui:shots` exits non-zero when a page crashes, throws, or calls an endpoint the mock
+does not answer; `report.txt` names them. A page that reads a new endpoint needs an
+answer in `mock-api.mjs`, with values in the documentation ranges (192.0.2.0/24,
+2001:db8::/32, example.com). The answers are fixed, so two runs of one build compare
+equal. `ui:compare` lets each 128px tile move a few pixels and ignores sub-pixel text
+shifts, then lists what still differs, largest first; `--out` writes before, after and
+the changes in red for each one. Pages are found by their English titles, so a renamed
+page or menu item needs the same change in `shots.mjs`.
 
 ### Layout check across languages (to set up)
 
-Playwright is not a dependency of the repository yet. Install it
-(`corepack pnpm --dir web add -D playwright`, then `npx playwright install chromium`) and add a
-script that serves `web/dist` with mocked `/api/...` answers, opens Settings in the touch layout
-(375px wide, touch and mobile on) for each of the 26 languages and each of the 14 pages, and flags:
+Extend the screenshot check: open Settings in the touch layout
+(375px wide, touch and mobile on) for each of the 26 languages and each of the 14 pages, and flag:
 
 - a label that overlaps its control, or any element that runs past the screen edge;
 - a word of the five main navigation labels that breaks in the middle;
@@ -54,8 +77,9 @@ script that serves `web/dist` with mocked `/api/...` answers, opens Settings in 
 
 English must report no clash and no broken navigation label. A first run, done by hand with
 Playwright on 2026-10-30, found 0 clashes in 2,548 rows and 5 broken navigation labels, which are
-fixed; it also counted 61 wrapped labels, which are fine and stay at that number. The mock has to answer the firewall and certificate endpoints fully, or those pages
-crash and are not measured. Rerun it after a change to a label or to the text of a control.
+fixed; it also counted 61 wrapped labels, which are fine and stay at that number. The
+screenshot check's mock already answers every Settings page. Rerun it after a change to a label
+or to the text of a control.
 
 ## Shell scripts
 
