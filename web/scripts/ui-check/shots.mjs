@@ -253,8 +253,18 @@ async function settings(layout) {
     } catch (e) {
       fail(e);
     }
-    // the page scrolls inside the dialog: one shot per screenful
-    const viewport = page.locator('.ant-modal [data-slot="scroll-area-viewport"]').last();
+    // the page scrolls inside the dialog: mark its largest scrolling box, one shot per screenful
+    await page.evaluate(() => {
+      document.querySelector('[data-ui-check-scroll]')?.removeAttribute('data-ui-check-scroll');
+      const boxes = [...document.querySelectorAll('.ant-modal *')].filter(
+        (e) =>
+          /auto|scroll/.test(getComputedStyle(e).overflowY) && e.scrollHeight > e.clientHeight + 1
+      );
+      boxes
+        .sort((a, b) => b.clientHeight - a.clientHeight)[0]
+        ?.setAttribute('data-ui-check-scroll', '');
+    });
+    const viewport = page.locator('[data-ui-check-scroll]');
     const [scrollHeight, clientHeight] = await viewport
       .evaluate((e) => [e.scrollHeight, e.clientHeight], null, { timeout: 2000 })
       .catch(() => [0, 0]);

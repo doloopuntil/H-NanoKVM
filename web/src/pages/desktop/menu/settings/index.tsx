@@ -381,12 +381,11 @@ export const Settings = () => {
           <ScrollArea
             viewportRef={scrollViewportRef}
             className={clsx(
-              // block! beats the display: table that Radix sets inline on the viewport's child
-              'bg-settings-panel w-full max-w-full overflow-x-hidden [&_[data-slot=scroll-area-scrollbar]]:w-1.5 [&_[data-slot=scroll-area-scrollbar]]:p-0 [&_[data-slot=scroll-area-thumb]]:bg-neutral-500/30 [&_[data-slot=scroll-area-viewport]>div]:block!',
+              'bg-settings-panel w-full max-w-full overflow-x-hidden overscroll-x-none',
               isTouchLayout ? 'min-h-0 flex-1 rounded-none px-4' : 'h-full rounded-r-lg px-6'
             )}
           >
-            <div className="flex size-full min-w-0 justify-center">
+            <div className="flex min-h-full w-full min-w-0 justify-center">
               <div
                 className={clsx(
                   'min-w-0',

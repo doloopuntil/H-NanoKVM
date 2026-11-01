@@ -211,10 +211,9 @@ and the dialog and toast helpers in `web/src/lib/feedback.ts`.
     `assets/styles/index.css` as `theme, base, antd, components, utilities`, and
     antd renders into the `antd` layer (`StyleProvider layer` in `main.tsx`), so
     preflight never restyles antd and a utility overrides antd without `!`. Use `!`
-    only against an inline style, which no layer beats (Radix sets `display: table`
-    on the Settings scroll area).
+    only against an inline style, which no layer beats.
     Preflight makes every box border-box, gives every border a solid style
-    (`border-b border-white/[0.06]` draws a line on its own) and removes default
+    (`border-b border-white/6` draws a line on its own) and removes default
     margins, padding and list markers: a list is `my-2 list-disc pl-10` (or
     `list-decimal`), the browser's 40px indent; inside a confirmation dialog or a
     PicoClaw chat bubble, where width is short, it is `pl-5`. Prefer these

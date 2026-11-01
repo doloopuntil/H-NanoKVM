@@ -18,6 +18,7 @@ import { attempt, confirm, toast } from '@/lib/feedback.ts';
 import { IMAGE_LIST_CHANGED_EVENT } from '@/lib/image-events.ts';
 import { formatBytes } from '@/lib/image-transfer.ts';
 import { client } from '@/lib/websocket.ts';
+import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 
 type ImagesProps = {
   isOpen: boolean;
@@ -338,7 +339,7 @@ export const Images = ({
 
     return (
       // three images show, the rest scroll; a thin scrollbar on a transparent track
-      <div className="flex max-h-30 scrollbar-thin [scrollbar-color:var(--color-neutral-600)_transparent] flex-col overflow-y-auto pr-1">
+      <ScrollArea className="flex max-h-30 flex-col pr-1">
         {images.map((image) => (
           <div
             key={image}
@@ -411,7 +412,7 @@ export const Images = ({
             </div>
           </div>
         ))}
-      </div>
+      </ScrollArea>
     );
   }
 };

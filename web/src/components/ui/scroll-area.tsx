@@ -1,57 +1,27 @@
 import * as React from 'react';
-import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area';
 import clsx from 'clsx';
 
+// A box that scrolls vertically with a thin scrollbar on the dark panels. Chrome and Safari draw
+// it from the ::-webkit-scrollbar variants, which have no arrow buttons; Chrome would ignore them
+// if scrollbar-width or scrollbar-color were set, so those apply only where ::-webkit-scrollbar
+// does not exist (Firefox).
 function ScrollArea({
   className,
   viewportRef,
-  children,
   ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
-  viewportRef?: React.Ref<HTMLDivElement>;
-}) {
+}: React.ComponentProps<'div'> & { viewportRef?: React.Ref<HTMLDivElement> }) {
   return (
-    <ScrollAreaPrimitive.Root
-      data-slot="scroll-area"
-      className={clsx('relative', className)}
-      {...props}
-    >
-      <ScrollAreaPrimitive.Viewport
-        ref={viewportRef}
-        data-slot="scroll-area-viewport"
-        className="size-full rounded-[inherit] outline-hidden transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1"
-      >
-        {children}
-      </ScrollAreaPrimitive.Viewport>
-      <ScrollBar />
-      <ScrollAreaPrimitive.Corner />
-    </ScrollAreaPrimitive.Root>
-  );
-}
-
-function ScrollBar({
-  className,
-  orientation = 'vertical',
-  ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>) {
-  return (
-    <ScrollAreaPrimitive.ScrollAreaScrollbar
-      data-slot="scroll-area-scrollbar"
-      orientation={orientation}
+    <div
+      ref={viewportRef}
       className={clsx(
-        'flex touch-none p-px transition-colors select-none',
-        orientation === 'vertical' && 'h-full w-2 border-l border-l-transparent',
-        orientation === 'horizontal' && 'h-2 flex-col border-t border-t-transparent',
+        'overflow-y-auto',
+        '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-600 [&::-webkit-scrollbar-track]:bg-transparent',
+        '[@supports_not_selector(::-webkit-scrollbar)]:scrollbar-thin [@supports_not_selector(::-webkit-scrollbar)]:[scrollbar-color:var(--color-neutral-600)_transparent]',
         className
       )}
       {...props}
-    >
-      <ScrollAreaPrimitive.ScrollAreaThumb
-        data-slot="scroll-area-thumb"
-        className="relative flex-1 rounded-full bg-neutral-500/30"
-      />
-    </ScrollAreaPrimitive.ScrollAreaScrollbar>
+    />
   );
 }
 
-export { ScrollArea, ScrollBar };
+export { ScrollArea };

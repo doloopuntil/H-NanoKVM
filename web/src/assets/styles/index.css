@@ -86,16 +86,6 @@ body {
   line-height: 1.2;
 }
 
-.settings-modal-mobile [data-slot='scroll-area-viewport'] {
-  max-width: 100%;
-  overflow-x: hidden;
-  overscroll-behavior-x: none;
-}
-
-.settings-modal-mobile [data-slot='scroll-area-viewport'] > div {
-  max-width: 100%;
-}
-
 .settings-modal-mobile .ant-alert-title,
 .settings-modal-mobile .ant-alert-description,
 .settings-modal-mobile .ant-typography {
@@ -112,22 +102,25 @@ body {
   flex-shrink: 0;
 }
 
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: #000000;
-}
-::-webkit-scrollbar-corner {
-  background: #000000;
-}
-::-webkit-scrollbar-thumb {
-  background: #555;
-  border-radius: 5px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #444;
+/* The page's scrollbars; in the base layer so a component's scrollbar utilities override them. */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #000000;
+  }
+  ::-webkit-scrollbar-corner {
+    background: #000000;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 5px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #444;
+  }
 }
 
 .hardened-login-logo {
