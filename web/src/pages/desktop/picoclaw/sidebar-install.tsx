@@ -31,7 +31,7 @@ export const SidebarInstall = ({
     >
       {isInstalling ? (
         <div className="w-full text-left">
-          <div className="mb-2 flex items-center justify-between text-[11px] text-neutral-500">
+          <div className="mb-2 flex items-center justify-between text-xs text-neutral-500">
             <span>{t(`picoclaw.install.stages.${installStage || 'downloading'}`)}</span>
             <span>{installProgress ?? 0}%</span>
           </div>

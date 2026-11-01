@@ -27,7 +27,7 @@ export const Meter = ({
         <span className="text-sm text-neutral-300">{label}</span>
         <span className="text-xs wrap-break-word text-neutral-500">{caption}</span>
       </div>
-      <div className="shrink-0 text-[15px] whitespace-nowrap text-neutral-200 tabular-nums">
+      <div className="shrink-0 text-sm whitespace-nowrap text-neutral-200 tabular-nums">
         {value}
       </div>
     </div>
@@ -67,7 +67,7 @@ export const SplitMeter = ({
           <span className="text-sm text-neutral-300">{label}</span>
           <span className="text-xs wrap-break-word text-neutral-500">{caption}</span>
         </div>
-        <div className="shrink-0 text-[15px] whitespace-nowrap text-neutral-200 tabular-nums">
+        <div className="shrink-0 text-sm whitespace-nowrap text-neutral-200 tabular-nums">
           {value}
         </div>
       </div>

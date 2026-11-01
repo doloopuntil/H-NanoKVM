@@ -133,7 +133,7 @@ export const SidebarHistory = ({
                       }}
                     />
                   </div>
-                  <div className="mt-2 flex items-center gap-3 text-[11px] text-neutral-600">
+                  <div className="mt-2 flex items-center gap-3 text-xs text-neutral-600">
                     <span>{formatSessionTime(session.updated)}</span>
                     <span>
                       {t('picoclaw.history.messageCount', { count: session.message_count })}
