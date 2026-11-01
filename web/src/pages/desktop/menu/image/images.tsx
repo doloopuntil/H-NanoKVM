@@ -364,7 +364,7 @@ export const Images = ({
             )}
             <div
               className={clsx(
-                'mr-1 rounded border border-solid px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none',
+                'mr-0.5 rounded border border-solid px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none',
                 isImageCdrom(image)
                   ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
                   : 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
