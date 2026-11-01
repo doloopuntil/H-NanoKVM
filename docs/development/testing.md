@@ -70,7 +70,7 @@ Extend the screenshot check: open Settings in the touch layout
 (375px wide, touch and mobile on) for each of the 26 languages and each of the 14 pages, and flag:
 
 - a label that overlaps its control, or any element that runs past the screen edge;
-- a word of the five main navigation labels that breaks in the middle;
+- a navigation tab whose label is cut, or that runs past the screen edge;
 - a label that wraps to a second line only as information: the rules allow it beside a
   switch and a badge may drop under its text, so it is not a failure, and the count will not
   go to zero.

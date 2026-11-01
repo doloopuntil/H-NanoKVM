@@ -202,8 +202,11 @@ and the dialog and toast helpers in `web/src/lib/feedback.ts`.
     browser they use); Network holds IP & DNS, Services, Firewall,
     WireGuard and Tailscale; System holds Time, Logging, Performance, Monitor and
     Updates. The first subpage of a group is the one a touch layout opens when
-    the group is chosen. The touch layout shows the five main items on one row,
-    so their names stay short.
+    the group is chosen. The touch layout shows the main items and a group's
+    subpages as wrapping rows of tabs, each as wide as its label: a label never
+    wraps or breaks, and a row splits in two only when the labels do not fit (at
+    390px only the System subpages in Russian and Ukrainian). Names stay short so
+    that it stays rare.
 
 ## Technical rules
 

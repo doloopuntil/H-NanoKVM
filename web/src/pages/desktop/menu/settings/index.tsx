@@ -239,7 +239,7 @@ export const Settings = () => {
       <span
         className={clsx(
           isTouchLayout
-            ? 'mt-1 block text-center text-[11px] leading-tight wrap-anywhere'
+            ? 'mt-1 block text-center text-xs leading-tight whitespace-nowrap'
             : 'hidden truncate text-sm sm:block'
         )}
       >
@@ -253,7 +253,7 @@ export const Settings = () => {
         className={clsx(
           'cursor-pointer rounded-lg select-none',
           isTouchLayout
-            ? 'flex min-w-0 flex-auto flex-col items-center justify-center px-1 py-2'
+            ? 'flex flex-auto flex-col items-center justify-center px-1 py-2'
             : clsx('flex items-center gap-2 sm:px-3', isChild ? 'py-1.5 pl-2 sm:pl-8' : 'p-2'),
           // on the desktop a group is only a label; its subpage carries the selection
           isActive && (!tab.children || isTouchLayout)
@@ -357,7 +357,7 @@ export const Settings = () => {
             <div
               className={clsx(
                 isTouchLayout
-                  ? 'grid grid-cols-5 gap-1 px-1 pb-2'
+                  ? 'flex flex-wrap gap-1 px-1 pb-2'
                   : 'flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pb-3'
               )}
             >
