@@ -3,11 +3,11 @@ import { Button, Divider, Tooltip, Typography } from 'antd';
 import clsx from 'clsx';
 import {
   CableIcon,
-  ImportIcon,
+  HardDriveDownloadIcon,
+  HardDriveUploadIcon,
   LoaderCircleIcon,
   PackageIcon,
   PackageSearchIcon,
-  ShareIcon,
   Trash2Icon
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -381,12 +381,12 @@ export const Images = ({
               >
                 <div className="flex h-[24px] w-[24px] items-center justify-center rounded">
                   {mountedImage === image ? (
-                    <ShareIcon
+                    <HardDriveUploadIcon
                       size={16}
                       className="text-red-500 opacity-60 group-hover:opacity-100"
                     />
                   ) : (
-                    <ImportIcon
+                    <HardDriveDownloadIcon
                       size={16}
                       className="text-blue-500 opacity-60 group-hover:opacity-100"
                     />

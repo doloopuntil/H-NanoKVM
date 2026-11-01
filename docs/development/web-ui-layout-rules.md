@@ -280,8 +280,8 @@ The Images dialog (`menu/image/`) is the one dialog that departs from the rules 
   box around them (rule 3). A transfer that cannot start because the storage is read-only is
   an `Alert` (rule 24), and a failure is a `toast` (rule 26).
 - The image list shows three rows (`max-h-[120px]`) and scrolls beyond that, with a thin scrollbar on a
-  transparent track. Each row ends with a mount icon (`ImportIcon`, blue) or an eject
-  icon (`ShareIcon`, red) and a delete icon, 16px in 24px hit areas. The type chip has a 4px right margin
+  transparent track. Each row ends with a mount icon (`HardDriveDownloadIcon`, blue) or an eject
+  icon (`HardDriveUploadIcon`, red) and a delete icon, 16px in 24px hit areas. The type chip has a 4px right margin
   so that the space before the icons looks even with the space between them.
 - On a phone the dialog is not centred, so that the keyboard does not cover the URL box.
 
