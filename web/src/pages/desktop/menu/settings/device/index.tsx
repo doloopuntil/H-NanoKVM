@@ -54,7 +54,7 @@ export const Device = () => {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         {rebootReasons.length > 0 && (
-          <span className="min-w-0 wrap-break-word text-xs text-neutral-500">
+          <span className="min-w-0 text-xs wrap-break-word text-neutral-500">
             {t('settings.device.rebootPending', {
               reasons: rebootReasons.map((reason) => reasonLabels[reason]).join(', ')
             })}

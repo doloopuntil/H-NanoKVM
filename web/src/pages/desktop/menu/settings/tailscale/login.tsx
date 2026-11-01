@@ -53,7 +53,7 @@ export const Login = ({ onSuccess }: LoginProps) => {
       ) : (
         <>
           <div className="flex min-w-0 flex-col space-y-1">
-            <a className="break-all text-sm" href={loginUrl} target="_blank" rel="noreferrer">
+            <a className="text-sm break-all" href={loginUrl} target="_blank" rel="noreferrer">
               {loginUrl}
             </a>
             <span className="text-xs text-neutral-500">{t('settings.tailscale.urlPeriod')}</span>

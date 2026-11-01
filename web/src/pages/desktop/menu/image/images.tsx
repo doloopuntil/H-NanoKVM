@@ -338,12 +338,12 @@ export const Images = ({
 
     return (
       // three images show, the rest scroll; a thin scrollbar on a transparent track
-      <div className="flex max-h-[120px] flex-col overflow-y-auto pr-1 [scrollbar-color:var(--color-neutral-600)_transparent] scrollbar-thin">
+      <div className="flex max-h-[120px] scrollbar-thin [scrollbar-color:var(--color-neutral-600)_transparent] flex-col overflow-y-auto pr-1">
         {images.map((image) => (
           <div
             key={image}
             className={clsx(
-              'group flex cursor-pointer select-none items-center gap-1 rounded-sm px-1 py-2 hover:bg-neutral-700/70',
+              'group flex cursor-pointer items-center gap-1 rounded-sm px-1 py-2 select-none hover:bg-neutral-700/70',
               mountedImage === image && 'text-blue-500'
             )}
             onClick={() => mountImage(image)}
@@ -364,7 +364,7 @@ export const Images = ({
             )}
             <div
               className={clsx(
-                'mr-0.5 rounded-sm border px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none',
+                'mr-0.5 rounded-sm border px-1.5 py-0.5 text-[10px] leading-none font-semibold uppercase',
                 isImageCdrom(image)
                   ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
                   : 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'

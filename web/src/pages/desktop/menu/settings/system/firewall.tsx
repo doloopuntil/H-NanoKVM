@@ -306,14 +306,14 @@ function ModeChoice({
             </Tag>
           )}
         </span>
-        <span className="block wrap-break-word text-xs leading-snug text-neutral-400">
+        <span className="block text-xs leading-snug wrap-break-word text-neutral-400">
           {option.description}
         </span>
         <span className="flex min-w-0 flex-wrap gap-1">
           {option.tags.map((tag) => (
             <Tag
               key={tag}
-              className="m-0 max-w-full whitespace-normal wrap-break-word leading-snug"
+              className="m-0 max-w-full leading-snug wrap-break-word whitespace-normal"
               color={tagColor(option.mode, option.danger)}
             >
               {tag}

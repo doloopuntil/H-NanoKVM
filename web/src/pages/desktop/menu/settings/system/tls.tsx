@@ -32,7 +32,7 @@ export const Tls = () => {
       content: (
         <div className="space-y-2">
           <p>{t('settings.network.tls.restartDesc', { seconds: REDIRECT_DELAY_SECONDS })}</p>
-          <p className="break-all font-mono text-xs text-neutral-400">{target}</p>
+          <p className="font-mono text-xs break-all text-neutral-400">{target}</p>
         </div>
       ),
       okText: t('settings.network.tls.restartOk'),

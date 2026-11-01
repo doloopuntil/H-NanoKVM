@@ -39,7 +39,7 @@ export const Sparkline = ({ values, axis, warn, crit, label }: SparklineProps) =
         {axis.ticks.map((tick) => (
           <span
             key={tick}
-            className="absolute right-0 -translate-y-1/2 text-[10px] tabular-nums text-neutral-500"
+            className="absolute right-0 -translate-y-1/2 text-[10px] text-neutral-500 tabular-nums"
             style={{ top: `${(y(tick) / HEIGHT) * 100}%` }}
           >
             {tick}

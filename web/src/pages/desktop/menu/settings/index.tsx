@@ -251,7 +251,7 @@ export const Settings = () => {
       <div
         key={tab.id}
         className={clsx(
-          'cursor-pointer select-none rounded-lg',
+          'cursor-pointer rounded-lg select-none',
           isTouchLayout
             ? 'flex min-w-0 flex-auto flex-col items-center justify-center px-1 py-2'
             : clsx('flex items-center space-x-2 sm:px-3', isChild ? 'py-1.5 pl-2 sm:pl-8' : 'p-2'),
@@ -381,10 +381,8 @@ export const Settings = () => {
           <ScrollArea
             viewportRef={scrollViewportRef}
             className={clsx(
-              'w-full max-w-full overflow-x-hidden bg-settings-panel [&_[data-slot=scroll-area-scrollbar]]:w-1.5 [&_[data-slot=scroll-area-scrollbar]]:p-0 [&_[data-slot=scroll-area-thumb]]:bg-neutral-500/30 [&_[data-slot=scroll-area-viewport]>div]:block!',
-              isTouchLayout
-                ? 'min-h-0 flex-1 rounded-none px-4'
-                : 'h-full rounded-r-lg px-6'
+              'bg-settings-panel w-full max-w-full overflow-x-hidden [&_[data-slot=scroll-area-scrollbar]]:w-1.5 [&_[data-slot=scroll-area-scrollbar]]:p-0 [&_[data-slot=scroll-area-thumb]]:bg-neutral-500/30 [&_[data-slot=scroll-area-viewport]>div]:block!',
+              isTouchLayout ? 'min-h-0 flex-1 rounded-none px-4' : 'h-full rounded-r-lg px-6'
             )}
           >
             <div className="flex h-full w-full min-w-0 justify-center">
@@ -392,7 +390,7 @@ export const Settings = () => {
                 className={clsx(
                   'min-w-0',
                   isTouchLayout ? 'w-full max-w-full' : 'w-full max-w-2xl',
-                  isTouchLayout ? 'pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4' : 'pb-10 pt-10'
+                  isTouchLayout ? 'pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]' : 'pt-10 pb-10'
                 )}
               >
                 <SettingsLoadGroup key={currentTab} slot>

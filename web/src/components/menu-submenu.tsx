@@ -32,7 +32,7 @@ export const MenuSubmenu = ({ icon, label, content, open, onOpenChange }: MenuSu
       onClick={isDesktopLayout ? undefined : () => setOpen(!isOpen)}
     >
       <div className="mr-2 flex h-[18px] w-[18px] shrink-0 items-center justify-center">{icon}</div>
-      <span className="min-w-0 flex-1 select-none text-sm">{label}</span>
+      <span className="min-w-0 flex-1 text-sm select-none">{label}</span>
       {!isDesktopLayout && (
         <ChevronRightIcon
           size={16}
@@ -61,7 +61,7 @@ export const MenuSubmenu = ({ icon, label, content, open, onOpenChange }: MenuSu
     <div className="min-w-0">
       {trigger}
       {isOpen && (
-        <div className="ml-5 mt-1 max-w-full overflow-x-auto border-l border-neutral-700 pl-2">
+        <div className="mt-1 ml-5 max-w-full overflow-x-auto border-l border-neutral-700 pl-2">
           {content}
         </div>
       )}

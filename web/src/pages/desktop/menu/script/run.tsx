@@ -44,7 +44,7 @@ export const Run = ({ script, setIsRunning }: RunProps) => {
           <Spin indicator={<LoaderCircleIcon size="1em" className="animate-spin" />} size="large" />
         </div>
       ) : (
-        <Card className="h-[600px] overflow-auto whitespace-pre-line font-mono">{log}</Card>
+        <Card className="h-[600px] overflow-auto font-mono whitespace-pre-line">{log}</Card>
       )}
 
       <DialogAction onClick={() => setIsRunning(false)}>{t('script.close')}</DialogAction>

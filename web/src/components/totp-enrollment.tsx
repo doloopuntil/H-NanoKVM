@@ -287,7 +287,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
           <QRCodeSVG value={otpauthUri} size={180} />
         </div>
         <span className="text-xs text-neutral-500">{t('settings.account.totp.manualEntry')}</span>
-        <code className="break-all rounded-sm bg-neutral-800 p-2 text-xs">{secret}</code>
+        <code className="rounded-sm bg-neutral-800 p-2 text-xs break-all">{secret}</code>
 
         <Input
           value={code}

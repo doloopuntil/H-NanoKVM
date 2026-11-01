@@ -36,7 +36,10 @@ export const LocalKeyboard = () => {
       icon={
         <span className="relative flex size-4 items-center justify-center">
           <KeyboardIcon size={16} />
-          <SmartphoneIcon size={10} className="absolute -right-1 -top-1 rounded-sm bg-neutral-800" />
+          <SmartphoneIcon
+            size={10}
+            className="absolute -top-1 -right-1 rounded-sm bg-neutral-800"
+          />
         </span>
       }
       onClick={toggleLocalKeyboard}

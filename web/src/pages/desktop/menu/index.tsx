@@ -68,7 +68,7 @@ export const Menu = () => {
       <div
         ref={nodeRef}
         className={clsx(
-          'fixed left-1/2 top-[10px] z-1000 transition-opacity duration-300',
+          'fixed top-[10px] left-1/2 z-1000 transition-opacity duration-300',
           isInitialized ? 'opacity-100' : 'opacity-0'
         )}
         onMouseEnter={() => handleHovered(true)}
@@ -77,7 +77,7 @@ export const Menu = () => {
       >
         {/* Trigger area for auto-show when hidden */}
         {isDesktopLayout && isMenuExpanded && (
-          <div className="absolute top-[-10px] left-0 right-0 h-[46px] w-full bg-transparent" />
+          <div className="absolute top-[-10px] right-0 left-0 h-[46px] w-full bg-transparent" />
         )}
 
         {/* Menubar */}
@@ -96,19 +96,19 @@ export const Menu = () => {
             )}
             <div
               className={clsx(
-                'h-[36px] max-w-[calc(100vw-12px)] items-center overflow-x-auto rounded-sm bg-neutral-800/80 pl-1 pr-2 transition-all duration-300',
+                'h-[36px] max-w-[calc(100vw-12px)] items-center overflow-x-auto rounded-sm bg-neutral-800/80 pr-2 pl-1 transition-all duration-300',
                 showExpandedMenu ? 'flex' : 'hidden',
                 shouldAutoHide ? 'translate-y-[-110%] opacity-80' : 'translate-y-0 opacity-100'
               )}
             >
               <strong className={isDesktopLayout ? '' : 'hidden'}>
-                <div className="flex h-[30px] cursor-move select-none items-center justify-center pl-1 text-neutral-500">
+                <div className="flex h-[30px] cursor-move items-center justify-center pl-1 text-neutral-500 select-none">
                   <GripVerticalIcon size={16} />
                 </div>
               </strong>
 
               <div
-                className="flex h-[30px] w-[30px] select-none items-center justify-center"
+                className="flex h-[30px] w-[30px] items-center justify-center select-none"
                 title={HARDENED_NAME}
               >
                 <img src={HARDENED_MARK_SRC} alt={HARDENED_SHORT_NAME} className="size-6" />

@@ -12,11 +12,7 @@ type LabelTipProps = {
 export const LabelTip = ({ text, tip, warning = false }: LabelTipProps) => (
   <span className="inline-flex items-center gap-1.5">
     {text}
-    <Tooltip
-      title={tip}
-      placement="top"
-      styles={{ root: { maxWidth: '400px' } }}
-    >
+    <Tooltip title={tip} placement="top" styles={{ root: { maxWidth: '400px' } }}>
       {warning ? (
         <CircleAlertIcon size={16} className="cursor-pointer text-orange-400" />
       ) : (

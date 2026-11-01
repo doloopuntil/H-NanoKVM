@@ -25,9 +25,9 @@ export const Meter = ({
     <div className="flex items-end justify-between gap-4">
       <div className="flex min-w-0 flex-col space-y-0.5">
         <span className="text-sm text-neutral-300">{label}</span>
-        <span className="wrap-break-word text-xs text-neutral-500">{caption}</span>
+        <span className="text-xs wrap-break-word text-neutral-500">{caption}</span>
       </div>
-      <div className="shrink-0 whitespace-nowrap text-[15px] tabular-nums text-neutral-200">
+      <div className="shrink-0 text-[15px] whitespace-nowrap text-neutral-200 tabular-nums">
         {value}
       </div>
     </div>
@@ -65,9 +65,9 @@ export const SplitMeter = ({
       <div className="flex items-end justify-between gap-4">
         <div className="flex min-w-0 flex-col space-y-0.5">
           <span className="text-sm text-neutral-300">{label}</span>
-          <span className="wrap-break-word text-xs text-neutral-500">{caption}</span>
+          <span className="text-xs wrap-break-word text-neutral-500">{caption}</span>
         </div>
-        <div className="shrink-0 whitespace-nowrap text-[15px] tabular-nums text-neutral-200">
+        <div className="shrink-0 text-[15px] whitespace-nowrap text-neutral-200 tabular-nums">
           {value}
         </div>
       </div>

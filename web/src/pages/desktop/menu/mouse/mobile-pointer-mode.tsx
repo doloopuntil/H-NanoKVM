@@ -16,7 +16,7 @@ export const MobilePointerMode = () => {
       data-menu-keep-open
       className="flex min-h-[48px] items-start rounded-sm px-3 py-2 text-neutral-300"
     >
-      <div className="mr-2 mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center text-blue-400">
+      <div className="mt-0.5 mr-2 flex h-[18px] w-[18px] shrink-0 items-center justify-center text-blue-400">
         <TabletSmartphoneIcon size={16} />
       </div>
       <div className="min-w-0 flex-1">
@@ -24,7 +24,7 @@ export const MobilePointerMode = () => {
           <MousePointer2Icon size={16} />
           <span>{t('mouse.mobile.touchSync')}</span>
         </div>
-        <div className="mt-0.5 whitespace-normal text-xs leading-4 text-neutral-500">
+        <div className="mt-0.5 text-xs leading-4 whitespace-normal text-neutral-500">
           {t('mouse.mobile.touchSyncDesc')}
         </div>
       </div>

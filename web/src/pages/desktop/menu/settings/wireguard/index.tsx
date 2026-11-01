@@ -281,7 +281,7 @@ export const Wireguard = () => {
                 label={t('settings.wireguard.publicKey.title')}
                 description={t('settings.wireguard.publicKey.description')}
               >
-                <Typography.Text copyable className="break-all font-mono text-xs">
+                <Typography.Text copyable className="font-mono text-xs break-all">
                   {status.publicKey}
                 </Typography.Text>
               </SettingRow>
@@ -360,7 +360,7 @@ export const Wireguard = () => {
               inline
             >
               <Select
-                className="w-36 sm:w-56 [&_.ant-select-content]:justify-end [&_.ant-select-content-item-suffix]:-ml-1 pr-[7px]! [&_.ant-select-content]:!mr-0 [&_.ant-select-placeholder]:text-right"
+                className="w-36 pr-[7px]! sm:w-56 [&_.ant-select-content]:!mr-0 [&_.ant-select-content]:justify-end [&_.ant-select-content-item-suffix]:-ml-1 [&_.ant-select-placeholder]:text-right"
                 mode="tags"
                 open={false}
                 tokenSeparators={[',', ' ']}

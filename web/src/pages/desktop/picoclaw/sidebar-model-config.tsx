@@ -58,7 +58,7 @@ export const SidebarModelConfig = ({
   }, [setIsKeyboardEnable]);
 
   return (
-    <div className="flex flex-1 flex-col space-y-6 overflow-y-auto px-5 pb-8 pt-5">
+    <div className="flex flex-1 flex-col space-y-6 overflow-y-auto px-5 pt-5 pb-8">
       <div>
         {/* opened to change the model (it has a Cancel) or because none is set up yet */}
         <MenuHeader

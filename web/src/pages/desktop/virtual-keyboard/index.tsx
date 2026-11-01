@@ -331,7 +331,7 @@ export const VirtualKeyboard = () => {
                     key={`${row}-${key}`}
                     type="button"
                     className={clsx(
-                      'flex h-10 select-none items-center justify-center rounded-sm bg-white px-2 text-center text-sm shadow-xs active:bg-blue-100',
+                      'flex h-10 items-center justify-center rounded-sm bg-white px-2 text-center text-sm shadow-xs select-none active:bg-blue-100',
                       getMobileButtonClass(key),
                       activeModifierKeys.includes(key) && 'bg-blue-600 text-white'
                     )}
@@ -358,7 +358,7 @@ export const VirtualKeyboard = () => {
       <Drawer.Portal>
         <Drawer.Content
           className={clsx(
-            'max-w-screen fixed bottom-0 left-0 right-0 z-999 mx-auto overflow-hidden bg-white outline-hidden',
+            'fixed right-0 bottom-0 left-0 z-999 mx-auto max-w-screen overflow-hidden bg-white outline-hidden',
             isDesktopLayout ? 'w-[820px] rounded-sm' : 'w-screen rounded-t'
           )}
         >

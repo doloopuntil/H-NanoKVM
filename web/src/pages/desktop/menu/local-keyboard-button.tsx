@@ -43,7 +43,7 @@ export const LocalKeyboardButton = () => {
         <KeyboardIcon size={16} />
         <SmartphoneIcon
           size={10}
-          className="absolute right-[4px] top-[4px] rounded-sm bg-neutral-800"
+          className="absolute top-[4px] right-[4px] rounded-sm bg-neutral-800"
         />
       </div>
     </Tooltip>

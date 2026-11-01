@@ -118,7 +118,7 @@ export const SidebarHeader = ({
 
   return (
     <>
-      <div className="flex h-12 shrink-0 items-center justify-between gap-3 pl-2 pr-4">
+      <div className="flex h-12 shrink-0 items-center justify-between gap-3 pr-4 pl-2">
         {/* Left: Title */}
         <div className="flex min-w-0 items-center gap-1.5">
           <Tooltip title={t('menu.collapse')} mouseEnterDelay={0.6} placement="bottom">

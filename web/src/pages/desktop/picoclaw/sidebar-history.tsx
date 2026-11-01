@@ -63,7 +63,7 @@ export const SidebarHistory = ({
     }
 
     return (
-      <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-3">
+      <div className="flex min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto px-3 py-3">
         <div className="w-full max-w-full space-y-2">
           {sessions.map((session) => {
             const isActive = session.id === activeSessionId;

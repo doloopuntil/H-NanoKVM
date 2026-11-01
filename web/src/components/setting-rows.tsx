@@ -23,13 +23,13 @@ export const InfoRow = ({
     {description ? (
       <div className="flex min-w-0 flex-1 flex-col space-y-0.5">
         <span className="text-sm text-neutral-300">{label}</span>
-        <span className="wrap-break-word text-xs leading-snug text-neutral-500">{description}</span>
+        <span className="text-xs leading-snug wrap-break-word text-neutral-500">{description}</span>
       </div>
     ) : (
       <span className="shrink-0 text-sm text-neutral-300">{label}</span>
     )}
     <div
-      className={`min-w-0 wrap-break-word text-right text-sm text-neutral-500 ${
+      className={`min-w-0 text-right text-sm wrap-break-word text-neutral-500 ${
         description ? 'shrink-0' : 'flex-1 sm:max-w-md sm:flex-none'
       }`}
     >
@@ -94,7 +94,7 @@ export const SettingRow = ({
     <div className="flex min-w-0 flex-col space-y-0.5 sm:flex-1">
       <span className="text-sm text-neutral-300">{label}</span>
       {description && (
-        <span className="wrap-break-word text-xs leading-snug text-neutral-500">{description}</span>
+        <span className="text-xs leading-snug wrap-break-word text-neutral-500">{description}</span>
       )}
     </div>
     <div
@@ -104,7 +104,7 @@ export const SettingRow = ({
     >
       {children}
       {error && (
-        <div className="mt-1 w-0 min-w-full text-xs text-red-400 sm:w-auto sm:min-w-0 sm:max-w-72 sm:text-right">
+        <div className="mt-1 w-0 min-w-full text-xs text-red-400 sm:w-auto sm:max-w-72 sm:min-w-0 sm:text-right">
           {error}
         </div>
       )}
@@ -153,7 +153,9 @@ export const SettingSection = ({
             />
           )}
         </div>
-        {description && <div className="wrap-break-word text-xs text-neutral-500">{description}</div>}
+        {description && (
+          <div className="text-xs wrap-break-word text-neutral-500">{description}</div>
+        )}
       </div>
       <div ref={body} className="contents">
         {children}

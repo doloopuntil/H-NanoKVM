@@ -166,7 +166,7 @@ export const Certificate = forwardRef<SystemActionHandle, CertificateProps>(
         content: (
           <div className="space-y-2">
             <p>{t('settings.network.certificate.openDesc')}</p>
-            <p className="break-all font-mono text-xs text-neutral-400">{url}</p>
+            <p className="font-mono text-xs break-all text-neutral-400">{url}</p>
           </div>
         ),
         okText: t('settings.network.certificate.openOk'),

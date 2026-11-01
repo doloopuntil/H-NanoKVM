@@ -90,7 +90,7 @@ export const InstallWait = ({ open, onFailed }: InstallWaitProps) => {
               ? t('settings.update.system.rawWaitRestarting')
               : t('settings.update.system.rawWaitWriting')}
           </span>
-          <span className="ml-auto font-mono text-sm tabular-nums text-neutral-400">
+          <span className="ml-auto font-mono text-sm text-neutral-400 tabular-nums">
             {formatElapsed(elapsed)}
           </span>
         </div>
