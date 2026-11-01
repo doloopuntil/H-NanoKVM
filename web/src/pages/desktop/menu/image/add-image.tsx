@@ -199,7 +199,7 @@ export const AddImage = ({
                 <Button
                   block
                   disabled={isDisabled}
-                  className={clsx('min-w-0', isDragging && '!border-blue-500 !text-blue-400')}
+                  className={clsx('min-w-0', isDragging && 'border-blue-500 text-blue-400')}
                   onDrop={(e) => {
                     e.preventDefault();
                     setIsDragging(false);

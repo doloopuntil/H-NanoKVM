@@ -181,7 +181,7 @@ export const TimeSettings = forwardRef<SystemActionHandle, TimeSettingsProps>(
               inline
             >
               <Select
-                className="w-44 pr-1.75! sm:w-72 [&_.ant-select-content]:!mr-0 [&_.ant-select-content]:justify-end [&_.ant-select-content-item-suffix]:-ml-1"
+                className="w-44 pr-1.75 sm:w-72 [&_.ant-select-content]:mr-0 [&_.ant-select-content]:justify-end [&_.ant-select-content-item-suffix]:-ml-1"
                 mode="tags"
                 open={false}
                 disabled={!config.ntpEnabled}

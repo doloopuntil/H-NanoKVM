@@ -87,7 +87,7 @@ export const MessageInput = ({
             aria-label={t('picoclaw.newConversation')}
             onClick={() => void onNewConversation()}
             disabled={disableNewConversation}
-            className="flex! !h-7 !w-7 items-center! justify-center! !rounded-lg"
+            className="flex h-7 w-7 items-center justify-center rounded-lg"
           />
         </Tooltip>
         <Tooltip title={t('picoclaw.send')} mouseEnterDelay={0.6}>
@@ -97,7 +97,7 @@ export const MessageInput = ({
             aria-label={t('picoclaw.send')}
             onClick={() => void submit()}
             disabled={!isReady || !value.trim()}
-            className="flex! !h-7 !w-7 items-center! justify-center! !rounded-lg"
+            className="flex h-7 w-7 items-center justify-center rounded-lg"
           />
         </Tooltip>
       </div>

@@ -32,11 +32,11 @@ body {
 }
 
 :first-child[hidden] + .ant-divider + * {
-  margin-top: 0 !important;
+  margin-top: 0;
 }
 
 .settings-modal-mobile {
-  width: 100vw !important;
+  width: 100vw;
   max-width: none;
   margin: 0;
   padding-bottom: 0;
@@ -92,7 +92,7 @@ body {
 
 .settings-modal-mobile [data-slot='scroll-area-viewport'] {
   max-width: 100%;
-  overflow-x: hidden !important;
+  overflow-x: hidden;
   overscroll-behavior-x: none;
 }
 

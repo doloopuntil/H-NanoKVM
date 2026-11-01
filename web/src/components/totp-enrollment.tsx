@@ -322,7 +322,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
           <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
             {t('settings.account.totp.authenticator')}
             {status?.required && !status.enabled && (
-              <Tag color="blue" className="!me-0">
+              <Tag color="blue" className="me-0">
                 {t('settings.account.totp.required')}
               </Tag>
             )}

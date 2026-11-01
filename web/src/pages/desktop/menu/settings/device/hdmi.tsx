@@ -96,7 +96,7 @@ export const Hdmi = () => {
       >
         <Space.Compact>
           <InputNumber
-            className="w-20 [&_.ant-input-number-input]:text-right!"
+            className="w-20 [&_.ant-input-number-input]:text-right"
             min={0}
             max={10080}
             precision={0}

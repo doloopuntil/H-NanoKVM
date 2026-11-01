@@ -9,7 +9,7 @@ import { InfoRow } from '@/components/setting-rows.tsx';
 const DASH = '-';
 
 const OverdriveTag = ({ text }: { text: string }) => (
-  <Tag color="orange" className="!me-0 !ml-2">
+  <Tag color="orange" className="me-0 ml-2">
     {text}
   </Tag>
 );
