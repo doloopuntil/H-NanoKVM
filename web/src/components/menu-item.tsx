@@ -92,7 +92,7 @@ export const MenuItem = ({
       open={isPopoverOpen}
       onOpenChange={togglePopover}
       fresh={!!fresh}
-      overlayStyle={isDesktopLayout ? undefined : { maxWidth: 'calc(100vw - 8px)' }}
+      styles={{ root: isDesktopLayout ? undefined : { maxWidth: 'calc(100vw - 8px)' } }}
     >
       <Tooltip
         title={isDesktopLayout ? title : undefined}

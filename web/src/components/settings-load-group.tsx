@@ -72,7 +72,7 @@ export const SettingsLoadGroup = ({
           type="info"
           showIcon
           icon={<LoaderCircleIcon className="animate-spin" size={16} />}
-          message={t('common.loading')}
+          title={t('common.loading')}
         />
       )}
 
@@ -81,7 +81,7 @@ export const SettingsLoadGroup = ({
           className="mb-6"
           type="warning"
           showIcon
-          message={t('common.loadFailed')}
+          title={t('common.loadFailed')}
           action={
             <Button size="small" onClick={() => setGeneration((value) => value + 1)}>
               {t('common.retry')}

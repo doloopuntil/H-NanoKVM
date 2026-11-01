@@ -1,5 +1,5 @@
 import { ChangeEvent, useRef, useState } from 'react';
-import { Button, Input, List } from 'antd';
+import { Button, Input } from 'antd';
 import type { InputRef } from 'antd';
 import clsx from 'clsx';
 import { useSetAtom } from 'jotai';
@@ -157,11 +157,12 @@ export const Wol = () => {
       </div>
 
       {macList.length > 0 && (
-        <List
-          itemLayout="horizontal"
-          dataSource={macList}
-          renderItem={(item) => (
-            <List.Item className="flex w-full items-center justify-between">
+        <div>
+          {macList.map((item) => (
+            <div
+              key={item.mac}
+              className="box-border flex w-full items-center justify-between border-0 border-b border-solid border-white/[0.06] py-3 last:border-b-0"
+            >
               <div className="h-[24px] max-w-[200px]">
                 {item.isEdit ? (
                   <Input
@@ -206,9 +207,9 @@ export const Wol = () => {
                   <Trash2Icon size={16} />
                 </div>
               </div>
-            </List.Item>
-          )}
-        />
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

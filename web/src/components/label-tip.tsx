@@ -14,11 +14,14 @@ export const LabelTip = ({ text, tip, warning = false }: LabelTipProps) => (
     {text}
     <Tooltip
       title={tip}
-      className={`cursor-pointer ${warning ? 'text-orange-400' : 'text-neutral-500'}`}
       placement="top"
       styles={{ root: { maxWidth: '400px' } }}
     >
-      {warning ? <CircleAlertIcon size={16} /> : <CircleQuestionMarkIcon size={16} />}
+      {warning ? (
+        <CircleAlertIcon size={16} className="cursor-pointer text-orange-400" />
+      ) : (
+        <CircleQuestionMarkIcon size={16} className="cursor-pointer text-neutral-500" />
+      )}
     </Tooltip>
   </span>
 );

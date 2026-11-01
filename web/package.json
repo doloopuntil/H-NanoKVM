@@ -13,12 +13,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ant-design/icons": "^5.6.1",
+    "@ant-design/icons": "^6.3.4",
     "@radix-ui/react-scroll-area": "^1.2.10",
     "@xterm/addon-attach": "^0.11.0",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
-    "antd": "^5.29.3",
+    "antd": "^6.6.8",
     "axios": "^1.18.1",
     "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",

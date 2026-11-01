@@ -104,7 +104,7 @@ export const Monitor = () => {
   return (
     <div className="flex min-w-0 flex-col space-y-6">
       {unavailable && (
-        <Alert type="warning" showIcon message={t('settings.system.monitor.noReadings')} />
+        <Alert type="warning" showIcon title={t('settings.system.monitor.noReadings')} />
       )}
 
       <div className="grid min-w-0 grid-cols-1 gap-x-14 gap-y-7 lg:grid-cols-2">

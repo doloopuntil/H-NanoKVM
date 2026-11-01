@@ -113,13 +113,13 @@ export const Menu = () => {
               >
                 <img src={HARDENED_MARK_SRC} alt={HARDENED_SHORT_NAME} className="size-6" />
               </div>
-              <Divider type="vertical" />
+              <Divider orientation="vertical" />
 
               <Screen />
               <LocalKeyboardButton />
               <Keyboard />
               <Mouse />
-              <Divider type="vertical" />
+              <Divider orientation="vertical" />
 
               {isEnabled('image') && <Image />}
               {isEnabled('terminal') && <Terminal />}
@@ -127,20 +127,20 @@ export const Menu = () => {
               {isEnabled('wol') && <Wol />}
 
               {['image', 'script', 'terminal', 'wol'].some(isEnabled) && (
-                <Divider type="vertical" />
+                <Divider orientation="vertical" />
               )}
 
               {isEnabled('picoclaw') && (
                 <>
                   <Picoclaw />
-                  <Divider type="vertical" />
+                  <Divider orientation="vertical" />
                 </>
               )}
 
               {isEnabled('power') && (
                 <>
                   <Power />
-                  <Divider type="vertical" />
+                  <Divider orientation="vertical" />
                 </>
               )}
 

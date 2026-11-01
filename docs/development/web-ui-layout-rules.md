@@ -235,6 +235,24 @@ and the dialog and toast helpers in `web/src/lib/feedback.ts`.
     empty or feature state. The cursor drawn over the remote screen has its own size.
     A hit area can be larger than the icon (24px for a row action, 18px for the
     icon box of a menu row); the icon stays 16px inside it.
+37. The app uses antd 6, which renamed parts of its DOM. A CSS override that reaches into
+    antd's markup must use the new names: `.ant-select-content` (the flex row of a
+    multiple select's tags), `.ant-select-content-value` (the value of a single select),
+    `.ant-select-placeholder`, `.ant-select-input`, `.ant-alert-title` and
+    `.ant-modal-container` (there is no `.ant-modal-content`). The classes are not
+    type-checked, so a stale one only shows as a layout change: look at the page. Also:
+    - A `Tooltip` or `Popover` `className` styles the popup, not the trigger; put the
+      class on the child (see `LabelTip`).
+    - A multiple select (tags) adds padding and an empty slot after the last tag; the three
+      tag fields cancel both (`!pr-[7px]`, `-ml-1` on `.ant-select-content-item-suffix`) so
+      their tags stay flush right (rule 8).
+    - A dialog focuses its close button when it opens, so the button shows a focus ring.
+      This is accepted.
+    - Use the v6 prop names: `title` on `Alert` and notifications, `actions` for a
+      notification button, `mask={{ closable }}` on `Modal`, `styles.root` and
+      `styles.container` instead of `overlayStyle` and `overlayInnerStyle`, `orientation`
+      on `Divider`, and `Space.Compact` with `Space.Addon` instead of `addonAfter`. A dev
+      build (`NODE_ENV=development`) logs the deprecated ones in the console.
 
 ## Menu bar popovers
 

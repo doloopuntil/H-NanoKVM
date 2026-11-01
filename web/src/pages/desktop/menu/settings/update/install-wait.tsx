@@ -76,7 +76,7 @@ export const InstallWait = ({ open, onFailed }: InstallWaitProps) => {
     <Modal
       open={open}
       closable={false}
-      maskClosable={false}
+      mask={{ closable: false }}
       keyboard={false}
       footer={null}
       centered
@@ -98,7 +98,7 @@ export const InstallWait = ({ open, onFailed }: InstallWaitProps) => {
         <div className="text-sm text-neutral-400">{t('settings.update.system.rawWaitDesc')}</div>
 
         {elapsed >= SLOW_AFTER_SECONDS && (
-          <Alert type="warning" showIcon message={t('settings.update.system.rawWaitSlow')} />
+          <Alert type="warning" showIcon title={t('settings.update.system.rawWaitSlow')} />
         )}
       </div>
     </Modal>
