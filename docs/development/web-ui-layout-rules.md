@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: app 2.1.0
-last-checked: 2026-10-31
+last-checked: 2026-11-01
 ---
 
 # Web UI layout rules for the Settings pages
@@ -207,23 +207,26 @@ and the dialog and toast helpers in `web/src/lib/feedback.ts`.
 
 ## Technical rules
 
-32. Tailwind's preflight is off (it clashes with antd), so a border needs an
-    explicit style (`border-0 border-b border-solid border-white/[0.06]`);
-    `border-b` alone draws nothing. Boxes also keep the browser's default
-    sizing, where padding and border add to the width and height: an element
-    with a width and padding (`w-full px-4`) needs `box-border`, or it is wider
-    than its parent. Do not switch box-sizing on globally: the menu bar popovers
-    were sized for the default, and their rows would shrink by 8px.
+32. Tailwind 4 runs with its preflight. The layers are declared in
+    `assets/styles/index.css` as `theme, base, antd, components, utilities`, and
+    antd renders into the `antd` layer (`StyleProvider layer` in `main.tsx`), so
+    preflight never restyles antd and a utility overrides antd without `!`.
+    Preflight makes every box border-box, gives every border a solid style
+    (`border-b border-white/[0.06]` draws a line on its own) and removes default
+    margins, padding and list markers: a list needs `list-disc` or `list-decimal`
+    and a left padding. CSS outside a layer in `index.css` beats every utility.
+    In a flex or grid column use `gap-*`: `space-y-*` puts its space in the
+    bottom margin of each child, and a child's own `mb-*` or `!mb-0` removes it.
 33. A sticky element must not sit inside an `overflow-x-hidden` container; that
     makes the container its scroll parent and the element stops sticking.
 34. Layout depends on the phone class `settings-modal-mobile` (see
     `assets/styles/index.css`); use
     `[.settings-modal-mobile_&]:` for rules that differ on the touch layout.
 35. The app is dark-only. The colour of the settings panel is the one
-    `settings-panel` colour of `tailwind.config.js` (the modal colour under a 50%
-    layer, as a solid colour), used by the panel itself and by whatever sticks over
-    its content, so that it hides what scrolls under it. Do not write the value
-    again.
+    `--color-settings-panel` in the `@theme` block of `assets/styles/index.css`
+    (`bg-settings-panel`: the modal colour under a 50% layer, as a solid colour),
+    used by the panel itself and by whatever sticks over its content, so that it
+    hides what scrolls under it. Do not write the value again.
 36. The Settings window is at most 710px tall (`max-h-[710px]`), and 82.5vh on a
     shorter screen. Only the Monitor page sets this number: 710px puts as much
     space under its last line (45px) as above its title (44px). Taller pages, such

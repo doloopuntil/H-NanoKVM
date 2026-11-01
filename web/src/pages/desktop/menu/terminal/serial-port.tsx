@@ -95,7 +95,7 @@ export const SerialPort = () => {
 
           <SettingRow label={t('terminal.baudrate')} inline>
             <InputNumber
-              className="w-32 [&_.ant-input-number-input]:!text-right"
+              className="w-32 [&_.ant-input-number-input]:text-right!"
               controls={false}
               min={1}
               value={baudrate}

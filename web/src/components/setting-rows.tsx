@@ -23,13 +23,13 @@ export const InfoRow = ({
     {description ? (
       <div className="flex min-w-0 flex-1 flex-col space-y-0.5">
         <span className="text-sm text-neutral-300">{label}</span>
-        <span className="break-words text-xs leading-snug text-neutral-500">{description}</span>
+        <span className="wrap-break-word text-xs leading-snug text-neutral-500">{description}</span>
       </div>
     ) : (
       <span className="shrink-0 text-sm text-neutral-300">{label}</span>
     )}
     <div
-      className={`min-w-0 break-words text-right text-sm text-neutral-500 ${
+      className={`min-w-0 wrap-break-word text-right text-sm text-neutral-500 ${
         description ? 'shrink-0' : 'flex-1 sm:max-w-md sm:flex-none'
       }`}
     >
@@ -94,7 +94,7 @@ export const SettingRow = ({
     <div className="flex min-w-0 flex-col space-y-0.5 sm:flex-1">
       <span className="text-sm text-neutral-300">{label}</span>
       {description && (
-        <span className="break-words text-xs leading-snug text-neutral-500">{description}</span>
+        <span className="wrap-break-word text-xs leading-snug text-neutral-500">{description}</span>
       )}
     </div>
     <div
@@ -142,7 +142,7 @@ export const SettingSection = ({
 
   return (
     // the hidden attribute, not a class, so that space-y skips the section
-    <div className="flex min-w-0 flex-col gap-6 [&[hidden]]:hidden" hidden={isEmpty}>
+    <div className="flex min-w-0 flex-col gap-6 [[hidden]]:hidden" hidden={isEmpty}>
       <div className="flex min-w-0 flex-col space-y-1">
         <div className="flex items-center gap-2 text-neutral-400">
           {title}
@@ -153,7 +153,7 @@ export const SettingSection = ({
             />
           )}
         </div>
-        {description && <div className="break-words text-xs text-neutral-500">{description}</div>}
+        {description && <div className="wrap-break-word text-xs text-neutral-500">{description}</div>}
       </div>
       <div ref={body} className="contents">
         {children}

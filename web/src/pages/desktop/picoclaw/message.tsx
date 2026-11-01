@@ -99,8 +99,8 @@ export const Message = ({ message }: MessageProps) => {
       return null;
     }
     return (
-      <div className="rounded-lg border border-solid border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-        <MarkdownContent content={message.text} className="break-words text-red-200/90" />
+      <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+        <MarkdownContent content={message.text} className="wrap-break-word text-red-200/90" />
       </div>
     );
   }
@@ -116,12 +116,12 @@ export const Message = ({ message }: MessageProps) => {
     }
 
     return (
-      <div className="rounded-xl border border-solid border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-neutral-300">
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-neutral-300">
         <div className="mb-1 flex items-center gap-2 text-xs text-neutral-500">
           <SparklesIcon size={16} />
           <span>{t('picoclaw.message.toolAction')}</span>
         </div>
-        <MarkdownContent content={toolText} className="break-words" />
+        <MarkdownContent content={toolText} className="wrap-break-word" />
       </div>
     );
   }
@@ -133,13 +133,13 @@ export const Message = ({ message }: MessageProps) => {
     }
 
     return (
-      <div className="rounded-lg border border-solid border-blue-400/20 bg-blue-400/10 px-3 py-2 text-sm text-blue-50">
+      <div className="rounded-lg border border-blue-400/20 bg-blue-400/10 px-3 py-2 text-sm text-blue-50">
         <div className="mb-2 flex items-center gap-2 text-xs text-blue-200">
           <ImageIcon size={16} />
           <span>{t('picoclaw.message.observation')}</span>
         </div>
         {observationText && (
-          <MarkdownContent content={observationText} className="mb-2 break-words" />
+          <MarkdownContent content={observationText} className="mb-2 wrap-break-word" />
         )}
         {message.imageBase64 && (
           <img
@@ -159,8 +159,8 @@ export const Message = ({ message }: MessageProps) => {
     }
 
     return (
-      <div className="rounded-xl border border-solid border-white/5 bg-white/[0.02] px-3 py-2 text-xs text-neutral-400">
-        <MarkdownContent content={thoughtText} className="break-words" />
+      <div className="rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2 text-xs text-neutral-400">
+        <MarkdownContent content={thoughtText} className="wrap-break-word" />
       </div>
     );
   }
@@ -176,11 +176,11 @@ export const Message = ({ message }: MessageProps) => {
     <div className={clsx('flex', isUser ? 'justify-end' : 'justify-start')}>
       <div
         className={clsx(
-          'max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm',
+          'max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-xs',
           isUser ? 'bg-blue-600 text-white' : 'bg-neutral-800 text-neutral-100'
         )}
       >
-        <MarkdownContent content={messageText} className="break-words" />
+        <MarkdownContent content={messageText} className="wrap-break-word" />
       </div>
     </div>
   );

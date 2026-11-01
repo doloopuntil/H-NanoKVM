@@ -241,7 +241,7 @@ export const FirewallSettings = () => {
             onChange={(value) => setRulesTab(value as RulesTab)}
           />
         </div>
-        <pre className="max-h-[360px] min-h-[260px] overflow-auto rounded bg-black/50 p-3 font-mono text-xs leading-relaxed text-neutral-200">
+        <pre className="max-h-[360px] min-h-[260px] overflow-auto rounded-sm bg-black/50 p-3 font-mono text-xs leading-relaxed text-neutral-200">
           {selectedRules}
         </pre>
       </div>
@@ -306,14 +306,14 @@ function ModeChoice({
             </Tag>
           )}
         </span>
-        <span className="block break-words text-xs leading-snug text-neutral-400">
+        <span className="block wrap-break-word text-xs leading-snug text-neutral-400">
           {option.description}
         </span>
         <span className="flex min-w-0 flex-wrap gap-1">
           {option.tags.map((tag) => (
             <Tag
               key={tag}
-              className="m-0 max-w-full whitespace-normal break-words leading-snug"
+              className="m-0 max-w-full whitespace-normal wrap-break-word leading-snug"
               color={tagColor(option.mode, option.danger)}
             >
               {tag}

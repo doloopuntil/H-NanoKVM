@@ -195,7 +195,7 @@ export const Terminal = () => {
                 <h1 className="mb-2 text-lg font-semibold text-neutral-100">
                   {t('terminal.unlockTitle')}
                 </h1>
-                <p className="m-0 text-sm text-neutral-400">{t('terminal.unlockDesc')}</p>
+                <p className="text-sm text-neutral-400">{t('terminal.unlockDesc')}</p>
               </div>
 
               <Form.Item

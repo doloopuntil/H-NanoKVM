@@ -239,7 +239,7 @@ export const Settings = () => {
       <span
         className={clsx(
           isTouchLayout
-            ? 'mt-1 block text-center text-[11px] leading-tight [overflow-wrap:anywhere]'
+            ? 'mt-1 block text-center text-[11px] leading-tight wrap-anywhere'
             : 'hidden truncate text-sm sm:block'
         )}
       >
@@ -280,7 +280,7 @@ export const Settings = () => {
           label
         )}
         {tab.children && !isTouchLayout && (
-          <span className="!ml-auto hidden sm:block">
+          <span className="ml-auto! hidden sm:block">
             {isOpen ? <ChevronDownIcon size={16} /> : <ChevronRightIcon size={16} />}
           </span>
         )}
@@ -297,7 +297,7 @@ export const Settings = () => {
         open={isTouchLayout ? false : undefined}
       >
         <div
-          className="flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded hover:bg-neutral-700/80"
+          className="flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-sm hover:bg-neutral-700/80"
           onClick={openModal}
         >
           <Badge dot={isUpdateAvailable} color="blue" offset={[0, 2]}>
@@ -333,7 +333,7 @@ export const Settings = () => {
           className={clsx(
             'outline outline-1 outline-neutral-700',
             isTouchLayout
-              ? 'flex h-[100dvh] w-full max-w-[100vw] flex-col overflow-hidden rounded-none'
+              ? 'flex h-dvh w-full max-w-[100vw] flex-col overflow-hidden rounded-none'
               : 'flex h-[82.5vh] max-h-[710px] rounded-lg'
           )}
         >
@@ -372,7 +372,7 @@ export const Settings = () => {
               ))}
             </div>
             {isTouchLayout && currentGroup && (
-              <div className="flex flex-wrap gap-1 border-0 border-t border-solid border-neutral-700 px-2 py-2">
+              <div className="flex flex-wrap gap-1 border-t border-neutral-700 px-2 py-2">
                 {currentGroup.children?.map((child) => renderTab(child, true))}
               </div>
             )}
@@ -381,9 +381,9 @@ export const Settings = () => {
           <ScrollArea
             viewportRef={scrollViewportRef}
             className={clsx(
-              'w-full max-w-full overflow-x-hidden bg-settings-panel [&_[data-slot=scroll-area-scrollbar]]:w-1.5 [&_[data-slot=scroll-area-scrollbar]]:p-0 [&_[data-slot=scroll-area-thumb]]:bg-neutral-500/30 [&_[data-slot=scroll-area-viewport]>div]:!block',
+              'w-full max-w-full overflow-x-hidden bg-settings-panel [&_[data-slot=scroll-area-scrollbar]]:w-1.5 [&_[data-slot=scroll-area-scrollbar]]:p-0 [&_[data-slot=scroll-area-thumb]]:bg-neutral-500/30 [&_[data-slot=scroll-area-viewport]>div]:block!',
               isTouchLayout
-                ? 'box-border min-h-0 flex-1 rounded-none px-4'
+                ? 'min-h-0 flex-1 rounded-none px-4'
                 : 'h-full rounded-r-lg px-6'
             )}
           >

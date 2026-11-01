@@ -896,7 +896,7 @@ const StatusRow = ({ busy = false, error = false, title, text, buttons }: Status
         {title && <span className="text-sm text-neutral-300">{title}</span>}
         {(busy || text) && (
           <span
-            className={`flex items-center gap-2 break-words text-xs ${error ? 'text-red-400' : 'text-neutral-500'}`}
+            className={`flex items-center gap-2 wrap-break-word text-xs ${error ? 'text-red-400' : 'text-neutral-500'}`}
           >
             {busy && (
               <Spin

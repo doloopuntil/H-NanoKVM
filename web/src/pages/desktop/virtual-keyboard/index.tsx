@@ -277,11 +277,11 @@ export const VirtualKeyboard = () => {
     if (!isKeyboardOpen) return null;
 
     return (
-      <div className="fixed inset-x-0 bottom-0 z-[1200] max-h-[68dvh] overflow-hidden rounded-t bg-white text-neutral-900 shadow-2xl">
+      <div className="fixed inset-x-0 bottom-0 z-1200 max-h-[68dvh] overflow-hidden rounded-t bg-white text-neutral-900 shadow-2xl">
         <div className="keyboard-header flex items-center justify-between gap-3 px-3 py-2">
           <div className="flex min-w-0 items-center gap-2">
             <select
-              className="h-8 rounded border border-neutral-300 bg-white px-2 text-sm"
+              className="h-8 rounded-sm border border-neutral-300 bg-white px-2 text-sm"
               value={keyboardLanguage}
               onChange={(event) => selectLanguage(event.target.value)}
             >
@@ -293,7 +293,7 @@ export const VirtualKeyboard = () => {
             </select>
 
             {keyboardLanguage === 'en' && (
-              <div className="flex overflow-hidden rounded border border-neutral-300 text-sm">
+              <div className="flex overflow-hidden rounded-sm border border-neutral-300 text-sm">
                 {systems.map((system) => (
                   <button
                     key={system.value}
@@ -313,7 +313,7 @@ export const VirtualKeyboard = () => {
 
           <button
             type="button"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-neutral-600 hover:bg-neutral-200"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-neutral-600 hover:bg-neutral-200"
             onClick={() => setIsKeyboardOpen(false)}
           >
             <XIcon size={16} />
@@ -331,7 +331,7 @@ export const VirtualKeyboard = () => {
                     key={`${row}-${key}`}
                     type="button"
                     className={clsx(
-                      'flex h-10 select-none items-center justify-center rounded bg-white px-2 text-center text-sm shadow-sm active:bg-blue-100',
+                      'flex h-10 select-none items-center justify-center rounded-sm bg-white px-2 text-center text-sm shadow-xs active:bg-blue-100',
                       getMobileButtonClass(key),
                       activeModifierKeys.includes(key) && 'bg-blue-600 text-white'
                     )}
@@ -358,8 +358,8 @@ export const VirtualKeyboard = () => {
       <Drawer.Portal>
         <Drawer.Content
           className={clsx(
-            'max-w-screen fixed bottom-0 left-0 right-0 z-[999] mx-auto overflow-hidden bg-white outline-none',
-            isDesktopLayout ? 'w-[820px] rounded' : 'w-screen rounded-t'
+            'max-w-screen fixed bottom-0 left-0 right-0 z-999 mx-auto overflow-hidden bg-white outline-hidden',
+            isDesktopLayout ? 'w-[820px] rounded-sm' : 'w-screen rounded-t'
           )}
         >
           {/* header */}
@@ -391,7 +391,7 @@ export const VirtualKeyboard = () => {
 
             <div className="flex shrink-0 items-center justify-end sm:w-[100px]">
               <div
-                className="flex h-[20px] w-[20px] cursor-pointer items-center justify-center rounded text-neutral-600 hover:bg-neutral-300 hover:text-white"
+                className="flex h-[20px] w-[20px] cursor-pointer items-center justify-center rounded-sm text-neutral-600 hover:bg-neutral-300 hover:text-white"
                 onClick={() => setIsKeyboardOpen(false)}
               >
                 <XIcon size={16} />
@@ -399,7 +399,7 @@ export const VirtualKeyboard = () => {
             </div>
           </div>
 
-          <div className="h-px flex-shrink-0 border-b bg-neutral-300" />
+          <div className="h-px shrink-0 border-b bg-neutral-300" />
 
           <div data-vaul-no-drag className="keyboardContainer w-full">
             {/* main keyboard */}

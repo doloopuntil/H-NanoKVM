@@ -17,7 +17,7 @@ export const Expand = ({ toggleMenu }: ExpandProps) => {
       <Divider orientation="vertical" style={{ margin: '0 4px' }} />
 
       <div
-        className="flex size-[26px] cursor-pointer items-center justify-center rounded text-neutral-500 hover:bg-neutral-800/60 hover:text-white"
+        className="flex size-[26px] cursor-pointer items-center justify-center rounded-sm text-neutral-500 hover:bg-neutral-800/60 hover:text-white"
         onClick={() => toggleMenu(true)}
       >
         <ChevronRightIcon size={16} />

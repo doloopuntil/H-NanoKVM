@@ -25,7 +25,7 @@ export const Meter = ({
     <div className="flex items-end justify-between gap-4">
       <div className="flex min-w-0 flex-col space-y-0.5">
         <span className="text-sm text-neutral-300">{label}</span>
-        <span className="break-words text-xs text-neutral-500">{caption}</span>
+        <span className="wrap-break-word text-xs text-neutral-500">{caption}</span>
       </div>
       <div className="shrink-0 whitespace-nowrap text-[15px] tabular-nums text-neutral-200">
         {value}
@@ -37,9 +37,9 @@ export const Meter = ({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(percent)}
-      className="mt-2 h-2 overflow-hidden rounded bg-neutral-700/60"
+      className="mt-2 h-2 overflow-hidden rounded-sm bg-neutral-700/60"
     >
-      <div className={`h-full rounded ${BAR_COLORS[tone]}`} style={{ width: `${percent}%` }} />
+      <div className={`h-full rounded-sm ${BAR_COLORS[tone]}`} style={{ width: `${percent}%` }} />
     </div>
   </div>
 );
@@ -65,7 +65,7 @@ export const SplitMeter = ({
       <div className="flex items-end justify-between gap-4">
         <div className="flex min-w-0 flex-col space-y-0.5">
           <span className="text-sm text-neutral-300">{label}</span>
-          <span className="break-words text-xs text-neutral-500">{caption}</span>
+          <span className="wrap-break-word text-xs text-neutral-500">{caption}</span>
         </div>
         <div className="shrink-0 whitespace-nowrap text-[15px] tabular-nums text-neutral-200">
           {value}
@@ -77,7 +77,7 @@ export const SplitMeter = ({
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(firstWidth + secondWidth)}
-        className="mt-2 flex h-2 overflow-hidden rounded bg-neutral-700/60"
+        className="mt-2 flex h-2 overflow-hidden rounded-sm bg-neutral-700/60"
       >
         <div className={`h-full ${CPU_USER_COLOR}`} style={{ width: `${firstWidth}%` }} />
         <div className={`h-full ${CPU_SYSTEM_COLOR}`} style={{ width: `${secondWidth}%` }} />

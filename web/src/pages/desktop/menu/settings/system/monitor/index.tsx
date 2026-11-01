@@ -46,7 +46,7 @@ const History = ({
     <div className="flex items-end justify-between gap-4">
       <div className="flex min-w-0 flex-col space-y-0.5">
         <span className="text-sm text-neutral-300">{label}</span>
-        <span className="break-words text-xs text-neutral-500">{caption}</span>
+        <span className="wrap-break-word text-xs text-neutral-500">{caption}</span>
       </div>
       <div className={`shrink-0 whitespace-nowrap text-[15px] tabular-nums ${VALUE_COLORS[tone]}`}>
         {value}

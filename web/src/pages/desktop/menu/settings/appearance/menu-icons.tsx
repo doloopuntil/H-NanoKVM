@@ -167,7 +167,7 @@ export const MenuIcons = () => {
             label={
               <span className="flex min-w-0 items-center gap-2">
                 <span className="shrink-0 text-neutral-400">{item.icon}</span>
-                <span className="min-w-0 break-words">
+                <span className="min-w-0 wrap-break-word">
                   {item.label ? t(item.label) : t(`${item.key}.title`)}
                 </span>
               </span>

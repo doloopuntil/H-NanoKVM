@@ -34,7 +34,7 @@ const HeaderButton = forwardRef<HTMLButtonElement, HeaderButtonProps>(
       type="button"
       disabled={disabled || loading}
       className={clsx(
-        'box-border flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded border-0 bg-transparent p-0',
+        'flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-sm',
         disabled || loading
           ? 'cursor-not-allowed text-neutral-500'
           : [
@@ -118,7 +118,7 @@ export const SidebarHeader = ({
 
   return (
     <>
-      <div className="flex h-12 flex-shrink-0 items-center justify-between gap-3 pl-2 pr-4">
+      <div className="flex h-12 shrink-0 items-center justify-between gap-3 pl-2 pr-4">
         {/* Left: Title */}
         <div className="flex min-w-0 items-center gap-1.5">
           <Tooltip title={t('menu.collapse')} mouseEnterDelay={0.6} placement="bottom">

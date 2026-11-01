@@ -48,8 +48,10 @@ Details and known failures: [docs/development/testing.md](docs/development/testi
   `web/src/i18n/locales/en.ts` goes into every other language file too;
   `translations.test.ts` enforces keys and copy rules. Follow
   [docs/development/web-ui-layout-rules.md](docs/development/web-ui-layout-rules.md).
-- **Tailwind preflight is off**: borders need `border-solid`; elements with width
-  and padding need `box-border`.
+- **Tailwind 4 and antd share cascade layers**
+  (`@layer theme, base, antd, components, utilities` in `web/src/assets/styles/index.css`;
+  antd joins through `StyleProvider layer` in `main.tsx`). Preflight is on and
+  cannot restyle antd; utilities override antd without `!`. Keep that order.
 - **Image workflow**: do not reintroduce downloads of published Hardened
   artifacts (the raw.12 system, the 2.0.42 app archive); `libkvm` and
   `kvm_system` are built from source. The `build/rc12-run` path name is a

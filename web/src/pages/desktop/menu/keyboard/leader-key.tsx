@@ -136,7 +136,7 @@ export const LeaderKey = () => {
             </div>
 
             {!isDocCollapsed && (
-              <ul className="list-outside space-y-3">
+              <ul className="my-3.5 list-outside list-disc space-y-3 pl-10">
                 {['simultaneous', 'sequential'].map((key) => (
                   <li>
                     <div className="flex flex-col space-y-2 pr-1">
@@ -178,7 +178,7 @@ export const LeaderKey = () => {
                   <div
                     key={key.value}
                     className={clsx(
-                      'flex w-28 cursor-pointer items-center justify-center space-x-1 rounded py-1 shadow-lg shadow-neutral-800 outline',
+                      'flex w-28 cursor-pointer items-center justify-center space-x-1 rounded-sm py-1 shadow-lg shadow-neutral-800 outline',
                       key.value === tempLeaderKey
                         ? 'text-neutral-300 outline-blue-500'
                         : 'text-neutral-500 outline-neutral-700 hover:shadow-xl hover:outline-neutral-600'

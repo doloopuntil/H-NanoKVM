@@ -147,7 +147,7 @@ export const Wol = () => {
         {status && (
           <div
             className={clsx(
-              'max-w-[300px] break-words text-sm',
+              'max-w-[300px] wrap-break-word text-sm',
               status === 'failed' ? 'text-red-500' : 'text-green-500'
             )}
           >
@@ -161,7 +161,7 @@ export const Wol = () => {
           {macList.map((item) => (
             <div
               key={item.mac}
-              className="box-border flex w-full items-center justify-between border-0 border-b border-solid border-white/[0.06] py-3 last:border-b-0"
+              className="flex w-full items-center justify-between border-b border-white/[0.06] py-3 last:border-b-0"
             >
               <div className="h-[24px] max-w-[200px]">
                 {item.isEdit ? (
@@ -182,26 +182,26 @@ export const Wol = () => {
               <div className="flex items-center space-x-1">
                 {item.isName && (
                   <div
-                    className="text-500 flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded hover:bg-neutral-700/80"
+                    className="text-500 flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded-sm hover:bg-neutral-700/80"
                     onClick={() => toggleShow(item.mac)}
                   >
                     {item.isShow ? <EyeClosed size={16} /> : <Eye size={16} />}
                   </div>
                 )}
                 <div
-                  className="text-500 flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded hover:bg-neutral-700"
+                  className="text-500 flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded-sm hover:bg-neutral-700"
                   onClick={() => editMac(item.mac, item.isEdit)}
                 >
                   <Pencil size={16} />
                 </div>
                 <div
-                  className="flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded text-green-500 hover:bg-neutral-700/80"
+                  className="flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded-sm text-green-500 hover:bg-neutral-700/80"
                   onClick={() => wake(item.mac)}
                 >
                   <SendIcon size={16} />
                 </div>
                 <div
-                  className="flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded text-red-500 hover:bg-neutral-700"
+                  className="flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded-sm text-red-500 hover:bg-neutral-700"
                   onClick={() => deleteMac(item.mac)}
                 >
                   <Trash2Icon size={16} />

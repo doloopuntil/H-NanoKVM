@@ -75,7 +75,7 @@ export const Desktop = () => {
   }
 
   return (
-    <div className="h-[100dvh] w-screen overflow-hidden bg-neutral-950">
+    <div className="h-dvh w-screen overflow-hidden bg-neutral-950">
       <Head title={t('head.desktop')} />
 
       {isDesktopLayout && <Notification />}
@@ -117,7 +117,7 @@ export const Desktop = () => {
       )}
 
       {!isDesktopLayout && isPicoclawChatOpen ? (
-        <div className="fixed inset-x-0 bottom-0 top-14 z-[980] overflow-hidden bg-[#0d0d0f] shadow-2xl">
+        <div className="fixed inset-x-0 bottom-0 top-14 z-980 overflow-hidden bg-[#0d0d0f] shadow-2xl">
           <PicoclawSidebar />
         </div>
       ) : null}

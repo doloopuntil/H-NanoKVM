@@ -1,6 +1,14 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* antd renders into the antd layer (StyleProvider in main.tsx): above preflight, below utilities. */
+@layer theme, base, antd, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@theme {
+  /* The Settings panel: the antd modal colour (rgb(31, 31, 31)) under a 50% neutral-900 layer,
+     as one solid colour so that what sticks over the scrolling content hides it. */
+  --color-settings-panel: #1b1b1b;
+}
 
 html,
 body {

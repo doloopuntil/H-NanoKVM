@@ -253,7 +253,7 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
                   disabled={!config.remoteEnabled}
                   value={config.remotePort}
                   onChange={(value) => patchConfig({ remotePort: value || 514 })}
-                  className="w-20 [&_.ant-input-number-input]:!text-right"
+                  className="w-20 [&_.ant-input-number-input]:text-right!"
                 />
               </SettingRow>
             </div>
@@ -291,7 +291,7 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
                     controls={false}
                     value={config.bufferKb}
                     onChange={(value) => patchConfig({ bufferKb: value || 200 })}
-                    className="w-20 [&_.ant-input-number-input]:!text-right"
+                    className="w-20 [&_.ant-input-number-input]:text-right!"
                   />
                   <Space.Addon className="w-12 text-center">KiB</Space.Addon>
                 </Space.Compact>
@@ -307,7 +307,7 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
                   controls={false}
                   value={config.rotations}
                   onChange={(value) => patchConfig({ rotations: value || 0 })}
-                  className="w-16 [&_.ant-input-number-input]:!text-right"
+                  className="w-16 [&_.ant-input-number-input]:text-right!"
                 />
               </SettingRow>
               <SettingRow
@@ -349,7 +349,7 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
                   </Button>
 
                   <div className="flex w-full min-w-0 items-center gap-2 sm:ml-auto sm:w-auto sm:flex-wrap sm:justify-end">
-                    <Space.Compact className="!flex min-w-0 flex-1 basis-0 sm:!inline-flex sm:flex-none sm:basis-auto">
+                    <Space.Compact className="flex! min-w-0 flex-1 basis-0 sm:!inline-flex sm:flex-none sm:basis-auto">
                       <Select
                         className="min-w-0 flex-1 text-right sm:w-20 sm:flex-none"
                         value={lineCount}
@@ -378,7 +378,7 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
                   <Alert type="info" showIcon title={t('settings.systemLog.viewer.truncated')} />
                 )}
 
-                <pre className="max-h-[360px] min-h-[260px] overflow-auto rounded bg-black/50 p-3 font-mono text-xs leading-relaxed text-neutral-200">
+                <pre className="max-h-[360px] min-h-[260px] overflow-auto rounded-sm bg-black/50 p-3 font-mono text-xs leading-relaxed text-neutral-200">
                   {content || t('settings.systemLog.viewer.empty')}
                 </pre>
               </div>

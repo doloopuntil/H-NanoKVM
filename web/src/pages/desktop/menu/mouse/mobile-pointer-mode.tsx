@@ -14,7 +14,7 @@ export const MobilePointerMode = () => {
   return (
     <div
       data-menu-keep-open
-      className="flex min-h-[48px] items-start rounded px-3 py-2 text-neutral-300"
+      className="flex min-h-[48px] items-start rounded-sm px-3 py-2 text-neutral-300"
     >
       <div className="mr-2 mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center text-blue-400">
         <TabletSmartphoneIcon size={16} />

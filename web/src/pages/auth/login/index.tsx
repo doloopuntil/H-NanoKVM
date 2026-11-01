@@ -242,7 +242,7 @@ export const Login = (): ReactElement => {
         >
           <div className="flex flex-col items-center justify-center pb-5">
             <div
-              className={`hardened-login-logo flex h-[72px] w-[300px] cursor-pointer items-center justify-center rounded ${
+              className={`hardened-login-logo flex h-[72px] w-[300px] cursor-pointer items-center justify-center rounded-sm ${
                 logoPressed ? 'hardened-login-logo--active' : ''
               }`}
               onClick={pressLogo}
@@ -259,8 +259,8 @@ export const Login = (): ReactElement => {
           {isSetup && (
             <div className="mb-5 flex flex-col gap-2 text-center">
               <h1 className="text-lg font-semibold text-neutral-100">{t('auth.setupTitle')}</h1>
-              <p className="m-0 text-sm text-neutral-400">{t('auth.setupDescription')}</p>
-              <p className="m-0 text-xs text-red-400">{t('auth.setupRecovery')}</p>
+              <p className="text-sm text-neutral-400">{t('auth.setupDescription')}</p>
+              <p className="text-xs text-red-400">{t('auth.setupRecovery')}</p>
             </div>
           )}
           {totpRequired && (
@@ -268,7 +268,7 @@ export const Login = (): ReactElement => {
               <h1 className="text-lg font-semibold text-neutral-100">
                 {t('auth.totp.title', { defaultValue: 'Two-factor authentication' })}
               </h1>
-              <p className="m-0 text-sm text-neutral-400">
+              <p className="text-sm text-neutral-400">
                 {useBackupCode
                   ? t('auth.totp.backupPrompt', {
                       defaultValue: 'Enter one of your backup codes'

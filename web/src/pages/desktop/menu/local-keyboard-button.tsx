@@ -35,7 +35,7 @@ export const LocalKeyboardButton = () => {
     <Tooltip title={t('keyboard.local')} mouseEnterDelay={0.6} placement="bottom">
       <div
         className={clsx(
-          'relative flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded text-neutral-300 hover:bg-neutral-700/80 hover:text-white',
+          'relative flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-sm text-neutral-300 hover:bg-neutral-700/80 hover:text-white',
           isLocalKeyboardOpen && 'bg-neutral-700/80 text-blue-400'
         )}
         onClick={toggleLocalKeyboard}
@@ -43,7 +43,7 @@ export const LocalKeyboardButton = () => {
         <KeyboardIcon size={16} />
         <SmartphoneIcon
           size={10}
-          className="absolute right-[4px] top-[4px] rounded bg-neutral-800"
+          className="absolute right-[4px] top-[4px] rounded-sm bg-neutral-800"
         />
       </div>
     </Tooltip>

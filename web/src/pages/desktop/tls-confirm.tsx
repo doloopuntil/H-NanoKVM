@@ -102,7 +102,7 @@ export const TlsConfirm = () => {
         )
       }
     >
-      <p className="m-0">
+      <p>
         {isReverting
           ? t('settings.network.tls.reverting', { seconds: REDIRECT_DELAY_SECONDS })
           : isCertificate

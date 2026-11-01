@@ -45,7 +45,7 @@ export const Shortcut = ({ shortcut }: ShortcutProps) => {
 
   return (
     <div
-      className="flex h-[30px] w-full cursor-pointer items-center space-x-1 rounded px-3 hover:bg-neutral-700/70"
+      className="flex h-[30px] w-full cursor-pointer items-center space-x-1 rounded-sm px-3 hover:bg-neutral-700/70"
       onClick={handleClick}
     >
       {shortcut.keys.map((key, index) => (

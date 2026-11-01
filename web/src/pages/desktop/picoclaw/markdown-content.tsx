@@ -17,7 +17,7 @@ export const MarkdownContent = ({ content, className }: MarkdownContentProps) =>
         remarkPlugins={[remarkGfm]}
         components={{
           p: ({ children }) => (
-            <p className="my-2 whitespace-pre-wrap break-words leading-6 first:mt-0 last:mb-0">
+            <p className="my-2 whitespace-pre-wrap wrap-break-word leading-6 first:mt-0 last:mb-0">
               {children}
             </p>
           ),
@@ -33,7 +33,7 @@ export const MarkdownContent = ({ content, className }: MarkdownContentProps) =>
           ),
           ul: ({ children }) => <ul className="my-2 list-disc pl-5">{children}</ul>,
           ol: ({ children }) => <ol className="my-2 list-decimal pl-5">{children}</ol>,
-          li: ({ children }) => <li className="my-1 break-words leading-6">{children}</li>,
+          li: ({ children }) => <li className="my-1 wrap-break-word leading-6">{children}</li>,
           h1: ({ children }) => (
             <h1 className="mt-3 text-base font-semibold first:mt-0">{children}</h1>
           ),
@@ -49,7 +49,7 @@ export const MarkdownContent = ({ content, className }: MarkdownContentProps) =>
           code: ({ children, className: codeClassName, ...props }: any) =>
             !String(codeClassName || '').includes('language-') ? (
               <code
-                className="rounded bg-black/25 px-1.5 py-0.5 font-mono text-[0.92em]"
+                className="rounded-sm bg-black/25 px-1.5 py-0.5 font-mono text-[0.92em]"
                 {...props}
               >
                 {children}
@@ -70,12 +70,12 @@ export const MarkdownContent = ({ content, className }: MarkdownContentProps) =>
             </div>
           ),
           th: ({ children }) => (
-            <th className="border-0 border-b border-solid border-white/10 px-2 py-1 font-semibold">
+            <th className="border-b border-white/10 px-2 py-1 font-semibold">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="border-0 border-b border-solid border-white/5 px-2 py-1 align-top">
+            <td className="border-b border-white/5 px-2 py-1 align-top">
               {children}
             </td>
           )

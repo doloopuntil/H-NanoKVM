@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-18
+last-checked: 2026-11-01
 ---
 
 # Web UI
@@ -76,5 +76,5 @@ signature checks ([Build and deploy the server](cross-build.md)).
   files in `web/src/i18n/locales/`, keys in the order of `en.ts`.
   `translations.test.ts` fails on missing or extra keys, broken placeholders and
   copy-rule violations.
-- Tailwind's preflight is off: give borders `border-solid`, and add `box-border`
-  to elements with both a width and padding.
+- Tailwind 4 runs with its preflight, and antd sits in a cascade layer below the
+  utilities: see rule 32 of the layout rules.

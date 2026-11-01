@@ -95,7 +95,7 @@ export const Password = () => {
     <>
       <Head title={t('head.changePassword')} />
 
-      <div className="box-border flex min-h-dvh w-full flex-col items-center justify-center space-y-5 px-4 py-6">
+      <div className="flex min-h-dvh w-full flex-col items-center justify-center gap-5 px-4 py-6">
         <h2 className="text-xl font-semibold text-neutral-100">{t('auth.changePassword')}</h2>
 
         <Form
@@ -167,9 +167,9 @@ export const Password = () => {
         </Form>
 
         <Card className="w-full max-w-[500px]">
-          <div className="flex flex-col break-words">
+          <div className="flex flex-col wrap-break-word">
             <div>{t('auth.tips.change1')}</div>
-            <ul className="list-outside list-decimal">
+            <ul className="my-3.5 list-outside list-decimal pl-10">
               <li>{t('auth.tips.change2')}</li>
               <li>{t('auth.tips.change3')}</li>
             </ul>

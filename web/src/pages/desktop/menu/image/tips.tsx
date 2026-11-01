@@ -13,7 +13,7 @@ export const Tips = () => {
       key: '1',
       label: 'USB',
       children: (
-        <ul className="list-decimal">
+        <ul className="my-3.5 list-decimal pl-10">
           <li>{t('image.tips.usb1')}</li>
           <li>{t('image.tips.usb2')}</li>
           <li>{t('image.tips.usb3')}</li>
@@ -24,7 +24,7 @@ export const Tips = () => {
       key: '2',
       label: 'SCP',
       children: (
-        <ul className="list-decimal">
+        <ul className="my-3.5 list-decimal pl-10">
           <li>{t('image.tips.scp1')}</li>
           <li>{t('image.tips.scp2')}</li>
           <li>{t('image.tips.scp3')}</li>
@@ -36,8 +36,8 @@ export const Tips = () => {
       label: t('image.tips.tfCard'),
       children: (
         <>
-          <p className="pl-5 text-sm text-neutral-400">{t('image.tips.tf1')}</p>
-          <ul className="list-decimal">
+          <p className="my-3.5 pl-5 text-sm text-neutral-400">{t('image.tips.tf1')}</p>
+          <ul className="my-3.5 list-decimal pl-10">
             <li>{t('image.tips.tf2')}</li>
             <li>{t('image.tips.tf3')}</li>
             <li>{t('image.tips.tf4')}</li>

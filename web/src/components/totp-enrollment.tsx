@@ -255,7 +255,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
             </div>
           }
         />
-        <div className="grid grid-cols-3 gap-2 rounded bg-neutral-800 p-3 text-center font-mono text-sm">
+        <div className="grid grid-cols-3 gap-2 rounded-sm bg-neutral-800 p-3 text-center font-mono text-sm">
           {backupCodes.map((backupCode) => (
             <span key={backupCode}>{backupCode}</span>
           ))}
@@ -283,11 +283,11 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
     return (
       <div className="flex flex-col space-y-3">
         <span className="text-sm text-neutral-400">{t('settings.account.totp.scan')}</span>
-        <div className="flex justify-center rounded bg-white p-3">
+        <div className="flex justify-center rounded-sm bg-white p-3">
           <QRCodeSVG value={otpauthUri} size={180} />
         </div>
         <span className="text-xs text-neutral-500">{t('settings.account.totp.manualEntry')}</span>
-        <code className="break-all rounded bg-neutral-800 p-2 text-xs">{secret}</code>
+        <code className="break-all rounded-sm bg-neutral-800 p-2 text-xs">{secret}</code>
 
         <Input
           value={code}

@@ -22,12 +22,12 @@ export const PageHeader = ({ title, children }: PageHeaderProps) => {
 
   return (
     <>
-      <div className="sticky top-0 z-20 mb-8 min-w-0 border-0 border-b border-solid border-white/[0.06] bg-settings-panel pb-6 shadow-[0_20px_20px_-20px_rgba(0,0,0,0.5)] backdrop-blur before:absolute before:bottom-full before:left-0 before:right-0 before:h-10 before:bg-settings-panel before:content-[''] sm:top-10">
-        {/* The shadow has a negative spread, so it is as wide as the header and fades out before
-            its sides: the scroll area clips whatever goes beyond the content width, and a shadow
+      <div className="sticky top-0 z-20 mb-8 min-w-0 border-b border-white/[0.06] bg-settings-panel pb-6 shadow-[0_20px_20px_-20px_rgba(0,0,0,0.5)] backdrop-blur-sm before:absolute before:bottom-full before:left-0 before:right-0 before:h-10 before:bg-settings-panel before:content-[''] sm:top-10">
+        {/* The shadow-sm has a negative spread, so it is as wide as the header and fades out before
+            its sides: the scroll area clips whatever goes beyond the content width, and a shadow-sm
             that reached it would end in a hard edge beside the title. The cover above leaves room
-            for the dialog's own title bar. The shadow box is the header's height minus 40px, so
-            the header's own padding is what keeps the shadow visible. */}
+            for the dialog's own title bar. The shadow-sm box is the header's height minus 40px, so
+            the header's own padding is what keeps the shadow-sm visible. */}
         <div className="flex items-center justify-between gap-3">
           <div className="shrink-0 text-base leading-7">{title}</div>
           {children && <div className="flex min-w-0 items-center justify-end">{children}</div>}

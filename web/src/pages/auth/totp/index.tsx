@@ -22,7 +22,7 @@ export const Totp = () => {
     <>
       <Head title={t('settings.account.totp.title')} />
 
-      <div className="box-border flex min-h-dvh w-full flex-col items-center justify-center space-y-5 px-4 py-6">
+      <div className="flex min-h-dvh w-full flex-col items-center justify-center gap-5 px-4 py-6">
         <Typography.Title level={4} className="!mb-0 text-center">
           {t('settings.account.totp.requiredTitle')}
         </Typography.Title>

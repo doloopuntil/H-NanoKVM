@@ -130,7 +130,7 @@ export const Script = () => {
         <div
           key={script}
           className={clsx(
-            'my-1 cursor-pointer rounded',
+            'my-1 cursor-pointer rounded-sm',
             script === currentScript ? 'bg-neutral-700/50' : 'hover:bg-neutral-700/70'
           )}
         >

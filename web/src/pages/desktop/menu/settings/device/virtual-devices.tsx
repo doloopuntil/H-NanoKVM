@@ -181,7 +181,7 @@ export const VirtualDevices = () => {
                 content: (
                   <div className="space-y-2">
                     <p>{t('mouse.hidOnly.desc')}</p>
-                    <ul className="m-0 list-disc space-y-1 pl-5 text-neutral-400">
+                    <ul className="list-disc space-y-1 pl-5 text-neutral-400">
                       <li>{t('mouse.hidOnly.tip1')}</li>
                       <li>{t('mouse.hidOnly.tip2')}</li>
                       <li>{t('mouse.hidOnly.tip3')}</li>

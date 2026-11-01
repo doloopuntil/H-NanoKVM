@@ -141,7 +141,7 @@ export const MobileCursorOverlay = () => {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed z-[900] transition-opacity duration-100"
+      className="pointer-events-none fixed z-900 transition-opacity duration-100"
       style={{
         left: cursor.x,
         top: cursor.y,
@@ -152,7 +152,7 @@ export const MobileCursorOverlay = () => {
       <MousePointer2Icon
         size={22}
         strokeWidth={2.25}
-        className="text-white [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]"
+        className="text-white filter-[drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]"
       />
     </div>
   );

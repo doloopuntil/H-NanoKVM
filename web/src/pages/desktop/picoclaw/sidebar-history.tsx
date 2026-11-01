@@ -63,8 +63,8 @@ export const SidebarHistory = ({
     }
 
     return (
-      <div className="box-border flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-3">
-        <div className="box-border w-full max-w-full space-y-2">
+      <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-3">
+        <div className="w-full max-w-full space-y-2">
           {sessions.map((session) => {
             const isActive = session.id === activeSessionId;
             return (
@@ -88,7 +88,7 @@ export const SidebarHistory = ({
                   }
                 }}
                 className={[
-                  'group box-border flex w-full items-start gap-3 rounded-2xl border border-solid px-3 py-3 text-left transition-colors',
+                  'group flex w-full items-start gap-3 rounded-2xl border px-3 py-3 text-left transition-colors',
                   isSwitching ? 'pointer-events-none opacity-60' : '',
                   isActive
                     ? 'border-blue-500/30 bg-blue-500/10'
@@ -115,8 +115,8 @@ export const SidebarHistory = ({
                       disabled={isDeleting || isSwitching}
                       icon={<Trash2Icon size={16} />}
                       className={[
-                        '!mt-0.5 !hidden !items-center !justify-center !text-neutral-500 hover:!bg-red-500/10 hover:!text-red-300',
-                        isActive ? '' : 'group-hover:!inline-flex'
+                        '!mt-0.5 hidden! items-center! justify-center! !text-neutral-500 hover:!bg-red-500/10 hover:!text-red-300',
+                        isActive ? '' : 'group-hover:inline-flex!'
                       ].join(' ')}
                       onClick={(event) => {
                         event.preventDefault();

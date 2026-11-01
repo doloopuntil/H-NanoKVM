@@ -338,12 +338,12 @@ export const Images = ({
 
     return (
       // three images show, the rest scroll; a thin scrollbar on a transparent track
-      <div className="flex max-h-[120px] flex-col overflow-y-auto pr-1 [scrollbar-color:theme(colors.neutral.600)_transparent] [scrollbar-width:thin]">
+      <div className="flex max-h-[120px] flex-col overflow-y-auto pr-1 [scrollbar-color:var(--color-neutral-600)_transparent] scrollbar-thin">
         {images.map((image) => (
           <div
             key={image}
             className={clsx(
-              'group flex cursor-pointer select-none items-center gap-1 rounded px-1 py-2 hover:bg-neutral-700/70',
+              'group flex cursor-pointer select-none items-center gap-1 rounded-sm px-1 py-2 hover:bg-neutral-700/70',
               mountedImage === image && 'text-blue-500'
             )}
             onClick={() => mountImage(image)}
@@ -364,7 +364,7 @@ export const Images = ({
             )}
             <div
               className={clsx(
-                'mr-0.5 rounded border border-solid px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none',
+                'mr-0.5 rounded-sm border px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none',
                 isImageCdrom(image)
                   ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
                   : 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
@@ -379,7 +379,7 @@ export const Images = ({
                 title={mountedImage === image ? t('image.eject') : t('image.mountTitle')}
                 mouseEnterDelay={0.6}
               >
-                <div className="flex h-[24px] w-[24px] items-center justify-center rounded">
+                <div className="flex h-[24px] w-[24px] items-center justify-center rounded-sm">
                   {mountedImage === image ? (
                     <HardDriveUploadIcon
                       size={16}

@@ -172,7 +172,7 @@ export const AddImage = ({
           {status && transfer.log && (
             <div
               className={clsx(
-                'break-words text-sm',
+                'wrap-break-word text-sm',
                 status === 'failed' ? 'text-red-400' : 'text-green-400'
               )}
             >

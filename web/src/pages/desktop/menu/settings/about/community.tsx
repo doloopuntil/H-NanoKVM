@@ -35,7 +35,7 @@ export const Community = () => {
           </a>
         ))}
       </div>
-      <p className="m-0 break-words text-xs text-neutral-500">
+      <p className="wrap-break-word text-xs text-neutral-500">
         <Trans
           i18nKey="settings.about.credit"
           components={{

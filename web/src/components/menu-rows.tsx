@@ -37,7 +37,7 @@ export const MenuRow = forwardRef<HTMLDivElement, MenuRowProps>(
     <div
       ref={ref}
       className={clsx(
-        'box-border flex min-h-[30px] select-none items-center rounded px-3 py-1 text-sm',
+        'flex min-h-[30px] select-none items-center rounded-sm px-3 py-1 text-sm',
         disabled
           ? 'cursor-not-allowed text-neutral-500'
           : [
@@ -69,7 +69,7 @@ export const MenuOption = forwardRef<HTMLDivElement, MenuOptionProps>(
     <div
       ref={ref}
       className={clsx(
-        'box-border flex min-h-[30px] select-none items-center rounded py-1 pl-1 pr-5 text-sm',
+        'flex min-h-[30px] select-none items-center rounded-sm py-1 pl-1 pr-5 text-sm',
         disabled
           ? 'cursor-not-allowed text-neutral-500'
           : 'cursor-pointer text-neutral-300 hover:bg-neutral-700/70',
