@@ -68,7 +68,7 @@ export const Screen = () => {
     <div className="min-w-50">
       <MenuHeader title={t('screen.title')} />
 
-      <div className="flex flex-col space-y-1">
+      <div className="flex flex-col gap-1">
         <VideoMode />
         <Resolution />
         <Quality quality={quality} setQuality={setQuality} />
@@ -77,7 +77,7 @@ export const Screen = () => {
         {videoMode === 'mjpeg' && <FrameDetect />}
         {isPcie && (
           <>
-            <Divider style={{ margin: '10px 0' }} />
+            <Divider className="my-1.5" />
             <Reset />
           </>
         )}

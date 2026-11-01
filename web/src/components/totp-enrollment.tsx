@@ -244,7 +244,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
   // Backup codes are shown exactly once; only hashes are kept server-side.
   if (backupCodes.length > 0) {
     return (
-      <div ref={codesRef} className="flex flex-col space-y-3">
+      <div ref={codesRef} className="flex flex-col gap-3">
         <Alert
           type="warning"
           showIcon
@@ -281,7 +281,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
 
   if (isEnrolling) {
     return (
-      <div className="flex flex-col space-y-3">
+      <div className="flex flex-col gap-3">
         <span className="text-sm text-neutral-400">{t('settings.account.totp.scan')}</span>
         <div className="flex justify-center rounded-sm bg-white p-3">
           <QRCodeSVG value={otpauthUri} size={180} />
@@ -297,7 +297,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
           inputMode="numeric"
           autoComplete="one-time-code"
         />
-        <div className="flex space-x-2">
+        <div className="flex gap-2">
           <Button type="primary" loading={isBusy} onClick={confirmEnrollment}>
             {t('settings.account.totp.confirm')}
           </Button>
@@ -310,7 +310,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
   const isEnabled = !!status?.enabled;
 
   return (
-    <div className="flex flex-col space-y-6">
+    <div className="flex flex-col gap-6">
       {/* Codes are derived from the clock, so enrolling before NTP succeeds
           would produce a secret whose codes could never be confirmed. */}
       {status && !status.clockSynced && !status.enabled && (
@@ -387,7 +387,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
           setPassword('');
         }}
       >
-        <div className="flex flex-col space-y-3 py-2">
+        <div className="flex flex-col gap-3 py-2">
           <span className="text-sm text-neutral-400">
             {t('settings.account.totp.enableDescription')}
           </span>
@@ -416,7 +416,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
           setStepCode('');
         }}
       >
-        <div className="flex flex-col space-y-3 py-2">
+        <div className="flex flex-col gap-3 py-2">
           <span className="text-sm text-neutral-400">
             {t('settings.account.totp.regenerateDescription')}
           </span>
@@ -453,7 +453,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
           setStepCode('');
         }}
       >
-        <div className="flex flex-col space-y-3 py-2">
+        <div className="flex flex-col gap-3 py-2">
           <span className="text-sm text-neutral-400">
             {t('settings.account.totp.disableDescription')}
           </span>

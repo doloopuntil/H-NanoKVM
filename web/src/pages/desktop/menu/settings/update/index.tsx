@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Alert, Button, Divider, Spin, Tag } from 'antd';
+import { Alert, Button, Spin, Tag } from 'antd';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import semver from 'semver';
@@ -22,7 +22,7 @@ import { attempt, confirm } from '@/lib/feedback.ts';
 import { waitForRestart } from '@/lib/restart.ts';
 import { PageHeader } from '@/components/page-header.tsx';
 import { RebootTag } from '@/components/reboot-tag.tsx';
-import { InfoRow, SettingSection } from '@/components/setting-rows.tsx';
+import { InfoRow, SectionDivider, SettingSection } from '@/components/setting-rows.tsx';
 
 import { InstallWait } from './install-wait.tsx';
 import { ApplicationUpload, LocalKeyRow, SystemUpload, type LocalKey } from './local.tsx';
@@ -672,7 +672,7 @@ export const Update = ({ setIsLocked }: UpdateProps) => {
     <>
       <PageHeader title={t('settings.update.title')} />
 
-      <div className="flex min-w-0 flex-col space-y-6">
+      <div className="flex min-w-0 flex-col gap-6">
         {onlineUpdatesBlocked && (
           <Alert
             type="error"
@@ -683,7 +683,7 @@ export const Update = ({ setIsLocked }: UpdateProps) => {
         )}
 
         <SettingSection title={t('settings.update.application.title')} busy={applicationLoading}>
-          <div className="flex flex-col space-y-3">
+          <div className="flex flex-col gap-3">
             <InfoRow
               label={t('settings.update.currentVersion')}
               description={
@@ -757,10 +757,10 @@ export const Update = ({ setIsLocked }: UpdateProps) => {
           />
         </SettingSection>
 
-        <Divider className="opacity-50" />
+        <SectionDivider />
 
         <SettingSection title={t('settings.system.title')} busy={systemStatus === 'loading'}>
-          <div className="flex flex-col space-y-3">
+          <div className="flex flex-col gap-3">
             <InfoRow label={t('settings.update.currentVersion')} value={systemCurrentVersion} />
             <InfoRow
               label={<LatestLabel check={systemCheck} />}
@@ -831,7 +831,7 @@ export const Update = ({ setIsLocked }: UpdateProps) => {
           />
         </SettingSection>
 
-        <Divider className="opacity-50" />
+        <SectionDivider />
 
         <SettingSection title={t('settings.update.local.section')}>
           <LocalKeyRow localKey={localKey} onChange={setLocalKey} />
@@ -892,7 +892,7 @@ const StatusRow = ({ busy = false, error = false, title, text, buttons }: Status
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex min-w-0 flex-col space-y-1 sm:flex-1 sm:basis-60">
+      <div className="flex min-w-0 flex-col gap-1 sm:flex-1 sm:basis-60">
         {title && <span className="text-sm text-neutral-300">{title}</span>}
         {(busy || text) && (
           <span

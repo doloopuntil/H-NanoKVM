@@ -131,7 +131,7 @@ export const Wol = () => {
       <MenuHeader title={t('wol.title')} />
 
       <div className="w-full space-y-1 pb-3">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <Input
             ref={inputRef}
             value={input}
@@ -179,7 +179,7 @@ export const Wol = () => {
                 )}
               </div>
 
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center gap-1">
                 {item.isName && (
                   <div
                     className="flex size-6 cursor-pointer items-center justify-center rounded-sm hover:bg-neutral-700/80"

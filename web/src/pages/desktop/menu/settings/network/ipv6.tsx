@@ -250,11 +250,11 @@ export const IPv6 = forwardRef<NetworkSectionHandle, IPv6Props>(
     }, [onStatusChange, statusSnapshot]);
 
     return (
-      <div className="flex flex-col space-y-6">
+      <div className="flex flex-col gap-6">
         <div className="text-neutral-400">{t('settings.network.ipv6.title')}</div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-6">
-          <div className="flex min-w-0 flex-col space-y-1 sm:flex-1 sm:basis-60">
+          <div className="flex min-w-0 flex-col gap-1 sm:flex-1 sm:basis-60">
             <span>{t('settings.network.configuration')}</span>
             <span className="text-xs text-neutral-500">
               {t('settings.network.ipv6.description')}
@@ -283,7 +283,7 @@ export const IPv6 = forwardRef<NetworkSectionHandle, IPv6Props>(
           </div>
         </div>
 
-        <div className="flex flex-col space-y-3">
+        <div className="flex flex-col gap-3">
           <InfoRow label={t('settings.network.ipv6.interface')} value="eth0" />
 
           {mode === 'manual' ? (

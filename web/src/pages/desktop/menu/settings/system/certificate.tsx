@@ -349,7 +349,7 @@ export const Certificate = forwardRef<SystemActionHandle, CertificateProps>(
 
         {(info.currentNotAfter !== null ||
           (info.source !== 'selfSigned' && info.status.lastAttempt !== null)) && (
-          <div className="flex flex-col space-y-3">
+          <div className="flex flex-col gap-3">
             {info.currentNotAfter !== null && (
               <InfoRow
                 label={

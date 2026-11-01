@@ -83,7 +83,7 @@ export const InstallWait = ({ open, onFailed }: InstallWaitProps) => {
       title={t('settings.update.system.rawWaitTitle')}
     >
       <div className="space-y-4 py-2">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-3">
           <LoaderCircleIcon className="animate-spin text-blue-400" size={24} />
           <span className="text-sm text-neutral-300">
             {wentDown

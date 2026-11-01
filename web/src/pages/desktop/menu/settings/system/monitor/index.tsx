@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import { Alert, Divider } from 'antd';
+import { Alert } from 'antd';
 import { useTranslation } from 'react-i18next';
 
 import { formatUptime } from '@/lib/uptime.ts';
-import { SettingSection } from '@/components/setting-rows.tsx';
+import { SectionDivider, SettingSection } from '@/components/setting-rows.tsx';
 
 import { Meter, SplitMeter } from './meter';
 import {
@@ -44,7 +44,7 @@ const History = ({
 }) => (
   <div className="flex min-w-0 flex-col lg:min-h-26">
     <div className="flex items-end justify-between gap-4">
-      <div className="flex min-w-0 flex-col space-y-0.5">
+      <div className="flex min-w-0 flex-col gap-0.5">
         <span className="text-sm text-neutral-300">{label}</span>
         <span className="text-xs wrap-break-word text-neutral-500">{caption}</span>
       </div>
@@ -102,7 +102,7 @@ export const Monitor = () => {
   }
 
   return (
-    <div className="flex min-w-0 flex-col space-y-6">
+    <div className="flex min-w-0 flex-col gap-6">
       {unavailable && (
         <Alert type="warning" showIcon title={t('settings.system.monitor.noReadings')} />
       )}
@@ -215,7 +215,7 @@ export const Monitor = () => {
         </SettingSection>
       </div>
 
-      <Divider className="opacity-50" />
+      <SectionDivider />
 
       <div className="grid min-w-0 grid-cols-1 gap-x-14 gap-y-7 lg:grid-cols-2">
         {storage('/', t('settings.system.monitor.systemPartition'), '/')}

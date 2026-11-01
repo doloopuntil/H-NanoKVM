@@ -117,7 +117,7 @@ export const LeaderKey = () => {
       >
         <DialogHint>{t('keyboard.leaderKey.desc')}</DialogHint>
 
-        <div className="flex flex-col space-y-3">
+        <div className="flex flex-col gap-3">
           {/* Document */}
           <div className="rounded-lg bg-neutral-800 py-3">
             <div
@@ -139,7 +139,7 @@ export const LeaderKey = () => {
               <ul className="my-2 list-disc space-y-3 pl-10">
                 {['simultaneous', 'sequential'].map((key) => (
                   <li>
-                    <div className="flex flex-col space-y-2 pr-1">
+                    <div className="flex flex-col gap-2 pr-1">
                       <span className="">{t(`keyboard.leaderKey.${key}.title`)}</span>
                       <span className="text-sm text-neutral-400">
                         {t(`keyboard.leaderKey.${key}.desc1`)}
@@ -162,7 +162,7 @@ export const LeaderKey = () => {
 
           {/* Keyboard recorder */}
           {isLeaderKeyEnable && (
-            <div className="flex flex-col space-y-5 rounded-lg bg-neutral-800 px-5 py-5">
+            <div className="flex flex-col gap-5 rounded-lg bg-neutral-800 px-5 py-5">
               <span className="text-sm text-neutral-400">{t('keyboard.leaderKey.tip')}</span>
               <Input
                 value={tempLeaderKey}
@@ -173,12 +173,12 @@ export const LeaderKey = () => {
                 onBlur={() => setIsFocused(false)}
               />
 
-              <div className="flex items-center justify-center space-x-3">
+              <div className="flex items-center justify-center gap-3">
                 {optionalKeys.map((key) => (
                   <div
                     key={key.value}
                     className={clsx(
-                      'flex w-28 cursor-pointer items-center justify-center space-x-1 rounded-sm py-1 shadow-lg shadow-neutral-800 outline',
+                      'flex w-28 cursor-pointer items-center justify-center gap-1 rounded-sm py-1 shadow-lg shadow-neutral-800 outline',
                       key.value === tempLeaderKey
                         ? 'text-neutral-300 outline-blue-500'
                         : 'text-neutral-500 outline-neutral-700 hover:shadow-xl hover:outline-neutral-600'

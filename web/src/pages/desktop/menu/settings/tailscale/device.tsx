@@ -42,7 +42,7 @@ export const Device = ({ status }: DeviceProps) => {
         <Switch checked={isRunning} loading={isUpdating} onClick={update} />
       </SettingRow>
 
-      <div className="flex flex-col space-y-3">
+      <div className="flex flex-col gap-3">
         <InfoRow label={t('settings.tailscale.deviceName')} value={status.name} />
         <InfoRow label={t('settings.tailscale.deviceIP')} value={status.ip} />
         <InfoRow label={t('settings.tailscale.account')} value={status.account} />

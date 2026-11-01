@@ -1,8 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { Divider } from 'antd';
 import { useTranslation } from 'react-i18next';
 
-import { SettingSection } from '@/components/setting-rows.tsx';
+import { SectionDivider, SettingSection } from '@/components/setting-rows.tsx';
 
 import type { SystemActionHandle, SystemActionState } from '../system/action.ts';
 import { DNS } from './dns.tsx';
@@ -78,15 +77,15 @@ export const Network = forwardRef<SystemActionHandle, NetworkProps>(
 
     return (
       <>
-        <div className="flex flex-col space-y-6">
+        <div className="flex flex-col gap-6">
           <SettingSection title={t('settings.network.connection')}>
             <Wifi />
           </SettingSection>
 
-          <Divider className="opacity-50" />
+          <SectionDivider />
 
           <DNS ref={dnsRef} disabled={isApplying} onStatusChange={setDNSStatus} />
-          <Divider className="opacity-50" />
+          <SectionDivider />
           <IPv6 ref={ipv6Ref} disabled={isApplying} onStatusChange={setIPv6Status} />
         </div>
       </>

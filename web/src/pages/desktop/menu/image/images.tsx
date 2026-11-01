@@ -318,7 +318,7 @@ export const Images = ({
   function renderList() {
     if (isLoading) {
       return (
-        <div className="flex items-center justify-center space-x-2 py-5 text-neutral-400">
+        <div className="flex items-center justify-center gap-2 py-5 text-neutral-400">
           <LoaderCircleIcon className="animate-spin" size={16} />
           <span className="text-sm">{t('image.loading')}</span>
         </div>
@@ -327,7 +327,7 @@ export const Images = ({
 
     if (images.length === 0) {
       return (
-        <div className="flex items-center justify-center space-x-2 py-5 text-neutral-500">
+        <div className="flex items-center justify-center gap-2 py-5 text-neutral-500">
           <PackageSearchIcon size={16} />
           <span className="text-sm">
             {isListFailed ? t('common.actionFailed') : t('image.empty')}
@@ -356,7 +356,7 @@ export const Images = ({
               )}
             </div>
 
-            <div className="flex min-w-0 flex-1 items-center space-x-2">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
               <span className="truncate">{image.replace(/^.*[\\/]/, '')}</span>
             </div>
             {sizes[image] !== undefined && (

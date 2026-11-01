@@ -1,10 +1,13 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { Input, Spin } from 'antd';
+import { Divider, Input, Spin } from 'antd';
 import { LoaderCircleIcon } from 'lucide-react';
 
 // A read-only "label ... value" row, as used on the Network page. It is as tall as the
 // editable row, so switching between the two does not move the rows around. The value stays on
 // the label's row, also on a phone, and a value of several lines can start at the top of the row.
+// The hairline between two sections; the page column's gap spaces it.
+export const SectionDivider = () => <Divider className="my-0 opacity-50" />;
+
 export const InfoRow = ({
   label,
   description,
@@ -21,7 +24,7 @@ export const InfoRow = ({
     className={`flex min-h-8 flex-row justify-between gap-4 ${alignStart ? 'items-start' : 'items-center'}`}
   >
     {description ? (
-      <div className="flex min-w-0 flex-1 flex-col space-y-0.5">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-sm text-neutral-300">{label}</span>
         <span className="text-xs leading-snug wrap-break-word text-neutral-500">{description}</span>
       </div>
@@ -91,7 +94,7 @@ export const SettingRow = ({
       isSwitch || inline ? 'items-center justify-between gap-4' : 'flex-col items-stretch'
     }`}
   >
-    <div className="flex min-w-0 flex-col space-y-0.5 sm:flex-1">
+    <div className="flex min-w-0 flex-col gap-0.5 sm:flex-1">
       <span className="text-sm text-neutral-300">{label}</span>
       {description && (
         <span className="text-xs leading-snug wrap-break-word text-neutral-500">{description}</span>
@@ -141,9 +144,9 @@ export const SettingSection = ({
   }, []);
 
   return (
-    // the hidden attribute, not a class, so that space-y skips the section
+    // the hidden attribute, not a class, so that index.css can hide the hairline next to it
     <div className="flex min-w-0 flex-col gap-6 [[hidden]]:hidden" hidden={isEmpty}>
-      <div className="flex min-w-0 flex-col space-y-1">
+      <div className="flex min-w-0 flex-col gap-1">
         <div className="flex items-center gap-2 text-neutral-400">
           {title}
           {busy && (

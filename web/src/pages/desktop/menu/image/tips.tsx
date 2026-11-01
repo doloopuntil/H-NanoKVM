@@ -51,7 +51,7 @@ export const Tips = () => {
   return (
     <>
       <div
-        className="flex cursor-pointer items-center space-x-1 text-neutral-500 hover:text-blue-500"
+        className="flex cursor-pointer items-center gap-1 text-neutral-500 hover:text-blue-500"
         onClick={() => setIsModalOpen(true)}
       >
         <CircleQuestionMarkIcon size={16} />

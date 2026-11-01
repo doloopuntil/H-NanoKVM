@@ -1,12 +1,12 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Button, ConfigProvider, Divider, Select, Switch } from 'antd';
+import { Button, ConfigProvider, Select, Switch } from 'antd';
 import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/system-time.ts';
 import type { TimeConfig, TimeConfigResponse } from '@/api/system-time.ts';
 import { toast } from '@/lib/feedback.ts';
 import { useSettingsLoadState } from '@/hooks/useSettingsLoad.ts';
-import { SettingRow, SettingSection } from '@/components/setting-rows.tsx';
+import { SectionDivider, SettingRow, SettingSection } from '@/components/setting-rows.tsx';
 
 import type { SystemActionHandle, SystemActionState } from './action.ts';
 
@@ -165,7 +165,7 @@ export const TimeSettings = forwardRef<SystemActionHandle, TimeSettingsProps>(
 
     return (
       <ConfigProvider componentDisabled={isUnavailable}>
-        <div className="flex min-w-0 flex-col space-y-6">
+        <div className="flex min-w-0 flex-col gap-6">
           <SettingSection title={t('settings.system.time.networkTime')}>
             <SettingRow
               label={t('settings.system.time.ntp.title')}
@@ -225,7 +225,7 @@ export const TimeSettings = forwardRef<SystemActionHandle, TimeSettingsProps>(
             </SettingRow>
           </SettingSection>
 
-          <Divider className="opacity-50" />
+          <SectionDivider />
 
           <SettingSection title={t('settings.system.time.clock.title')}>
             <SettingRow

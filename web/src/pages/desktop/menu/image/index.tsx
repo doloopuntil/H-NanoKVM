@@ -32,7 +32,7 @@ export const Image = () => {
     {
       value: 'mass-storage',
       label: (
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center gap-1">
           <HardDriveIcon size={16} />
           <span>{t('image.massStorage')}</span>
         </div>
@@ -41,7 +41,7 @@ export const Image = () => {
     {
       value: 'cd-rom',
       label: (
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center gap-1">
           <DiscIcon size={16} />
           <span>{t('image.cdRom')}</span>
         </div>
@@ -98,7 +98,7 @@ export const Image = () => {
 
       <Modal
         title={
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center gap-1">
             <span>{t('image.title')}</span>
             <Tips />
           </div>

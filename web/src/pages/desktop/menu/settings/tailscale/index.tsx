@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Divider } from 'antd';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/extensions/tailscale.ts';
 import { useSettingsLoadState } from '@/hooks/useSettingsLoad.ts';
 import { PageHeader } from '@/components/page-header.tsx';
-import { SettingSection } from '@/components/setting-rows.tsx';
+import { SectionDivider, SettingSection } from '@/components/setting-rows.tsx';
 
 import { Device } from './device.tsx';
 import { Install } from './install.tsx';
@@ -41,12 +40,12 @@ export const Tailscale = ({ setIsLocked }: TailscaleProps) => {
       <PageHeader title={t('settings.tailscale.title')} />
 
       {isLoading ? (
-        <div className="flex w-full items-center justify-center space-x-2 pt-5 text-neutral-500">
+        <div className="flex w-full items-center justify-center gap-2 pt-5 text-neutral-500">
           <LoaderCircleIcon className="animate-spin" size={16} />
           <span>{t('settings.tailscale.loading')}</span>
         </div>
       ) : (
-        <div className="flex min-w-0 flex-col space-y-6">
+        <div className="flex min-w-0 flex-col gap-6">
           {status?.state === 'notInstall' && (
             <Install setIsLocked={setIsLocked} onSuccess={reload} />
           )}
@@ -61,7 +60,7 @@ export const Tailscale = ({ setIsLocked }: TailscaleProps) => {
 
           {isInstalled && (
             <>
-              <Divider className="opacity-50" />
+              <SectionDivider />
 
               <SettingSection title={t('settings.tailscale.performance')}>
                 <Memory />
@@ -70,13 +69,13 @@ export const Tailscale = ({ setIsLocked }: TailscaleProps) => {
 
               {canControl && (
                 <>
-                  <Divider className="opacity-50" />
+                  <SectionDivider />
 
                   <Service onSuccess={reload} />
                 </>
               )}
 
-              <Divider className="opacity-50" />
+              <SectionDivider />
 
               <div className="flex flex-wrap justify-end gap-2">
                 {isSignedIn && <Logout onSuccess={reload} />}

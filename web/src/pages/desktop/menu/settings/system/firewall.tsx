@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
-import { Button, Divider, Segmented, Spin, Tag } from 'antd';
+import { Button, Segmented, Spin, Tag } from 'antd';
 import type { TFunction } from 'i18next';
 import {
   LockKeyholeIcon,
@@ -16,7 +16,7 @@ import type { FirewallMode, FirewallStatus } from '@/api/system-firewall.ts';
 import { confirm, toast } from '@/lib/feedback.ts';
 import { useSettingsLoadState } from '@/hooks/useSettingsLoad.ts';
 import { LabelTip } from '@/components/label-tip.tsx';
-import { InfoRow } from '@/components/setting-rows.tsx';
+import { InfoRow, SectionDivider } from '@/components/setting-rows.tsx';
 
 type RulesTab = 'ipv4' | 'ipv6' | 'nft';
 
@@ -195,7 +195,7 @@ export const FirewallSettings = () => {
   }
 
   return (
-    <div className="flex min-w-0 flex-col space-y-6">
+    <div className="flex min-w-0 flex-col gap-6">
       <div className="min-w-0 space-y-6">
         <div className="text-neutral-400">
           {status && !status.httpsEnabled ? (
@@ -224,7 +224,7 @@ export const FirewallSettings = () => {
         </div>
       </div>
 
-      <Divider className="opacity-50" />
+      <SectionDivider />
 
       <div className="space-y-3">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -246,7 +246,7 @@ export const FirewallSettings = () => {
         </pre>
       </div>
 
-      <Divider className="opacity-50" />
+      <SectionDivider />
 
       <div className="space-y-6">
         <div className="text-neutral-400">{t('settings.system.firewall.backends')}</div>
@@ -261,7 +261,7 @@ export const FirewallSettings = () => {
         </div>
       </div>
 
-      <Divider className="opacity-50" />
+      <SectionDivider />
 
       <div className="flex min-w-0 flex-wrap justify-end gap-2">
         <Button icon={<RefreshCwIcon size={16} />} loading={isLoading} onClick={reload}>

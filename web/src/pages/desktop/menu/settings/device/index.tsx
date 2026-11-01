@@ -1,9 +1,8 @@
-import { Divider } from 'antd';
 import { useTranslation } from 'react-i18next';
 
 import { PageHeader } from '@/components/page-header.tsx';
 import { SaveBar } from '@/components/save-bar.tsx';
-import { SettingSection } from '@/components/setting-rows.tsx';
+import { SectionDivider, SettingSection } from '@/components/setting-rows.tsx';
 
 import { Hdmi } from './hdmi.tsx';
 import { Hostname } from './hostname.tsx';
@@ -30,39 +29,39 @@ export const Device = () => {
     <>
       <PageHeader title={t('settings.device.title')} />
 
-      <div className="flex flex-col space-y-6">
+      <div className="flex flex-col gap-6">
         <SettingSection title={t('settings.device.sections.general')}>
           <Hostname form={hostname} />
         </SettingSection>
 
-        <Divider className="opacity-50" />
+        <SectionDivider />
 
         <SettingSection title={t('settings.device.sections.hostConnection')}>
           <VirtualDevices />
         </SettingSection>
 
-        <Divider className="opacity-50" />
+        <SectionDivider />
 
         <SettingSection title={t('settings.device.sections.inputOutput')}>
           <MouseJiggler />
           <Hdmi />
           <Oled />
         </SettingSection>
-      </div>
 
-      <Divider className="opacity-50" />
+        <SectionDivider />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {rebootReasons.length > 0 && (
-          <span className="min-w-0 text-xs wrap-break-word text-neutral-500">
-            {t('settings.device.rebootPending', {
-              reasons: rebootReasons.map((reason) => reasonLabels[reason]).join(', ')
-            })}
-          </span>
-        )}
-        <div className="ml-auto flex flex-wrap justify-end gap-2">
-          <Poweroff />
-          <Reboot />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {rebootReasons.length > 0 && (
+            <span className="min-w-0 text-xs wrap-break-word text-neutral-500">
+              {t('settings.device.rebootPending', {
+                reasons: rebootReasons.map((reason) => reasonLabels[reason]).join(', ')
+              })}
+            </span>
+          )}
+          <div className="ml-auto flex flex-wrap justify-end gap-2">
+            <Poweroff />
+            <Reboot />
+          </div>
         </div>
       </div>
 

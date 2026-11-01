@@ -65,13 +65,13 @@ export const Mouse = () => {
     <div className="min-w-50">
       <MenuHeader title={t('mouse.title')} />
 
-      <div className="flex flex-col space-y-1">
+      <div className="flex flex-col gap-1">
         <Cursor />
         <MouseMode />
         <PointerSensitivity />
         <Direction />
         <Speed />
-        <Divider style={{ margin: '10px 0' }} />
+        <Divider className="my-1.5" />
 
         <ResetHid />
       </div>
@@ -82,11 +82,11 @@ export const Mouse = () => {
     <div className="min-w-50">
       <MenuHeader title={t('mouse.title')} />
 
-      <div className="flex flex-col space-y-1">
+      <div className="flex flex-col gap-1">
         <MobilePointerModeMenu />
         <Direction />
         <Speed />
-        <Divider style={{ margin: '10px 0' }} />
+        <Divider className="my-1.5" />
         <ResetHid />
       </div>
     </div>

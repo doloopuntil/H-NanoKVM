@@ -221,7 +221,7 @@ export const Paste = () => {
 
         <div
           className={clsx(
-            'flex w-full items-center space-x-3 pb-2',
+            'flex w-full items-center gap-3 pb-2',
             isClipboardSupported ? 'justify-start' : 'justify-end'
           )}
         >

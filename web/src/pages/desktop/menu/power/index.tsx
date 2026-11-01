@@ -65,7 +65,7 @@ export const Power = () => {
     <div className="min-w-50">
       <MenuHeader title={t('power.title')}>
         <Tooltip title={t('power.showConfirmTip')} placement="right">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <span className="text-xs text-neutral-400">{t('power.showConfirm')}</span>
 
             <Switch size="small" checked={showConfirm} onChange={updateShowConfirm} />
@@ -73,7 +73,7 @@ export const Power = () => {
         </Tooltip>
       </MenuHeader>
 
-      <div className="flex flex-col space-y-1">
+      <div className="flex flex-col gap-1">
         <Reset showConfirm={showConfirm} isLoading={isLoading} setIsLoading={setIsLoading} />
         <PowerShort showConfirm={showConfirm} isLoading={isLoading} setIsLoading={setIsLoading} />
         <PowerLong showConfirm={showConfirm} isLoading={isLoading} setIsLoading={setIsLoading} />

@@ -3,7 +3,6 @@ import {
   Alert,
   Button,
   ConfigProvider,
-  Divider,
   Input,
   InputNumber,
   Modal,
@@ -23,7 +22,7 @@ import { attempt, confirm, toast } from '@/lib/feedback.ts';
 import { useSettingsLoadState } from '@/hooks/useSettingsLoad.ts';
 import { PageHeader } from '@/components/page-header.tsx';
 import { SaveBar } from '@/components/save-bar.tsx';
-import { SettingRow } from '@/components/setting-rows.tsx';
+import { SectionDivider, SettingRow } from '@/components/setting-rows.tsx';
 
 const POLL_MS = 5000;
 // WireGuard re-handshakes every two minutes while traffic flows, so older means the peer is silent.
@@ -203,7 +202,7 @@ export const Wireguard = () => {
 
       <ConfigProvider componentDisabled={isUnavailable}>
         <div
-          className="flex min-w-0 flex-col space-y-6"
+          className="flex min-w-0 flex-col gap-6"
           onKeyDown={discardOnEscape(hasPending || hasInvalid, discard)}
         >
           <Section title={t('settings.network.connection')}>
@@ -234,7 +233,7 @@ export const Wireguard = () => {
             {saved.enabled && status && <StatusCard status={status} />}
           </Section>
 
-          <Divider className="opacity-50" />
+          <SectionDivider />
 
           <Section title={t('settings.wireguard.device')}>
             <SettingRow
@@ -303,7 +302,7 @@ export const Wireguard = () => {
             </SettingRow>
           </Section>
 
-          <Divider className="opacity-50" />
+          <SectionDivider />
 
           <Section title={t('settings.wireguard.peer.title')}>
             <SettingRow
@@ -586,7 +585,7 @@ const StatusCard = ({ status }: { status: WireguardStatus }) => {
 };
 
 const Section = ({ title, children }: { title: string; children: ReactNode }) => (
-  <div className="flex min-w-0 flex-col space-y-6">
+  <div className="flex min-w-0 flex-col gap-6">
     <div className="text-neutral-400">{title}</div>
     {children}
   </div>

@@ -254,7 +254,7 @@ export const Settings = () => {
           'cursor-pointer rounded-lg select-none',
           isTouchLayout
             ? 'flex min-w-0 flex-auto flex-col items-center justify-center px-1 py-2'
-            : clsx('flex items-center space-x-2 sm:px-3', isChild ? 'py-1.5 pl-2 sm:pl-8' : 'p-2'),
+            : clsx('flex items-center gap-2 sm:px-3', isChild ? 'py-1.5 pl-2 sm:pl-8' : 'p-2'),
           // on the desktop a group is only a label; its subpage carries the selection
           isActive && (!tab.children || isTouchLayout)
             ? 'bg-neutral-700/50'
@@ -341,7 +341,7 @@ export const Settings = () => {
             className={clsx(
               isTouchLayout
                 ? 'shrink-0 border-b border-neutral-700 bg-neutral-900/95 pt-[env(safe-area-inset-top)]'
-                : 'flex h-full max-w-65 flex-col space-y-0.5 rounded-l-lg bg-neutral-800/90 px-1 sm:w-1/5 md:w-1/4 md:px-2'
+                : 'flex h-full max-w-65 flex-col gap-0.5 rounded-l-lg bg-neutral-800/90 px-1 sm:w-1/5 md:w-1/4 md:px-2'
             )}
           >
             <div
@@ -358,7 +358,7 @@ export const Settings = () => {
               className={clsx(
                 isTouchLayout
                   ? 'grid grid-cols-5 gap-1 px-1 pb-2'
-                  : 'flex min-h-0 flex-1 flex-col space-y-0.5 overflow-y-auto pb-3'
+                  : 'flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pb-3'
               )}
             >
               {tabs.map((tab) => (

@@ -1,12 +1,12 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Divider, Segmented, Select } from 'antd';
+import { Segmented, Select } from 'antd';
 import { XIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/network.ts';
 import type { DNSMode } from '@/api/network.ts';
 import { useSettingsLoad } from '@/hooks/useSettingsLoad.ts';
-import { EditableInfoRow, InfoRow } from '@/components/setting-rows.tsx';
+import { EditableInfoRow, InfoRow, SectionDivider } from '@/components/setting-rows.tsx';
 
 import type { NetworkSectionHandle, NetworkSectionResult, NetworkSectionStatus } from './types.ts';
 
@@ -401,12 +401,12 @@ export const DNS = forwardRef<NetworkSectionHandle, DNSProps>(
     }, [onStatusChange, status]);
 
     return (
-      <div className="flex flex-col space-y-6">
-        <div className="flex flex-col space-y-6">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6">
           <div className="text-neutral-400">{t('settings.network.dns.ipv4Title')}</div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-6">
-            <div className="flex min-w-0 flex-col space-y-1 sm:flex-1 sm:basis-60">
+            <div className="flex min-w-0 flex-col gap-1 sm:flex-1 sm:basis-60">
               <span>{t('settings.network.configuration')}</span>
               <span className="text-xs text-neutral-500">
                 {t('settings.network.dns.ipv4Description')}
@@ -440,7 +440,7 @@ export const DNS = forwardRef<NetworkSectionHandle, DNSProps>(
             </div>
           </div>
 
-          <div className="flex flex-col space-y-3">
+          <div className="flex flex-col gap-3">
             <InfoRow label={t('settings.network.dns.interface')} value={formatInterface(info)} />
             {ipMode === 'manual' ? (
               <>
@@ -490,13 +490,13 @@ export const DNS = forwardRef<NetworkSectionHandle, DNSProps>(
           </div>
         </div>
 
-        <Divider className="opacity-50" />
+        <SectionDivider />
 
-        <div className="flex flex-col space-y-6">
+        <div className="flex flex-col gap-6">
           <div className="text-neutral-400">{t('settings.network.dns.title')}</div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-6">
-            <div className="flex min-w-0 flex-col space-y-1 sm:flex-1 sm:basis-60">
+            <div className="flex min-w-0 flex-col gap-1 sm:flex-1 sm:basis-60">
               <span>{t('settings.network.configuration')}</span>
               <span className="text-xs text-neutral-500">
                 {t('settings.network.dns.description')}
@@ -527,12 +527,12 @@ export const DNS = forwardRef<NetworkSectionHandle, DNSProps>(
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <div className="flex min-w-0 flex-col space-y-1 sm:flex-1">
+            <div className="flex min-w-0 flex-col gap-1 sm:flex-1">
               <span>{t('settings.network.dns.servers')}</span>
               <span className="text-xs text-neutral-500">{serversDescription}</span>
             </div>
 
-            <div className="flex min-w-0 flex-col space-y-2 sm:shrink-0 sm:items-end">
+            <div className="flex min-w-0 flex-col gap-2 sm:shrink-0 sm:items-end">
               <Select
                 className="w-full pr-1.75 sm:w-96 [&_.ant-select-content]:mr-0 [&_.ant-select-content]:justify-end [&_.ant-select-content-item-suffix]:-ml-1"
                 mode="tags"

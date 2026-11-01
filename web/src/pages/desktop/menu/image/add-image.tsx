@@ -57,7 +57,7 @@ export const AddImage = ({
       value: 'url',
       disabled: !isRemoteEnabled,
       label: (
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center gap-1">
           <LinkIcon size={16} />
           <span>{t('image.fromUrl')}</span>
         </div>
@@ -66,7 +66,7 @@ export const AddImage = ({
     {
       value: 'file',
       label: (
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center gap-1">
           <UploadIcon size={16} />
           <span>{t('image.fromFile')}</span>
         </div>
@@ -99,7 +99,7 @@ export const AddImage = ({
   );
 
   return (
-    <div className="flex flex-col space-y-3">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <span className="font-semibold">
           {!isRemoteEnabled && !isDisabled ? (
@@ -135,9 +135,9 @@ export const AddImage = ({
       )}
 
       {isBusy ? (
-        <div className="flex flex-col space-y-1">
+        <div className="flex flex-col gap-1">
           <span className="min-w-0 truncate text-sm">{transfer.log}</span>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1">
               <Progress
                 percent={transfer.progress ?? 100}
@@ -164,10 +164,7 @@ export const AddImage = ({
         </div>
       ) : (
         <div
-          className={clsx(
-            'flex flex-col space-y-3',
-            isDisabled && 'pointer-events-none opacity-50'
-          )}
+          className={clsx('flex flex-col gap-3', isDisabled && 'pointer-events-none opacity-50')}
         >
           {status && transfer.log && (
             <div
@@ -183,7 +180,7 @@ export const AddImage = ({
           {activeSource === 'url' ? (
             <div>
               <div className="pb-1 text-xs text-neutral-400">{t('download.input')}</div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <Input
                   value={transfer.input}
                   disabled={isDisabled}
@@ -195,7 +192,7 @@ export const AddImage = ({
           ) : (
             <div>
               <div className="pb-1 text-xs text-neutral-400">{t('download.inputfile')}</div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <Button
                   block
                   disabled={isDisabled}

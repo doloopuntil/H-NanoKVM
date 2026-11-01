@@ -52,7 +52,7 @@ export const Login = ({ onSuccess }: LoginProps) => {
         </div>
       ) : (
         <>
-          <div className="flex min-w-0 flex-col space-y-1">
+          <div className="flex min-w-0 flex-col gap-1">
             <a className="text-sm break-all" href={loginUrl} target="_blank" rel="noreferrer">
               {loginUrl}
             </a>

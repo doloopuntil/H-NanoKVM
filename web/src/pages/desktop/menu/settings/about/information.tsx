@@ -78,7 +78,7 @@ export const Information = () => {
           }
           value={
             information?.ips && information.ips.length > 0 ? (
-              <div className="flex min-w-0 flex-col space-y-1">
+              <div className="flex min-w-0 flex-col gap-1">
                 {information.ips.map((ip) => (
                   <div key={ip.addr} className="flex min-w-0 items-center justify-end gap-2">
                     <span className="min-w-0 break-all">{ip.addr}</span>

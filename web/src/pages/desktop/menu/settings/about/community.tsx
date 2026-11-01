@@ -26,7 +26,7 @@ export const Community = () => {
         {communities.map((community) => (
           <a
             key={community.name}
-            className="flex h-16 w-24 flex-col items-center justify-center space-y-2 rounded-lg text-neutral-300 outline outline-1 outline-neutral-800 hover:bg-neutral-800 hover:text-white focus:bg-neutral-800"
+            className="flex h-16 w-24 flex-col items-center justify-center gap-2 rounded-lg text-neutral-300 outline outline-1 outline-neutral-800 hover:bg-neutral-800 hover:text-white focus:bg-neutral-800"
             href={community.url}
             target="_blank"
           >

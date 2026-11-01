@@ -72,7 +72,7 @@ export const SerialPort = () => {
         footer={null}
         onCancel={closeModal}
       >
-        <div className="flex flex-col space-y-6 pt-2">
+        <div className="flex flex-col gap-6 pt-2">
           <SettingRow label={t('terminal.serialPort')} inline>
             <Input
               className="w-56 text-right"

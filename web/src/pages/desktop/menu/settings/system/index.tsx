@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Divider } from 'antd';
+import { Alert } from 'antd';
 import { useTranslation } from 'react-i18next';
 
 import { discardOnEscape } from '@/lib/discard.ts';
 import { PageHeader } from '@/components/page-header.tsx';
 import { SaveBar } from '@/components/save-bar.tsx';
-import { SettingSection } from '@/components/setting-rows.tsx';
+import { SectionDivider, SettingSection } from '@/components/setting-rows.tsx';
 import { SettingsLoadGroup } from '@/components/settings-load-group.tsx';
 
 import { Network } from '../network';
@@ -121,7 +121,7 @@ export const System = ({ section, setIsLocked }: SystemProps) => {
             <SystemLog ref={systemLogRef} onActionStateChange={updateActionState} />
           )}
           {section === 'services' && (
-            <div className="flex flex-col space-y-6">
+            <div className="flex flex-col gap-6">
               {certificateBlocked && <Alert type="warning" showIcon title={certificateBlocked} />}
 
               <SettingSection title={t('settings.system.sections.webInterface')}>
@@ -133,7 +133,7 @@ export const System = ({ section, setIsLocked }: SystemProps) => {
                 />
               </SettingSection>
 
-              <Divider className="opacity-50" />
+              <SectionDivider />
 
               <SettingSection title={t('settings.device.sections.connectivity')}>
                 <Ssh />
@@ -143,19 +143,19 @@ export const System = ({ section, setIsLocked }: SystemProps) => {
           )}
           {section === 'monitor' && <Monitor />}
           {section === 'performance' && (
-            <div className="flex flex-col space-y-6">
+            <div className="flex flex-col gap-6">
               <SettingSection title={t('settings.system.performance.processor')}>
                 <Overdrive />
                 <Clocks />
               </SettingSection>
 
-              <Divider className="opacity-50" />
+              <SectionDivider />
 
               <SettingSection title={t('settings.system.performance.memory')}>
                 <Swap />
               </SettingSection>
 
-              <Divider className="opacity-50" />
+              <SectionDivider />
 
               <SettingSection title={t('settings.system.performance.recovery')}>
                 <Watchdog />

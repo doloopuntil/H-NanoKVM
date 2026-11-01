@@ -155,7 +155,7 @@ export const Password = () => {
 
           {msg && <div className="mb-3 text-red-500">{msg}</div>}
           <Form.Item>
-            <div className="flex w-full space-x-2">
+            <div className="flex w-full gap-2">
               <Button type="primary" htmlType="submit" className="w-1/2">
                 {t('auth.ok')}
               </Button>

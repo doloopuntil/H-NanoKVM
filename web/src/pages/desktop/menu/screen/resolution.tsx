@@ -40,7 +40,7 @@ export const Resolution = () => {
           onClick={() => update(res)}
         >
           {res.height === 0 ? (
-            <div className="flex items-center justify-between space-x-2">
+            <div className="flex items-center justify-between gap-2">
               <span>{t('screen.auto')}</span>
               <Tooltip
                 title={t('screen.autoTips')}

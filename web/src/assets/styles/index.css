@@ -22,17 +22,13 @@ body {
 }
 
 /* A SettingSection with no content hides itself (see setting-rows.tsx); the hairline beside it goes
-   too, and a hidden first section leaves no extra gap above the next one. */
+   too. Hidden, neither takes part in the column's gap. */
 [hidden] + .ant-divider {
   display: none;
 }
 
 .ant-divider:has(+ [hidden]:last-child) {
   display: none;
-}
-
-:first-child[hidden] + .ant-divider + * {
-  margin-top: 0;
 }
 
 .settings-modal-mobile {

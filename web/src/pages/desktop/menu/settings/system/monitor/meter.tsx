@@ -23,7 +23,7 @@ export const Meter = ({
 }) => (
   <div className="flex min-w-0 flex-col lg:min-h-14">
     <div className="flex items-end justify-between gap-4">
-      <div className="flex min-w-0 flex-col space-y-0.5">
+      <div className="flex min-w-0 flex-col gap-0.5">
         <span className="text-sm text-neutral-300">{label}</span>
         <span className="text-xs wrap-break-word text-neutral-500">{caption}</span>
       </div>
@@ -63,7 +63,7 @@ export const SplitMeter = ({
   return (
     <div className="flex min-w-0 flex-col lg:min-h-14">
       <div className="flex items-end justify-between gap-4">
-        <div className="flex min-w-0 flex-col space-y-0.5">
+        <div className="flex min-w-0 flex-col gap-0.5">
           <span className="text-sm text-neutral-300">{label}</span>
           <span className="text-xs wrap-break-word text-neutral-500">{caption}</span>
         </div>

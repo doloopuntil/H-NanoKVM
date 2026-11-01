@@ -131,7 +131,7 @@ export const Wifi = () => {
         okButtonProps={{ disabled: !ssid || !password }}
         confirmLoading={status === 'connecting'}
       >
-        <div className="flex flex-col space-y-4 py-2">
+        <div className="flex flex-col gap-4 py-2">
           {connectedWiFi && (
             <SettingRow
               label={connectedWiFi}

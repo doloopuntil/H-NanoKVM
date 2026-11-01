@@ -17,7 +17,7 @@ export const Keyboard = () => {
     <div className="min-w-50">
       <MenuHeader title={t('keyboard.title')} />
 
-      <div className="flex flex-col space-y-1">
+      <div className="flex flex-col gap-1">
         <Paste />
         <LocalKeyboard />
         <VirtualKeyboard />

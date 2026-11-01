@@ -92,7 +92,7 @@ export const Wifi = () => {
             initialValues={{ remember: true }}
             onFinish={onVerifyFinish}
           >
-            <div className="flex flex-col space-y-1 pb-5">
+            <div className="flex flex-col gap-1 pb-5">
               <span className="text-center text-2xl font-semibold text-red-500">
                 {t('wifi.ap.authTitle')}
               </span>
@@ -136,7 +136,7 @@ export const Wifi = () => {
           initialValues={{ remember: true }}
           onFinish={connect}
         >
-          <div className="flex flex-col space-y-1 pb-5">
+          <div className="flex flex-col gap-1 pb-5">
             <span className="text-center text-2xl font-semibold text-neutral-100">
               {t('wifi.title')}
             </span>
@@ -179,7 +179,7 @@ export const Wifi = () => {
 
           {state === 'failed' && <span className="text-sm text-red-500">{t('wifi.failed')} </span>}
           {state === 'denied' && (
-            <div className="flex flex-col items-center space-y-5">
+            <div className="flex flex-col items-center gap-5">
               <span className="text-sm text-red-500">{t('wifi.invalidMode')} </span>
             </div>
           )}

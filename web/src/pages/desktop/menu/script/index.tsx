@@ -135,7 +135,7 @@ export const Script = () => {
           )}
         >
           <div
-            className="flex items-center justify-between space-x-5 px-2 py-1.5"
+            className="flex items-center justify-between gap-5 px-2 py-1.5"
             onClick={() => activate(script)}
           >
             <div className="max-w-75 truncate select-none">{script}</div>
@@ -145,7 +145,7 @@ export const Script = () => {
           </div>
 
           {script === currentScript && (
-            <div className="flex items-center justify-end space-x-2 p-3">
+            <div className="flex items-center justify-end gap-2 p-3">
               <Button type="primary" size="small" onClick={() => runScript('foreground')}>
                 {t('script.run')}
               </Button>

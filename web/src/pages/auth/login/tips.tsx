@@ -32,7 +32,7 @@ export const Tips = () => {
         centered={true}
       >
         <Card style={{ marginTop: '20px' }}>
-          <div className="flex flex-col space-y-5 wrap-break-word">
+          <div className="flex flex-col gap-5 wrap-break-word">
             <div>{t('auth.tips.hardenedRecovery')}</div>
           </div>
         </Card>

@@ -1,15 +1,5 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import {
-  Alert,
-  Button,
-  ConfigProvider,
-  Divider,
-  Input,
-  InputNumber,
-  Select,
-  Space,
-  Switch
-} from 'antd';
+import { Alert, Button, ConfigProvider, Input, InputNumber, Select, Space, Switch } from 'antd';
 import { RefreshCwIcon, SendIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -17,7 +7,7 @@ import * as api from '@/api/system-log.ts';
 import type { SystemLogConfig } from '@/api/system-log.ts';
 import { toast } from '@/lib/feedback.ts';
 import { useSettingsLoadState } from '@/hooks/useSettingsLoad.ts';
-import { SettingRow } from '@/components/setting-rows.tsx';
+import { SectionDivider, SettingRow } from '@/components/setting-rows.tsx';
 
 import type { SystemActionHandle, SystemActionState } from '../system/action.ts';
 
@@ -186,8 +176,8 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
     return (
       <>
         <ConfigProvider componentDisabled={isUnavailable}>
-          <div className="flex min-w-0 flex-col space-y-6">
-            <div className="flex min-w-0 flex-col space-y-6">
+          <div className="flex min-w-0 flex-col gap-6">
+            <div className="flex min-w-0 flex-col gap-6">
               <div className="text-neutral-400">{t('settings.systemLog.kernel.title')}</div>
               <SettingRow
                 label={t('settings.systemLog.kernel.enabled')}
@@ -213,9 +203,9 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
               </SettingRow>
             </div>
 
-            <Divider className="opacity-50" />
+            <SectionDivider />
 
-            <div className="flex min-w-0 flex-col space-y-6">
+            <div className="flex min-w-0 flex-col gap-6">
               <div className="text-neutral-400">{t('settings.systemLog.remote.title')}</div>
               <SettingRow
                 label={t('settings.systemLog.remote.forward')}
@@ -258,9 +248,9 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
               </SettingRow>
             </div>
 
-            <Divider className="opacity-50" />
+            <SectionDivider />
 
-            <div className="flex min-w-0 flex-col space-y-6">
+            <div className="flex min-w-0 flex-col gap-6">
               <div className="text-neutral-400">{t('settings.systemLog.local.title')}</div>
               <Alert
                 type="info"
@@ -332,9 +322,9 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
               </SettingRow>
             </div>
 
-            <Divider className="opacity-50" />
+            <SectionDivider />
 
-            <div className="flex min-w-0 flex-col space-y-6">
+            <div className="flex min-w-0 flex-col gap-6">
               <div className="text-neutral-400">{t('settings.systemLog.viewer.title')}</div>
 
               <div className="space-y-3">

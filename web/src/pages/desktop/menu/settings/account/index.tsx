@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Button, Divider } from 'antd';
+import { Button } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import * as api from '@/api/auth.ts';
 import { useSettingsLoad } from '@/hooks/useSettingsLoad.ts';
 import { PageHeader } from '@/components/page-header.tsx';
-import { InfoRow, SettingRow, SettingSection } from '@/components/setting-rows.tsx';
+import { InfoRow, SectionDivider, SettingRow, SettingSection } from '@/components/setting-rows.tsx';
 import { TotpEnrollment } from '@/components/totp-enrollment.tsx';
 
 import { Logout } from './logout.tsx';
@@ -32,7 +32,7 @@ export const Account = ({ setIsLocked }: Props) => {
     <>
       <PageHeader title={t('settings.account.title')} />
 
-      <div className="flex min-w-0 flex-col space-y-6">
+      <div className="flex min-w-0 flex-col gap-6">
         <SettingSection title={t('auth.login')}>
           <InfoRow label={t('settings.account.webAccount')} value={username} />
 
@@ -45,19 +45,19 @@ export const Account = ({ setIsLocked }: Props) => {
           </SettingRow>
         </SettingSection>
 
-        <Divider className="opacity-50" />
+        <SectionDivider />
 
         <SettingSection title={t('settings.account.totp.title')}>
           <TotpEnrollment setIsLocked={setIsLocked} />
         </SettingSection>
 
-        <Divider className="opacity-50" />
+        <SectionDivider />
 
         <SettingSection title={t('settings.account.session.title')}>
           <SessionSettings />
         </SettingSection>
 
-        <Divider className="opacity-50" />
+        <SectionDivider />
 
         <div className="flex justify-end">
           <Logout />

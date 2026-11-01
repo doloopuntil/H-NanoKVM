@@ -207,7 +207,7 @@ export const Recorder = ({
           </a>
         </div>
 
-        <div className="flex items-center space-x-0.5 py-6">
+        <div className="flex items-center gap-0.5 py-6">
           <Input
             ref={inputRef}
             placeholder={t('keyboard.shortcut.capture')}
@@ -232,7 +232,7 @@ export const Recorder = ({
                   key={shortcut.id}
                   className="flex items-center justify-between rounded-sm p-2 hover:bg-neutral-700/50"
                 >
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center gap-1">
                     {shortcut.keys.map((key, index) => (
                       <KbdGroup key={index}>
                         <Kbd>{key.label}</Kbd>
