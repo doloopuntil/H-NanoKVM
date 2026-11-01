@@ -3,8 +3,8 @@ import { Button, Divider, Tooltip, Typography } from 'antd';
 import clsx from 'clsx';
 import {
   CableIcon,
-  EjectIcon,
   HardDriveDownloadIcon,
+  HardDriveUploadIcon,
   LoaderCircleIcon,
   PackageIcon,
   PackageSearchIcon,
@@ -364,7 +364,7 @@ export const Images = ({
             )}
             <div
               className={clsx(
-                'rounded border border-solid px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none',
+                'mr-0.5 rounded border border-solid px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none',
                 isImageCdrom(image)
                   ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
                   : 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
@@ -381,7 +381,7 @@ export const Images = ({
               >
                 <div className="flex h-[24px] w-[24px] items-center justify-center rounded">
                   {mountedImage === image ? (
-                    <EjectIcon
+                    <HardDriveUploadIcon
                       size={16}
                       className="text-red-500 opacity-60 group-hover:opacity-100"
                     />
@@ -399,7 +399,11 @@ export const Images = ({
                 size="small"
                 danger
                 className="h-[24px] w-[24px] p-0"
-                icon={<Trash2Icon size={16} />}
+                icon={
+                  <span className="flex">
+                    <Trash2Icon size={16} />
+                  </span>
+                }
                 disabled={mountedImage === image || isDiskShared || !isDiskStateKnown}
                 loading={deletingImage === image}
                 onClick={(e) => showDeleteModal(e, image)}
