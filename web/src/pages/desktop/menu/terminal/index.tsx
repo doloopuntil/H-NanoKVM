@@ -11,7 +11,7 @@ export const Terminal = () => {
   const { t } = useTranslation();
 
   const content = (
-    <div className="min-w-[200px]">
+    <div className="min-w-50">
       <MenuHeader title={t('terminal.title')} />
 
       <Nanokvm />

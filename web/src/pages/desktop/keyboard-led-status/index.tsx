@@ -42,14 +42,14 @@ function LockIndicator({ labelKey, active, known }: LockIndicatorProps) {
   return (
     <Tooltip title={indicatorLabel} placement="bottom" mouseEnterDelay={0.6}>
       <div
-        className="flex h-[8px] items-center gap-1 px-1 text-[8px] leading-[8px] font-medium text-neutral-400"
+        className="flex h-2 items-center gap-1 px-1 text-[8px] leading-[8px] font-medium text-neutral-400"
         aria-label={indicatorLabel}
         role="img"
       >
         <span
           aria-hidden="true"
           className={clsx(
-            'flex h-2 w-2 items-center justify-center rounded-full text-[7px] leading-none',
+            'flex size-2 items-center justify-center rounded-full text-[7px] leading-none',
             known
               ? active
                 ? 'bg-emerald-400'
@@ -73,7 +73,7 @@ export function KeyboardLedStatus() {
 
   return (
     <div
-      className="flex h-full w-[40px] flex-col items-start justify-center rounded-sm bg-neutral-800/80"
+      className="flex h-full w-10 flex-col items-start justify-center rounded-sm bg-neutral-800/80"
       aria-label={t('settings.keyboardLedStatus.groupLabel')}
       role="group"
     >

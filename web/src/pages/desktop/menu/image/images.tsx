@@ -338,7 +338,7 @@ export const Images = ({
 
     return (
       // three images show, the rest scroll; a thin scrollbar on a transparent track
-      <div className="flex max-h-[120px] scrollbar-thin [scrollbar-color:var(--color-neutral-600)_transparent] flex-col overflow-y-auto pr-1">
+      <div className="flex max-h-30 scrollbar-thin [scrollbar-color:var(--color-neutral-600)_transparent] flex-col overflow-y-auto pr-1">
         {images.map((image) => (
           <div
             key={image}
@@ -348,7 +348,7 @@ export const Images = ({
             )}
             onClick={() => mountImage(image)}
           >
-            <div className="flex h-[24px] w-[24px] items-center justify-center">
+            <div className="flex size-6 items-center justify-center">
               {mountingImage === image ? (
                 <LoaderCircleIcon className="animate-spin" size={16} />
               ) : (
@@ -379,7 +379,7 @@ export const Images = ({
                 title={mountedImage === image ? t('image.eject') : t('image.mountTitle')}
                 mouseEnterDelay={0.6}
               >
-                <div className="flex h-[24px] w-[24px] items-center justify-center rounded-sm">
+                <div className="flex size-6 items-center justify-center rounded-sm">
                   {mountedImage === image ? (
                     <HardDriveUploadIcon
                       size={16}
@@ -398,7 +398,7 @@ export const Images = ({
                 type="text"
                 size="small"
                 danger
-                className="h-[24px] w-[24px] p-0"
+                className="size-6 p-0"
                 icon={
                   <span className="flex">
                     <Trash2Icon size={16} />

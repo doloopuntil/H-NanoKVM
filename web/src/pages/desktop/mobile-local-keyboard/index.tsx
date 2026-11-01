@@ -148,7 +148,7 @@ export const MobileLocalKeyboard = () => {
       autoCapitalize="off"
       autoComplete="off"
       autoCorrect="off"
-      className="fixed bottom-0 left-0 z-1200 h-px w-px resize-none opacity-0"
+      className="fixed bottom-0 left-0 z-1200 size-px resize-none opacity-0"
       inputMode="text"
       rows={1}
       spellCheck={false}

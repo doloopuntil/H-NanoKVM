@@ -40,11 +40,11 @@ export const Run = ({ script, setIsRunning }: RunProps) => {
   return (
     <Modal title={script} width={600} centered closable={false} footer={null} open={true}>
       {state === 'running' ? (
-        <div className="flex h-[300px] items-center justify-center">
+        <div className="flex h-75 items-center justify-center">
           <Spin indicator={<LoaderCircleIcon size="1em" className="animate-spin" />} size="large" />
         </div>
       ) : (
-        <Card className="h-[600px] overflow-auto font-mono whitespace-pre-line">{log}</Card>
+        <Card className="h-150 overflow-auto font-mono whitespace-pre-line">{log}</Card>
       )}
 
       <DialogAction onClick={() => setIsRunning(false)}>{t('script.close')}</DialogAction>

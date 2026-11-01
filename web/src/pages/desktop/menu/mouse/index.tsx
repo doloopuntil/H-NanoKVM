@@ -62,7 +62,7 @@ export const Mouse = () => {
   }, []);
 
   const desktopContent = (
-    <div className="min-w-[200px]">
+    <div className="min-w-50">
       <MenuHeader title={t('mouse.title')} />
 
       <div className="flex flex-col space-y-1">
@@ -79,7 +79,7 @@ export const Mouse = () => {
   );
 
   const mobileContent = (
-    <div className="min-w-[200px]">
+    <div className="min-w-50">
       <MenuHeader title={t('mouse.title')} />
 
       <div className="flex flex-col space-y-1">

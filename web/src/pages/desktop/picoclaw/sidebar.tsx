@@ -63,7 +63,7 @@ export const Sidebar = () => {
   } = useSidebar();
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col overflow-x-hidden bg-[#0d0d0f]">
+    <aside className="flex size-full min-h-0 flex-col overflow-x-hidden bg-[#0d0d0f]">
       {/* Header */}
       <SidebarHeader
         isCheckingRuntime={isInitializing}
@@ -84,7 +84,7 @@ export const Sidebar = () => {
       />
 
       {/* Divider */}
-      <div className="h-px bg-white/[0.06]" />
+      <div className="h-px bg-white/6" />
 
       {/* Body */}
       <div className="flex min-h-0 flex-1 flex-col">

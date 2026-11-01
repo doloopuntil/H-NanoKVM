@@ -14,7 +14,7 @@ export const Keyboard = () => {
   const { t } = useTranslation();
 
   const content = (
-    <div className="min-w-[200px]">
+    <div className="min-w-50">
       <MenuHeader title={t('keyboard.title')} />
 
       <div className="flex flex-col space-y-1">

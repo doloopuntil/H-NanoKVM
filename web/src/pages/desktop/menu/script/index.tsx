@@ -105,7 +105,7 @@ export const Script = () => {
   }
 
   const content = (
-    <div className="min-w-[250px]">
+    <div className="min-w-62.5">
       <MenuHeader title={t('script.title')}>
         <input
           ref={inputRef}
@@ -138,8 +138,8 @@ export const Script = () => {
             className="flex items-center justify-between space-x-5 px-2 py-1.5"
             onClick={() => activate(script)}
           >
-            <div className="max-w-[300px] truncate select-none">{script}</div>
-            <div className={clsx('h-[16px] w-[16px]', script === currentScript && 'rotate-90')}>
+            <div className="max-w-75 truncate select-none">{script}</div>
+            <div className={clsx('size-4', script === currentScript && 'rotate-90')}>
               <ChevronRightIcon size={16} />
             </div>
           </div>

@@ -271,7 +271,7 @@ export const Settings = () => {
           }
         }}
       >
-        <div className="flex h-[16px] w-[16px] items-center justify-center">{tab.icon}</div>
+        <div className="flex size-4 items-center justify-center">{tab.icon}</div>
         {showBadge ? (
           <Badge dot color="blue" offset={[6, 3]}>
             {label}
@@ -297,7 +297,7 @@ export const Settings = () => {
         open={isTouchLayout ? false : undefined}
       >
         <div
-          className="flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-sm hover:bg-neutral-700/80"
+          className="flex size-7.5 cursor-pointer items-center justify-center rounded-sm hover:bg-neutral-700/80"
           onClick={openModal}
         >
           <Badge dot={isUpdateAvailable} color="blue" offset={[0, 2]}>
@@ -334,14 +334,14 @@ export const Settings = () => {
             'outline outline-1 outline-neutral-700',
             isTouchLayout
               ? 'flex h-dvh w-full max-w-[100vw] flex-col overflow-hidden rounded-none'
-              : 'flex h-[82.5vh] max-h-[710px] rounded-lg'
+              : 'flex h-[82.5vh] max-h-177.5 rounded-lg'
           )}
         >
           <div
             className={clsx(
               isTouchLayout
                 ? 'shrink-0 border-b border-neutral-700 bg-neutral-900/95 pt-[env(safe-area-inset-top)]'
-                : 'flex h-full max-w-[260px] flex-col space-y-0.5 rounded-l-lg bg-neutral-800/90 px-1 sm:w-1/5 md:w-1/4 md:px-2'
+                : 'flex h-full max-w-65 flex-col space-y-0.5 rounded-l-lg bg-neutral-800/90 px-1 sm:w-1/5 md:w-1/4 md:px-2'
             )}
           >
             <div
@@ -385,7 +385,7 @@ export const Settings = () => {
               isTouchLayout ? 'min-h-0 flex-1 rounded-none px-4' : 'h-full rounded-r-lg px-6'
             )}
           >
-            <div className="flex h-full w-full min-w-0 justify-center">
+            <div className="flex size-full min-w-0 justify-center">
               <div
                 className={clsx(
                   'min-w-0',

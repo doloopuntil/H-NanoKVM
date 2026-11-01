@@ -47,7 +47,7 @@ export const MessageInput = ({
     <div
       className={clsx(
         // the panel at the bottom of the sidebar, as wide as the sidebar
-        'flex shrink-0 flex-col border-t border-white/[0.06] bg-white/[0.04] transition-colors focus-within:bg-white/[0.06]',
+        'flex shrink-0 flex-col border-t border-white/6 bg-white/4 transition-colors focus-within:bg-white/6',
         !isReady && 'opacity-40'
       )}
     >
@@ -80,7 +80,7 @@ export const MessageInput = ({
       />
       {/* Under the text, so that neither the text nor its scrollbar runs below the buttons. Like the
           save bar of the Settings: a hairline above and a shadow-sm that pushes up from there. */}
-      <div className="relative z-10 flex items-center justify-end gap-2 border-t border-white/[0.06] p-2.5 shadow-[0_-20px_20px_-20px_rgba(0,0,0,0.5)]">
+      <div className="relative z-10 flex items-center justify-end gap-2 border-t border-white/6 p-2.5 shadow-[0_-20px_20px_-20px_rgba(0,0,0,0.5)]">
         <Tooltip title={t('picoclaw.newConversation')} mouseEnterDelay={0.6}>
           <Button
             icon={<SquarePenIcon size={16} />}

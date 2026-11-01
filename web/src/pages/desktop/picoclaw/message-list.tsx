@@ -71,7 +71,7 @@ export const MessageList = ({ messages, runState }: MessageListProps) => {
     >
       <div ref={contentRef} className={messages.length === 0 ? 'min-h-full' : 'space-y-3'}>
         {messages.length === 0 ? (
-          <div className="flex h-full min-h-[200px]">
+          <div className="flex h-full min-h-50">
             <EmptyState icon={<BotIcon size={24} />} title={t('picoclaw.empty')}>
               {isLoading && <MessageLoading text={t('picoclaw.processing')} />}
             </EmptyState>

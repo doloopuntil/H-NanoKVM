@@ -87,7 +87,7 @@ export const Image = () => {
       <Tooltip title={t('image.title')} placement="bottom" mouseEnterDelay={0.6}>
         <div
           className={clsx(
-            'flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-sm hover:bg-neutral-700',
+            'flex size-7.5 cursor-pointer items-center justify-center rounded-sm hover:bg-neutral-700',
             isMounted ? 'text-blue-500' : 'text-neutral-300 hover:text-white'
           )}
           onClick={() => toggleModal(true)}

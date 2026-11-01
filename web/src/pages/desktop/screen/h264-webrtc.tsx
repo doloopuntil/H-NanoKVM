@@ -328,13 +328,13 @@ export const H264Webrtc = () => {
   }, [setVideoScale]);
 
   return (
-    <div className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">
+    <div className="relative size-full min-h-0 min-w-0 overflow-hidden">
       {contextHolder}
 
       <div
         ref={containerRef}
         data-kvm-screen-scroll
-        className="flex h-full min-h-0 w-full min-w-0 items-start justify-start overflow-auto overscroll-contain bg-black"
+        className="flex size-full min-h-0 min-w-0 items-start justify-start overflow-auto overscroll-contain bg-black"
       >
         <video
           id="screen"

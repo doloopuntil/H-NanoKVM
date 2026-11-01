@@ -241,7 +241,7 @@ export const FirewallSettings = () => {
             onChange={(value) => setRulesTab(value as RulesTab)}
           />
         </div>
-        <pre className="max-h-[360px] min-h-[260px] overflow-auto rounded-sm bg-black/50 p-3 font-mono text-xs leading-relaxed text-neutral-200">
+        <pre className="max-h-90 min-h-65 overflow-auto rounded-sm bg-black/50 p-3 font-mono text-xs leading-relaxed text-neutral-200">
           {selectedRules}
         </pre>
       </div>
@@ -343,7 +343,7 @@ function modeButtonClass(active: boolean, disabled: boolean, danger?: boolean) {
 }
 
 function modeIconClass(active: boolean, danger?: boolean) {
-  const base = 'flex h-9 w-9 shrink-0 items-center justify-center rounded-md';
+  const base = 'flex size-9 shrink-0 items-center justify-center rounded-md';
   if (danger) {
     return active ? `${base} bg-red-500/20 text-red-200` : `${base} bg-neutral-800 text-red-300`;
   }

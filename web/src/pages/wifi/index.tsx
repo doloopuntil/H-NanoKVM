@@ -113,7 +113,7 @@ export const Wifi = () => {
             </Form.Item>
           </Form>
 
-          <div className="flex max-w-[500px] justify-center px-5 pt-3 md:px-10">
+          <div className="flex max-w-125 justify-center px-5 pt-3 md:px-10">
             {verifyState === 'failed' && (
               <span className="text-sm text-red-500">{t('wifi.ap.authFailed')}</span>
             )}
@@ -172,7 +172,7 @@ export const Wifi = () => {
           </Form.Item>
         </Form>
 
-        <div className="flex max-w-[500px] justify-center px-5 pt-3 md:px-10">
+        <div className="flex max-w-125 justify-center px-5 pt-3 md:px-10">
           {state === 'success' && (
             <span className="text-sm text-green-500">{t('wifi.success')}</span>
           )}

@@ -65,7 +65,7 @@ export const Screen = () => {
   }
 
   const content = (
-    <div className="min-w-[200px]">
+    <div className="min-w-50">
       <MenuHeader title={t('screen.title')} />
 
       <div className="flex flex-col space-y-1">

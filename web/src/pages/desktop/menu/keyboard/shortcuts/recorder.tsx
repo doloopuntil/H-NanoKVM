@@ -226,7 +226,7 @@ export const Recorder = ({
           <>
             <Divider />
 
-            <ScrollArea className="*:data-radix-scroll-area-viewport:max-h-[300px]">
+            <ScrollArea className="*:data-radix-scroll-area-viewport:max-h-75">
               {shortcuts.map((shortcut) => (
                 <div
                   key={shortcut.id}
@@ -241,7 +241,7 @@ export const Recorder = ({
                   </div>
 
                   <div
-                    className="flex size-[20px] cursor-pointer items-center justify-center rounded-xs text-neutral-500 hover:text-red-500"
+                    className="flex size-5 cursor-pointer items-center justify-center rounded-xs text-neutral-500 hover:text-red-500"
                     onClick={() => delShortcut(shortcut)}
                   >
                     <Trash2Icon size={16} />

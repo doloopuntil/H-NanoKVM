@@ -134,19 +134,6 @@ body {
   background: #444;
 }
 
-.spin {
-  animation: spin 1s linear;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .hardened-login-logo {
   position: relative;
   transform: translateZ(0);

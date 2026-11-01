@@ -28,10 +28,10 @@ export const MenuSubmenu = ({ icon, label, content, open, onOpenChange }: MenuSu
   const trigger = (
     <div
       data-menu-keep-open
-      className="flex min-h-[30px] cursor-pointer items-center rounded-sm px-3 py-1 text-neutral-300 hover:bg-neutral-700/70"
+      className="flex min-h-7.5 cursor-pointer items-center rounded-sm px-3 py-1 text-neutral-300 hover:bg-neutral-700/70"
       onClick={isDesktopLayout ? undefined : () => setOpen(!isOpen)}
     >
-      <div className="mr-2 flex h-[18px] w-[18px] shrink-0 items-center justify-center">{icon}</div>
+      <div className="mr-2 flex size-4.5 shrink-0 items-center justify-center">{icon}</div>
       <span className="min-w-0 flex-1 text-sm select-none">{label}</span>
       {!isDesktopLayout && (
         <ChevronRightIcon

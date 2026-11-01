@@ -71,7 +71,7 @@ export const Fps = ({ fps, setFps }: FpsProps) => {
       </MenuOption>
 
       {isCustomize && (
-        <div className="flex w-[140px] items-center space-x-1 py-1">
+        <div className="flex w-35 items-center space-x-1 py-1">
           <InputNumber<number> defaultValue={fps} min={1} max={60} onChange={onChange} />
           <Button
             size="small"

@@ -34,8 +34,8 @@ export const Sparkline = ({ values, axis, warn, crit, label }: SparklineProps) =
   const warn0 = (clampedY(warn) / HEIGHT).toFixed(3);
 
   return (
-    <div className="relative mt-2.5 pl-[34px]">
-      <div className="absolute inset-y-0 left-0 w-[30px]" aria-hidden>
+    <div className="relative mt-2.5 pl-8.5">
+      <div className="absolute inset-y-0 left-0 w-7.5" aria-hidden>
         {axis.ticks.map((tick) => (
           <span
             key={tick}

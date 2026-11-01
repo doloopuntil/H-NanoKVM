@@ -21,7 +21,7 @@ export const PointerSensitivity = () => {
   }
 
   const content = (
-    <div className="min-w-[220px] px-2 py-3">
+    <div className="min-w-55 px-2 py-3">
       <div className="mb-2 text-xs leading-4 text-neutral-500">{t('mouse.sensitivityDesc')}</div>
       <Slider
         marks={{

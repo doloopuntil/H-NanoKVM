@@ -42,7 +42,7 @@ const History = ({
   tone: 'normal' | 'warn' | 'crit';
   children: ReactNode;
 }) => (
-  <div className="flex min-w-0 flex-col lg:min-h-[104px]">
+  <div className="flex min-w-0 flex-col lg:min-h-26">
     <div className="flex items-end justify-between gap-4">
       <div className="flex min-w-0 flex-col space-y-0.5">
         <span className="text-sm text-neutral-300">{label}</span>

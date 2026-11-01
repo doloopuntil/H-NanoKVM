@@ -82,7 +82,7 @@ export const Information = () => {
                 {information.ips.map((ip) => (
                   <div key={ip.addr} className="flex min-w-0 items-center justify-end gap-2">
                     <span className="min-w-0 break-all">{ip.addr}</span>
-                    <div className="size-[16px] shrink-0 text-neutral-500">
+                    <div className="size-4 shrink-0 text-neutral-500">
                       {ip.type === 'Wireless' ? (
                         <WifiIcon size={16} />
                       ) : (

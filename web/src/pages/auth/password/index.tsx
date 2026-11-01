@@ -166,7 +166,7 @@ export const Password = () => {
           </Form.Item>
         </Form>
 
-        <Card className="w-full max-w-[500px]">
+        <Card className="w-full max-w-125">
           <div className="flex flex-col wrap-break-word">
             <div>{t('auth.tips.change1')}</div>
             <ul className="my-2 list-decimal pl-10">

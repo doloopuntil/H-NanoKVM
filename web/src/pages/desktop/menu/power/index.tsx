@@ -62,7 +62,7 @@ export const Power = () => {
   );
 
   const content = (
-    <div className="min-w-[200px]">
+    <div className="min-w-50">
       <MenuHeader title={t('power.title')}>
         <Tooltip title={t('power.showConfirmTip')} placement="right">
           <div className="flex items-center space-x-2">

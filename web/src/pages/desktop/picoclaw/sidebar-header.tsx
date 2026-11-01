@@ -34,7 +34,7 @@ const HeaderButton = forwardRef<HTMLButtonElement, HeaderButtonProps>(
       type="button"
       disabled={disabled || loading}
       className={clsx(
-        'flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-sm',
+        'flex size-7.5 shrink-0 items-center justify-center rounded-sm',
         disabled || loading
           ? 'cursor-not-allowed text-neutral-500'
           : [
@@ -143,7 +143,7 @@ export const SidebarHeader = ({
                 disabled={isUninstallingRuntime || isTogglingRuntime || isSwitchingAgent}
                 loading={isSwitchingAgent}
                 popupMatchSelectWidth={false}
-                className="min-w-[120px] [&_.ant-select-content-value]:text-neutral-300"
+                className="min-w-30 [&_.ant-select-content-value]:text-neutral-300"
                 options={agentOptions.map((option) => ({
                   value: option.value,
                   label: option.title

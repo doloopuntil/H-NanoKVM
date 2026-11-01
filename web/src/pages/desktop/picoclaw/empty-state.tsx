@@ -13,7 +13,7 @@ type EmptyStateProps = {
 // messages): an icon tile, a title, a caption and an optional action, centred.
 export const EmptyState = ({ icon, title, description, children }: EmptyStateProps) => (
   <div className="flex flex-1 flex-col items-center justify-center px-6 pt-6 pb-12 text-center">
-    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-neutral-500">
+    <div className="mb-4 flex size-12 items-center justify-center rounded-2xl border border-white/8 bg-white/4 text-neutral-500">
       {icon}
     </div>
     <div className="text-sm font-medium text-neutral-200">{title}</div>

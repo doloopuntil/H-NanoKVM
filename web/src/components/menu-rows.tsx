@@ -37,7 +37,7 @@ export const MenuRow = forwardRef<HTMLDivElement, MenuRowProps>(
     <div
       ref={ref}
       className={clsx(
-        'flex min-h-[30px] items-center rounded-sm px-3 py-1 text-sm select-none',
+        'flex min-h-7.5 items-center rounded-sm px-3 py-1 text-sm select-none',
         disabled
           ? 'cursor-not-allowed text-neutral-500'
           : [
@@ -48,7 +48,7 @@ export const MenuRow = forwardRef<HTMLDivElement, MenuRowProps>(
       )}
       {...props}
     >
-      <div className="mr-2 flex size-[18px] shrink-0 items-center justify-center">{icon}</div>
+      <div className="mr-2 flex size-4.5 shrink-0 items-center justify-center">{icon}</div>
       <span className="min-w-0 flex-1">{children}</span>
     </div>
   )
@@ -69,7 +69,7 @@ export const MenuOption = forwardRef<HTMLDivElement, MenuOptionProps>(
     <div
       ref={ref}
       className={clsx(
-        'flex min-h-[30px] items-center rounded-sm py-1 pr-5 pl-1 text-sm select-none',
+        'flex min-h-7.5 items-center rounded-sm py-1 pr-5 pl-1 text-sm select-none',
         disabled
           ? 'cursor-not-allowed text-neutral-500'
           : 'cursor-pointer text-neutral-300 hover:bg-neutral-700/70',
@@ -77,7 +77,7 @@ export const MenuOption = forwardRef<HTMLDivElement, MenuOptionProps>(
       )}
       {...props}
     >
-      <div className="flex h-[14px] w-[20px] shrink-0 items-end text-blue-500">
+      <div className="flex h-3.5 w-5 shrink-0 items-end text-blue-500">
         {selected && <CheckIcon size={16} />}
       </div>
       {icon && <div className="mr-1.5 flex shrink-0 items-center justify-center">{icon}</div>}

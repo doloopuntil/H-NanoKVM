@@ -82,18 +82,18 @@ export const Desktop = () => {
       <TlsConfirm />
 
       {videoMode && resolution && (
-        <div className="relative flex h-full min-h-0 w-full min-w-0">
+        <div className="relative flex size-full min-h-0 min-w-0">
           <Menu />
-          <div className="h-full min-h-0 w-full min-w-0">
+          <div className="size-full min-h-0 min-w-0">
             <Splitter
-              className="h-full w-full"
+              className="size-full"
               style={{ height: '100%', width: '100%' }}
               onResize={handleSplitterResize}
             >
               <Splitter.Panel min="45%">
                 <div
                   id="kvm-pointer-surface"
-                  className="relative h-full min-h-0 w-full min-w-0 overflow-hidden bg-black"
+                  className="relative size-full min-h-0 min-w-0 overflow-hidden bg-black"
                 >
                   <Screen />
                   <CaptureStatusOverlay status={captureStatus} />

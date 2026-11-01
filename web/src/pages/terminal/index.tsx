@@ -180,14 +180,14 @@ export const Terminal = () => {
     <>
       <Head title={t('head.terminal')} />
 
-      <div className="h-full w-full overflow-hidden">
+      <div className="size-full overflow-hidden">
         {ticket ? (
           <div id="terminal" className="h-full p-2"></div>
         ) : (
-          <div className="flex h-full w-full items-center justify-center px-4">
+          <div className="flex size-full items-center justify-center px-4">
             <Form
               form={form}
-              className="w-full max-w-[360px]"
+              className="w-full max-w-90"
               initialValues={{ username: 'admin' }}
               onFinish={unlock}
             >

@@ -127,7 +127,7 @@ export const LeaderKey = () => {
               <span>{t('keyboard.leaderKey.howToUse')}</span>
               <div
                 className={clsx(
-                  'transition-300 size-[18px] text-neutral-500 transition',
+                  'size-4.5 text-neutral-500 transition',
                   isDocCollapsed ? 'rotate-0' : 'rotate-90'
                 )}
               >

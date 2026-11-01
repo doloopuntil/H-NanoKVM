@@ -244,23 +244,23 @@ export const VirtualKeyboard = () => {
 
   function getMobileButtonClass(key: string) {
     const specialWidth = new Map([
-      ['{space}', 'min-w-[132px]'],
-      ['{backspace}', 'min-w-[92px]'],
-      ['{capslock}', 'min-w-[78px]'],
-      ['{shiftleft}', 'min-w-[84px]'],
-      ['{shiftright}', 'min-w-[84px]'],
-      ['{controlleft}', 'min-w-[68px]'],
-      ['{controlright}', 'min-w-[68px]'],
-      ['{altleft}', 'min-w-[58px]'],
-      ['{altright}', 'min-w-[58px]'],
-      ['{enter}', 'min-w-[76px]'],
-      ['{tab}', 'min-w-[64px]'],
-      ['{winleft}', 'min-w-[58px]'],
-      ['{winright}', 'min-w-[58px]'],
-      ['{menu}', 'min-w-[58px]']
+      ['{space}', 'min-w-33'],
+      ['{backspace}', 'min-w-23'],
+      ['{capslock}', 'min-w-19.5'],
+      ['{shiftleft}', 'min-w-21'],
+      ['{shiftright}', 'min-w-21'],
+      ['{controlleft}', 'min-w-17'],
+      ['{controlright}', 'min-w-17'],
+      ['{altleft}', 'min-w-14.5'],
+      ['{altright}', 'min-w-14.5'],
+      ['{enter}', 'min-w-19'],
+      ['{tab}', 'min-w-16'],
+      ['{winleft}', 'min-w-14.5'],
+      ['{winright}', 'min-w-14.5'],
+      ['{menu}', 'min-w-14.5']
     ]);
 
-    return specialWidth.get(key) || 'min-w-[42px]';
+    return specialWidth.get(key) || 'min-w-10.5';
   }
 
   function handleMobilePointerUp(key: string) {
@@ -313,7 +313,7 @@ export const VirtualKeyboard = () => {
 
           <button
             type="button"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-neutral-600 hover:bg-neutral-200"
+            className="flex size-8 shrink-0 items-center justify-center rounded-sm text-neutral-600 hover:bg-neutral-200"
             onClick={() => setIsKeyboardOpen(false)}
           >
             <XIcon size={16} />
@@ -359,7 +359,7 @@ export const VirtualKeyboard = () => {
         <Drawer.Content
           className={clsx(
             'fixed right-0 bottom-0 left-0 z-999 mx-auto max-w-screen overflow-hidden bg-white outline-hidden',
-            isDesktopLayout ? 'w-[820px] rounded-sm' : 'w-screen rounded-t'
+            isDesktopLayout ? 'w-205 rounded-sm' : 'w-screen rounded-t'
           )}
         >
           {/* header */}
@@ -372,7 +372,7 @@ export const VirtualKeyboard = () => {
               <div className="flex min-w-0 items-center gap-2 sm:gap-5">
                 <Select
                   size="small"
-                  className="min-w-[90px]"
+                  className="min-w-22.5"
                   defaultValue={keyboardLanguage}
                   options={languages}
                   onChange={selectLanguage}
@@ -389,9 +389,9 @@ export const VirtualKeyboard = () => {
               </div>
             </ConfigProvider>
 
-            <div className="flex shrink-0 items-center justify-end sm:w-[100px]">
+            <div className="flex shrink-0 items-center justify-end sm:w-25">
               <div
-                className="flex h-[20px] w-[20px] cursor-pointer items-center justify-center rounded-sm text-neutral-600 hover:bg-neutral-300 hover:text-white"
+                className="flex size-5 cursor-pointer items-center justify-center rounded-sm text-neutral-600 hover:bg-neutral-300 hover:text-white"
                 onClick={() => setIsKeyboardOpen(false)}
               >
                 <XIcon size={16} />
