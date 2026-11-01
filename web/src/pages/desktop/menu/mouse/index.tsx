@@ -95,7 +95,7 @@ export const Mouse = () => {
   return (
     <MenuItem
       title={t('mouse.title')}
-      icon={<MouseIcon size={18} />}
+      icon={<MouseIcon size={16} />}
       content={isTouchLayout ? mobileContent : desktopContent}
     />
   );

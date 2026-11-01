@@ -32,7 +32,7 @@ export const ResetHid = () => {
   return (
     <MenuRow
       icon={
-        <RefreshCwIcon className={clsx({ 'animate-spin text-blue-500': isResetting })} size={18} />
+        <RefreshCwIcon className={clsx({ 'animate-spin text-blue-500': isResetting })} size={16} />
       }
       onClick={resetHid}
     >

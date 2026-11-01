@@ -18,7 +18,7 @@ export const LabelTip = ({ text, tip, warning = false }: LabelTipProps) => (
       placement="top"
       styles={{ root: { maxWidth: '400px' } }}
     >
-      {warning ? <CircleAlertIcon size={14} /> : <CircleQuestionMarkIcon size={14} />}
+      {warning ? <CircleAlertIcon size={16} /> : <CircleQuestionMarkIcon size={16} />}
     </Tooltip>
   </span>
 );

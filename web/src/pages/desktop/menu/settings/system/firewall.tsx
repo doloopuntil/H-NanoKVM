@@ -49,7 +49,7 @@ export const FirewallSettings = () => {
     return [
       {
         mode: 'baseline',
-        icon: <ShieldOffIcon size={18} />,
+        icon: <ShieldOffIcon size={16} />,
         title: t('settings.system.firewall.mode.baseline'),
         description: t('settings.system.firewall.mode.baselineDesc'),
         tags: [
@@ -60,7 +60,7 @@ export const FirewallSettings = () => {
       },
       {
         mode: 'moderate',
-        icon: <ShieldCheckIcon size={18} />,
+        icon: <ShieldCheckIcon size={16} />,
         title: t('settings.system.firewall.mode.moderate'),
         description: t('settings.system.firewall.mode.moderateDesc'),
         tags: [
@@ -71,7 +71,7 @@ export const FirewallSettings = () => {
       },
       {
         mode: 'restricted',
-        icon: <ShieldIcon size={18} />,
+        icon: <ShieldIcon size={16} />,
         title: t('settings.system.firewall.mode.restricted'),
         description: t('settings.system.firewall.mode.restrictedDesc'),
         tags: [
@@ -83,7 +83,7 @@ export const FirewallSettings = () => {
       },
       {
         mode: 'paranoid',
-        icon: <LockKeyholeIcon size={18} />,
+        icon: <LockKeyholeIcon size={16} />,
         title: t('settings.system.firewall.mode.paranoid'),
         description: t('settings.system.firewall.mode.paranoidDesc'),
         tags: [

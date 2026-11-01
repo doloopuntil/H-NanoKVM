@@ -75,16 +75,16 @@ export const Fps = ({ fps, setFps }: FpsProps) => {
           <InputNumber<number> defaultValue={fps} min={1} max={60} onChange={onChange} />
           <Button
             size="small"
-            icon={<CheckIcon size={14} />}
+            icon={<CheckIcon size={16} />}
             onClick={() => update(customizeRef.current)}
           />
-          <Button size="small" icon={<XIcon size={14} />} onClick={() => setIsCustomize(false)} />
+          <Button size="small" icon={<XIcon size={16} />} onClick={() => setIsCustomize(false)} />
         </div>
       )}
     </>
   );
 
   return (
-    <MenuSubmenu icon={<ScanBarcodeIcon size={18} />} label={t('screen.fps')} content={content} />
+    <MenuSubmenu icon={<ScanBarcodeIcon size={16} />} label={t('screen.fps')} content={content} />
   );
 };

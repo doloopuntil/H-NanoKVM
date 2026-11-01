@@ -203,7 +203,7 @@ export const Terminal = () => {
                 rules={[{ required: true, message: t('auth.noEmptyUsername'), min: 1 }]}
               >
                 <Input
-                  prefix={<UserRoundIcon size={14} />}
+                  prefix={<UserRoundIcon size={16} />}
                   placeholder={t('auth.placeholderUsername')}
                 />
               </Form.Item>
@@ -213,7 +213,7 @@ export const Terminal = () => {
                 rules={[{ required: true, message: t('auth.noEmptyPassword'), min: 1 }]}
               >
                 <Input.Password
-                  prefix={<LockIcon size={14} />}
+                  prefix={<LockIcon size={16} />}
                   placeholder={t('auth.placeholderPassword')}
                 />
               </Form.Item>
@@ -224,7 +224,7 @@ export const Terminal = () => {
                   rules={[{ required: true, message: t('auth.totp.noEmptyCode'), min: 1 }]}
                 >
                   <Input
-                    prefix={<ShieldUserIcon size={14} />}
+                    prefix={<ShieldUserIcon size={16} />}
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     placeholder={t('auth.totp.placeholderCode')}

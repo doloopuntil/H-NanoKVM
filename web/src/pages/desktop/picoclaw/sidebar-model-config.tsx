@@ -82,7 +82,7 @@ export const SidebarModelConfig = ({
           target="_blank"
           rel="noreferrer"
           aria-label={t('picoclaw.model.docsTitle')}
-          icon={<ExternalLinkIcon size={14} />}
+          icon={<ExternalLinkIcon size={16} />}
         />
       </SettingRow>
 

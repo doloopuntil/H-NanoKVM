@@ -108,7 +108,7 @@ export const Password = () => {
             rules={[{ required: true, message: t('auth.noEmptyPassword'), min: 1 }]}
           >
             <Input
-              prefix={<LockIcon size={14} />}
+              prefix={<LockIcon size={16} />}
               type="password"
               autoComplete="current-password"
               placeholder={t('auth.placeholderCurrentPassword')}
@@ -120,7 +120,7 @@ export const Password = () => {
             rules={[{ required: true, message: t('auth.noEmptyPassword'), min: 1 }]}
           >
             <Input
-              prefix={<LockIcon size={14} />}
+              prefix={<LockIcon size={16} />}
               type="password"
               autoComplete="new-password"
               placeholder={t('auth.placeholderNewPassword')}
@@ -132,7 +132,7 @@ export const Password = () => {
             rules={[{ required: true, message: t('auth.noEmptyPassword'), min: 1 }]}
           >
             <Input
-              prefix={<LockIcon size={14} />}
+              prefix={<LockIcon size={16} />}
               type="password"
               autoComplete="new-password"
               placeholder={t('auth.placeholderPassword2')}
@@ -145,7 +145,7 @@ export const Password = () => {
               rules={[{ required: true, message: t('auth.totp.noEmptyCode'), min: 1 }]}
             >
               <Input
-                prefix={<ShieldUserIcon size={14} />}
+                prefix={<ShieldUserIcon size={16} />}
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 placeholder={t('auth.totp.placeholderCode')}

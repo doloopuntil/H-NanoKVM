@@ -34,7 +34,7 @@ export const PowerLong = ({ showConfirm, isLoading, setIsLoading }: PowerLongPro
   }
 
   const row = (
-    <MenuRow icon={<CirclePowerIcon size={18} />} onClick={showConfirm ? undefined : power}>
+    <MenuRow icon={<CirclePowerIcon size={16} />} onClick={showConfirm ? undefined : power}>
       {t('power.powerLong')}
       <span className="ml-2 text-xs text-neutral-500">{`${duration}s`}</span>
     </MenuRow>

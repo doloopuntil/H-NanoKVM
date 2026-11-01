@@ -29,7 +29,7 @@ export const PowerShort = ({ showConfirm, isLoading, setIsLoading }: PowerShortP
   }
 
   const row = (
-    <MenuRow icon={<PowerIcon size={18} />} onClick={showConfirm ? undefined : power}>
+    <MenuRow icon={<PowerIcon size={16} />} onClick={showConfirm ? undefined : power}>
       {t('power.powerShort')}
     </MenuRow>
   );

@@ -150,13 +150,13 @@ export const Wifi = () => {
 
           <Input
             value={ssid}
-            prefix={<WifiIcon size={14} />}
+            prefix={<WifiIcon size={16} />}
             placeholder={t('settings.network.wifi.ssid')}
             onChange={(e) => setSsid(e.target.value)}
           />
           <Input.Password
             value={password}
-            prefix={<LockIcon size={14} />}
+            prefix={<LockIcon size={16} />}
             placeholder={t('settings.network.wifi.password')}
             onChange={(e) => setPassword(e.target.value)}
           />

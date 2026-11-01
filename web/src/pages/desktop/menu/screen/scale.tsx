@@ -1,6 +1,6 @@
 import { ReactElement, useEffect } from 'react';
 import { useAtom } from 'jotai';
-import { PercentIcon, ScalingIcon } from 'lucide-react';
+import { ScalingIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import * as storage from '@/lib/localstorage.ts';
@@ -37,10 +37,7 @@ export const Scale = (): ReactElement => {
           selected={scale.value === videoScale}
           onClick={() => update(scale.value)}
         >
-          <div className="flex items-center space-x-0.5">
-            <span>{scale.label}</span>
-            <PercentIcon size={12} />
-          </div>
+          {scale.label}%
         </MenuOption>
       ))}
     </>

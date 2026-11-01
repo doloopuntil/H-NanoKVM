@@ -34,8 +34,8 @@ export const LocalKeyboard = () => {
     <MenuRow
       active={isLocalKeyboardOpen}
       icon={
-        <span className="relative flex size-[18px] items-center justify-center">
-          <KeyboardIcon size={18} />
+        <span className="relative flex size-4 items-center justify-center">
+          <KeyboardIcon size={16} />
           <SmartphoneIcon size={10} className="absolute -right-1 -top-1 rounded bg-neutral-800" />
         </span>
       }

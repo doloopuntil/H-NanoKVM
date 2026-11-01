@@ -118,7 +118,7 @@ export const Script = () => {
           ghost
           type="primary"
           size="small"
-          icon={<UploadIcon size={14} />}
+          icon={<UploadIcon size={16} />}
           loading={isUploading}
           onClick={selectFile}
         >
@@ -167,7 +167,7 @@ export const Script = () => {
     <>
       <MenuItem
         title={t('script.title')}
-        icon={<FileJsonIcon size={18} />}
+        icon={<FileJsonIcon size={16} />}
         content={content}
         onOpenChange={handleOpenChange}
       />

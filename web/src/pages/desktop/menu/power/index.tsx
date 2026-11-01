@@ -56,9 +56,9 @@ export const Power = () => {
       )}
     >
       {isLoading ? (
-        <LoaderCircleIcon className="animate-spin" size={18} />
+        <LoaderCircleIcon className="animate-spin" size={16} />
       ) : (
-        <PowerIcon size={18} />
+        <PowerIcon size={16} />
       )}
     </div>
   );

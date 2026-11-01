@@ -10,7 +10,7 @@ export const Expand = ({ toggleMenu }: ExpandProps) => {
     <div className="flex items-center rounded-lg bg-neutral-800/50 p-1">
       <strong>
         <div className="flex size-[26px] cursor-move select-none items-center justify-center text-neutral-500">
-          <GripVerticalIcon size={18} />
+          <GripVerticalIcon size={16} />
         </div>
       </strong>
 
@@ -20,7 +20,7 @@ export const Expand = ({ toggleMenu }: ExpandProps) => {
         className="flex size-[26px] cursor-pointer items-center justify-center rounded text-neutral-500 hover:bg-neutral-800/60 hover:text-white"
         onClick={() => toggleMenu(true)}
       >
-        <ChevronRightIcon size={18} />
+        <ChevronRightIcon size={16} />
       </div>
     </div>
   );

@@ -135,7 +135,7 @@ export const Sidebar = () => {
           >
             <Button
               type="primary"
-              icon={<PlayIcon size={14} />}
+              icon={<PlayIcon size={16} />}
               loading={isTogglingRuntime}
               onClick={() => void handleStartRuntime()}
             >

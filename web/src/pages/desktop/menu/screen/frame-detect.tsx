@@ -47,11 +47,11 @@ export const FrameDetect = () => {
         className="group"
         icon={
           isLoading ? (
-            <LoaderCircleIcon className="animate-spin" size={18} />
+            <LoaderCircleIcon className="animate-spin" size={16} />
           ) : isEnabled ? (
-            <ScanEyeIcon color="#22c55e" size={18} />
+            <ScanEyeIcon color="#22c55e" size={16} />
           ) : (
-            <ScanIcon size={18} />
+            <ScanIcon size={16} />
           )
         }
         onClick={update}

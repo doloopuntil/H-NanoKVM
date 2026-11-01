@@ -188,7 +188,7 @@ export const Recorder = ({
 
   return (
     <>
-      <MenuRow icon={<PlusIcon size={18} />} onClick={() => setIsModalOpen(true)}>
+      <MenuRow icon={<PlusIcon size={16} />} onClick={() => setIsModalOpen(true)}>
         {t('keyboard.shortcut.custom')}
       </MenuRow>
 

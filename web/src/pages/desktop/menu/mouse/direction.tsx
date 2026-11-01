@@ -40,7 +40,7 @@ export const Direction = () => {
 
   return (
     <MenuSubmenu
-      icon={<ArrowDownUpIcon size={18} />}
+      icon={<ArrowDownUpIcon size={16} />}
       label={t('mouse.direction')}
       content={content}
     />

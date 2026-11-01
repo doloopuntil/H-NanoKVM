@@ -123,7 +123,7 @@ export const SidebarHeader = ({
         <div className="flex min-w-0 items-center gap-1.5">
           <Tooltip title={t('menu.collapse')} mouseEnterDelay={0.6} placement="bottom">
             <HeaderButton
-              icon={<PanelRightCloseIcon size={18} />}
+              icon={<PanelRightCloseIcon size={16} />}
               aria-label={t('menu.collapse')}
               onClick={onClose}
             />

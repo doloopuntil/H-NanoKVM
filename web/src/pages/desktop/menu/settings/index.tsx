@@ -98,13 +98,13 @@ export const Settings = () => {
       children: [
         {
           id: 'user.account',
-          icon: <UserRoundIcon size={14} />,
+          icon: <UserRoundIcon size={16} />,
           title: t('settings.account.title'),
           component: <Account setIsLocked={setIsLocked} />
         },
         {
           id: 'user.appearance',
-          icon: <PaletteIcon size={14} />,
+          icon: <PaletteIcon size={16} />,
           title: t('settings.appearance.title'),
           component: <Appearance />
         }
@@ -115,12 +115,12 @@ export const Settings = () => {
       icon: <GlobeIcon size={16} />,
       title: t('settings.networking.title'),
       children: [
-        systemTab('network', <NetworkIcon size={14} />, t('settings.network.title')),
-        systemTab('services', <RadioTowerIcon size={14} />, t('settings.system.sections.services')),
-        systemTab('firewall', <BrickWallIcon size={14} />, t('settings.system.sections.firewall')),
+        systemTab('network', <NetworkIcon size={16} />, t('settings.network.title')),
+        systemTab('services', <RadioTowerIcon size={16} />, t('settings.system.sections.services')),
+        systemTab('firewall', <BrickWallIcon size={16} />, t('settings.system.sections.firewall')),
         {
           id: 'networking.wireguard',
-          icon: <ShieldEllipsisIcon size={14} />,
+          icon: <ShieldEllipsisIcon size={16} />,
           title: t('settings.wireguard.title'),
           component: <Wireguard />
         },
@@ -137,19 +137,19 @@ export const Settings = () => {
       icon: <ServerCogIcon size={16} />,
       title: t('settings.system.title'),
       children: [
-        systemTab('time', <ClockIcon size={14} />, t('settings.system.sections.time')),
+        systemTab('time', <ClockIcon size={16} />, t('settings.system.sections.time')),
         systemTab(
           'systemLog',
-          <ScrollTextIcon size={14} />,
+          <ScrollTextIcon size={16} />,
           t('settings.system.sections.systemLog')
         ),
         systemTab(
           'performance',
-          <GaugeIcon size={14} />,
+          <GaugeIcon size={16} />,
           t('settings.system.sections.performance')
         ),
-        systemTab('monitor', <ActivityIcon size={14} />, t('settings.system.sections.monitor')),
-        systemTab('updates', <CircleArrowUpIcon size={14} />, t('settings.update.title'))
+        systemTab('monitor', <ActivityIcon size={16} />, t('settings.system.sections.monitor')),
+        systemTab('updates', <CircleArrowUpIcon size={16} />, t('settings.update.title'))
       ]
     }
   ];
@@ -281,7 +281,7 @@ export const Settings = () => {
         )}
         {tab.children && !isTouchLayout && (
           <span className="!ml-auto hidden sm:block">
-            {isOpen ? <ChevronDownIcon size={14} /> : <ChevronRightIcon size={14} />}
+            {isOpen ? <ChevronDownIcon size={16} /> : <ChevronRightIcon size={16} />}
           </span>
         )}
       </div>
@@ -302,7 +302,7 @@ export const Settings = () => {
         >
           <Badge dot={isUpdateAvailable} color="blue" offset={[0, 2]}>
             <div className="pt-[3px] text-neutral-300 hover:text-white">
-              <SettingsIcon size={18} />
+              <SettingsIcon size={16} />
             </div>
           </Badge>
         </div>

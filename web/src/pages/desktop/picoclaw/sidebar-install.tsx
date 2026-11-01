@@ -43,7 +43,7 @@ export const SidebarInstall = ({
           />
         </div>
       ) : (
-        <Button icon={<DownloadIcon size={14} />} onClick={() => void onInstall()} type="primary">
+        <Button icon={<DownloadIcon size={16} />} onClick={() => void onInstall()} type="primary">
           {t('picoclaw.install.install')}
         </Button>
       )}

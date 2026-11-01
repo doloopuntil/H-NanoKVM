@@ -40,7 +40,7 @@ export const LocalKeyboardButton = () => {
         )}
         onClick={toggleLocalKeyboard}
       >
-        <KeyboardIcon size={18} />
+        <KeyboardIcon size={16} />
         <SmartphoneIcon
           size={10}
           className="absolute right-[4px] top-[4px] rounded bg-neutral-800"

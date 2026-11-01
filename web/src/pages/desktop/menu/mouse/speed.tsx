@@ -56,5 +56,5 @@ export const Speed = () => {
     </div>
   );
 
-  return <MenuSubmenu icon={<GaugeIcon size={18} />} label={t('mouse.speed')} content={content} />;
+  return <MenuSubmenu icon={<GaugeIcon size={16} />} label={t('mouse.speed')} content={content} />;
 };

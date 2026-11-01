@@ -83,7 +83,7 @@ export const MessageInput = ({
       <div className="relative z-10 flex items-center justify-end gap-2 border-0 border-t border-solid border-white/[0.06] p-2.5 shadow-[0_-20px_20px_-20px_rgba(0,0,0,0.5)]">
         <Tooltip title={t('picoclaw.newConversation')} mouseEnterDelay={0.6}>
           <Button
-            icon={<SquarePenIcon size={14} />}
+            icon={<SquarePenIcon size={16} />}
             aria-label={t('picoclaw.newConversation')}
             onClick={() => void onNewConversation()}
             disabled={disableNewConversation}
@@ -93,7 +93,7 @@ export const MessageInput = ({
         <Tooltip title={t('picoclaw.send')} mouseEnterDelay={0.6}>
           <Button
             type="primary"
-            icon={<SendIcon size={14} />}
+            icon={<SendIcon size={16} />}
             aria-label={t('picoclaw.send')}
             onClick={() => void submit()}
             disabled={!isReady || !value.trim()}
