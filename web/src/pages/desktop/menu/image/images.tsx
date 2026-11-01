@@ -383,12 +383,12 @@ export const Images = ({
                   {mountedImage === image ? (
                     <HardDriveUploadIcon
                       size={16}
-                      className="text-red-500 opacity-60 group-hover:opacity-100"
+                      className="-translate-y-[0.63px] text-red-500 opacity-60 group-hover:opacity-100"
                     />
                   ) : (
                     <HardDriveDownloadIcon
                       size={16}
-                      className="text-blue-500 opacity-60 group-hover:opacity-100"
+                      className="-translate-y-[0.63px] text-blue-500 opacity-60 group-hover:opacity-100"
                     />
                   )}
                 </div>

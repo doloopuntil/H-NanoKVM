@@ -282,7 +282,8 @@ The Images dialog (`menu/image/`) is the one dialog that departs from the rules 
 - The image list shows three rows (`max-h-[120px]`) and scrolls beyond that, with a thin scrollbar on a
   transparent track. Each row ends with a mount icon (`HardDriveDownloadIcon`, blue) or an eject
   icon (`HardDriveUploadIcon`, red) and a delete icon, 16px in 24px hit areas. The type chip has a 2px right margin,
-  so the drawn distance from the chip to the mount icon equals the one from that icon to the delete icon.
+  so the drawn distance from the chip to the mount icon equals the one from that icon to the delete icon. The mount and
+  eject icons sit 0.63px higher than centred, so the bottom of the drive lines up with the bottom of the bin.
 - On a phone the dialog is not centred, so that the keyboard does not cover the URL box.
 
 The PicoClaw sidebar is part of the menu bar and follows the same rules where it can:
