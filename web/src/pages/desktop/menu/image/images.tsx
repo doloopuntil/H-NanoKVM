@@ -383,12 +383,12 @@ export const Images = ({
                   {mountedImage === image ? (
                     <HardDriveUploadIcon
                       size={16}
-                      className="-translate-y-[0.63px] text-red-500 opacity-60 group-hover:opacity-100"
+                      className="text-red-500 opacity-60 group-hover:opacity-100"
                     />
                   ) : (
                     <HardDriveDownloadIcon
                       size={16}
-                      className="-translate-y-[0.63px] text-blue-500 opacity-60 group-hover:opacity-100"
+                      className="text-blue-500 opacity-60 group-hover:opacity-100"
                     />
                   )}
                 </div>
@@ -399,7 +399,11 @@ export const Images = ({
                 size="small"
                 danger
                 className="h-[24px] w-[24px] p-0"
-                icon={<Trash2Icon size={16} />}
+                icon={
+                  <span className="flex">
+                    <Trash2Icon size={16} />
+                  </span>
+                }
                 disabled={mountedImage === image || isDiskShared || !isDiskStateKnown}
                 loading={deletingImage === image}
                 onClick={(e) => showDeleteModal(e, image)}
