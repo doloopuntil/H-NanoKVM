@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { InputNumber, Switch } from 'antd';
+import { InputNumber, Space, Switch } from 'antd';
 import { useAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 
@@ -94,18 +94,20 @@ export const Hdmi = () => {
         description={t('settings.device.hdmi.idleTimeoutDescription')}
         inline
       >
-        <InputNumber
-          className="w-40 [&_.ant-input-number-input]:!text-right"
-          min={0}
-          max={10080}
-          precision={0}
-          value={idleTimeoutInput}
-          addonAfter={t('settings.device.minutes')}
-          disabled={isIdleTimeoutLoading || !isReady}
-          onChange={setIdleTimeoutInput}
-          onBlur={updateIdleTimeout}
-          onPressEnter={updateIdleTimeout}
-        />
+        <Space.Compact>
+          <InputNumber
+            className="w-20 [&_.ant-input-number-input]:!text-right"
+            min={0}
+            max={10080}
+            precision={0}
+            value={idleTimeoutInput}
+            disabled={isIdleTimeoutLoading || !isReady}
+            onChange={setIdleTimeoutInput}
+            onBlur={updateIdleTimeout}
+            onPressEnter={updateIdleTimeout}
+          />
+          <Space.Addon className="w-16 text-center">{t('settings.device.minutes')}</Space.Addon>
+        </Space.Compact>
       </SettingRow>
     </>
   );

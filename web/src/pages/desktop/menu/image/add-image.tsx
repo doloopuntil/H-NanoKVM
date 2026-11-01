@@ -122,7 +122,7 @@ export const AddImage = ({
         <Alert
           type="warning"
           showIcon
-          message={t('download.diskShared')}
+          title={t('download.diskShared')}
           action={
             <Button type="primary" size="small" loading={isDisablingDisk} onClick={onDisableDisk}>
               {t('image.turnOff')}

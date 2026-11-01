@@ -265,7 +265,7 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
               <Alert
                 type="info"
                 showIcon
-                message={t('settings.systemLog.local.description', { path: localLogFile })}
+                title={t('settings.systemLog.local.description', { path: localLogFile })}
               />
               <SettingRow
                 label={t('settings.systemLog.local.priority')}
@@ -284,15 +284,17 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
                 description={t('settings.systemLog.local.bufferDesc')}
                 inline
               >
-                <InputNumber<number>
-                  min={16}
-                  max={1024}
-                  controls={false}
-                  value={config.bufferKb}
-                  addonAfter="KiB"
-                  onChange={(value) => patchConfig({ bufferKb: value || 200 })}
-                  className="w-28 [&_.ant-input-number-input]:!text-right"
-                />
+                <Space.Compact>
+                  <InputNumber<number>
+                    min={16}
+                    max={1024}
+                    controls={false}
+                    value={config.bufferKb}
+                    onChange={(value) => patchConfig({ bufferKb: value || 200 })}
+                    className="w-20 [&_.ant-input-number-input]:!text-right"
+                  />
+                  <Space.Addon className="w-12 text-center">KiB</Space.Addon>
+                </Space.Compact>
               </SettingRow>
               <SettingRow
                 label={t('settings.systemLog.local.rotations')}

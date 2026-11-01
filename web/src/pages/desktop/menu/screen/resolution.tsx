@@ -45,7 +45,7 @@ export const Resolution = () => {
               <Tooltip
                 title={t('screen.autoTips')}
                 placement="right"
-                overlayInnerStyle={{ width: '300px' }}
+                styles={{ container: { width: '300px' } }}
               >
                 <CircleQuestionMarkIcon size={16} />
               </Tooltip>

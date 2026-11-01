@@ -248,7 +248,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
         <Alert
           type="warning"
           showIcon
-          message={
+          title={
             <div>
               <div className="font-medium">{t('settings.account.totp.backupTitle')}</div>
               <div>{t('settings.account.totp.backupDescription')}</div>

@@ -677,7 +677,7 @@ export const Update = ({ setIsLocked }: UpdateProps) => {
           <Alert
             type="error"
             showIcon
-            message={t('settings.update.paranoidBlocked')}
+            title={t('settings.update.paranoidBlocked')}
             description={t('settings.update.paranoidBlockedDesc')}
           />
         )}

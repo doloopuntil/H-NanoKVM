@@ -143,7 +143,7 @@ export const SidebarHeader = ({
                 disabled={isUninstallingRuntime || isTogglingRuntime || isSwitchingAgent}
                 loading={isSwitchingAgent}
                 popupMatchSelectWidth={false}
-                className="min-w-[120px] [&_.ant-select-selection-item]:text-neutral-300"
+                className="min-w-[120px] [&_.ant-select-content-value]:text-neutral-300"
                 options={agentOptions.map((option) => ({
                   value: option.value,
                   label: option.title
