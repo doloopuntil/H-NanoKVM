@@ -22,7 +22,7 @@ export const Terminal = () => {
   return (
     <MenuItem
       title={t('terminal.title')}
-      icon={<SquareTerminalIcon size={16} />}
+      icon={<SquareTerminalIcon size={18} />}
       content={content}
     />
   );

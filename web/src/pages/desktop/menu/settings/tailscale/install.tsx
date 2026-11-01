@@ -45,7 +45,7 @@ export const Install = ({ setIsLocked, onSuccess }: InstallProps) => {
         title={t('settings.tailscale.failed')}
         description={t('settings.tailscale.retry')}
       >
-        <ol className="list-decimal space-y-1 pl-5 text-sm text-neutral-300">
+        <ol className="list-decimal space-y-1 pl-10 text-sm text-neutral-300">
           <li>
             {t('settings.tailscale.download')}
             <a

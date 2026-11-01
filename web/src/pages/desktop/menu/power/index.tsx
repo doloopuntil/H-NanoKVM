@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Switch, Tooltip } from 'antd';
-import clsx from 'clsx';
 import { LoaderCircleIcon, PowerIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -50,15 +49,14 @@ export const Power = () => {
 
   const icon = (
     <div
-      className={clsx(
-        'h-[18px] w-[18px]',
+      className={
         isPowerOn ? 'text-red-400 hover:text-red-500' : 'text-green-600 hover:text-green-500'
-      )}
+      }
     >
       {isLoading ? (
-        <LoaderCircleIcon className="animate-spin" size={16} />
+        <LoaderCircleIcon className="animate-spin" size={18} />
       ) : (
-        <PowerIcon size={16} />
+        <PowerIcon size={18} />
       )}
     </div>
   );

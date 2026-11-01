@@ -92,7 +92,7 @@ export const Image = () => {
           )}
           onClick={() => toggleModal(true)}
         >
-          <DiscIcon size={16} />
+          <DiscIcon size={18} />
         </div>
       </Tooltip>
 

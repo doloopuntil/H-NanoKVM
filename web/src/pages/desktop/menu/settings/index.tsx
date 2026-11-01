@@ -301,8 +301,8 @@ export const Settings = () => {
           onClick={openModal}
         >
           <Badge dot={isUpdateAvailable} color="blue" offset={[0, 2]}>
-            <div className="pt-[3px] text-neutral-300 hover:text-white">
-              <SettingsIcon size={16} />
+            <div className="text-neutral-300 hover:text-white">
+              <SettingsIcon size={18} />
             </div>
           </Badge>
         </div>

@@ -103,7 +103,7 @@ export const Menu = () => {
             >
               <strong className={isDesktopLayout ? '' : 'hidden'}>
                 <div className="flex h-[30px] cursor-move items-center justify-center pl-1 text-neutral-500 select-none">
-                  <GripVerticalIcon size={16} />
+                  <GripVerticalIcon size={18} />
                 </div>
               </strong>
 

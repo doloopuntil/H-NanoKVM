@@ -28,6 +28,6 @@ export const Keyboard = () => {
   );
 
   return (
-    <MenuItem title={t('keyboard.title')} icon={<KeyboardIcon size={16} />} content={content} />
+    <MenuItem title={t('keyboard.title')} icon={<KeyboardIcon size={18} />} content={content} />
   );
 };

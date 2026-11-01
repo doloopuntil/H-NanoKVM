@@ -15,7 +15,7 @@ export const Picoclaw = () => {
         className="flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-sm text-neutral-300 hover:bg-neutral-700/80 hover:text-white"
         onClick={() => setIsChatOpen((open) => !open)}
       >
-        <BotIcon size={16} />
+        <BotIcon size={18} />
       </div>
     </Tooltip>
   );

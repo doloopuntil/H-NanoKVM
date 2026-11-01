@@ -136,7 +136,7 @@ export const LeaderKey = () => {
             </div>
 
             {!isDocCollapsed && (
-              <ul className="my-3.5 list-outside list-disc space-y-3 pl-10">
+              <ul className="my-2 list-disc space-y-3 pl-10">
                 {['simultaneous', 'sequential'].map((key) => (
                   <li>
                     <div className="flex flex-col space-y-2 pr-1">

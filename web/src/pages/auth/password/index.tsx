@@ -169,7 +169,7 @@ export const Password = () => {
         <Card className="w-full max-w-[500px]">
           <div className="flex flex-col wrap-break-word">
             <div>{t('auth.tips.change1')}</div>
-            <ul className="my-3.5 list-outside list-decimal pl-10">
+            <ul className="my-2 list-decimal pl-10">
               <li>{t('auth.tips.change2')}</li>
               <li>{t('auth.tips.change3')}</li>
             </ul>

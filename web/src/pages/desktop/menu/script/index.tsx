@@ -167,7 +167,7 @@ export const Script = () => {
     <>
       <MenuItem
         title={t('script.title')}
-        icon={<FileJsonIcon size={16} />}
+        icon={<FileJsonIcon size={18} />}
         content={content}
         onOpenChange={handleOpenChange}
       />

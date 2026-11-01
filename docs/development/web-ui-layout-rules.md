@@ -213,10 +213,13 @@ and the dialog and toast helpers in `web/src/lib/feedback.ts`.
     preflight never restyles antd and a utility overrides antd without `!`.
     Preflight makes every box border-box, gives every border a solid style
     (`border-b border-white/[0.06]` draws a line on its own) and removes default
-    margins, padding and list markers: a list needs `list-disc` or `list-decimal`
-    and a left padding. CSS outside a layer in `index.css` beats every utility.
-    In a flex or grid column use `gap-*`: `space-y-*` puts its space in the
-    bottom margin of each child, and a child's own `mb-*` or `!mb-0` removes it.
+    margins, padding and list markers: a list is `my-2 list-disc pl-10` (or
+    `list-decimal`), the browser's 40px indent; inside a confirmation dialog or a
+    PicoClaw chat bubble, where width is short, it is `pl-5`. Prefer these
+    defaults to matching an old size pixel for pixel. CSS outside a layer in
+    `index.css` beats every utility. In a flex or grid column use `gap-*`:
+    `space-y-*` puts its space in the bottom margin of each child, and a child's
+    own `mb-*` or `!mb-0` removes it.
 33. A sticky element must not sit inside an `overflow-x-hidden` container; that
     makes the container its scroll parent and the element stops sticking.
 34. Layout depends on the phone class `settings-modal-mobile` (see
@@ -233,9 +236,10 @@ and the dialog and toast helpers in `web/src/lib/feedback.ts`.
     as Device (788px to 1038px, by board), scroll inside the window. Measure again
     and change the number if the Monitor page gets taller or shorter.
 37. Icons come from `lucide-react` (the GitHub, Apple and Windows logos from
-    `@ant-design/icons`) and are 16px, to go with the 14px text. Exceptions: 10 or
-    12 for a badge or a mark inside a chip or a line of text, and 24 for a loading,
-    empty or feature state. The cursor drawn over the remote screen has its own size.
+    `@ant-design/icons`) and are 16px, to go with the 14px text. Exceptions: 18 for
+    the buttons of the menu bar, to sit with the logo there; 10 or 12 for a badge or
+    a mark inside a chip or a line of text; and 24 for a loading, empty or feature
+    state. The cursor drawn over the remote screen has its own size.
     A hit area can be larger than the icon (24px for a row action, 18px for the
     icon box of a menu row); the icon stays 16px inside it.
 37. The app uses antd 6, which renamed parts of its DOM. A CSS override that reaches into
