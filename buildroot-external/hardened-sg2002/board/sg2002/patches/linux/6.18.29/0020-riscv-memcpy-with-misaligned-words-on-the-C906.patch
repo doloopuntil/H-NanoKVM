@@ -1,0 +1,182 @@
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Mon, 2 Nov 2026 17:00:24 +0200
+Subject: [PATCH 20/21] riscv: memcpy with misaligned words on the C906
+
+The assembly memcpy copies byte by byte below 128 bytes and whenever the
+source and the destination differ in alignment. The C906 does misaligned
+loads and stores in hardware, and word copies are up to ten times faster.
+__memcpy is now C (memcpy_misaligned.c): overlapping accesses below 8
+bytes, misaligned words below 128 bytes, and from 128 bytes an overlapping
+head that aligns the destination; aligned copies of 128 bytes or more
+keep the assembly loop (__memcpy_asm), and so do the early-boot (PI)
+aliases.
+
+No runtime misalignment probe check: the platform contract is 0052's
+(SG2002/C906 with native misaligned access enabled by the firmware before
+Linux starts), so the copy is safe before the probe has run.
+---
+ arch/riscv/lib/Makefile            |   9 +++
+ arch/riscv/lib/memcpy.S            |  17 +++--
+ arch/riscv/lib/memcpy_misaligned.c | 101 +++++++++++++++++++++++++++++
+ 3 files changed, 121 insertions(+), 6 deletions(-)
+ create mode 100644 arch/riscv/lib/memcpy_misaligned.c
+
+diff --git a/arch/riscv/lib/Makefile b/arch/riscv/lib/Makefile
+index bbc031124..d41220516 100644
+--- a/arch/riscv/lib/Makefile
++++ b/arch/riscv/lib/Makefile
+@@ -1,6 +1,15 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ lib-y			+= delay.o
+ lib-y			+= memcpy.o
++lib-y			+= memcpy_misaligned.o
++# The C906 does misaligned accesses in hardware (NanoKVM only): misaligned
++# word accesses on any build, and no loop turned back into a memcpy() call.
++CFLAGS_memcpy_misaligned.o += -mno-strict-align -fno-tree-loop-distribute-patterns
++CFLAGS_REMOVE_memcpy_misaligned.o = $(CC_FLAGS_FTRACE)
++KASAN_SANITIZE_memcpy_misaligned.o := n
++KCSAN_SANITIZE_memcpy_misaligned.o := n
++KCOV_INSTRUMENT_memcpy_misaligned.o := n
++UBSAN_SANITIZE_memcpy_misaligned.o := n
+ lib-y			+= memset.o
+ lib-y			+= memmove.o
+ ifeq ($(CONFIG_KASAN_GENERIC)$(CONFIG_KASAN_SW_TAGS),)
+diff --git a/arch/riscv/lib/memcpy.S b/arch/riscv/lib/memcpy.S
+index 44e009ec5..4d7dcc1f6 100644
+--- a/arch/riscv/lib/memcpy.S
++++ b/arch/riscv/lib/memcpy.S
+@@ -6,8 +6,11 @@
+ #include <linux/linkage.h>
+ #include <asm/asm.h>
+ 
+-/* void *memcpy(void *, const void *, size_t) */
+-SYM_FUNC_START(__memcpy)
++/*
++ * void *__memcpy_asm(void *, const void *, size_t): the copy that __memcpy
++ * (memcpy_misaligned.c) uses for aligned copies of 128 bytes or more.
++ */
++SYM_FUNC_START(__memcpy_asm)
+ 	move t6, a0  /* Preserve return value */
+ 
+ 	/* Defer to byte-oriented copy for small sizes */
+@@ -104,7 +107,9 @@ SYM_FUNC_START(__memcpy)
+ 	bltu a1, a3, 5b
+ 6:
+ 	ret
+-SYM_FUNC_END(__memcpy)
+-SYM_FUNC_ALIAS_WEAK(memcpy, __memcpy)
+-SYM_FUNC_ALIAS(__pi_memcpy, __memcpy)
+-SYM_FUNC_ALIAS(__pi___memcpy, __memcpy)
++SYM_FUNC_END(__memcpy_asm)
++/* The kexec purgatory links this file alone; the kernel overrides memcpy. */
++SYM_FUNC_ALIAS_WEAK(memcpy, __memcpy_asm)
++/* Early boot code (the PI aliases) keeps the assembly copy. */
++SYM_FUNC_ALIAS(__pi_memcpy, __memcpy_asm)
++SYM_FUNC_ALIAS(__pi___memcpy, __memcpy_asm)
+diff --git a/arch/riscv/lib/memcpy_misaligned.c b/arch/riscv/lib/memcpy_misaligned.c
+new file mode 100644
+index 000000000..8e24cf9d6
+--- /dev/null
++++ b/arch/riscv/lib/memcpy_misaligned.c
+@@ -0,0 +1,101 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * memcpy for harts whose misaligned scalar accesses are fast, such as the
++ * T-Head C906.
++ *
++ * The assembly memcpy copies byte by byte below 128 bytes and whenever the
++ * source and the destination differ in alignment. On the C906, which does
++ * misaligned loads and stores in hardware, that is up to ten times slower
++ * than copying words. Copy words instead: two overlapping
++ * accesses below 8 bytes; otherwise 128-byte blocks, then words, of
++ * misaligned loads, and an overlapping tail. Below 128 bytes the stores
++ * are misaligned too (as upstream's fast-unaligned usercopy): aligning the
++ * destination costs more there than it saves. From 128 bytes an
++ * overlapping head aligns the destination, and long runs of misaligned
++ * stores would cost more. Copies of 128 bytes or more between two 8-byte
++ * aligned buffers keep the assembly loop, which is faster there.
++ *
++ * Platform contract, as 0052: NanoKVM only, for the SG2002/C906 with native
++ * misaligned scalar access enabled by the firmware before Linux starts. No
++ * boot-probe check: once the probe has run it is a nop either way, and the
++ * copy is safe before it.
++ */
++#define __NO_FORTIFY
++#include <linux/linkage.h>
++#include <linux/string.h>
++#include <linux/types.h>
++#include <linux/unaligned.h>
++
++asmlinkage void *__memcpy_asm(void *dst, const void *src, size_t n);
++
++static __always_inline u64 ld64(const void *p) { return get_unaligned((const u64 *)p); }
++static __always_inline void st64(void *p, u64 v) { put_unaligned(v, (u64 *)p); }
++static __always_inline u32 ld32(const void *p) { return get_unaligned((const u32 *)p); }
++static __always_inline void st32(void *p, u32 v) { put_unaligned(v, (u32 *)p); }
++static __always_inline u16 ld16(const void *p) { return get_unaligned((const u16 *)p); }
++static __always_inline void st16(void *p, u16 v) { put_unaligned(v, (u16 *)p); }
++
++void *__memcpy(void *dst, const void *src, size_t n)
++{
++	u8 *d = dst, *end;
++	const u8 *s = src;
++	u64 tail;
++
++	if (n >= 128 && !(((uintptr_t)dst | (uintptr_t)src) & 7))
++		return __memcpy_asm(dst, src, n);
++
++	if (n < 8) {
++		if (n >= 4) {
++			u32 a = ld32(s), b = ld32(s + n - 4);
++
++			st32(d, a);
++			st32(d + n - 4, b);
++		} else if (n >= 2) {
++			u16 a = ld16(s), b = ld16(s + n - 2);
++
++			st16(d, a);
++			st16(d + n - 2, b);
++		} else if (n) {
++			*d = *s;
++		}
++		return dst;
++	}
++
++	tail = ld64(s + n - 8);
++	end = d + n - 8;
++	if (n >= 128) {
++		size_t skip = 8 - ((uintptr_t)d & 7);
++
++		st64(d, ld64(s));
++		d += skip;
++		s += skip;
++	}
++	while (end - d >= 128) {
++		u64 r0 = ld64(s), r1 = ld64(s + 8), r2 = ld64(s + 16), r3 = ld64(s + 24);
++		u64 r4 = ld64(s + 32), r5 = ld64(s + 40), r6 = ld64(s + 48), r7 = ld64(s + 56);
++		u64 r8 = ld64(s + 64), r9 = ld64(s + 72), ra = ld64(s + 80), rb = ld64(s + 88);
++		u64 rc = ld64(s + 96), rd = ld64(s + 104), re = ld64(s + 112), rf = ld64(s + 120);
++
++		st64(d, r0); st64(d + 8, r1); st64(d + 16, r2); st64(d + 24, r3);
++		st64(d + 32, r4); st64(d + 40, r5); st64(d + 48, r6); st64(d + 56, r7);
++		st64(d + 64, r8); st64(d + 72, r9); st64(d + 80, ra); st64(d + 88, rb);
++		st64(d + 96, rc); st64(d + 104, rd); st64(d + 112, re); st64(d + 120, rf);
++		d += 128;
++		s += 128;
++	}
++	while (d < end) {
++		st64(d, ld64(s));
++		d += 8;
++		s += 8;
++	}
++	st64(end, tail);
++	return dst;
++}
++
++/*
++ * Overrides the weak memcpy in memcpy.S. With KASAN, mm/kasan provides the
++ * checked memcpy, which calls __memcpy.
++ */
++#if !(defined(CONFIG_KASAN_GENERIC) || defined(CONFIG_KASAN_SW_TAGS))
++void *memcpy(void *dst, const void *src, size_t n) __alias(__memcpy);
++#endif
