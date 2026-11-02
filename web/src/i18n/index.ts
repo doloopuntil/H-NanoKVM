@@ -6,7 +6,6 @@ import { getLanguage } from '@/lib/localstorage.ts';
 import { getResources } from './resources';
 
 const languageAliases: Record<string, string> = {
-  cs: 'cz',
   nb: 'no',
   nn: 'no',
   se: 'sv',

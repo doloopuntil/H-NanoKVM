@@ -1256,6 +1256,8 @@ const cz = {
         deleteConfirmContent: 'Opravdu chcete smazat "{{title}}"?',
         deleteConfirmOk: 'Smazat',
         messageCount_one: '{{count}} zpráva',
+        messageCount_few: '{{count}} zprávy',
+        messageCount_many: '{{count}} zprávy',
         messageCount_other: '{{count}} zpráv'
       },
       config: {

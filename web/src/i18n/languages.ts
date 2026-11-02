@@ -21,7 +21,7 @@ const languages = [
   { key: 'hu', name: 'Magyar' },
   { key: 'vi', name: 'Tiếng Việt' },
   { key: 'ja', name: '日本語' },
-  { key: 'cz', name: 'Čeština' },
+  { key: 'cs', name: 'Čeština' },
   { key: 'uk', name: 'Українська' },
   { key: 'th', name: 'ภาษาไทย' },
   { key: 'sv', name: 'Svenska' }
