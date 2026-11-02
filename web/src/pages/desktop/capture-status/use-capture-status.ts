@@ -10,12 +10,12 @@ import {
 } from './model';
 
 export function useCaptureStatus(activeVideoMode: string) {
-  const [captureStatus, setCaptureStatus] = useState<CaptureStatus | null>(null);
+  // the mode the status belongs to, so a mode change drops it without an effect
+  const [entry, setEntry] = useState<{ mode: string; status: CaptureStatus } | null>(null);
   const latestStatusRef = useRef<CaptureStatus | null>(null);
 
   useEffect(() => {
     latestStatusRef.current = null;
-    setCaptureStatus(null);
 
     if (!activeVideoMode) {
       return;
@@ -31,9 +31,9 @@ export function useCaptureStatus(activeVideoMode: string) {
       }
 
       latestStatusRef.current = status;
-      setCaptureStatus(status.ok ? null : status);
+      setEntry(status.ok ? null : { mode: activeVideoMode, status });
     });
   }, [activeVideoMode]);
 
-  return captureStatus;
+  return entry?.mode === activeVideoMode ? entry.status : null;
 }

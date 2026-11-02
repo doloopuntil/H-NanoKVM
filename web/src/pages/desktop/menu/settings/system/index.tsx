@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Alert } from 'antd';
 import { useTranslation } from 'react-i18next';
 
@@ -56,9 +56,12 @@ export const System = ({ section, setIsLocked }: SystemProps) => {
     setActionState(state);
   }, []);
 
-  useEffect(() => {
+  // a new section starts with no pending action
+  const [actionSection, setActionSection] = useState(section);
+  if (actionSection !== section) {
+    setActionSection(section);
     setActionState(idleSystemActionState);
-  }, [section]);
+  }
 
   function saveActiveSection() {
     if (section === 'network') {

@@ -20,6 +20,8 @@ export const ActionOverlay = () => {
   useEffect(() => {
     const screen = document.getElementById('screen');
     if (!screen) {
+      // measures an element outside React, so the rect is kept in state
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRect(null);
       return;
     }
@@ -34,6 +36,7 @@ export const ActionOverlay = () => {
       });
     };
 
+     
     updateRect();
 
     const observer = new ResizeObserver(updateRect);

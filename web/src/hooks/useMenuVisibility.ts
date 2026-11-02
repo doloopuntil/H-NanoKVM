@@ -65,6 +65,8 @@ export function useMenuVisibility(): MenuVisibilityState {
 
   // Initialize menu settings
   useEffect(() => {
+    // restores the saved settings into shared atoms, once, when the menu mounts
+    /* eslint-disable react-hooks/set-state-in-effect */
     const displayMode = getMenuDisplayMode();
     setMenuDisplayMode(displayMode);
 
@@ -95,13 +97,17 @@ export function useMenuVisibility(): MenuVisibilityState {
         });
     }
 
+    /* eslint-enable react-hooks/set-state-in-effect */
+
     return () => {
       stopCountdown();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle display mode changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMenuHidden(false);
 
     if (menuDisplayMode === 'auto') {

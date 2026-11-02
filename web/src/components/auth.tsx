@@ -14,10 +14,8 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   useSessionKeepAlive(authState === 'allowed');
 
   useEffect(() => {
-    if (existToken()) {
-      setAuthState('allowed');
-      return;
-    }
+    // the initial state already covers a stored token
+    if (existToken()) return;
 
     let cancelled = false;
 

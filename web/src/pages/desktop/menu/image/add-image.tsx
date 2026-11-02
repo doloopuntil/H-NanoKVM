@@ -41,8 +41,11 @@ export const AddImage = ({
     if (isOpen) {
       resume();
     } else {
+      // clears the form when the dialog closes
+      /* eslint-disable react-hooks/set-state-in-effect */
       reset();
       setIsDragging(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);

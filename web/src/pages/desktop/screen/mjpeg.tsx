@@ -31,9 +31,15 @@ export const Mjpeg = () => {
     if (enabled) {
       stopFrameDetect(10);
     }
+  }, [resolution]);
+
+  // a new resolution restarts the stream and clears the error
+  const [streamResolution, setStreamResolution] = useState(resolution);
+  if (streamResolution !== resolution) {
+    setStreamResolution(resolution);
     setHasError(false);
     setStreamNonce((current) => current + 1);
-  }, [resolution]);
+  }
 
   useEffect(() => {
     const scale = storage.getVideoScale();

@@ -25,12 +25,12 @@ export default defineConfig(
         rules: {
             '@typescript-eslint/no-explicit-any': 'off',
             'react-hooks/exhaustive-deps': 'warn',
-            // React Compiler rules new in react-hooks 7. What they flag is deliberate
-            // here (latest-value refs, hoisted handlers, load flags set in effects).
-            'react-hooks/set-state-in-effect': 'warn',
-            'react-hooks/refs': 'warn',
-            'react-hooks/immutability': 'warn',
-            'react-hooks/purity': 'warn',
+            // React Compiler rules of react-hooks 7. A site that is right as written gets a
+            // line-level disable with its reason; do not turn a rule off for the whole project.
+            'react-hooks/set-state-in-effect': 'error',
+            'react-hooks/refs': 'error',
+            'react-hooks/immutability': 'error',
+            'react-hooks/purity': 'error',
             'react-refresh/only-export-components': [
                 'warn',
                 { allowConstantExport: true },
