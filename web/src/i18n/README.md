@@ -10,3 +10,6 @@
 
 To add a language, add `locales/<key>.ts` with every key of `en.ts` (it is
 picked up automatically) and add its key and name to `languages.ts`.
+- Plural strings use i18next's suffixes (`key_one`, `key_other`, and `_few`, `_many`
+  where the language has them). A language needs exactly the forms i18next asks for;
+  the test checks it. A missing form falls back to English.

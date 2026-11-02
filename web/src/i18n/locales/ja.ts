@@ -1266,7 +1266,6 @@ const ja = {
         deleteConfirmTitle: 'セッションを削除します',
         deleteConfirmContent: '「{{title}}」を削除してもよろしいですか?',
         deleteConfirmOk: '削除',
-        messageCount_one: '{{count}} メッセージ',
         messageCount_other: '{{count}} メッセージ'
       },
       config: {

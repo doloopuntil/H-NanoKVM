@@ -1207,7 +1207,6 @@ const zh = {
         deleteConfirmTitle: '删除会话',
         deleteConfirmContent: '确定要删除“{{title}}”吗？',
         deleteConfirmOk: '删除',
-        messageCount_one: '{{count}} 条消息',
         messageCount_other: '{{count}} 条消息'
       },
       config: {

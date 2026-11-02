@@ -1265,6 +1265,8 @@ const ru = {
         deleteConfirmContent: 'Вы уверены, что хотите удалить «{{title}}»?',
         deleteConfirmOk: 'Удалить',
         messageCount_one: '{{count}} сообщение',
+        messageCount_few: '{{count}} сообщения',
+        messageCount_many: '{{count}} сообщений',
         messageCount_other: '{{count}} сообщения'
       },
       config: {

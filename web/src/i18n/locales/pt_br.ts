@@ -1265,6 +1265,7 @@ const pt_br = {
         deleteConfirmContent: 'Tem certeza de que deseja excluir "{{title}}"?',
         deleteConfirmOk: 'Excluir',
         messageCount_one: '{{count}} mensagem',
+        messageCount_many: '{{count}} de mensagens',
         messageCount_other: '{{count}} mensagens'
       },
       config: {

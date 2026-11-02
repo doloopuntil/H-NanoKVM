@@ -1241,7 +1241,6 @@ const ko = {
         deleteConfirmTitle: '세션 삭제',
         deleteConfirmContent: '정말로 "{{title}}"를 삭제할까요?',
         deleteConfirmOk: '삭제',
-        messageCount_one: '{{count}}개의 메시지',
         messageCount_other: '{{count}}개의 메시지'
       },
       config: {

@@ -1256,7 +1256,6 @@ const vi = {
         deleteConfirmTitle: 'Xóa phiên',
         deleteConfirmContent: 'Bạn có chắc chắn muốn xóa "{{title}}" không?',
         deleteConfirmOk: 'Xóa',
-        messageCount_one: '{{count}} tin nhắn',
         messageCount_other: '{{count}} tin nhắn'
       },
       config: {

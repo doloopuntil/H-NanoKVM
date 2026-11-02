@@ -1273,6 +1273,7 @@ const es = {
         deleteConfirmContent: '¿Está seguro de que desea eliminar "{{title}}"?',
         deleteConfirmOk: 'Eliminar',
         messageCount_one: '{{count}} mensaje',
+        messageCount_many: '{{count}} de mensajes',
         messageCount_other: '{{count}} mensajes'
       },
       config: {

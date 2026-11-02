@@ -1267,6 +1267,8 @@ const uk = {
         deleteConfirmContent: 'Ви впевнені, що хочете видалити "{{title}}"?',
         deleteConfirmOk: 'Видалити',
         messageCount_one: '{{count}} повідомлення',
+        messageCount_few: '{{count}} повідомлення',
+        messageCount_many: '{{count}} повідомлень',
         messageCount_other: '{{count}} повідомлень'
       },
       config: {

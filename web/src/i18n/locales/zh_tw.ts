@@ -1209,7 +1209,6 @@ const zh_tw = {
         deleteConfirmTitle: '刪除會話',
         deleteConfirmContent: '您確定要刪除「{{title}}」嗎？',
         deleteConfirmOk: '刪除',
-        messageCount_one: '{{count}} 則訊息',
         messageCount_other: '{{count}} 則訊息'
       },
       config: {

@@ -1264,7 +1264,6 @@ const id = {
         deleteConfirmTitle: 'Hapus sesi',
         deleteConfirmContent: 'Apakah Anda yakin ingin menghapus "{{title}}"?',
         deleteConfirmOk: 'Hapus',
-        messageCount_one: '{{count}} pesan',
         messageCount_other: '{{count}} pesan'
       },
       config: {

@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { describe, expect, it } from 'vitest';
 
 import languages from './languages';
@@ -56,6 +57,42 @@ const lowerCaseStarts = new Set([
 ]);
 
 const english = flatten(resources.en.translation);
+
+// i18next resolves plurals as key_one, key_few, ... with the categories of the language; a missing
+// one falls back to English, so every language needs exactly the suffixes i18next asks for.
+const pluralSuffix = /_(zero|one|two|few|many|other)$/;
+const pluralBases = [...new Set(Object.keys(english).filter((key) => /_one$/.test(key)))].map(
+  (key) => key.replace(pluralSuffix, '')
+);
+const resolver = i18next.createInstance();
+await resolver.init({ resources, lng: 'en' });
+
+function suffixes(language: string): string[] {
+  const service = (
+    resolver.services as unknown as {
+      pluralResolver: { getSuffixes: (lng: string) => string[] };
+    }
+  ).pluralResolver;
+  // se is the file behind sv; as a code of its own i18next would read it as Northern Sami
+  return service.getSuffixes(language === 'se' ? 'sv' : language);
+}
+
+// The keys a language must have: English's, with each plural key in the language's own forms.
+function expectedKeys(language: string): string[] {
+  const plain = Object.keys(english).filter(
+    (key) => !pluralBases.includes(key.replace(pluralSuffix, ''))
+  );
+  const plurals = pluralBases.flatMap((base) => suffixes(language).map((suffix) => base + suffix));
+  return [...plain, ...plurals];
+}
+
+// The English text a key is compared with; the plural forms all follow English's "other".
+function reference(key: string): string {
+  return pluralBases.includes(key.replace(pluralSuffix, ''))
+    ? english[`${key.replace(pluralSuffix, '')}_other`]
+    : english[key];
+}
+
 const translated = Object.keys(resources).filter((language) => language !== 'en');
 
 describe('languages', () => {
@@ -72,13 +109,14 @@ describe('languages', () => {
 describe.each(translated)('%s translation', (language) => {
   const strings = flatten(resources[language].translation);
 
-  it('has every English key', () => {
-    const missing = Object.keys(english).filter((key) => !(key in strings));
+  it('has every English key, plurals in its own forms', () => {
+    const missing = expectedKeys(language).filter((key) => !(key in strings));
     expect(missing).toEqual([]);
   });
 
   it('has no key that English lacks', () => {
-    const extra = Object.keys(strings).filter((key) => !(key in english));
+    const expected = new Set(expectedKeys(language));
+    const extra = Object.keys(strings).filter((key) => !expected.has(key));
     expect(extra).toEqual([]);
   });
 
@@ -88,16 +126,15 @@ describe.each(translated)('%s translation', (language) => {
   });
 
   it('uses the same placeholders as English', () => {
-    const mismatched = Object.keys(english).filter(
-      (key) =>
-        key in strings && placeholders(strings[key]).join() !== placeholders(english[key]).join()
+    const mismatched = Object.keys(strings).filter(
+      (key) => placeholders(strings[key]).join() !== placeholders(reference(key)).join()
     );
     expect(mismatched).toEqual([]);
   });
 
   it('keeps the same link tags as English', () => {
-    const mismatched = Object.keys(english).filter(
-      (key) => key in strings && tags(strings[key]).join() !== tags(english[key]).join()
+    const mismatched = Object.keys(strings).filter(
+      (key) => tags(strings[key]).join() !== tags(reference(key)).join()
     );
     expect(mismatched).toEqual([]);
   });
@@ -143,16 +180,16 @@ describe.each(translated)('%s translation', (language) => {
     const abbreviations = new Set(['settings.device.minutes']);
     const ending = (text: string) =>
       /[.。]$/.test(text.trim()) ? '.' : /[?？]$/.test(text.trim()) ? '?' : '';
-    const different = Object.keys(english).filter(
-      (key) =>
-        key in strings && !abbreviations.has(key) && ending(strings[key]) !== ending(english[key])
+    const different = Object.keys(strings).filter(
+      (key) => !abbreviations.has(key) && ending(strings[key]) !== ending(reference(key))
     );
     expect(different).toEqual([]);
   });
 
   it('does not leave sentences in English', () => {
-    const untranslated = Object.keys(english).filter(
-      (key) => strings[key] === english[key] && words(english[key]) >= 3 && !sameAsEnglish.has(key)
+    const untranslated = Object.keys(strings).filter(
+      (key) =>
+        strings[key] === reference(key) && words(reference(key)) >= 3 && !sameAsEnglish.has(key)
     );
     expect(untranslated).toEqual([]);
   });

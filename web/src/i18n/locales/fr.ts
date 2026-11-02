@@ -1276,6 +1276,7 @@ const fr = {
         deleteConfirmContent: 'Etes-vous sûr de vouloir supprimer « {{title}} »?',
         deleteConfirmOk: 'Supprimer',
         messageCount_one: '{{count}} message',
+        messageCount_many: '{{count}} de messages',
         messageCount_other: '{{count}} messages'
       },
       config: {

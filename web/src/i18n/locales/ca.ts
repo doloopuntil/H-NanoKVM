@@ -1271,6 +1271,7 @@ const ca = {
         deleteConfirmContent: 'Estàs segur que vols suprimir "{{title}}"?',
         deleteConfirmOk: 'Esborra',
         messageCount_one: '{{count}} missatge',
+        messageCount_many: '{{count}} de missatges',
         messageCount_other: '{{count}} missatges'
       },
       config: {

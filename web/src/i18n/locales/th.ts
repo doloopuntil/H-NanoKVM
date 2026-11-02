@@ -1240,7 +1240,6 @@ const th = {
         deleteConfirmTitle: 'ลบเซสชัน',
         deleteConfirmContent: 'คุณแน่ใจหรือไม่ว่าต้องการลบ "{{title}}"',
         deleteConfirmOk: 'ลบ',
-        messageCount_one: '{{count}} ข้อความ',
         messageCount_other: '{{count}} ข้อความ'
       },
       config: {
