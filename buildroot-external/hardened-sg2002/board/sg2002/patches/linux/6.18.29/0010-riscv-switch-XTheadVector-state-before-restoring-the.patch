@@ -1,0 +1,34 @@
+From: Gleb Pesin <dormancygrace@gmail.com>
+Date: Mon, 2 Nov 2026 17:00:24 +0200
+Subject: [PATCH 10/16] riscv: switch XTheadVector state before restoring the
+ next FCSR
+
+On the C906 (XTheadVector) the vector fixed-point fields VXRM and VXSAT are
+part of FCSR. __switch_to_fpu() loads the next task's FCSR, so a vector
+switch after it would save the previous task's vxrm/vxsat from the next
+task's FCSR. Switch the vector state first on XTheadVector cores; other
+cores keep the upstream order.
+
+[Adapted to 6.18: no srmcfg switch.]
+---
+ arch/riscv/include/asm/switch_to.h | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/riscv/include/asm/switch_to.h b/arch/riscv/include/asm/switch_to.h
+index 0e71eb82f..dd50fa3b3 100644
+--- a/arch/riscv/include/asm/switch_to.h
++++ b/arch/riscv/include/asm/switch_to.h
+@@ -115,9 +115,12 @@ do {							\
+ 	struct task_struct *__prev = (prev);		\
+ 	struct task_struct *__next = (next);		\
+ 	__set_prev_cpu(__prev->thread);			\
++	/* C906 FCSR aliases VXRM/VXSAT: save V before restoring next FCSR. */ \
++	if (has_xtheadvector())				\
++		__switch_to_vector(__prev, __next);	\
+ 	if (has_fpu())					\
+ 		__switch_to_fpu(__prev, __next);	\
+-	if (has_vector() || has_xtheadvector())		\
++	if (has_vector() && !has_xtheadvector())		\
+ 		__switch_to_vector(__prev, __next);	\
+ 	if (switch_to_should_flush_icache(__next))	\
+ 		local_flush_icache_all();		\
