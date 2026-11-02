@@ -28,7 +28,7 @@ async function copyText(text: string, container: HTMLElement): Promise<boolean> 
   container.appendChild(area);
   area.focus();
   area.select();
-  let copied = false;
+  let copied: boolean;
   try {
     copied = document.execCommand('copy');
   } catch {

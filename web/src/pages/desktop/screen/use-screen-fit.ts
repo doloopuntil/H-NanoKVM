@@ -95,7 +95,7 @@ export function useScreenFit(
       height: Math.max(1, Math.round(resolution.height * scale)),
       objectFit: 'cover'
     };
-  }, [fallbackStyle, fitScale, resolution?.height, resolution?.width, videoScale]);
+  }, [fallbackStyle, fitScale, resolution, videoScale]);
 
   return { containerRef, mediaStyle };
 }
