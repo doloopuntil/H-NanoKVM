@@ -9,7 +9,7 @@ import { useIsTouchLayout } from '@/hooks/useResponsiveLayout.ts';
 import {
   blurMobileLocalKeyboard,
   focusMobileLocalKeyboard
-} from '@/pages/desktop/mobile-local-keyboard';
+} from '@/pages/desktop/mobile-local-keyboard/focus.ts';
 
 export const LocalKeyboardButton = () => {
   const { t } = useTranslation();

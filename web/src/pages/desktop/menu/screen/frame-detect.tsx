@@ -12,13 +12,10 @@ export const FrameDetect = () => {
   const { t } = useTranslation();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isEnabled, setIsEnabled] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(() => ls.getFrameDetect());
 
   useEffect(() => {
-    const enabled = ls.getFrameDetect();
-    if (enabled) {
-      setIsEnabled(true);
-    } else {
+    if (!ls.getFrameDetect()) {
       attempt(() => api.updateFrameDetect(false), { quiet: true });
     }
   }, []);

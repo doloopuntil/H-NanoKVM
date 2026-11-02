@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Switch } from 'antd';
 import { useTranslation } from 'react-i18next';
 
@@ -14,12 +14,8 @@ const REDIRECT_DELAY_SECONDS = 12;
 export const Tls = () => {
   const { t } = useTranslation();
 
-  const [isEnabled, setIsEnabled] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(() => window.location.protocol === 'https:');
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    setIsEnabled(window.location.protocol === 'https:');
-  }, []);
 
   function requestUpdate() {
     if (isLoading) return;

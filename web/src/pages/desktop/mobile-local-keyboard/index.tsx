@@ -8,22 +8,13 @@ import * as storage from '@/lib/localstorage.ts';
 import { client, MessageEvent } from '@/lib/websocket.ts';
 import { isKeyboardEnableAtom, isLocalKeyboardOpenAtom } from '@/jotai/keyboard.ts';
 
-const INPUT_ID = 'nanokvm-mobile-local-keyboard';
+import { INPUT_ID } from './focus.ts';
+
 const VALID_PASTE_LANGUAGES = new Set(['en', 'de', 'fr', 'ru', 'ko', 'ja']);
 
 function getPasteLanguage() {
   const language = storage.getKeyboardLanguage() || 'en';
   return VALID_PASTE_LANGUAGES.has(language) ? language : 'en';
-}
-
-export function focusMobileLocalKeyboard() {
-  const input = document.getElementById(INPUT_ID) as HTMLTextAreaElement | null;
-  input?.focus({ preventScroll: true });
-}
-
-export function blurMobileLocalKeyboard() {
-  const input = document.getElementById(INPUT_ID) as HTMLTextAreaElement | null;
-  input?.blur();
 }
 
 export const MobileLocalKeyboard = () => {

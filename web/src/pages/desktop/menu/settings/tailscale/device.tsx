@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Switch } from 'antd';
 import { useTranslation } from 'react-i18next';
 
@@ -15,12 +15,15 @@ type DeviceProps = {
 export const Device = ({ status }: DeviceProps) => {
   const { t } = useTranslation();
 
-  const [isRunning, setIsRunning] = useState(false);
+  const [isRunning, setIsRunning] = useState(status.state === 'running');
   const [isUpdating, setIsUpdating] = useState(false);
 
-  useEffect(() => {
+  // follow the polled status; a toggle sets isRunning until the next status arrives
+  const [lastStatus, setLastStatus] = useState(status);
+  if (lastStatus !== status) {
+    setLastStatus(status);
     setIsRunning(status.state === 'running');
-  }, [status]);
+  }
 
   async function update() {
     if (isUpdating) return;

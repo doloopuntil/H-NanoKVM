@@ -8,7 +8,7 @@ import { MenuRow } from '@/components/menu-rows.tsx';
 import {
   blurMobileLocalKeyboard,
   focusMobileLocalKeyboard
-} from '@/pages/desktop/mobile-local-keyboard';
+} from '@/pages/desktop/mobile-local-keyboard/focus.ts';
 
 export const LocalKeyboard = () => {
   const { t } = useTranslation();

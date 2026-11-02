@@ -22,7 +22,7 @@ export const VideoMode = () => {
   const { t } = useTranslation();
   const videoMode = useAtomValue(videoModeAtom);
 
-  const [isDirectSupported, setIsDirectSupported] = useState<boolean | null>(null);
+  const isDirectSupported = window.location.protocol === 'https:' && !!window.VideoDecoder;
   const [isWebrtcBlocked, setIsWebrtcBlocked] = useState(false);
 
   const refreshFirewallStatus = useCallback(() => {
@@ -40,13 +40,6 @@ export const VideoMode = () => {
         );
       })
       .catch(() => undefined);
-  }, []);
-
-  useEffect(() => {
-    const isHttps = window.location.protocol === 'https:';
-    const isDecoderSupported = !!window.VideoDecoder;
-
-    setIsDirectSupported(isHttps && isDecoderSupported);
   }, []);
 
   useEffect(() => {
@@ -70,7 +63,7 @@ export const VideoMode = () => {
   }, [refreshFirewallStatus]);
 
   useEffect(() => {
-    if (!isWebrtcBlocked || videoMode !== 'h264' || isDirectSupported === null) return;
+    if (!isWebrtcBlocked || videoMode !== 'h264') return;
 
     setCookie(isDirectSupported ? 'direct' : 'mjpeg');
     setTimeout(() => {

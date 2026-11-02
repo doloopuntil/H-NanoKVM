@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, useRef, useState } from 'react';
 import { Button, Input, Modal, Select } from 'antd';
 import type { InputRef } from 'antd';
 import clsx from 'clsx';
@@ -21,7 +21,7 @@ export const Paste = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const [isClipboardSupported, setIsClipboardSupported] = useState(false);
+  const isClipboardSupported = 'clipboard' in navigator;
   const [isReadingClipboard, setIsReadingClipboard] = useState(false);
   const [langue, setLangue] = useState('en');
   const [status, setStatus] = useState<InputStatus>('');
@@ -36,10 +36,6 @@ export const Paste = () => {
     { value: 'fr', label: t('keyboard.dropdownFrench') },
     { value: 'ru', label: t('keyboard.dropdownRussian') }
   ];
-
-  useEffect(() => {
-    setIsClipboardSupported('clipboard' in navigator);
-  }, []);
 
   function onChange(e: ChangeEvent<HTMLTextAreaElement>) {
     const value = e.target.value;
