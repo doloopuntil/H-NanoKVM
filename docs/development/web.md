@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-01
+last-checked: 2026-11-02
 ---
 
 # Web UI
@@ -33,6 +33,16 @@ corepack pnpm --dir web test       # vitest: translations, PicoClaw protocol, to
 corepack pnpm --dir web lint
 corepack pnpm --dir web format     # prettier
 ```
+
+`tsc` is TypeScript 7 (the native compiler, about 4x faster). typescript-eslint 8 still
+needs the JavaScript compiler API, so `web/.pnpmfile.cjs` gives it TypeScript 6 as its own
+dependency; remove the hook once typescript-eslint supports TypeScript 7. Do not set
+`baseUrl` in `tsconfig.json`: TypeScript 7 rejects it, and Vite reads the `@/*` alias from
+`paths` (`resolve.tsconfigPaths`).
+
+ESLint reports about 67 warnings and no errors. 45 of them come from the React Compiler
+rules of eslint-plugin-react-hooks 7 (`set-state-in-effect`, `refs`, `immutability`,
+`purity`), which `eslint.config.js` sets to `warn`; fix them when you touch the code.
 
 If ESLint crashes with `expand is not a function`, the local `node_modules` is
 out of step with the lockfile; reinstall with `--frozen-lockfile` (in a scratch
