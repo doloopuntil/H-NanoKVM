@@ -72,7 +72,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
   const disablePasswordRef = useRef<InputRef>(null);
 
   // antd focuses the dialog itself once it has opened, which overrides autoFocus.
-  const focusWhenOpen = (ref: RefObject<InputRef>) => (open: boolean) => {
+  const focusWhenOpen = (ref: RefObject<InputRef | null>) => (open: boolean) => {
     if (open) ref.current?.focus();
   };
 
