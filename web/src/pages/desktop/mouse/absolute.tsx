@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 
-import { MouseReportAbsolute } from '@/lib/mouse.ts';
 import * as storage from '@/lib/localstorage.ts';
+import { MouseReportAbsolute } from '@/lib/mouse.ts';
 import { client, MessageEvent } from '@/lib/websocket.ts';
 import { scrollDirectionAtom, scrollIntervalAtom } from '@/jotai/mouse.ts';
 import { resolutionAtom, videoScaleAtom } from '@/jotai/screen.ts';
@@ -23,6 +23,17 @@ const HID_ABSOLUTE_MAX = 0x7fff;
 const HID_ABSOLUTE_CENTER = Math.round(HID_ABSOLUTE_MAX / 2);
 const MIN_TOUCH_ZOOM = 0.1;
 const MAX_TOUCH_ZOOM = 4;
+
+function sendReport(report: Uint8Array) {
+  const data = new Uint8Array([MessageEvent.Mouse, ...report]);
+  client.send(data);
+}
+
+// disable default events
+function disableEvent(event: any) {
+  event.preventDefault();
+  event.stopPropagation();
+}
 
 export const Absolute = () => {
   const isTouchLayout = useIsTouchLayout();
@@ -53,6 +64,35 @@ export const Absolute = () => {
   const TAP_THRESHOLD = 8;
   const DRAG_THRESHOLD = 10;
   const VELOCITY_THRESHOLD = 0.3;
+
+  // Mouse event handler
+  const handleMouseEvent = useCallback((event: MouseAbsoluteEvent) => {
+    let report: Uint8Array;
+    const mouse = mouseRef.current;
+
+    switch (event.type) {
+      case 'mousedown':
+        mouse.buttonDown(event.button);
+        report = mouse.buildButtonReport(lastPosRef.current.x, lastPosRef.current.y);
+        break;
+      case 'mouseup':
+        mouse.buttonUp(event.button);
+        report = mouse.buildButtonReport(lastPosRef.current.x, lastPosRef.current.y);
+        break;
+      case 'wheel':
+        report = mouse.buildReport(lastPosRef.current.x, lastPosRef.current.y, event.deltaY);
+        break;
+      case 'move':
+        report = mouse.buildReport(event.x, event.y);
+        lastPosRef.current = { x: event.x, y: event.y };
+        break;
+      default:
+        report = mouse.buildReport(lastPosRef.current.x, lastPosRef.current.y);
+        break;
+    }
+
+    sendReport(report);
+  }, []);
 
   useEffect(() => {
     currentVideoScaleRef.current = videoScale;
@@ -93,7 +133,7 @@ export const Absolute = () => {
 
     handleMouseEvent({ type: 'move', x: HID_ABSOLUTE_CENTER, y: HID_ABSOLUTE_CENTER });
     emitMobileCursorAbsolute(0.5, 0.5);
-  }, [isTouchLayout, resolution?.height, resolution?.width]);
+  }, [handleMouseEvent, isTouchLayout, resolution?.height, resolution?.width]);
 
   useEffect(() => {
     const screen = document.getElementById('screen') as HTMLElement | null;
@@ -528,53 +568,15 @@ export const Absolute = () => {
         clearTimeout(longPressTimerRef.current);
       }
     };
-  }, [resolution, scrollDirection, scrollInterval, setVideoScale]);
-
-  // Mouse event handler
-  function handleMouseEvent(event: MouseAbsoluteEvent) {
-    let report: Uint8Array;
-    const mouse = mouseRef.current;
-
-    switch (event.type) {
-      case 'mousedown':
-        mouse.buttonDown(event.button);
-        report = mouse.buildButtonReport(lastPosRef.current.x, lastPosRef.current.y);
-        break;
-      case 'mouseup':
-        mouse.buttonUp(event.button);
-        report = mouse.buildButtonReport(lastPosRef.current.x, lastPosRef.current.y);
-        break;
-      case 'wheel':
-        report = mouse.buildReport(lastPosRef.current.x, lastPosRef.current.y, event.deltaY);
-        break;
-      case 'move':
-        report = mouse.buildReport(event.x, event.y);
-        lastPosRef.current = { x: event.x, y: event.y };
-        break;
-      default:
-        report = mouse.buildReport(lastPosRef.current.x, lastPosRef.current.y);
-        break;
-    }
-
-    sendReport(report);
-  }
-
-  function sendReport(report: Uint8Array) {
-    const data = new Uint8Array([MessageEvent.Mouse, ...report]);
-    client.send(data);
-  }
-
-  // disable default events
-  function disableEvent(event: any) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
+  }, [handleMouseEvent, resolution, scrollDirection, scrollInterval, setVideoScale]);
 
   return <></>;
 };
 
 function uniqueElements(elements: Array<HTMLElement | null>): HTMLElement[] {
-  return Array.from(new Set(elements.filter((element): element is HTMLElement => Boolean(element))));
+  return Array.from(
+    new Set(elements.filter((element): element is HTMLElement => Boolean(element)))
+  );
 }
 
 function getMediaSize(screen: Element) {
@@ -603,13 +605,11 @@ function getMediaSize(screen: Element) {
   return null;
 }
 
-function getPinchMetrics(touches: TouchList):
-  | {
-      distance: number;
-      centerX: number;
-      centerY: number;
-    }
-  | null {
+function getPinchMetrics(touches: TouchList): {
+  distance: number;
+  centerX: number;
+  centerY: number;
+} | null {
   if (touches.length < 2) return null;
 
   const first = touches[0];

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Switch, Tooltip } from 'antd';
 import { LoaderCircleIcon, PowerIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -17,21 +17,9 @@ export const Power = () => {
 
   const [isPowerOn, setIsPowerOn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(() => localstorage.getPowerConfirm());
 
-  useEffect(() => {
-    getLed();
-    const interval = setInterval(getLed, 5000);
-
-    const powerConfirm = localstorage.getPowerConfirm();
-    setShowConfirm(powerConfirm);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
-
-  async function getLed() {
+  const getLed = useCallback(async () => {
     try {
       const rsp = await api.getGpio();
       if (rsp.code === 0) {
@@ -40,7 +28,17 @@ export const Power = () => {
     } catch (err) {
       console.log(err);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sets state after the request answers
+    getLed();
+    const interval = setInterval(getLed, 5000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [getLed]);
 
   function updateShowConfirm(value: boolean) {
     setShowConfirm(value);

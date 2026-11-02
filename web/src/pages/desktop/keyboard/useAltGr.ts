@@ -19,14 +19,12 @@ export function useAltGr(
   pressedKeys: React.RefObject<Set<string>>,
   sendKeyEvent: (type: 'keydown' | 'keyup', code: string) => void
 ): AltGrHandlers {
-  const state = useRef<AltGrState | null>(null);
-
-  if (os === 'Windows' && !state.current) {
-    state.current = { active: false, ctrlLeftTimestamp: 0 };
-  }
+  const state = useRef<AltGrState>({ active: false, ctrlLeftTimestamp: 0 });
+  // only Windows reports AltGr as Ctrl+Alt
+  const enabled = os === 'Windows';
 
   const handleKeyDown = (code: string, timestamp: number): void => {
-    if (!state.current) return;
+    if (!enabled) return;
 
     // When AltGr is pressed, browsers send ControlLeft followed immediately by AltRight
     if (code === 'ControlLeft') {
@@ -46,7 +44,7 @@ export function useAltGr(
   };
 
   const handleKeyUp = (code: string): boolean => {
-    if (!state.current?.active) {
+    if (!enabled || !state.current.active) {
       return false;
     }
 
@@ -65,13 +63,11 @@ export function useAltGr(
   };
 
   const reset = () => {
-    if (state.current) {
-      state.current.active = false;
-      state.current.ctrlLeftTimestamp = 0;
-    }
+    state.current.active = false;
+    state.current.ctrlLeftTimestamp = 0;
   };
 
-  const isActive = () => state.current?.active ?? false;
+  const isActive = () => enabled && state.current.active;
 
   return { handleKeyDown, handleKeyUp, reset, isActive };
 }

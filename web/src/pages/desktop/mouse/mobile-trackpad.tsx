@@ -59,6 +59,8 @@ export const MobileTrackpad = () => {
   const drainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    const activePointers = activePointersRef.current;
+    const mouse = mouseRef.current;
     const screen = document.getElementById('screen') as HTMLElement | null;
     if (!screen) return;
 
@@ -358,8 +360,8 @@ export const MobileTrackpad = () => {
       window.removeEventListener('pointercancel', handlePointerCancel, pointerOptions);
       clearLongPress();
       clearMovementDrain();
-      activePointersRef.current.clear();
-      sendReport(mouseRef.current.reset());
+      activePointers.clear();
+      sendReport(mouse.reset());
       emitMobileCursorHide(0);
     };
   }, [scrollDirection, scrollInterval, pointerSensitivity, resolution]);

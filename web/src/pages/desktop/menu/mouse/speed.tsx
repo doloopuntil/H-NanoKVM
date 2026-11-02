@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Slider } from 'antd';
 import { useAtom } from 'jotai';
 import { GaugeIcon } from 'lucide-react';
@@ -10,33 +9,28 @@ import { MenuSubmenu } from '@/components/menu-submenu.tsx';
 
 const MAX_INTERVAL = 300;
 
+function interval2Speed(interval: number) {
+  if (interval === MAX_INTERVAL) {
+    return 0;
+  }
+  return ((MAX_INTERVAL - interval) * 100) / MAX_INTERVAL;
+}
+
+function speed2Interval(speed: number) {
+  return MAX_INTERVAL - speed * (MAX_INTERVAL / 100);
+}
+
 export const Speed = () => {
   const { t } = useTranslation();
 
   const [scrollInterval, setScrollInterval] = useAtom(scrollIntervalAtom);
 
-  const [scrollSpeed, setScrollSpeed] = useState(100);
-
-  useEffect(() => {
-    const speed = interval2Speed(scrollInterval);
-    setScrollSpeed(speed);
-  }, [scrollInterval]);
+  const scrollSpeed = interval2Speed(scrollInterval);
 
   function update(speed: number): void {
     const interval = speed2Interval(speed);
     setScrollInterval(interval);
     storage.setMouseScrollInterval(interval);
-  }
-
-  function interval2Speed(interval: number) {
-    if (interval === MAX_INTERVAL) {
-      return 0;
-    }
-    return ((MAX_INTERVAL - interval) * 100) / MAX_INTERVAL;
-  }
-
-  function speed2Interval(speed: number) {
-    return MAX_INTERVAL - speed * (MAX_INTERVAL / 100);
   }
 
   const content = (

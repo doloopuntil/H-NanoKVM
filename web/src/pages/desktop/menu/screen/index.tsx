@@ -29,18 +29,6 @@ export const Screen = () => {
   // only a PCIe board has the HDMI reset line that Reset HDMI pulses
   const [isPcie, setIsPcie] = useState(false);
 
-  useEffect(() => {
-    updateScreen('type', videoMode === 'mjpeg' ? 0 : 1);
-    if (resolution) {
-      updateScreen('resolution', resolution.height);
-    }
-    updateQuality();
-    updateFps();
-    getHardware()
-      .then((rsp) => setIsPcie(rsp.data?.version === 'PCIE'))
-      .catch(() => {});
-  }, []);
-
   async function updateQuality() {
     const cookieQuality = ls.getQuality();
     if (!cookieQuality) return;
@@ -63,6 +51,22 @@ export const Screen = () => {
       setFps(cookieFps);
     }
   }
+
+  useEffect(() => {
+    updateScreen('type', videoMode === 'mjpeg' ? 0 : 1);
+    if (resolution) {
+      updateScreen('resolution', resolution.height);
+    }
+    // both set state only after their request answers
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    updateQuality();
+    updateFps();
+    getHardware()
+      .then((rsp) => setIsPcie(rsp.data?.version === 'PCIE'))
+      .catch(() => {});
+    // applies the saved settings once, when the menu mounts
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const content = (
     <div className="min-w-50">

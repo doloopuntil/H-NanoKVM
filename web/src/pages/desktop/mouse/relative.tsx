@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { message } from 'antd';
 import { useAtomValue } from 'jotai';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,17 @@ import {
 } from './movement-scale.ts';
 import { MouseRelativeEvent } from './types.ts';
 
+function sendReport(report: Uint8Array) {
+  const data = new Uint8Array([MessageEvent.Mouse, ...report]);
+  client.send(data);
+}
+
+// disable default events
+function disableEvent(event: any) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 export const Relative = () => {
   const { t } = useTranslation();
   const [messageApi, contextHolder] = message.useMessage();
@@ -30,6 +41,47 @@ export const Relative = () => {
   const lastScrollTimeRef = useRef(0);
   const moveAccumulatorRef = useRef({ x: 0, y: 0 });
   const drainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Mouse handler
+  const handleMouseEvent = useCallback((event: MouseRelativeEvent) => {
+    let report: Uint8Array;
+    const mouse = mouseRef.current;
+
+    switch (event.type) {
+      case 'mousedown':
+        mouse.buttonDown(event.button);
+        report = mouse.buildButtonReport();
+        break;
+      case 'mouseup':
+        mouse.buttonUp(event.button);
+        report = mouse.buildButtonReport();
+        break;
+      case 'wheel':
+        report = mouse.buildReport(0, 0, event.deltaY);
+        break;
+      case 'move':
+        sendReport(mouse.buildReport(event.deltaX, event.deltaY));
+        return;
+      default:
+        report = mouse.buildReport(0, 0);
+        break;
+    }
+
+    sendReport(report);
+  }, []);
+
+  // show message
+  const showMessage = useCallback(() => {
+    messageApi.open({
+      key: 'requestPointer',
+      type: 'info',
+      content: t('mouse.requestPointer'),
+      duration: 3,
+      style: {
+        marginTop: '40vh'
+      }
+    });
+  }, [messageApi, t]);
 
   useEffect(() => {
     const screen = document.getElementById('screen');
@@ -142,59 +194,14 @@ export const Relative = () => {
       target.removeEventListener('contextmenu', disableEvent);
       document.removeEventListener('pointerlockchange', handlePointerLockChange);
     };
-  }, [resolution, scrollDirection, scrollInterval, pointerSensitivity]);
-
-  // Mouse handler
-  function handleMouseEvent(event: MouseRelativeEvent) {
-    let report: Uint8Array;
-    const mouse = mouseRef.current;
-
-    switch (event.type) {
-      case 'mousedown':
-        mouse.buttonDown(event.button);
-        report = mouse.buildButtonReport();
-        break;
-      case 'mouseup':
-        mouse.buttonUp(event.button);
-        report = mouse.buildButtonReport();
-        break;
-      case 'wheel':
-        report = mouse.buildReport(0, 0, event.deltaY);
-        break;
-      case 'move':
-        sendReport(mouse.buildReport(event.deltaX, event.deltaY));
-        return;
-      default:
-        report = mouse.buildReport(0, 0);
-        break;
-    }
-
-    sendReport(report);
-  }
-
-  function sendReport(report: Uint8Array) {
-    const data = new Uint8Array([MessageEvent.Mouse, ...report]);
-    client.send(data);
-  }
-
-  // show message
-  function showMessage() {
-    messageApi.open({
-      key: 'requestPointer',
-      type: 'info',
-      content: t('mouse.requestPointer'),
-      duration: 3,
-      style: {
-        marginTop: '40vh'
-      }
-    });
-  }
-
-  // disable default events
-  function disableEvent(event: any) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
+  }, [
+    handleMouseEvent,
+    showMessage,
+    resolution,
+    scrollDirection,
+    scrollInterval,
+    pointerSensitivity
+  ]);
 
   return <>{contextHolder}</>;
 };

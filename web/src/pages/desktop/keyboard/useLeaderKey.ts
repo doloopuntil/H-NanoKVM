@@ -95,6 +95,7 @@ export function useLeaderKey(
 
     // Leader key released
     if (leader.code && code === leader.code) {
+      // eslint-disable-next-line react-hooks/purity -- runs in a key event, not during render
       if (leader.recordMode && Date.now() - leader.startTime > RECORD_MODE_THRESHOLD_MS) {
         // Exit record mode
         reset();

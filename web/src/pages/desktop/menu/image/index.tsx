@@ -49,6 +49,18 @@ export const Image = () => {
     }
   ];
 
+  // readers of the mounted image and of the CD-ROM flag: the icon state and the
+  // mode selector here, and the same state in the mount panel
+  function getImageState() {
+    attempt(() => api.getMountedImage(), { quiet: true }).then((rsp) => {
+      if (rsp) setIsMounted(!!rsp.data?.file);
+    });
+
+    attempt(() => api.getCdRom(), { quiet: true }).then((rsp) => {
+      if (rsp) setMode(rsp.data?.cdrom === 1 ? 'cd-rom' : 'mass-storage');
+    });
+  }
+
   useEffect(() => {
     getImageState();
 
@@ -61,18 +73,6 @@ export const Image = () => {
       window.removeEventListener(IMAGE_LIST_CHANGED_EVENT, handleImageUpdated);
     };
   }, []);
-
-  // readers of the mounted image and of the CD-ROM flag: the icon state and the
-  // mode selector here, and the same state in the mount panel
-  function getImageState() {
-    attempt(() => api.getMountedImage(), { quiet: true }).then((rsp) => {
-      if (rsp) setIsMounted(!!rsp.data?.file);
-    });
-
-    attempt(() => api.getCdRom(), { quiet: true }).then((rsp) => {
-      if (rsp) setMode(rsp.data?.cdrom === 1 ? 'cd-rom' : 'mass-storage');
-    });
-  }
 
   function toggleModal(open: boolean) {
     setIsModalOpen(open);

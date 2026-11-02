@@ -11,17 +11,6 @@ export const Notification = () => {
   const navigate = useNavigate();
   const [api, contextHolder] = notification.useNotification();
 
-  useEffect(() => {
-    const skip = getSkipModifyPassword();
-    if (skip) return;
-
-    isPasswordUpdated().then((rsp) => {
-      if (rsp.code === 0 && !rsp.data.isUpdated) {
-        openNotification();
-      }
-    });
-  }, []);
-
   function openNotification() {
     api.warning({
       key: 'no_change_password',
@@ -42,6 +31,19 @@ export const Notification = () => {
     api.destroy();
     navigate('/auth/password');
   }
+
+  useEffect(() => {
+    const skip = getSkipModifyPassword();
+    if (skip) return;
+
+    isPasswordUpdated().then((rsp) => {
+      if (rsp.code === 0 && !rsp.data.isUpdated) {
+        openNotification();
+      }
+    });
+    // the password is checked once, when the page opens
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return <>{contextHolder}</>;
 };
