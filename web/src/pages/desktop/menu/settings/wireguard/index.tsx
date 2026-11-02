@@ -551,6 +551,8 @@ function formatBytes(bytes: number) {
 const StatusCard = ({ status }: { status: WireguardStatus }) => {
   const { t } = useTranslation();
 
+  // status is polled, so each new answer re-renders this card
+  // eslint-disable-next-line react-hooks/purity
   const age = Date.now() / 1000 - status.latestHandshake;
   const connected = status.running && status.latestHandshake > 0 && age < FRESH_HANDSHAKE_SECONDS;
   const [color, label] = !status.running

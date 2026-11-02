@@ -232,6 +232,8 @@ export const AddImage = ({
           <div>
             <div className="pb-1 text-xs text-neutral-400">{t('download.sha256')}</div>
             <Input
+              // the hook's result carries a ref (fileInputRef) that is not read during render
+              // eslint-disable-next-line react-hooks/refs
               value={transfer.sha256sum}
               disabled={isDisabled}
               maxLength={64}

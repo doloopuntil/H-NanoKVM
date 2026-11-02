@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useId, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useId, useState } from 'react';
+import { useLatest } from './useLatest.ts';
 
 import { toastLoadFailed } from '@/lib/feedback.ts';
 
@@ -24,8 +25,7 @@ export function useSettingsLoadState<T extends Rsp>(
   const [status, setStatus] = useState<LoadStatus>('loading');
   const [reloads, setReloads] = useState(0);
 
-  const latest = useRef({ fetcher, apply });
-  latest.current = { fetcher, apply };
+  const latest = useLatest({ fetcher, apply });
 
   const generation = group?.generation ?? 0;
   const report = group?.report;
@@ -68,7 +68,7 @@ export function useSettingsLoadState<T extends Rsp>(
       cancelled = true;
       report?.(id, null);
     };
-  }, [generation, id, reloads, report]);
+  }, [generation, id, reloads, report, latest]);
 
   return { status, reload: () => setReloads((count) => count + 1) };
 }

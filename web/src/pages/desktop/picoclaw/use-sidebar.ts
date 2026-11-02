@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { useLatest } from '@/hooks/useLatest.ts';
 import { useAtom, useSetAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 
@@ -106,8 +107,9 @@ export const useSidebar = () => {
     setIsSwitchingAgent,
     setIsUninstallRequestPending
   });
-  const refreshStateRef = useRef(actions.refreshState);
-  refreshStateRef.current = actions.refreshState;
+  const refreshStateRef = useLatest(actions.refreshState);
+  // the ref is read only when refreshState is called, never during render
+  // eslint-disable-next-line react-hooks/refs
   const sessionActions = createPicoclawSidebarSessionActions({
     t,
     transportState,
@@ -117,7 +119,7 @@ export const useSidebar = () => {
     isFreshConversation,
     isSwitchingSession,
     hasHistory: historySessions.length > 0,
-    refreshState: refreshStateRef.current,
+    refreshState: () => refreshStateRef.current(),
     setMessages,
     setTakeover,
     setOverlay,

@@ -72,7 +72,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
   const disablePasswordRef = useRef<InputRef>(null);
 
   // antd focuses the dialog itself once it has opened, which overrides autoFocus.
-  const focusWhenOpen = (ref: RefObject<InputRef | null>) => (open: boolean) => {
+  const focusWhenOpen = (ref: RefObject<InputRef | null>, open: boolean) => {
     if (open) ref.current?.focus();
   };
 
@@ -376,7 +376,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
       <Modal
         open={isStartingEnrolment}
         centered
-        afterOpenChange={focusWhenOpen(enrolPasswordRef)}
+        afterOpenChange={(open) => focusWhenOpen(enrolPasswordRef, open)}
         title={t('settings.account.totp.enableTitle')}
         okText={t('settings.account.totp.continue')}
         cancelText={t('settings.account.totp.cancel')}
@@ -404,7 +404,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
       <Modal
         open={isRegenerating}
         centered
-        afterOpenChange={focusWhenOpen(regeneratePasswordRef)}
+        afterOpenChange={(open) => focusWhenOpen(regeneratePasswordRef, open)}
         title={t('settings.account.totp.regenerateTitle')}
         okText={t('settings.account.totp.generate')}
         cancelText={t('settings.account.totp.cancel')}
@@ -441,7 +441,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
       <Modal
         open={isDisabling}
         centered
-        afterOpenChange={focusWhenOpen(disablePasswordRef)}
+        afterOpenChange={(open) => focusWhenOpen(disablePasswordRef, open)}
         title={t('settings.account.totp.disableTitle')}
         okText={t('settings.account.totp.disable')}
         cancelText={t('settings.account.totp.cancel')}

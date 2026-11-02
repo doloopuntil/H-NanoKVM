@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLatest } from '@/hooks/useLatest.ts';
 import { Alert, Modal } from 'antd';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -41,8 +42,7 @@ export const InstallWait = ({ open, onFailed }: InstallWaitProps) => {
   const { t } = useTranslation();
   const [elapsed, setElapsed] = useState(0);
   const [wentDown, setWentDown] = useState(false);
-  const failedRef = useRef(onFailed);
-  failedRef.current = onFailed;
+  const failedRef = useLatest(onFailed);
 
   useEffect(() => {
     if (!open) return;
@@ -70,7 +70,7 @@ export const InstallWait = ({ open, onFailed }: InstallWaitProps) => {
       clearInterval(tick);
       clearInterval(poll);
     };
-  }, [open]);
+  }, [open, failedRef]);
 
   return (
     <Modal
