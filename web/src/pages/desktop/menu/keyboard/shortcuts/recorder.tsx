@@ -84,7 +84,7 @@ export const Recorder = ({
     return () => {
       clearTimeout(timer);
     };
-  }, [isModalOpen]);
+  }, [isModalOpen, setIsKeyboardEnable, setIsRecording]);
 
   useEffect(() => {
     if (!isFocused) return;

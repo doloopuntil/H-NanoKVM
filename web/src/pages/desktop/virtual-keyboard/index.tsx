@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { AppleOutlined, WindowsOutlined } from '@ant-design/icons';
 import clsx from 'clsx';
 import { useAtom } from 'jotai';
@@ -41,15 +41,33 @@ const SimpleKeyboardComponent = [
   SimpleKeyboardModule['module.exports']?.default
 ].find((candidate) => typeof candidate === 'function') as ComponentType<any>;
 
+const LAYOUT_BY_LANGUAGE = new Map([
+  ['en', 'default'],
+  ['ru', 'rus'],
+  ['de', 'qwertz'],
+  ['fr', 'azerty'],
+  ['ko', 'ko'],
+  ['ja', 'ja']
+]);
+
 export const VirtualKeyboard = () => {
   const { t } = useTranslation();
   const isDesktopLayout = useIsDesktopLayout();
 
   const [isKeyboardOpen, setIsKeyboardOpen] = useAtom(isKeyboardOpenAtom);
 
-  const [keyboardLayout, setKeyboardLayout] = useState('default');
-  const [keyboardSystem, setKeyboardSystem] = useState('win');
-  const [keyboardLanguage, setKeyboardLanguage] = useState('en');
+  const [keyboardSystem, setKeyboardSystem] = useState(() => {
+    const system = storage.getKeyboardSystem();
+    return system && ['win', 'mac'].includes(system) ? system : 'win';
+  });
+  const [keyboardLanguage, setKeyboardLanguage] = useState(() => {
+    const language = storage.getKeyboardLanguage();
+    return language && LAYOUT_BY_LANGUAGE.has(language) ? language : 'en';
+  });
+  const keyboardLayout =
+    keyboardLanguage === 'en' && keyboardSystem === 'mac'
+      ? 'mac'
+      : (LAYOUT_BY_LANGUAGE.get(keyboardLanguage) ?? 'default');
   const [activeModifierKeys, setActiveModifierKeys] = useState<string[]>([]);
 
   const keyboardRef = useRef<any>(null);
@@ -67,41 +85,6 @@ export const VirtualKeyboard = () => {
     { value: 'ko', label: t('keyboard.dropdownKorean') },
     { value: 'ja', label: t('keyboard.dropdownJapanese') }
   ];
-
-  useEffect(() => {
-    const system = storage.getKeyboardSystem();
-    if (system && ['win', 'mac'].includes(system)) {
-      setKeyboardSystem(system);
-    }
-
-    const language = storage.getKeyboardLanguage();
-    if (language && languages.some((lng) => lng.value === language)) {
-      setKeyboardLanguage(language);
-    }
-  }, []);
-
-  useEffect(() => {
-    const layoutMap = new Map([
-      ['en', 'default'],
-      ['ru', 'rus'],
-      ['de', 'qwertz'],
-      ['fr', 'azerty'],
-      ['ko', 'ko'],
-      ['ja', 'ja']
-    ]);
-
-    if (keyboardLanguage === 'en' && keyboardSystem === 'mac') {
-      setKeyboardLayout('mac');
-      return;
-    }
-
-    if (layoutMap.has(keyboardLanguage)) {
-      setKeyboardLayout(layoutMap.get(keyboardLanguage)!);
-      return;
-    }
-
-    setKeyboardLayout('default');
-  }, [keyboardSystem, keyboardLanguage]);
 
   // Press key
   function onKeyPress(key: string) {

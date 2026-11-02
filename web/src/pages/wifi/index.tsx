@@ -25,6 +25,8 @@ export const Wifi = () => {
     if (pass) {
       verifyPassword(pass);
     }
+    // reads the password from the link once, when the page opens
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function verifyPassword(password: string) {

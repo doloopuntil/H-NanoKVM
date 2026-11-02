@@ -58,6 +58,8 @@ export const Login = (): ReactElement => {
         }
       })
       .catch(() => undefined);
+    // runs once, when the page opens; navigate changes with the location
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

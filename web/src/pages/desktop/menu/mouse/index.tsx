@@ -59,7 +59,7 @@ export const Mouse = () => {
     if (interval) {
       setScrollInterval(interval);
     }
-  }, []);
+  }, [setMouseStyle, setMouseMode, setPointerSensitivity, setScrollDirection, setScrollInterval]);
 
   const desktopContent = (
     <div className="min-w-50">

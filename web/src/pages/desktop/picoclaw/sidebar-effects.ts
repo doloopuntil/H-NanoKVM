@@ -304,6 +304,7 @@ export function usePicoclawSidebarLifecycle({
     };
   }, [
     refreshStateRef,
+    setHistorySessions,
     setActiveSessionId,
     setIsFreshConversation,
     setIsInitializing,

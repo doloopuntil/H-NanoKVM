@@ -56,6 +56,8 @@ export const Update = ({ setIsLocked }: UpdateProps) => {
 
   useEffect(() => {
     refreshFirewallStatus();
+    // reads the firewall once, when the page opens
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // the installed version does not depend on the check, so it shows even when the check fails

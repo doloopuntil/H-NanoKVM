@@ -13,12 +13,10 @@ type RunProps = {
 
 export const Run = ({ script, setIsRunning }: RunProps) => {
   const { t } = useTranslation();
-  const [state, setState] = useState('');
+  const [state, setState] = useState('running');
   const [log, setLog] = useState('');
 
   useEffect(() => {
-    setState('running');
-
     api
       .runScript(script, 'foreground')
       .then((rsp) => {
@@ -35,6 +33,8 @@ export const Run = ({ script, setIsRunning }: RunProps) => {
         setLog(t('script.runFailed'));
         setState('failed');
       });
+    // runs the script once, when the dialog opens
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

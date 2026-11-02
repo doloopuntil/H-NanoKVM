@@ -25,7 +25,7 @@ export const Head = ({ title = '', description = '' }: HeadProps = {}) => {
         setWebTitle(rsp.data.title);
       }
     });
-  }, []);
+  }, [setWebTitle]);
 
   return (
     <Helmet

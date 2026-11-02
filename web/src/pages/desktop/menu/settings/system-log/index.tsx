@@ -56,6 +56,8 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
 
     useEffect(() => {
       refreshLog(200);
+      // loads the log once, when the page opens
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     function patchConfig(patch: Partial<SystemLogConfig>) {
@@ -103,6 +105,8 @@ export const SystemLog = forwardRef<SystemActionHandle, SystemLogProps>(
       } finally {
         setIsSaving(false);
       }
+      // refreshLog only reads lineCount, which is listed
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [config, isSaving, lineCount, t]);
 
     async function refreshLog(lines = lineCount) {
