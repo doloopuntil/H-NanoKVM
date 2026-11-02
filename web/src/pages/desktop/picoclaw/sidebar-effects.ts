@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
+import type { Dispatch, RefObject, SetStateAction } from 'react';
 import type { TFunction } from 'i18next';
 
 import {
@@ -54,7 +54,7 @@ type GatewayEventOptions = {
 
 type LifecycleOptions = {
   t: TFunction;
-  refreshStateRef: MutableRefObject<() => Promise<PicoclawRuntimeStatus | null>>;
+  refreshStateRef: RefObject<() => Promise<PicoclawRuntimeStatus | null>>;
   setActiveSessionId: Dispatch<SetStateAction<string>>;
   setIsFreshConversation: Dispatch<SetStateAction<boolean>>;
   setMessages: MessageSetter;
@@ -70,7 +70,7 @@ type InstallSnapshotOptions = {
   t: TFunction;
   runtimeStatus: PicoclawRuntimeStatus | null;
   setInstallSnapshot: Dispatch<SetStateAction<PicoclawRuntimeInstallSnapshot | null>>;
-  previousInstallStateRef: MutableRefObject<{ installing: boolean; status: string }>;
+  previousInstallStateRef: RefObject<{ installing: boolean; status: string }>;
   setMessages: MessageSetter;
 };
 
@@ -318,7 +318,7 @@ export function usePicoclawSidebarLifecycle({
 
 export function usePicoclawInstallRefresh(
   isRuntimeInstallActive: boolean,
-  refreshStateRef: MutableRefObject<() => Promise<PicoclawRuntimeStatus | null>>
+  refreshStateRef: RefObject<() => Promise<PicoclawRuntimeStatus | null>>
 ) {
   useEffect(() => {
     if (!isRuntimeInstallActive) {

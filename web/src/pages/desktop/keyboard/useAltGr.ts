@@ -16,7 +16,7 @@ export interface AltGrHandlers {
 
 export function useAltGr(
   os: string,
-  pressedKeys: React.MutableRefObject<Set<string>>,
+  pressedKeys: React.RefObject<Set<string>>,
   sendKeyEvent: (type: 'keydown' | 'keyup', code: string) => void
 ): AltGrHandlers {
   const state = useRef<AltGrState | null>(null);

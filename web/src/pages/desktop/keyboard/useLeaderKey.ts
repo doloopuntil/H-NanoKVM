@@ -23,7 +23,7 @@ interface LeaderKeyHandlers {
 const RECORD_MODE_THRESHOLD_MS = 350;
 
 export function useLeaderKey(
-  pressedKeys: React.MutableRefObject<Set<string>>,
+  pressedKeys: React.RefObject<Set<string>>,
   sendKeyEvent: (type: 'keydown' | 'keyup', code: string) => void
 ): LeaderKeyHandlers {
   const [leaderKeyCode, setLeaderKeyCode] = useAtom(leaderKeyAtom);
