@@ -284,7 +284,7 @@ pub fn generate_self_signed_cert(
     cert_path: impl AsRef<Path>,
     key_path: impl AsRef<Path>,
 ) -> Result<()> {
-    let CertifiedKey { cert, key_pair } = generate_simple_self_signed([
+    let CertifiedKey { cert, signing_key } = generate_simple_self_signed([
         "localhost".to_string(),
         "127.0.0.1".to_string(),
         "::1".to_string(),
@@ -294,7 +294,7 @@ pub fn generate_self_signed_cert(
     write_file(cert_path.as_ref(), cert.pem().as_bytes(), 0o644)?;
     write_file(
         key_path.as_ref(),
-        key_pair.serialize_pem().as_bytes(),
+        signing_key.serialize_pem().as_bytes(),
         0o600,
     )?;
     Ok(())
