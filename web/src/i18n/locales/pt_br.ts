@@ -539,6 +539,20 @@ const pt_br = {
             'O servidor agora usa o novo certificado. Ele volta ao anterior em {{seconds}} segundos se você não o mantiver.',
           certReverted: 'O certificado anterior voltou'
         },
+        trustedProxies: {
+          section: 'Proxy reverso',
+          title: 'Proxies confiáveis',
+          description:
+            'Proxies reversos em que o dispositivo confia para informar o endereço e o protocolo do cliente',
+          tip: 'Um endereço da lista escolhe o endereço do cliente que o limite de login e o registro gravam, então liste apenas proxies que você controla',
+          none: 'Nenhum',
+          edit: 'Editar',
+          editRow: 'Editar lista',
+          editTitle: 'Editar proxies confiáveis',
+          editDescription: 'Alterar a lista exige sua senha',
+          dialogDescription:
+            'Informe o endereço de cada proxy reverso como este dispositivo o vê, ou um intervalo como 10.0.0.0/24. Um proxy da lista diz ao dispositivo qual endereço e qual protocolo de cliente usar. Tudo o que ele encaminha é aceito como verdadeiro, então liste apenas proxies que você controla.'
+        },
         certificate: {
           title: 'Certificado',
           desc: 'De onde vem o certificado HTTPS',

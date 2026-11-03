@@ -515,6 +515,19 @@ const zh_tw = {
           certDesc: '伺服器現在使用新憑證。如果不保留，將在 {{seconds}} 秒後恢復為先前的憑證。',
           certReverted: '已恢復先前的憑證'
         },
+        trustedProxies: {
+          section: '反向代理',
+          title: '信任的代理',
+          description: '裝置信任其回報用戶端位址與通訊協定的反向代理',
+          tip: '清單中的位址會決定登入限制與記錄所記下的用戶端位址，因此只新增由你自己控制的代理',
+          none: '無',
+          edit: '編輯',
+          editRow: '編輯清單',
+          editTitle: '編輯信任的代理',
+          editDescription: '變更清單需要你的密碼',
+          dialogDescription:
+            '輸入每個反向代理在此裝置上看到的位址，或像 10.0.0.0/24 這樣的範圍。清單中的代理會告訴裝置要使用哪個用戶端位址與通訊協定。它轉送的內容都會被採信，因此只新增由你自己控制的代理。'
+        },
         certificate: {
           title: '憑證',
           desc: 'HTTPS 憑證的來源',

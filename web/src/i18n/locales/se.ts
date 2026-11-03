@@ -540,6 +540,20 @@ const se = {
             'Servern använder nu det nya certifikatet. Den går tillbaka till det förra om {{seconds}} sekunder om du inte behåller det.',
           certReverted: 'Det förra certifikatet är tillbaka'
         },
+        trustedProxies: {
+          section: 'Omvänd proxyserver',
+          title: 'Betrodda proxyservrar',
+          description:
+            'Omvända proxyservrar som enheten litar på för klientens adress och protokoll',
+          tip: 'En adress i listan väljer den klientadress som inloggningsspärren och loggen registrerar, så ange bara proxyservrar som du själv styr',
+          none: 'Ingen',
+          edit: 'Redigera',
+          editRow: 'Redigera listan',
+          editTitle: 'Redigera betrodda proxyservrar',
+          editDescription: 'Att ändra listan kräver ditt lösenord',
+          dialogDescription:
+            'Ange adressen till varje omvänd proxyserver så som den här enheten ser den, eller ett intervall som 10.0.0.0/24. En proxyserver i listan talar om för enheten vilken klientadress och vilket protokoll som ska användas. Allt den vidarebefordrar tros på, så ange bara proxyservrar som du själv styr.'
+        },
         certificate: {
           title: 'Certifikat',
           desc: 'Varifrån HTTPS-certifikatet kommer',

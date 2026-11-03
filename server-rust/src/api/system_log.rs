@@ -6,17 +6,13 @@ use std::{
     time::Duration,
 };
 
-use axum::{
-    Json,
-    extract::{ConnectInfo, Query},
-    response::IntoResponse,
-};
+use axum::{Json, extract::Query, response::IntoResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::{
     AppError, Result,
     error::ApiResponse,
-    http::tls::ClientAddr,
+    http::proxy::ClientInfo,
     system::{
         audit,
         command::{AllowedCommand, CommandOutput, run_allowed},
@@ -135,8 +131,8 @@ pub async fn get_messages(Query(query): Query<LogQuery>) -> Result<impl IntoResp
     })))
 }
 
-pub async fn test_message(ConnectInfo(addr): ConnectInfo<ClientAddr>) -> Result<impl IntoResponse> {
-    audit::test_message(&addr.0.ip().to_string());
+pub async fn test_message(client: ClientInfo) -> Result<impl IntoResponse> {
+    audit::test_message(&client.source_ip());
     Ok(Json(ApiResponse::<()>::ok_empty()))
 }
 

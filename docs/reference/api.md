@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-30
+last-checked: 2026-11-03
 source: server-rust/src/http/routes.rs
 ---
 
@@ -145,6 +145,7 @@ as authentication, CSRF, origin, malformed uploads, or internal errors.
 | POST            | `/api/vm/terminal/unlock`  | Implemented; takes `username`, `password` and, when the account has two-factor, a `code`. Returns the one-use ticket for the WebSocket. A missing or wrong code answers `-6`. |
 | GET/POST        | `/api/vm/terminal/enabled` | Implemented; also controls whether the terminal WebSocket is available. |
 | POST            | `/api/vm/session-lock/touch` | Implemented; slides the session while the user is active, so the lock counts idle time.                          |
+| GET/POST        | `/api/vm/trusted-proxies`  | Implemented; the reverse proxies whose forwarded client address and scheme are trusted. POST takes `proxies`, `password` and, with two-factor, `code`, applies at once and is logged. |
 | GET/POST        | `/api/vm/session-lock`     | Implemented; supports 5, 15, 30, and 60 minute durations and `logoutOnBrowserClose`; retimes the session. |
 | GET/POST        | `/api/vm/memory/limit`     | Implemented.                                                                                                       |
 | GET/POST        | `/api/vm/swap`             | Implemented. Reads the swap file size and `availableMb`, the space a swap file may take (free space of `/` plus the current file). Sizes are 0, 64, 128 or 256 MB; a size that leaves less than 32 MB free is refused. |

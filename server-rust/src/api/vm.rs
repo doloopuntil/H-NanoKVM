@@ -1,7 +1,7 @@
 use axum::{
     Extension, Json,
     extract::{
-        ConnectInfo, Query, State,
+        Query, State,
         ws::{CloseFrame, Message, WebSocket, WebSocketUpgrade},
     },
     http::HeaderMap,
@@ -41,7 +41,7 @@ use crate::{
     error::ApiResponse,
     ffi::kvm,
     hdmi_idle,
-    http::{middleware::CurrentSession, tls},
+    http::{middleware::CurrentSession, proxy::ClientInfo},
     state::{AppState, is_allowed_session_lock_duration},
     system::command::{AllowedCommand, run_allowed},
     ws::{hid as hid_ws, origin::validate_ws_origin},
@@ -773,6 +773,7 @@ pub async fn poweroff() -> Result<impl IntoResponse> {
 
 pub async fn terminal(
     State(state): State<AppState>,
+    client: ClientInfo,
     Extension(CurrentSession(session)): Extension<CurrentSession>,
     Query(query): Query<TerminalConnectQuery>,
     headers: HeaderMap,
@@ -781,7 +782,7 @@ pub async fn terminal(
     if state.config.auth_disabled() || !state.terminal_enabled() {
         return Err(AppError::Forbidden("terminal is disabled".to_string()));
     }
-    if !validate_ws_origin(&headers, &state.config) {
+    if !validate_ws_origin(&headers, &state.config, &client) {
         return Err(AppError::Forbidden("invalid websocket origin".to_string()));
     }
     if !state
@@ -905,7 +906,7 @@ async fn handle_terminal_socket(mut socket: WebSocket, expires_at: StdInstant) {
 pub async fn unlock_terminal(
     State(state): State<AppState>,
     Extension(CurrentSession(session)): Extension<CurrentSession>,
-    ConnectInfo(addr): ConnectInfo<tls::ClientAddr>,
+    client: ClientInfo,
     Json(req): Json<TerminalUnlockReq>,
 ) -> Result<impl IntoResponse> {
     if state.config.auth_disabled() || !state.terminal_enabled() {
@@ -915,7 +916,7 @@ pub async fn unlock_terminal(
         return Err(AppError::InvalidCredentials);
     }
 
-    let source_ip = addr.0.ip().to_string();
+    let source_ip = client.source_ip();
     verify_password_limited(&state, &source_ip, &session.username, &req.password).await?;
     require_second_factor(&state, &session.username, &source_ip, req.code.as_deref()).await?;
 
@@ -959,6 +960,7 @@ pub async fn get_session_lock(State(state): State<AppState>) -> Result<impl Into
 /// rather than time since login.
 pub async fn touch_session_lock(
     State(state): State<AppState>,
+    client: ClientInfo,
     session: Option<Extension<CurrentSession>>,
 ) -> Result<impl IntoResponse> {
     let duration = state.session_lock_duration();
@@ -983,7 +985,7 @@ pub async fn touch_session_lock(
         .ok_or(AppError::Unauthorized)?;
     headers.insert(
         axum::http::header::SET_COOKIE,
-        state.session_cookie(&session.token, duration)?,
+        state.session_cookie(&session.token, duration, client.secure)?,
     );
 
     Ok((
@@ -998,6 +1000,7 @@ pub async fn touch_session_lock(
 
 pub async fn set_session_lock(
     State(state): State<AppState>,
+    client: ClientInfo,
     Extension(CurrentSession(session)): Extension<CurrentSession>,
     Json(req): Json<SetSessionLockReq>,
 ) -> Result<impl IntoResponse> {
@@ -1030,7 +1033,7 @@ pub async fn set_session_lock(
     if let Some(session) = &session {
         headers.insert(
             axum::http::header::SET_COOKIE,
-            state.session_cookie(&session.token, duration)?,
+            state.session_cookie(&session.token, duration, client.secure)?,
         );
     }
 

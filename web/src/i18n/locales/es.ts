@@ -542,6 +542,20 @@ const es = {
             'El servidor usa ahora el nuevo certificado. Vuelve al anterior en {{seconds}} segundos si no lo conserva.',
           certReverted: 'El certificado anterior ha vuelto'
         },
+        trustedProxies: {
+          section: 'Proxy inverso',
+          title: 'Proxies de confianza',
+          description:
+            'Proxies inversos en los que el dispositivo confía para informar de la dirección y el protocolo del cliente',
+          tip: 'Una dirección de la lista elige la dirección del cliente que registran el límite de inicios de sesión y el registro, así que incluye solo proxies que controles',
+          none: 'Ninguno',
+          edit: 'Editar',
+          editRow: 'Editar lista',
+          editTitle: 'Editar proxies de confianza',
+          editDescription: 'Cambiar la lista requiere tu contraseña',
+          dialogDescription:
+            'Introduce la dirección de cada proxy inverso tal como la ve este dispositivo, o un intervalo como 10.0.0.0/24. Un proxy de la lista le indica al dispositivo qué dirección y qué protocolo de cliente usar. Se cree todo lo que reenvía, así que incluye solo proxies que controles.'
+        },
         certificate: {
           title: 'Certificado',
           desc: 'De dónde procede el certificado HTTPS',

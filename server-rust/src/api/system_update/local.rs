@@ -4,7 +4,7 @@
 
 use axum::{
     Extension, Json,
-    extract::{ConnectInfo, Multipart, Query, State},
+    extract::{Multipart, Query, State},
     http::{HeaderMap, header},
     response::IntoResponse,
 };
@@ -23,7 +23,7 @@ use super::*;
 use crate::{
     api::account::{require_second_factor, verify_password_limited},
     fsutil::write_0600_atomic,
-    http::{middleware::CurrentSession, tls},
+    http::{middleware::CurrentSession, proxy::ClientInfo},
     system::audit,
 };
 
@@ -73,12 +73,12 @@ pub async fn get_local_key(State(state): State<AppState>) -> Result<impl IntoRes
 pub async fn set_local_key(
     State(state): State<AppState>,
     Extension(CurrentSession(session)): Extension<CurrentSession>,
-    ConnectInfo(addr): ConnectInfo<tls::ClientAddr>,
+    client: ClientInfo,
     Json(req): Json<SetLocalKeyReq>,
 ) -> Result<impl IntoResponse> {
     verify_password_limited(
         &state,
-        &addr.0.ip().to_string(),
+        &client.source_ip(),
         &session.username,
         &req.password,
     )
@@ -86,7 +86,7 @@ pub async fn set_local_key(
     require_second_factor(
         &state,
         &session.username,
-        &addr.0.ip().to_string(),
+        &client.source_ip(),
         req.code.as_deref(),
     )
     .await?;
@@ -109,12 +109,12 @@ pub async fn set_local_key(
 pub async fn remove_local_key(
     State(state): State<AppState>,
     Extension(CurrentSession(session)): Extension<CurrentSession>,
-    ConnectInfo(addr): ConnectInfo<tls::ClientAddr>,
+    client: ClientInfo,
     Json(req): Json<RemoveLocalKeyReq>,
 ) -> Result<impl IntoResponse> {
     verify_password_limited(
         &state,
-        &addr.0.ip().to_string(),
+        &client.source_ip(),
         &session.username,
         &req.password,
     )
@@ -122,7 +122,7 @@ pub async fn remove_local_key(
     require_second_factor(
         &state,
         &session.username,
-        &addr.0.ip().to_string(),
+        &client.source_ip(),
         req.code.as_deref(),
     )
     .await?;

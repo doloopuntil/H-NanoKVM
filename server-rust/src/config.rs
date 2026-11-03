@@ -7,7 +7,10 @@ use std::{
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
-use crate::{AppError, Result, auth::token::random_token, fsutil::write_0600_atomic};
+use crate::{
+    AppError, Result, auth::token::random_token, fsutil::write_0600_atomic,
+    http::proxy::TrustedProxies,
+};
 
 const DEFAULT_CONFIG_PATH: &str = "/etc/kvm/server.yaml";
 const DEFAULT_SECRET_PATH: &str = "/etc/kvm/session_secret";
@@ -102,6 +105,9 @@ pub struct Security {
     /// device with no way back in.
     pub require_totp: bool,
     pub allowed_origins: Vec<String>,
+    /// Reverse proxies (addresses or ranges) whose `X-Forwarded-For` and
+    /// `X-Forwarded-Proto` are believed. Empty: the headers are ignored.
+    pub trusted_proxies: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -191,6 +197,7 @@ impl Default for Security {
             allow_default_admin: false,
             require_totp: false,
             allowed_origins: Vec::new(),
+            trusted_proxies: Vec::new(),
         }
     }
 }
@@ -302,6 +309,16 @@ impl Config {
         }
         if self.security.allow_default_admin {
             warn!("legacy admin/admin bootstrap is enabled");
+        }
+        let (trusted, rejected) = TrustedProxies::from_entries(&self.security.trusted_proxies);
+        for entry in rejected {
+            warn!(entry, "ignoring invalid security.trusted_proxies entry");
+        }
+        if !trusted.is_empty() {
+            warn!(
+                proxies = ?trusted.entries(),
+                "forwarded client address and scheme are trusted from these proxies"
+            );
         }
     }
 

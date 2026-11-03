@@ -86,6 +86,7 @@ export const answers = {
   // About, Device
   '/api/vm/hostname': { hostname: 'h-nanokvm', rebootRequired: false },
   '/api/vm/mdns': { enabled: true },
+  '/api/vm/trusted-proxies': { proxies: [] },
   '/api/vm/reboot-pending': { reasons: [] },
   '/api/hid/mode': { mode: 'normal' },
   '/api/hid/usb-wakeup': { enabled: false },

@@ -540,6 +540,20 @@ const fi = {
             'Palvelin käyttää nyt uutta varmennetta. Se palaa edelliseen {{seconds}} sekunnin kuluttua, ellet säilytä uutta.',
           certReverted: 'Edellinen varmenne on takaisin'
         },
+        trustedProxies: {
+          section: 'Käänteinen välityspalvelin',
+          title: 'Luotetut välityspalvelimet',
+          description:
+            'Käänteiset välityspalvelimet, joiden ilmoittamaan asiakkaan osoitteeseen ja protokollaan laite luottaa',
+          tip: 'Luettelossa oleva osoite valitsee asiakkaan osoitteen, jonka kirjautumisraja ja loki tallentavat, joten luettele vain omia välityspalvelimia',
+          none: 'Ei mitään',
+          edit: 'Muokkaa',
+          editRow: 'Muokkaa luetteloa',
+          editTitle: 'Muokkaa luotettuja välityspalvelimia',
+          editDescription: 'Luettelon muuttaminen vaatii salasanasi',
+          dialogDescription:
+            'Anna jokaisen käänteisen välityspalvelimen osoite sellaisena kuin tämä laite sen näkee tai alue, kuten 10.0.0.0/24. Luettelossa oleva välityspalvelin kertoo laitteelle, mitä asiakkaan osoitetta ja protokollaa käytetään. Kaikki, minkä se välittää, uskotaan, joten luettele vain omia välityspalvelimia.'
+        },
         certificate: {
           title: 'Varmenne',
           desc: 'Mistä HTTPS-varmenne tulee',

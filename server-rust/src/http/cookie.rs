@@ -24,10 +24,6 @@ pub fn expired_session_cookie(secure: bool) -> Result<HeaderValue> {
     build_session_cookie(None, 0, secure)
 }
 
-pub fn session_cookie_secure(proto: &str) -> bool {
-    proto.eq_ignore_ascii_case("https")
-}
-
 /// Cookie carrying the half-finished login between the two steps.
 ///
 /// HttpOnly like the session cookie, so the ticket is never readable from JS.

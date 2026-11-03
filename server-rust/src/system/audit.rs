@@ -134,6 +134,18 @@ pub fn remote_download_changed(username: &str, source_ip: &str, enabled: bool) {
     );
 }
 
+pub fn trusted_proxies_changed(username: &str, source_ip: &str, proxies: &[String]) {
+    emit(
+        84,
+        &format!(
+            "{TAG}: trusted proxies changed to [{}] user={} source={}",
+            sanitize(&proxies.join(",")),
+            sanitize(username),
+            sanitize(source_ip)
+        ),
+    );
+}
+
 pub fn wireguard_changed(source_ip: &str, enabled: bool) {
     emit(
         85,

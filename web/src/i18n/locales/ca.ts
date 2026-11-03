@@ -540,6 +540,20 @@ const ca = {
             "El servidor ara utilitza el nou certificat. Torna a l'anterior d'aquí a {{seconds}} segons si no el manteniu.",
           certReverted: 'El certificat anterior ha tornat'
         },
+        trustedProxies: {
+          section: 'Servidor intermediari invers',
+          title: 'Servidors intermediaris de confiança',
+          description:
+            "Servidors intermediaris inversos en què el dispositiu confia per informar de l'adreça i el protocol del client",
+          tip: "Una adreça de la llista tria l'adreça del client que registren el límit d'inici de sessió i el registre, així que llista només servidors intermediaris que controles",
+          none: 'Cap',
+          edit: 'Edita',
+          editRow: 'Edita la llista',
+          editTitle: 'Edita els servidors intermediaris de confiança',
+          editDescription: 'Canviar la llista requereix la teva contrasenya',
+          dialogDescription:
+            "Introdueix l'adreça de cada servidor intermediari invers tal com la veu aquest dispositiu, o un interval com 10.0.0.0/24. Un servidor de la llista diu al dispositiu quina adreça i quin protocol de client ha d'usar. Es creu tot el que reenvia, així que llista només servidors intermediaris que controles."
+        },
         certificate: {
           title: 'Certificat',
           desc: "D'on prové el certificat HTTPS",

@@ -540,6 +540,20 @@ const pl = {
             'Serwer używa teraz nowego certyfikatu. Jeśli go nie zachowasz, za {{seconds}} sekund wróci do poprzedniego.',
           certReverted: 'Poprzedni certyfikat wrócił'
         },
+        trustedProxies: {
+          section: 'Odwrotny serwer proxy',
+          title: 'Zaufane serwery proxy',
+          description:
+            'Odwrotne serwery proxy, którym urządzenie ufa w podawaniu adresu i protokołu klienta',
+          tip: 'Adres z listy wybiera adres klienta zapisywany przez limit logowania i dziennik, więc podawaj tylko serwery proxy, które kontrolujesz',
+          none: 'Brak',
+          edit: 'Edytuj',
+          editRow: 'Edytuj listę',
+          editTitle: 'Edytuj zaufane serwery proxy',
+          editDescription: 'Zmiana listy wymaga hasła',
+          dialogDescription:
+            'Podaj adres każdego odwrotnego serwera proxy tak, jak widzi go to urządzenie, albo zakres, na przykład 10.0.0.0/24. Serwer proxy z listy mówi urządzeniu, jakiego adresu i protokołu klienta użyć. Wszystko, co przekazuje, jest uznawane za prawdę, więc podawaj tylko serwery proxy, które kontrolujesz.'
+        },
         certificate: {
           title: 'Certyfikat',
           desc: 'Skąd pochodzi certyfikat HTTPS',

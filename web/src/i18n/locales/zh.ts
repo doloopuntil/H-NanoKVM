@@ -514,6 +514,19 @@ const zh = {
           certDesc: '服务器现在使用新证书。如果不保留，将在 {{seconds}} 秒后恢复为之前的证书。',
           certReverted: '已恢复之前的证书'
         },
+        trustedProxies: {
+          section: '反向代理',
+          title: '受信任的代理',
+          description: '设备信任其报告客户端地址和协议的反向代理',
+          tip: '列表中的地址决定登录限制和日志记录的客户端地址，因此只添加由你自己控制的代理',
+          none: '无',
+          edit: '编辑',
+          editRow: '编辑列表',
+          editTitle: '编辑受信任的代理',
+          editDescription: '更改列表需要你的密码',
+          dialogDescription:
+            '输入每个反向代理在此设备上看到的地址，或像 10.0.0.0/24 这样的范围。列表中的代理会告诉设备使用哪个客户端地址和协议。它转发的内容都会被采信，因此只添加由你自己控制的代理。'
+        },
         certificate: {
           title: '证书',
           desc: 'HTTPS 证书的来源',

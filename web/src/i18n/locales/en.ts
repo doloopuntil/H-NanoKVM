@@ -534,6 +534,20 @@ const en = {
             'The server now uses the new certificate. It goes back to the previous one in {{seconds}} seconds unless you keep it.',
           certReverted: 'The previous certificate is back'
         },
+        trustedProxies: {
+          section: 'Reverse proxy',
+          title: 'Trusted proxies',
+          description:
+            'Reverse proxies that the device trusts to report the client address and protocol',
+          tip: 'A listed address chooses the client address that the login limit and the log record, so list only proxies you control',
+          none: 'None',
+          edit: 'Edit',
+          editRow: 'Edit list',
+          editTitle: 'Edit trusted proxies',
+          editDescription: 'Changing the list needs your password',
+          dialogDescription:
+            'Enter the address of each reverse proxy as this device sees it, or a range such as 10.0.0.0/24. A listed proxy tells the device which client address and protocol to use. Everything it forwards is believed, so list only proxies you control.'
+        },
         certificate: {
           title: 'Certificate',
           desc: 'Where the HTTPS certificate comes from',

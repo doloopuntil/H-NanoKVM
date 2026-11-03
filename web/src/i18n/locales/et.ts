@@ -530,6 +530,20 @@ const et = {
             'Server kasutab nüüd uut sertifikaati. Kui te seda ei säilita, naaseb see {{seconds}} sekundi pärast eelmise juurde.',
           certReverted: 'Eelmine sertifikaat on tagasi'
         },
+        trustedProxies: {
+          section: 'Pöördpuhverserver',
+          title: 'Usaldusväärsed puhverserverid',
+          description:
+            'Pöördpuhverserverid, mida seade usaldab kliendi aadressi ja protokolli teatamisel',
+          tip: 'Loendis olev aadress valib kliendi aadressi, mille sisselogimispiirang ja logi salvestavad, seega lisa ainult enda hallatavaid puhverservereid',
+          none: 'Puudub',
+          edit: 'Muuda',
+          editRow: 'Muuda loendit',
+          editTitle: 'Muuda usaldusväärseid puhverservereid',
+          editDescription: 'Loendi muutmiseks on vaja sinu parooli',
+          dialogDescription:
+            'Sisesta iga pöördpuhverserveri aadress sellisena, nagu see seade seda näeb, või vahemik, näiteks 10.0.0.0/24. Loendis olev puhverserver ütleb seadmele, millist kliendi aadressi ja protokolli kasutada. Kõike, mida see edastab, usutakse, seega lisa ainult enda hallatavaid puhverservereid.'
+        },
         certificate: {
           title: 'Sertifikaat',
           desc: 'Kust HTTPS-sertifikaat pärineb',

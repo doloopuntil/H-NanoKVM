@@ -536,6 +536,20 @@ const tr = {
             'Sunucu artık yeni sertifikayı kullanıyor. Siz korumazsanız {{seconds}} saniye sonra öncekine döner.',
           certReverted: 'Önceki sertifika geri geldi'
         },
+        trustedProxies: {
+          section: 'Ters proxy',
+          title: "Güvenilen proxy'ler",
+          description:
+            "Cihazın istemci adresini ve protokolünü bildirme konusunda güvendiği ters proxy'ler",
+          tip: "Listedeki bir adres, oturum açma sınırının ve günlüğün kaydettiği istemci adresini belirler, bu yüzden yalnızca kendi yönettiğiniz proxy'leri ekleyin",
+          none: 'Yok',
+          edit: 'Düzenle',
+          editRow: 'Listeyi düzenle',
+          editTitle: "Güvenilen proxy'leri düzenle",
+          editDescription: 'Listeyi değiştirmek için parolanız gerekir',
+          dialogDescription:
+            "Her ters proxy'nin adresini bu cihazın gördüğü şekilde veya 10.0.0.0/24 gibi bir aralık olarak girin. Listedeki bir proxy cihaza hangi istemci adresinin ve protokolünün kullanılacağını söyler. İlettiği her şeye inanılır, bu yüzden yalnızca kendi yönettiğiniz proxy'leri ekleyin."
+        },
         certificate: {
           title: 'Sertifika',
           desc: 'HTTPS sertifikasının kaynağı',

@@ -8,7 +8,12 @@ use axum::{
 };
 
 use crate::{
-    AppError, auth::session::Session, config::Config, http::tls::ClientAddr, state::AppState,
+    AppError,
+    auth::session::Session,
+    config::Config,
+    http::{proxy::ClientInfo, tls::ClientAddr},
+    state::AppState,
+    ws::origin::is_host_origin,
 };
 
 #[derive(Debug, Clone)]
@@ -44,7 +49,9 @@ pub async fn protected(
             return AppError::Forbidden("missing or invalid CSRF token".to_string())
                 .into_response();
         }
-        if !validate_http_origin(req.headers(), &state.config) {
+        let forwarded_https = ClientInfo::from_request(&state, req.extensions(), req.headers())
+            .and_then(|client| client.forwarded_https);
+        if !validate_http_origin(req.headers(), &state.config, forwarded_https) {
             return AppError::Forbidden("invalid request origin".to_string()).into_response();
         }
     }
@@ -95,12 +102,16 @@ fn is_state_changing(method: &Method) -> bool {
     )
 }
 
-fn validate_http_origin(headers: &HeaderMap, config: &Config) -> bool {
+fn validate_http_origin(
+    headers: &HeaderMap,
+    config: &Config,
+    forwarded_https: Option<bool>,
+) -> bool {
     if let Some(origin) = headers
         .get(header::ORIGIN)
         .and_then(|value| value.to_str().ok())
     {
-        return is_allowed_origin(origin, headers, config);
+        return is_allowed_origin(origin, headers, config, forwarded_https);
     }
 
     if let Some(referer) = headers
@@ -110,13 +121,18 @@ fn validate_http_origin(headers: &HeaderMap, config: &Config) -> bool {
         let Some(origin) = normalize_origin(referer) else {
             return false;
         };
-        return is_allowed_origin(&origin, headers, config);
+        return is_allowed_origin(&origin, headers, config, forwarded_https);
     }
 
     true
 }
 
-fn is_allowed_origin(origin: &str, headers: &HeaderMap, config: &Config) -> bool {
+fn is_allowed_origin(
+    origin: &str,
+    headers: &HeaderMap,
+    config: &Config,
+    forwarded_https: Option<bool>,
+) -> bool {
     let Some(origin) = normalize_origin(origin) else {
         return false;
     };
@@ -136,7 +152,7 @@ fn is_allowed_origin(origin: &str, headers: &HeaderMap, config: &Config) -> bool
     else {
         return false;
     };
-    origin == format!("http://{host}") || origin == format!("https://{host}")
+    is_host_origin(&origin, host, forwarded_https)
 }
 
 fn normalize_origin(value: &str) -> Option<String> {
@@ -177,7 +193,7 @@ mod tests {
         headers.insert(header::HOST, HeaderValue::from_static("kvm.local"));
         headers.insert(header::ORIGIN, HeaderValue::from_static("http://kvm.local"));
 
-        assert!(validate_http_origin(&headers, &Config::default()));
+        assert!(validate_http_origin(&headers, &Config::default(), None));
     }
 
     #[test]
@@ -189,7 +205,7 @@ mod tests {
             HeaderValue::from_static("http://evil.local"),
         );
 
-        assert!(!validate_http_origin(&headers, &Config::default()));
+        assert!(!validate_http_origin(&headers, &Config::default(), None));
     }
 
     #[test]
@@ -201,12 +217,16 @@ mod tests {
             HeaderValue::from_static("https://kvm.local/settings"),
         );
 
-        assert!(validate_http_origin(&headers, &Config::default()));
+        assert!(validate_http_origin(&headers, &Config::default(), None));
     }
 
     #[test]
     fn allows_non_browser_requests_without_origin_headers() {
-        assert!(validate_http_origin(&HeaderMap::new(), &Config::default()));
+        assert!(validate_http_origin(
+            &HeaderMap::new(),
+            &Config::default(),
+            None
+        ));
     }
 
     #[test]

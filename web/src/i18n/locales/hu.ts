@@ -543,6 +543,20 @@ const hu = {
             'A szerver most az új tanúsítványt használja. {{seconds}} másodperc múlva visszaáll az előzőre, ha nem tartja meg.',
           certReverted: 'Az előző tanúsítvány visszatért'
         },
+        trustedProxies: {
+          section: 'Fordított proxy',
+          title: 'Megbízható proxyk',
+          description:
+            'Fordított proxyk, amelyeknek az eszköz hisz az ügyfél címének és protokolljának megadásában',
+          tip: 'A listán szereplő cím választja ki azt az ügyfélcímet, amelyet a bejelentkezési korlát és a napló rögzít, ezért csak saját proxykat adjon meg',
+          none: 'Nincs',
+          edit: 'Szerkesztés',
+          editRow: 'Lista szerkesztése',
+          editTitle: 'Megbízható proxyk szerkesztése',
+          editDescription: 'A lista módosításához szükség van a jelszavára',
+          dialogDescription:
+            'Adja meg minden fordított proxy címét úgy, ahogy ez az eszköz látja, vagy egy tartományt, például 10.0.0.0/24. A listán szereplő proxy megmondja az eszköznek, melyik ügyfélcímet és protokollt használja. Mindent elhisz, amit továbbít, ezért csak saját proxykat adjon meg.'
+        },
         certificate: {
           title: 'Tanúsítvány',
           desc: 'Honnan származik a HTTPS-tanúsítvány',

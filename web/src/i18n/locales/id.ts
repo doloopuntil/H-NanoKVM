@@ -540,6 +540,20 @@ const id = {
             'Server kini memakai sertifikat baru. Server kembali ke sertifikat sebelumnya dalam {{seconds}} detik kecuali Anda mempertahankannya.',
           certReverted: 'Sertifikat sebelumnya kembali'
         },
+        trustedProxies: {
+          section: 'Proxy terbalik',
+          title: 'Proxy tepercaya',
+          description:
+            'Proxy terbalik yang dipercaya perangkat untuk melaporkan alamat dan protokol klien',
+          tip: 'Alamat dalam daftar menentukan alamat klien yang dicatat oleh batas login dan log, jadi cantumkan hanya proxy yang Anda kendalikan',
+          none: 'Tidak ada',
+          edit: 'Ubah',
+          editRow: 'Ubah daftar',
+          editTitle: 'Ubah proxy tepercaya',
+          editDescription: 'Mengubah daftar memerlukan kata sandi Anda',
+          dialogDescription:
+            'Masukkan alamat setiap proxy terbalik seperti yang dilihat perangkat ini, atau rentang seperti 10.0.0.0/24. Proxy dalam daftar memberi tahu perangkat alamat dan protokol klien mana yang dipakai. Semua yang diteruskannya dipercaya, jadi cantumkan hanya proxy yang Anda kendalikan.'
+        },
         certificate: {
           title: 'Sertifikat',
           desc: 'Asal sertifikat HTTPS',

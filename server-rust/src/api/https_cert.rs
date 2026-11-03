@@ -5,11 +5,7 @@
 
 use std::{fs, path::Path};
 
-use axum::{
-    Extension, Json,
-    extract::{ConnectInfo, State},
-    response::IntoResponse,
-};
+use axum::{Extension, Json, extract::State, response::IntoResponse};
 use serde::{Deserialize, Serialize};
 use tokio::task;
 
@@ -27,6 +23,7 @@ use crate::{
         cert_manager::{self, Outcome, Settings, Source, Status},
         cert_store,
         middleware::CurrentSession,
+        proxy::ClientInfo,
         tls,
     },
     state::AppState,
@@ -120,10 +117,10 @@ fn site_url(domain: &str, config: &Config) -> String {
 pub async fn set(
     State(state): State<AppState>,
     Extension(CurrentSession(session)): Extension<CurrentSession>,
-    ConnectInfo(addr): ConnectInfo<tls::ClientAddr>,
+    client: ClientInfo,
     Json(req): Json<SetCertReq>,
 ) -> Result<Json<ApiResponse<()>>> {
-    let source_ip = addr.0.ip().to_string();
+    let source_ip = client.source_ip();
     verify_password_limited(&state, &source_ip, &session.username, &req.password).await?;
     require_second_factor(&state, &session.username, &source_ip, req.code.as_deref()).await?;
 
@@ -272,6 +269,7 @@ pub async fn renew() -> Result<Json<ApiResponse<()>>> {
 mod tests {
     use axum::{
         body::{Body, to_bytes},
+        extract::ConnectInfo,
         http::{HeaderValue, Method, Request, StatusCode, header},
     };
     use tower::ServiceExt;

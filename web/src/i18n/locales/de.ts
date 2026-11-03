@@ -545,6 +545,20 @@ const de = {
             'Der Server verwendet jetzt das neue Zertifikat. Er kehrt in {{seconds}} Sekunden zum vorherigen zurück, wenn Sie es nicht beibehalten.',
           certReverted: 'Das vorherige Zertifikat ist wieder aktiv'
         },
+        trustedProxies: {
+          section: 'Reverse-Proxy',
+          title: 'Vertrauenswürdige Proxys',
+          description:
+            'Reverse-Proxys, denen das Gerät bei Adresse und Protokoll des Clients vertraut',
+          tip: 'Eine gelistete Adresse bestimmt die Client-Adresse, die Anmeldesperre und Protokoll erfassen, also nur Proxys eintragen, die Sie selbst betreiben',
+          none: 'Keine',
+          edit: 'Bearbeiten',
+          editRow: 'Liste bearbeiten',
+          editTitle: 'Vertrauenswürdige Proxys bearbeiten',
+          editDescription: 'Zum Ändern der Liste ist Ihr Passwort nötig',
+          dialogDescription:
+            'Geben Sie die Adresse jedes Reverse-Proxys so ein, wie dieses Gerät sie sieht, oder einen Bereich wie 10.0.0.0/24. Ein gelisteter Proxy teilt dem Gerät mit, welche Client-Adresse und welches Protokoll gelten. Alles, was er weiterleitet, wird geglaubt, also nur Proxys eintragen, die Sie selbst betreiben.'
+        },
         certificate: {
           title: 'Zertifikat',
           desc: 'Woher das HTTPS-Zertifikat stammt',

@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-28
+last-checked: 2026-11-03
 source: server-rust/src/config.rs
 ---
 
@@ -43,6 +43,7 @@ are still accepted.
 | `security.require_csrf` | `true` | CSRF token on state-changing requests. |
 | `security.websocket_origin_check` | `true` | Reject WebSockets from another origin. |
 | `security.allowed_origins` | empty | Extra origins to accept, for a reverse proxy. |
+| `security.trusted_proxies` | empty | Addresses or ranges (`10.0.0.1`, `10.0.0.0/24`, IPv6 too) of reverse proxies whose `X-Forwarded-For` and `X-Forwarded-Proto` are believed. From any other address the headers are ignored. At most 16 entries; an entry that does not parse, or a range that covers every address, is skipped with a warning. Settings > Network > Services > Reverse proxy edits it; see [Reverse proxy](../guide/reverse-proxy.md). |
 | `security.access_token_duration` | `900` | Seconds. |
 | `security.logout_on_browser_close` | `true` | Session cookie without a lifetime. |
 | `security.refresh_token_duration` | `604800` | Seconds. |

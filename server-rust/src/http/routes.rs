@@ -10,8 +10,8 @@ use crate::{
     api::{
         account, account_totp, application, autostart, compatibility, cpu_clock, download, hid,
         https_cert, monitor, network, picoclaw, script, storage, stream, system_firewall,
-        system_log, system_time, system_update, tailscale, tls_switch, vm, watchdog, webrtc_stream,
-        wireguard,
+        system_log, system_time, system_update, tailscale, tls_switch, trusted_proxies, vm,
+        watchdog, webrtc_stream, wireguard,
     },
     http::middleware::{picoclaw_internal, protected},
     security::headers::security_headers,
@@ -149,6 +149,10 @@ pub fn build(state: AppState) -> Router {
         .route("/api/vm/ssh", get(vm::get_ssh_state))
         .route("/api/vm/ssh/enable", post(vm::enable_ssh))
         .route("/api/vm/ssh/disable", post(vm::disable_ssh))
+        .route(
+            "/api/vm/trusted-proxies",
+            get(trusted_proxies::get).post(trusted_proxies::set),
+        )
         .route("/api/vm/mdns", get(vm::get_mdns_state))
         .route("/api/vm/mdns/enable", post(vm::enable_mdns))
         .route("/api/vm/mdns/disable", post(vm::disable_mdns))

@@ -1,6 +1,6 @@
 use axum::{
     Extension, Json,
-    extract::{ConnectInfo, State},
+    extract::State,
     http::{HeaderMap, header},
     response::IntoResponse,
 };
@@ -20,10 +20,10 @@ use crate::{
     http::{
         cookie::{
             PENDING_TOTP_COOKIE_NAME, expired_pending_totp_cookie, expired_session_cookie,
-            pending_totp_cookie, session_cookie_secure,
+            pending_totp_cookie,
         },
         middleware::CurrentSession,
-        tls::ClientAddr,
+        proxy::ClientInfo,
     },
     security::rate_limit::LoginRateLimiter,
     state::AppState,
@@ -120,7 +120,7 @@ pub struct SetupStateRsp {
 
 pub async fn login(
     State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<ClientAddr>,
+    client: ClientInfo,
     Json(req): Json<LoginReq>,
 ) -> Result<impl IntoResponse> {
     if !state.accounts.exists() {
@@ -129,7 +129,7 @@ pub async fn login(
         ));
     }
 
-    let source_ip = addr.0.ip().to_string();
+    let source_ip = client.source_ip();
     {
         let mut limiter = state.login_limiter.write().await;
         if limiter.check(&source_ip, &req.username) {
@@ -166,11 +166,7 @@ pub async fn login(
         let mut headers = HeaderMap::new();
         headers.insert(
             header::SET_COOKIE,
-            pending_totp_cookie(
-                &ticket,
-                PENDING_TTL_SECS,
-                session_cookie_secure(&state.config.proto),
-            )?,
+            pending_totp_cookie(&ticket, PENDING_TTL_SECS, client.secure)?,
         );
         return Ok((
             headers,
@@ -194,17 +190,17 @@ pub async fn login(
     }
 
     audit::login_success(&req.username, &source_ip);
-    issue_session_response(&state, &req.username, enrollment_required).await
+    issue_session_response(&state, &client, &req.username, enrollment_required).await
 }
 
 /// Second login step: exchange the pending ticket plus a code for a session.
 pub async fn login_totp(
     State(state): State<AppState>,
-    ConnectInfo(addr): ConnectInfo<ClientAddr>,
+    client: ClientInfo,
     headers: HeaderMap,
     Json(req): Json<TotpLoginReq>,
 ) -> Result<impl IntoResponse> {
-    let source_ip = addr.0.ip().to_string();
+    let source_ip = client.source_ip();
     let ticket = pending_totp_from_cookie(&headers).ok_or(AppError::InvalidCredentials)?;
 
     // Resolve without spending: a mistyped digit should cost a retry, not the
@@ -271,10 +267,10 @@ pub async fn login_totp(
         .record_success(&source_ip, &limiter_key);
     audit::login_success(&username, &source_ip);
 
-    let (mut headers, body) = issue_session_response(&state, &username, false).await?;
+    let (mut headers, body) = issue_session_response(&state, &client, &username, false).await?;
     headers.append(
         header::SET_COOKIE,
-        expired_pending_totp_cookie(session_cookie_secure(&state.config.proto))?,
+        expired_pending_totp_cookie(client.secure)?,
     );
     Ok((headers, body))
 }
@@ -452,6 +448,7 @@ async fn verify_second_factor(
 
 async fn issue_session_response(
     state: &AppState,
+    client: &ClientInfo,
     username: &str,
     totp_enrollment_required: bool,
 ) -> Result<(HeaderMap, Json<ApiResponse<LoginRsp>>)> {
@@ -461,7 +458,7 @@ async fn issue_session_response(
     let mut headers = HeaderMap::new();
     headers.insert(
         header::SET_COOKIE,
-        state.session_cookie(&session.token, session_lock_duration)?,
+        state.session_cookie(&session.token, session_lock_duration, client.secure)?,
     );
     Ok((
         headers,
@@ -509,14 +506,12 @@ pub async fn get_setup_state(State(state): State<AppState>) -> Result<impl IntoR
 
 pub async fn logout(
     State(state): State<AppState>,
+    client: ClientInfo,
     Extension(CurrentSession(session)): Extension<CurrentSession>,
 ) -> Result<impl IntoResponse> {
     state.sessions.revoke(&session.token).await;
     let mut headers = HeaderMap::new();
-    headers.insert(
-        header::SET_COOKIE,
-        expired_session_cookie(session_cookie_secure(&state.config.proto))?,
-    );
+    headers.insert(header::SET_COOKIE, expired_session_cookie(client.secure)?);
     Ok((headers, Json(ApiResponse::<()>::ok_empty())))
 }
 
@@ -548,7 +543,7 @@ pub async fn is_password_updated(State(state): State<AppState>) -> Result<impl I
 pub async fn change_password(
     State(state): State<AppState>,
     Extension(CurrentSession(session)): Extension<CurrentSession>,
-    ConnectInfo(addr): ConnectInfo<ClientAddr>,
+    client: ClientInfo,
     Json(req): Json<ChangePasswordReq>,
 ) -> Result<impl IntoResponse> {
     if req.username != session.username {
@@ -557,7 +552,7 @@ pub async fn change_password(
         ));
     }
     // A stolen session alone must not be able to take over the account.
-    let source_ip = addr.0.ip().to_string();
+    let source_ip = client.source_ip();
     verify_password_limited(&state, &source_ip, &req.username, &req.current_password).await?;
     require_second_factor(&state, &req.username, &source_ip, req.code.as_deref()).await?;
     let password = decode_frontend_password(&req.password)?;
@@ -1033,7 +1028,7 @@ mod tests {
         let refused = change_password(
             State(state.clone()),
             Extension(CurrentSession(session)),
-            ConnectInfo(ClientAddr(([127, 0, 0, 1], 40000).into())),
+            ClientInfo::direct([127, 0, 0, 1].into()),
             Json(ChangePasswordReq {
                 username: "operator".to_string(),
                 current_password: "not the password".to_string(),
@@ -1061,7 +1056,7 @@ mod tests {
         let refused = change_password(
             State(state.clone()),
             Extension(CurrentSession(session)),
-            ConnectInfo(ClientAddr(([127, 0, 0, 1], 40000).into())),
+            ClientInfo::direct([127, 0, 0, 1].into()),
             Json(ChangePasswordReq {
                 username: "operator".to_string(),
                 current_password: "correct horse battery".to_string(),

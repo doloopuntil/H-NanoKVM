@@ -535,6 +535,20 @@ const cz = {
             'Server nyní používá nový certifikát. Pokud ho neponecháte, za {{seconds}} sekund se vrátí k předchozímu.',
           certReverted: 'Předchozí certifikát je zpět'
         },
+        trustedProxies: {
+          section: 'Reverzní proxy server',
+          title: 'Důvěryhodné proxy servery',
+          description:
+            'Reverzní proxy servery, kterým zařízení věří, že hlásí adresu a protokol klienta',
+          tip: 'Uvedená adresa určuje adresu klienta, kterou zaznamenávají limit přihlášení a protokol, proto uvádějte jen proxy servery, které řídíte',
+          none: 'Žádné',
+          edit: 'Upravit',
+          editRow: 'Upravit seznam',
+          editTitle: 'Upravit důvěryhodné proxy servery',
+          editDescription: 'Změna seznamu vyžaduje vaše heslo',
+          dialogDescription:
+            'Zadejte adresu každého reverzního proxy serveru tak, jak ji vidí toto zařízení, nebo rozsah, například 10.0.0.0/24. Uvedený proxy server říká zařízení, jakou adresu a jaký protokol klienta má použít. Věří se všemu, co předá, proto uvádějte jen proxy servery, které řídíte.'
+        },
         certificate: {
           title: 'Certifikát',
           desc: 'Odkud pochází certifikát HTTPS',

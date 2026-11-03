@@ -541,6 +541,20 @@ const it = {
             'Il server ora usa il nuovo certificato. Torna al precedente tra {{seconds}} secondi se non lo mantieni.',
           certReverted: 'Il certificato precedente è tornato'
         },
+        trustedProxies: {
+          section: 'Proxy inverso',
+          title: 'Proxy attendibili',
+          description:
+            "Proxy inversi di cui il dispositivo si fida per l'indirizzo e il protocollo del client",
+          tip: "Un indirizzo in elenco sceglie l'indirizzo del client registrato dal limite di accesso e dal registro, quindi inserisci solo proxy che controlli",
+          none: 'Nessuno',
+          edit: 'Modifica',
+          editRow: 'Modifica elenco',
+          editTitle: 'Modifica proxy attendibili',
+          editDescription: "Per modificare l'elenco serve la tua password",
+          dialogDescription:
+            "Inserisci l'indirizzo di ogni proxy inverso come lo vede questo dispositivo, oppure un intervallo come 10.0.0.0/24. Un proxy in elenco dice al dispositivo quale indirizzo e quale protocollo del client usare. Tutto ciò che inoltra viene creduto, quindi inserisci solo proxy che controlli."
+        },
         certificate: {
           title: 'Certificato',
           desc: 'Da dove proviene il certificato HTTPS',

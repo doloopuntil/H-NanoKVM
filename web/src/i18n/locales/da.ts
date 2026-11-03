@@ -538,6 +538,20 @@ const da = {
             'Serveren bruger nu det nye certifikat. Den vender tilbage til det forrige om {{seconds}} sekunder, medmindre du beholder det.',
           certReverted: 'Det forrige certifikat er tilbage'
         },
+        trustedProxies: {
+          section: 'Omvendt proxy',
+          title: 'Betroede proxyer',
+          description:
+            'Omvendte proxyer, som enheden stoler på til at oplyse klientens adresse og protokol',
+          tip: 'En adresse på listen vælger den klientadresse, som loginbegrænsningen og loggen registrerer, så angiv kun proxyer, du selv styrer',
+          none: 'Ingen',
+          edit: 'Rediger',
+          editRow: 'Rediger listen',
+          editTitle: 'Rediger betroede proxyer',
+          editDescription: 'Ændring af listen kræver din adgangskode',
+          dialogDescription:
+            'Angiv adressen på hver omvendt proxy, som denne enhed ser den, eller et område som 10.0.0.0/24. En proxy på listen fortæller enheden, hvilken klientadresse og hvilken protokol der skal bruges. Alt, den videresender, tros på, så angiv kun proxyer, du selv styrer.'
+        },
         certificate: {
           title: 'Certifikat',
           desc: 'Hvor HTTPS-certifikatet kommer fra',

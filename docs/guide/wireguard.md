@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-22
+last-checked: 2026-11-03
 ---
 
 # WireGuard
@@ -80,3 +80,5 @@ See [Firewall modes](firewall.md).
 - **Generate** replaces the key: add the new public key to the peer. **Remove**
   deletes the key and turns WireGuard off.
 - Changes to the settings and the key are written to the system log.
+- To publish the KVM under your own domain through the peer, see
+  [Reverse proxy with Caddy and WireGuard](reverse-proxy.md).

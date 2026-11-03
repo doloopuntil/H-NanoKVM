@@ -1,5 +1,5 @@
 use std::sync::{
-    Arc,
+    Arc, RwLock as StdRwLock,
     atomic::{AtomicBool, AtomicU64, Ordering},
 };
 
@@ -16,7 +16,10 @@ use crate::{
         totp::ReplayGuard,
     },
     config::Config,
-    http::cookie::{session_cookie, session_cookie_secure, session_only_cookie},
+    http::{
+        cookie::{session_cookie, session_only_cookie},
+        proxy::TrustedProxies,
+    },
     security::rate_limit::LoginRateLimiter,
 };
 
@@ -50,6 +53,8 @@ pub struct AppState {
     pub remote_image_download_enabled: Arc<AtomicBool>,
     pub session_lock_duration: Arc<AtomicU64>,
     pub logout_on_browser_close: Arc<AtomicBool>,
+    /// Swapped whole when the list changes; a request clones the `Arc` and works on that.
+    pub trusted_proxies: Arc<StdRwLock<Arc<TrustedProxies>>>,
 }
 
 impl AppState {
@@ -73,6 +78,7 @@ impl AppState {
             normalize_session_lock_duration(config.security.access_token_duration);
 
         let logout_on_browser_close = config.security.logout_on_browser_close;
+        let (trusted_proxies, _) = TrustedProxies::from_entries(&config.security.trusted_proxies);
 
         Ok(Self {
             config: Arc::new(config),
@@ -88,6 +94,7 @@ impl AppState {
             remote_image_download_enabled: Arc::new(AtomicBool::new(remote_image_download_enabled)),
             session_lock_duration: Arc::new(AtomicU64::new(session_lock_duration)),
             logout_on_browser_close: Arc::new(AtomicBool::new(logout_on_browser_close)),
+            trusted_proxies: Arc::new(StdRwLock::new(Arc::new(trusted_proxies))),
         })
     }
 
@@ -138,10 +145,25 @@ impl AppState {
         self.logout_on_browser_close.load(Ordering::Acquire)
     }
 
+    pub fn trusted_proxies(&self) -> Arc<TrustedProxies> {
+        Arc::clone(
+            &self
+                .trusted_proxies
+                .read()
+                .unwrap_or_else(|err| err.into_inner()),
+        )
+    }
+
+    pub fn set_trusted_proxies(&self, proxies: TrustedProxies) {
+        *self
+            .trusted_proxies
+            .write()
+            .unwrap_or_else(|err| err.into_inner()) = Arc::new(proxies);
+    }
+
     /// The Set-Cookie value for a session: it lasts as long as the session lock, or only
-    /// until the browser closes.
-    pub fn session_cookie(&self, token: &str, duration: u64) -> Result<HeaderValue> {
-        let secure = session_cookie_secure(&self.config.proto);
+    /// until the browser closes. `secure` is whether the browser reached us over HTTPS.
+    pub fn session_cookie(&self, token: &str, duration: u64, secure: bool) -> Result<HeaderValue> {
         if self.logout_on_browser_close() {
             session_only_cookie(token, secure)
         } else {

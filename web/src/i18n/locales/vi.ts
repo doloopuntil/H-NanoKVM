@@ -534,6 +534,19 @@ const vi = {
             'Máy chủ hiện dùng chứng chỉ mới. Nếu bạn không giữ, nó sẽ quay lại chứng chỉ trước sau {{seconds}} giây.',
           certReverted: 'Chứng chỉ trước đã được khôi phục'
         },
+        trustedProxies: {
+          section: 'Proxy ngược',
+          title: 'Proxy tin cậy',
+          description: 'Proxy ngược mà thiết bị tin cậy để báo địa chỉ và giao thức của máy khách',
+          tip: 'Địa chỉ trong danh sách quyết định địa chỉ máy khách mà giới hạn đăng nhập và nhật ký ghi lại, vì vậy chỉ thêm các proxy do bạn kiểm soát',
+          none: 'Không có',
+          edit: 'Sửa',
+          editRow: 'Sửa danh sách',
+          editTitle: 'Sửa proxy tin cậy',
+          editDescription: 'Thay đổi danh sách cần mật khẩu của bạn',
+          dialogDescription:
+            'Nhập địa chỉ của từng proxy ngược như thiết bị này nhìn thấy, hoặc một dải như 10.0.0.0/24. Proxy trong danh sách cho thiết bị biết dùng địa chỉ và giao thức máy khách nào. Mọi thứ nó chuyển tiếp đều được tin, vì vậy chỉ thêm các proxy do bạn kiểm soát.'
+        },
         certificate: {
           title: 'Chứng chỉ',
           desc: 'Nguồn gốc của chứng chỉ HTTPS',

@@ -64,6 +64,7 @@ use crate::{
     },
     config::Config,
     hdmi_idle,
+    http::proxy::ClientInfo,
     state::AppState,
     ws::origin::validate_ws_origin,
 };
@@ -77,6 +78,7 @@ static H264_WEBRTC_FIRST_SUCCESS_LOGGED: AtomicBool = AtomicBool::new(false);
 
 pub async fn h264_webrtc_stream(
     State(state): State<AppState>,
+    client: ClientInfo,
     headers: HeaderMap,
     ws: WebSocketUpgrade,
 ) -> Result<impl IntoResponse> {
@@ -86,7 +88,7 @@ pub async fn h264_webrtc_stream(
         ));
     }
 
-    if !validate_ws_origin(&headers, &state.config) {
+    if !validate_ws_origin(&headers, &state.config, &client) {
         return Err(AppError::Forbidden("invalid websocket origin".to_string()));
     }
 

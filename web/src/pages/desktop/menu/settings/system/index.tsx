@@ -23,6 +23,7 @@ import { Ssh } from './ssh';
 import { Swap } from './swap';
 import { TimeSettings } from './time';
 import { Tls } from './tls';
+import { TrustedProxies } from './trusted-proxies';
 import { Watchdog } from './watchdog';
 
 export type SystemSection =
@@ -134,6 +135,12 @@ export const System = ({ section, setIsLocked }: SystemProps) => {
                   onActionStateChange={updateActionState}
                   onBlockedChange={setCertificateBlocked}
                 />
+              </SettingSection>
+
+              <SectionDivider />
+
+              <SettingSection title={t('settings.network.trustedProxies.section')}>
+                <TrustedProxies />
               </SettingSection>
 
               <SectionDivider />

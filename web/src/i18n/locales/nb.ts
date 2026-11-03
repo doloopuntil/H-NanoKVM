@@ -541,6 +541,19 @@ const nb = {
             'Serveren bruker nå det nye sertifikatet. Den går tilbake til det forrige om {{seconds}} sekunder med mindre du beholder det.',
           certReverted: 'Det forrige sertifikatet er tilbake'
         },
+        trustedProxies: {
+          section: 'Omvendt proxy',
+          title: 'Klarerte proxyer',
+          description: 'Omvendte proxyer som enheten stoler på for klientens adresse og protokoll',
+          tip: 'En adresse i listen velger klientadressen som innloggingsgrensen og loggen registrerer, så ta bare med proxyer du selv styrer',
+          none: 'Ingen',
+          edit: 'Rediger',
+          editRow: 'Rediger listen',
+          editTitle: 'Rediger klarerte proxyer',
+          editDescription: 'Å endre listen krever passordet ditt',
+          dialogDescription:
+            'Skriv inn adressen til hver omvendte proxy slik denne enheten ser den, eller et område som 10.0.0.0/24. En proxy i listen forteller enheten hvilken klientadresse og hvilken protokoll som skal brukes. Alt den videresender blir trodd, så ta bare med proxyer du selv styrer.'
+        },
         certificate: {
           title: 'Sertifikat',
           desc: 'Hvor HTTPS-sertifikatet kommer fra',

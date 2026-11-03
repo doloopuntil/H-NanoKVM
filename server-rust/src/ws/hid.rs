@@ -25,7 +25,9 @@ use std::{
 use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 use tokio::sync::{broadcast, mpsc};
 
-use crate::{AppError, Result, state::AppState, ws::origin::validate_ws_origin};
+use crate::{
+    AppError, Result, http::proxy::ClientInfo, state::AppState, ws::origin::validate_ws_origin,
+};
 
 const HID_KEYBOARD: &str = "/dev/hidg0";
 const HID_MOUSE_RELATIVE: &str = "/dev/hidg1";
@@ -452,10 +454,11 @@ pub fn broadcast_event(kind: &str, data: &str) {
 
 pub async fn connect(
     State(state): State<AppState>,
+    client: ClientInfo,
     headers: HeaderMap,
     ws: WebSocketUpgrade,
 ) -> Result<impl IntoResponse> {
-    if !validate_ws_origin(&headers, &state.config) {
+    if !validate_ws_origin(&headers, &state.config, &client) {
         return Err(AppError::Forbidden("invalid websocket origin".to_string()));
     }
 

@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use axum::{Json, extract::ConnectInfo, response::IntoResponse};
+use axum::{Json, response::IntoResponse};
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
@@ -16,7 +16,7 @@ use crate::{
     api::system_firewall,
     error::ApiResponse,
     fsutil::write_0600_atomic,
-    http::tls::ClientAddr,
+    http::proxy::ClientInfo,
     system::{
         audit,
         command::{AllowedCommand, CommandOutput, run_allowed, run_allowed_with_stdin},
@@ -91,7 +91,7 @@ pub async fn get_status() -> Result<impl IntoResponse> {
 }
 
 pub async fn set_config(
-    ConnectInfo(addr): ConnectInfo<ClientAddr>,
+    client: ClientInfo,
     Json(req): Json<WireguardConfig>,
 ) -> Result<impl IntoResponse> {
     let _guard = LOCK.lock().await;
@@ -117,7 +117,7 @@ pub async fn set_config(
     }
 
     write_0600_atomic(Path::new(CONFIG_FILE), render_config(&config).as_bytes())?;
-    audit::wireguard_changed(&addr.0.ip().to_string(), config.enabled);
+    audit::wireguard_changed(&client.source_ip(), config.enabled);
 
     apply_service(config.enabled).await?;
     system_firewall::apply_firewall().await?;
@@ -126,21 +126,19 @@ pub async fn set_config(
 }
 
 pub async fn set_private_key(
-    ConnectInfo(addr): ConnectInfo<ClientAddr>,
+    client: ClientInfo,
     Json(req): Json<SetPrivateKeyReq>,
 ) -> Result<impl IntoResponse> {
     let _guard = LOCK.lock().await;
 
     let key = req.private_key.trim();
     validate_key(key, "private key")?;
-    store_private_key(key, &addr.0.ip().to_string()).await?;
+    store_private_key(key, &client.source_ip()).await?;
 
     Ok(Json(ApiResponse::ok(build_response().await?)))
 }
 
-pub async fn generate_private_key(
-    ConnectInfo(addr): ConnectInfo<ClientAddr>,
-) -> Result<impl IntoResponse> {
+pub async fn generate_private_key(client: ClientInfo) -> Result<impl IntoResponse> {
     let _guard = LOCK.lock().await;
 
     let output = run_allowed(AllowedCommand::Wg, ["genkey"], COMMAND_TIMEOUT).await?;
@@ -152,14 +150,12 @@ pub async fn generate_private_key(
     }
     let key = String::from_utf8_lossy(&output.stdout).trim().to_string();
     validate_key(&key, "generated key")?;
-    store_private_key(&key, &addr.0.ip().to_string()).await?;
+    store_private_key(&key, &client.source_ip()).await?;
 
     Ok(Json(ApiResponse::ok(build_response().await?)))
 }
 
-pub async fn remove_private_key(
-    ConnectInfo(addr): ConnectInfo<ClientAddr>,
-) -> Result<impl IntoResponse> {
+pub async fn remove_private_key(client: ClientInfo) -> Result<impl IntoResponse> {
     let _guard = LOCK.lock().await;
 
     let mut config = read_config();
@@ -174,7 +170,7 @@ pub async fn remove_private_key(
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
         Err(err) => return Err(err.into()),
     }
-    audit::wireguard_key_removed(&addr.0.ip().to_string());
+    audit::wireguard_key_removed(&client.source_ip());
 
     Ok(Json(ApiResponse::ok(build_response().await?)))
 }

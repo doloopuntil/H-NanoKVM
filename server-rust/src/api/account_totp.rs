@@ -3,11 +3,7 @@
 //! All of these require an authenticated session; the login-time half lives in
 //! [`crate::api::account`].
 
-use axum::{
-    Extension, Json,
-    extract::{ConnectInfo, State},
-    response::IntoResponse,
-};
+use axum::{Extension, Json, extract::State, response::IntoResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -20,7 +16,7 @@ use crate::{
     },
     config::Config,
     error::ApiResponse,
-    http::{middleware::CurrentSession, tls::ClientAddr},
+    http::{middleware::CurrentSession, proxy::ClientInfo},
     state::AppState,
     system::audit,
 };
@@ -112,13 +108,13 @@ pub async fn get_status(
 pub async fn enroll(
     State(state): State<AppState>,
     Extension(CurrentSession(session)): Extension<CurrentSession>,
-    ConnectInfo(addr): ConnectInfo<ClientAddr>,
+    client: ClientInfo,
     Json(req): Json<TotpEnrollReq>,
 ) -> Result<impl IntoResponse> {
     ensure_clock_synced()?;
     // Like disable and regenerate: a stolen session alone must not be able to
     // bind its own authenticator.
-    let source_ip = addr.0.ip().to_string();
+    let source_ip = client.source_ip();
     verify_password_limited(&state, &source_ip, &session.username, &req.password).await?;
     require_second_factor(&state, &session.username, &source_ip, req.code.as_deref()).await?;
 
@@ -192,10 +188,10 @@ pub async fn confirm(
 pub async fn regenerate_backup_codes(
     State(state): State<AppState>,
     Extension(CurrentSession(session)): Extension<CurrentSession>,
-    ConnectInfo(addr): ConnectInfo<ClientAddr>,
+    client: ClientInfo,
     Json(req): Json<TotpDisableReq>,
 ) -> Result<impl IntoResponse> {
-    let source_ip = addr.0.ip().to_string();
+    let source_ip = client.source_ip();
     verify_password_limited(&state, &source_ip, &session.username, &req.password).await?;
     require_second_factor(&state, &session.username, &source_ip, req.code.as_deref()).await?;
 
@@ -218,7 +214,7 @@ pub async fn regenerate_backup_codes(
 pub async fn disable(
     State(state): State<AppState>,
     Extension(CurrentSession(session)): Extension<CurrentSession>,
-    ConnectInfo(addr): ConnectInfo<ClientAddr>,
+    client: ClientInfo,
     Json(req): Json<TotpDisableReq>,
 ) -> Result<impl IntoResponse> {
     // Refusing here would leave the UI unable to undo a setting it offers, so
@@ -229,7 +225,7 @@ pub async fn disable(
             "configuration requires two-factor auth; clear security.require_totp first".to_string(),
         ));
     }
-    let source_ip = addr.0.ip().to_string();
+    let source_ip = client.source_ip();
     verify_password_limited(&state, &source_ip, &session.username, &req.password).await?;
     require_second_factor(&state, &session.username, &source_ip, req.code.as_deref()).await?;
 
@@ -304,7 +300,7 @@ mod tests {
         enroll(
             State(state.clone()),
             Extension(CurrentSession(session.clone())),
-            ConnectInfo(ClientAddr(([127, 0, 0, 1], 40000).into())),
+            ClientInfo::direct([127, 0, 0, 1].into()),
             Json(TotpEnrollReq {
                 password: password.to_string(),
                 code: None,
@@ -372,8 +368,8 @@ mod tests {
         format!("{:06}", totp::code_at(&secret, step))
     }
 
-    fn addr() -> ConnectInfo<ClientAddr> {
-        ConnectInfo(ClientAddr(([127, 0, 0, 1], 40000).into()))
+    fn addr() -> ClientInfo {
+        ClientInfo::direct([127, 0, 0, 1].into())
     }
 
     fn second_factor_refused<T>(result: &Result<T>) -> bool {

@@ -544,6 +544,20 @@ const nl = {
             'De server gebruikt nu het nieuwe certificaat. Hij keert over {{seconds}} seconden terug naar het vorige als u het niet behoudt.',
           certReverted: 'Het vorige certificaat is terug'
         },
+        trustedProxies: {
+          section: 'Reverse proxy',
+          title: "Vertrouwde proxy's",
+          description:
+            "Reverse proxy's die het apparaat vertrouwt voor het adres en protocol van de client",
+          tip: "Een adres in de lijst bepaalt het clientadres dat de inlogbeperking en het logboek vastleggen, dus neem alleen proxy's op die u zelf beheert",
+          none: 'Geen',
+          edit: 'Bewerken',
+          editRow: 'Lijst bewerken',
+          editTitle: "Vertrouwde proxy's bewerken",
+          editDescription: 'Voor het wijzigen van de lijst is uw wachtwoord nodig',
+          dialogDescription:
+            "Voer het adres van elke reverse proxy in zoals dit apparaat het ziet, of een bereik zoals 10.0.0.0/24. Een proxy in de lijst vertelt het apparaat welk clientadres en welk protocol moet worden gebruikt. Alles wat hij doorstuurt wordt geloofd, dus neem alleen proxy's op die u zelf beheert."
+        },
         certificate: {
           title: 'Certificaat',
           desc: 'Waar het HTTPS-certificaat vandaan komt',

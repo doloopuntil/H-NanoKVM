@@ -32,6 +32,7 @@ use crate::{
     error::ApiResponse,
     ffi::kvm,
     hdmi_idle,
+    http::proxy::ClientInfo,
     state::AppState,
     ws::{hid as hid_ws, origin::validate_ws_origin},
 };
@@ -501,11 +502,12 @@ pub async fn mjpeg_stream() -> impl IntoResponse {
 
 pub async fn h264_direct_stream(
     State(state): State<AppState>,
+    client: ClientInfo,
     headers: axum::http::HeaderMap,
     Query(query): Query<HashMap<String, String>>,
     ws: WebSocketUpgrade,
 ) -> Result<impl IntoResponse> {
-    if !validate_ws_origin(&headers, &state.config) {
+    if !validate_ws_origin(&headers, &state.config, &client) {
         return Err(AppError::Forbidden("invalid websocket origin".to_string()));
     }
 

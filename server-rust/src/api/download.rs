@@ -1,6 +1,6 @@
 use axum::{
     Extension, Json,
-    extract::{ConnectInfo, Multipart, State},
+    extract::{Multipart, State},
     http::{HeaderMap, header},
     response::IntoResponse,
 };
@@ -31,7 +31,7 @@ use crate::{
     api::account::{require_second_factor, verify_password_limited},
     config::Config,
     error::ApiResponse,
-    http::{middleware::CurrentSession, tls::ClientAddr},
+    http::{middleware::CurrentSession, proxy::ClientInfo},
     state::AppState,
     system::{
         audit,
@@ -125,12 +125,12 @@ pub async fn get_remote_image_download_enabled(
 pub async fn set_remote_image_download_enabled(
     State(state): State<AppState>,
     Extension(CurrentSession(session)): Extension<CurrentSession>,
-    ConnectInfo(addr): ConnectInfo<ClientAddr>,
+    client: ClientInfo,
     Json(req): Json<SetRemoteImageDownloadReq>,
 ) -> Result<impl IntoResponse> {
     // Turning it off needs only the session. Turning it on lets the device fetch URLs, and
     // downloads themselves need no password, so this is the one gate.
-    let source_ip = addr.0.ip().to_string();
+    let source_ip = client.source_ip();
     if req.enabled {
         let password = req.password.as_deref().ok_or_else(|| {
             AppError::BadRequest(
@@ -1681,7 +1681,7 @@ mod tests {
         set_remote_image_download_enabled(
             State(state.clone()),
             Extension(CurrentSession(session.clone())),
-            ConnectInfo(ClientAddr(([127, 0, 0, 1], 40000).into())),
+            ClientInfo::direct([127, 0, 0, 1].into()),
             Json(SetRemoteImageDownloadReq {
                 enabled: true,
                 password: password.map(str::to_string),

@@ -15,6 +15,7 @@ For people running the device.
 - [Firewall modes](guide/firewall.md)
 - [HTTPS certificate](guide/https-certificate.md): Tailscale or Let's Encrypt instead of the self-signed one
 - [WireGuard](guide/wireguard.md)
+- [Reverse proxy with Caddy and WireGuard](guide/reverse-proxy.md): your own domain in front of the KVM
 - [Tailscale](guide/tailscale.md)
 - [Virtual media](guide/virtual-media.md): mounting images, the virtual disk, uploads and downloads
 - [USB devices, keyboard and mouse](guide/usb-and-input.md), including HID-only mode

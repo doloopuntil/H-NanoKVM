@@ -172,6 +172,16 @@ export function unlockTerminal(username: string, password: string, code?: string
   return http.post('/api/vm/terminal/unlock', { username, password, code });
 }
 
+// reverse proxies whose forwarded client address and protocol are trusted
+export function getTrustedProxies() {
+  return http.get('/api/vm/trusted-proxies');
+}
+
+// changing the list needs the password, and a code when the account has a second factor
+export function setTrustedProxies(proxies: string[], password: string, code?: string) {
+  return http.post('/api/vm/trusted-proxies', { proxies, password, code });
+}
+
 // get session lock duration
 export function getSessionLock() {
   return http.get('/api/vm/session-lock');
