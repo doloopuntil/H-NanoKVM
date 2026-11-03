@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import * as totpApi from '@/api/auth-totp.ts';
 import * as authApi from '@/api/auth.ts';
 import * as vmApi from '@/api/vm.ts';
-import { encrypt } from '@/lib/encrypt.ts';
 import { attempt } from '@/lib/feedback.ts';
 import { isKeyboardEnableAtom } from '@/jotai/keyboard.ts';
 
@@ -48,7 +47,7 @@ export const Unlock = ({ onUnlock, onCancel }: UnlockProps) => {
     setIsUnlocking(true);
 
     vmApi
-      .unlockTerminal(username, encrypt(password), code.trim() || undefined)
+      .unlockTerminal(username, password, code.trim() || undefined)
       .then((rsp) => {
         if (rsp.code === 0) {
           onUnlock(rsp.data.ticket);

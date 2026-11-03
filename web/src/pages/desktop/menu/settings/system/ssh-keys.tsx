@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 
 import * as totpApi from '@/api/auth-totp.ts';
 import * as api from '@/api/vm.ts';
-import { encrypt } from '@/lib/encrypt.ts';
 import { attempt } from '@/lib/feedback.ts';
 import { usePopconfirmColor } from '@/hooks/usePopconfirmColor.ts';
 import { useSettingsLoad } from '@/hooks/useSettingsLoad.ts';
@@ -58,7 +57,7 @@ export const SshKeys = ({ onLockoutChange }: SshKeysProps) => {
     setSaving(true);
     const rsp = await attempt(() =>
       api.addSshKey(
-        encrypt(password),
+        password,
         publicKey.trim(),
         label.trim() || undefined,
         code.trim() || undefined

@@ -9,7 +9,6 @@ default = []
 linked-libkvm = []
 
 [dependencies]
-aes = "0.8"
 argon2 = "0.6"
 async-stream = "0.3"
 async-trait = "0.1"
@@ -17,7 +16,6 @@ axum = { version = "0.8", features = ["json", "multipart", "ws"] }
 base64 = "0.23"
 bcrypt = "0.19.3"
 bytes = "1"
-cbc = "0.1"
 cipher = "0.4"
 # Already present in Cargo.lock as transitive dependencies of the webrtc/rcgen
 # graph; promoted to direct dependencies for the TOTP implementation.
@@ -29,7 +27,6 @@ hyper = { version = "1", features = ["http1", "server"] }
 hyper-util = { version = "0.1", features = ["tokio"] }
 getrandom = "0.4"
 futures-util = { version = "0.3.32", features = ["sink"] }
-md-5 = "0.10"
 nix = { version = "0.31.3", features = ["fs", "ioctl", "mount", "net", "process", "signal", "term"] }
 rcgen = "0.14"
 # Types webrtc takes from its sans-I/O core; pinned with webrtc.

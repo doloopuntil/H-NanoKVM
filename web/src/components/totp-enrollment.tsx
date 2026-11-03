@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/auth-totp.ts';
 import type { TotpStatus } from '@/api/auth-totp.ts';
-import { encrypt } from '@/lib/encrypt.ts';
 import { toast } from '@/lib/feedback.ts';
 import { useSettingsLoad } from '@/hooks/useSettingsLoad.ts';
 import { SettingRow } from '@/components/setting-rows.tsx';
@@ -104,7 +103,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
     setIsBusy(true);
 
     api
-      .enroll(encrypt(password))
+      .enroll(password)
       .then((rsp) => {
         if (rsp.code !== 0) {
           toast.error(rsp.msg || t('settings.account.totp.enrollFailed'));
@@ -153,7 +152,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
     setIsBusy(true);
 
     api
-      .disable(encrypt(password), stepCode.trim())
+      .disable(password, stepCode.trim())
       .then((rsp) => {
         if (rsp.code !== 0) {
           toast.error(rsp.msg || t('settings.account.totp.disableFailed'));
@@ -173,7 +172,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
     setIsBusy(true);
 
     api
-      .regenerateBackupCodes(encrypt(password), stepCode.trim())
+      .regenerateBackupCodes(password, stepCode.trim())
       .then((rsp) => {
         if (rsp.code !== 0) {
           toast.error(rsp.msg || t('settings.account.totp.regenerateFailed'));

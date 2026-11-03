@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import * as totpApi from '@/api/auth-totp.ts';
 import * as api from '@/api/vm.ts';
 import type { CertInfo, CertSource } from '@/api/vm.ts';
-import { encrypt } from '@/lib/encrypt.ts';
 import { attempt, confirm, toast } from '@/lib/feedback.ts';
 import { useSettingsLoadState } from '@/hooks/useSettingsLoad.ts';
 import { LabelTip } from '@/components/label-tip.tsx';
@@ -123,7 +122,7 @@ export const Certificate = forwardRef<SystemActionHandle, CertificateProps>(
       async (before: CertInfo, expected?: CertSource) => {
         setIsWorking(true);
         let latest: CertInfo | undefined;
-        for (let waited = 0; waited < WAIT_LIMIT_SECONDS && isMounted.current; ) {
+        for (let waited = 0; waited < WAIT_LIMIT_SECONDS && isMounted.current;) {
           await sleep(POLL_SECONDS);
           waited += POLL_SECONDS;
           const rsp = await attempt(() => api.getCert(), { quiet: true });
@@ -194,7 +193,7 @@ export const Certificate = forwardRef<SystemActionHandle, CertificateProps>(
           source: draft.source,
           domain: draft.domain.trim(),
           email: draft.email.trim(),
-          password: encrypt(password),
+          password,
           code: code.trim() || undefined
         })
       );

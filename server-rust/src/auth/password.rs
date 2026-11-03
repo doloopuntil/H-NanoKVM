@@ -224,8 +224,11 @@ fn validate_username(username: &str) -> Result<()> {
     Ok(())
 }
 
+/// The longest password an account can have.
+pub const MAX_PASSWORD_BYTES: usize = 256;
+
 fn validate_password(password: &str) -> Result<()> {
-    if password.len() < 8 || password.len() > 256 {
+    if password.len() < 8 || password.len() > MAX_PASSWORD_BYTES {
         return Err(AppError::BadRequest(
             "password must be between 8 and 256 characters".to_string(),
         ));
@@ -292,24 +295,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn credential_preflight_rejects_password_protocol_delimiters_after_decoding() {
-        let encoded = [
-            "synthetic%0Apassword",
-            "synthetic%0Dpassword",
-            "synthetic%00password",
-            "synthetic%0D%0Apassword",
-        ];
-        let rejected = encoded
-            .iter()
-            .filter(|value| {
-                let password = crate::auth::compat_crypto::decode_frontend_password(value).unwrap();
+    fn credential_preflight_rejects_password_protocol_delimiters() {
+        for password in [
+            "synthetic\npassword",
+            "synthetic\rpassword",
+            "synthetic\0password",
+            "synthetic\r\npassword",
+        ] {
+            assert!(
                 matches!(
-                    validate_account_credentials("operator", &password),
+                    validate_account_credentials("operator", password),
                     Err(AppError::BadRequest(_))
-                )
-            })
-            .count();
-        assert_eq!(rejected, encoded.len());
+                ),
+                "{password:?}"
+            );
+        }
     }
 
     #[test]

@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 
 import * as totpApi from '@/api/auth-totp.ts';
 import * as downloadApi from '@/api/download.ts';
-import { encrypt } from '@/lib/encrypt.ts';
 import { attempt } from '@/lib/feedback.ts';
 
 type RemoteDownloadEnableProps = {
@@ -39,7 +38,7 @@ export const RemoteDownloadEnable = ({ open, onClose, onEnabled }: RemoteDownloa
   async function submit() {
     setSaving(true);
     const rsp = await attempt(() =>
-      downloadApi.setRemoteImageDownloadEnabled(true, encrypt(password), code.trim() || undefined)
+      downloadApi.setRemoteImageDownloadEnabled(true, password, code.trim() || undefined)
     );
     setSaving(false);
     if (!rsp) return;

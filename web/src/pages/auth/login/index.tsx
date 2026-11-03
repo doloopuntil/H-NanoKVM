@@ -8,7 +8,6 @@ import { getCurrentVersion } from '@/api/application.ts';
 import * as totpApi from '@/api/auth-totp.ts';
 import * as api from '@/api/auth.ts';
 import { existToken, setCsrfToken } from '@/lib/cookie.ts';
-import { encrypt } from '@/lib/encrypt.ts';
 import {
   formatHardenedVersion,
   HARDENED_LOGO_SRC,
@@ -143,7 +142,7 @@ export const Login = (): ReactElement => {
     setIsloading(true);
 
     const username = values.username;
-    const password = encrypt(values.password);
+    const password = values.password;
 
     api
       .login(username, password)
@@ -176,7 +175,7 @@ export const Login = (): ReactElement => {
     setIsloading(true);
 
     const username = values.username;
-    const password = encrypt(values.password);
+    const password = values.password;
 
     api
       .setupFirstAccount(username, password)

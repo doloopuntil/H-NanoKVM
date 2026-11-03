@@ -11,8 +11,7 @@ use crate::{
     AppError, Result,
     auth::{
         clock,
-        compat_crypto::decode_frontend_password,
-        password::{AccountStore, TotpConfig, validate_account_credentials},
+        password::{AccountStore, MAX_PASSWORD_BYTES, TotpConfig, validate_account_credentials},
         pending_totp::PENDING_TTL_SECS,
         totp::{self, ReplayGuard},
     },
@@ -154,8 +153,7 @@ pub async fn login(
         }
     }
 
-    let password = decode_frontend_password(&req.password)?;
-    if !verify_account(&state, &req.username, &password).await? {
+    if !verify_account(&state, &req.username, &req.password).await? {
         let mut limiter = state.login_limiter.write().await;
         let locked = limiter.record_failure(&source_ip, &req.username);
         if locked {
@@ -301,6 +299,10 @@ const VERIFY_WAIT: Duration = if cfg!(test) {
 };
 
 async fn verify_account(state: &AppState, username: &str, password: &str) -> Result<bool> {
+    // No stored password is longer, so a longer one fails without hashing.
+    if password.len() > MAX_PASSWORD_BYTES {
+        return Ok(false);
+    }
     let accounts = state.accounts.clone();
     let (username, password) = (username.to_string(), password.to_string());
     in_slot(&VERIFY_SLOT, VERIFY_WAIT, move || {
@@ -352,8 +354,7 @@ pub(crate) async fn verify_password_limited(
         ));
     }
 
-    let decoded = decode_frontend_password(password)?;
-    if !verify_account(state, username, &decoded).await? {
+    if !verify_account(state, username, password).await? {
         if state
             .login_limiter
             .write()
@@ -545,10 +546,9 @@ pub async fn setup_first_account(
             "account already initialized".to_string(),
         ));
     }
-    let password = decode_frontend_password(&req.password)?;
-    validate_account_credentials(&req.username, &password)?;
-    change_root_password(&password).await?;
-    state.accounts.set_account(&req.username, &password)?;
+    validate_account_credentials(&req.username, &req.password)?;
+    change_root_password(&req.password).await?;
+    state.accounts.set_account(&req.username, &req.password)?;
     Ok(Json(ApiResponse::<()>::ok_empty()))
 }
 
@@ -609,10 +609,9 @@ pub async fn change_password(
     let source_ip = client.source_ip();
     verify_password_limited(&state, &source_ip, &req.username, &req.current_password).await?;
     require_second_factor(&state, &req.username, &source_ip, req.code.as_deref()).await?;
-    let password = decode_frontend_password(&req.password)?;
-    validate_account_credentials(&req.username, &password)?;
-    change_root_password(&password).await?;
-    state.accounts.set_account(&req.username, &password)?;
+    validate_account_credentials(&req.username, &req.password)?;
+    change_root_password(&req.password).await?;
+    state.accounts.set_account(&req.username, &req.password)?;
     if state.config.security.revoke_tokens_on_password_change {
         state.sessions.revoke_user(&req.username).await;
     }
