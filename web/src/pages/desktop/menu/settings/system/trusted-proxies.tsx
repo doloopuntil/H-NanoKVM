@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 
 import * as totpApi from '@/api/auth-totp.ts';
 import * as api from '@/api/vm.ts';
-import { encrypt } from '@/lib/encrypt.ts';
 import { attempt } from '@/lib/feedback.ts';
 import { useSettingsLoad } from '@/hooks/useSettingsLoad.ts';
 import { LabelTip } from '@/components/label-tip.tsx';
@@ -39,7 +38,7 @@ const TrustedProxiesDialog = ({ open, proxies, onClose, onSaved }: DialogProps) 
   async function submit() {
     setSaving(true);
     const rsp = await attempt(() =>
-      api.setTrustedProxies(draft, encrypt(password), code.trim() || undefined)
+      api.setTrustedProxies(draft, password, code.trim() || undefined)
     );
     setSaving(false);
     if (!rsp) return;

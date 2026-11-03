@@ -113,7 +113,7 @@ export function getSshKeys() {
   return http.get('/api/vm/ssh/keys');
 }
 
-// password is encrypted; code is the second factor when the account has one
+// code is the second factor when the account has one
 export function addSshKey(password: string, publicKey: string, label?: string, code?: string) {
   return http.post('/api/vm/ssh/keys', { password, publicKey, label, code });
 }

@@ -1,5 +1,4 @@
 pub mod clock;
-pub mod compat_crypto;
 pub mod password;
 pub mod pending_totp;
 pub mod session;
