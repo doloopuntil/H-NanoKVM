@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import * as totpApi from '@/api/auth-totp.ts';
 import * as api from '@/api/auth.ts';
 import { removeToken } from '@/lib/cookie.ts';
-import { encrypt } from '@/lib/encrypt.ts';
 import { Head } from '@/components/head.tsx';
 
 export const Password = () => {
@@ -40,8 +39,8 @@ export const Password = () => {
       return;
     }
 
-    const currentPassword = encrypt(values.currentPassword);
-    const password = encrypt(values.password);
+    const currentPassword = values.currentPassword;
+    const password = values.password;
 
     // There is a single account, and the server wants its name with the request.
     api

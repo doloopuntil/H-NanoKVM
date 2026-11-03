@@ -11,7 +11,6 @@ import '@xterm/xterm/css/xterm.css';
 import * as totpApi from '@/api/auth-totp.ts';
 import * as authApi from '@/api/auth.ts';
 import * as vmApi from '@/api/vm.ts';
-import { encrypt } from '@/lib/encrypt.ts';
 import { getBaseUrl } from '@/lib/service.ts';
 import { Head } from '@/components/head.tsx';
 
@@ -156,7 +155,7 @@ export const Terminal = () => {
     setIsUnlocking(true);
 
     vmApi
-      .unlockTerminal(values.username, encrypt(values.password), values.code?.trim() || undefined)
+      .unlockTerminal(values.username, values.password, values.code?.trim() || undefined)
       .then((rsp) => {
         if (rsp.code !== 0) {
           if (rsp.code === -2) setMsg(t('terminal.invalidCredentials'));
