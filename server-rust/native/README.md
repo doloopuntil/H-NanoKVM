@@ -227,6 +227,11 @@ loaders (`ld-musl-riscv64xthead.so.1`, `ld-musl-riscv64v0p7_xthead.so.1`).
 `rootfs.sd` instead of raw.12, hard-failing if any isn't found (unlike the
 diagnostic that discovered these paths, this is production extraction).
 
+Update 2026-11: `libc.so` and the T-Head loader are no longer extracted or shipped.
+The loader's riscv64 `__clone` misaligns thread stacks, so the server, `nanokvm-hwmon`
+and `kvm_system` run on Buildroot's musl 1.2.6 loader; see
+[riscv64 thread stack alignment](../../docs/development/riscv-musl-stack-alignment.md).
+
 `libsns_lt6911.so` was the 8th file checked, and its bytes differ (2,100 of
 14,568) -- but tracing exactly *why* closed it too. The source is real,
 checked-in C code at

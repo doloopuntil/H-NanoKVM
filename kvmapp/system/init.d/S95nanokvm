@@ -17,7 +17,7 @@ SERVER_LOG=/tmp/nanokvm-server.log
 SERVER_PID_FILE=/tmp/nanokvm-server.pid
 INIT_SELF="$0"
 NANOKVM_NATIVE_LIBRARY_PATH=/kvmapp/server/dl_lib:/mnt/system/usr/lib:/mnt/system/usr/lib/3rd
-# Buildroot's musl 1.2.6: the vendor T-Head loader starts threads with a misaligned stack.
+# Buildroot's musl 1.2.6 (the vendor T-Head loader misaligned thread stacks).
 NANOKVM_LOADER=/lib/ld-musl-riscv64.so.1
 KVM_SYSTEM_SOURCE_DIR=/kvmapp/kvm_system
 KVM_SYSTEM_RUNTIME_DIR=/tmp/kvm_system
@@ -167,7 +167,7 @@ find_kvm_system_pids() {
     for proc in /proc/[0-9]*; do
         cmdline="$(tr '\0' ' ' < "$proc/cmdline" 2>/dev/null || true)"
         case "$cmdline" in
-            /lib/ld-musl-riscv64.so.1*'/tmp/kvm_system/kvm_system'*|/lib/ld-musl-riscv64xthead.so.1*'/tmp/kvm_system/kvm_system'*)
+            /lib/ld-musl-riscv64.so.1*'/tmp/kvm_system/kvm_system'*)
                 printf '%s\n' "${proc##*/}"
                 ;;
         esac
@@ -179,7 +179,7 @@ kvm_system_pid_matches() {
     [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null || return 1
     cmdline="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)"
     case "$cmdline" in
-        /lib/ld-musl-riscv64.so.1*'/tmp/kvm_system/kvm_system'*|/lib/ld-musl-riscv64xthead.so.1*'/tmp/kvm_system/kvm_system'*) return 0 ;;
+        /lib/ld-musl-riscv64.so.1*'/tmp/kvm_system/kvm_system'*) return 0 ;;
     esac
     return 1
 }

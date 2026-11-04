@@ -384,11 +384,14 @@ jobs:
             echo "libopencv_video.so.409 not NEEDED by this build; nothing to trim"
           fi
 
-      # kvm_system must run with only what the image already has.
-      - name: Check kvm_system's loader and libraries
+      # kvm_system must run with only what the image already has. MaixCDK links it for the vendor
+      # T-Head loader, whose __clone misaligns thread stacks; the image runs musl 1.2.6 instead
+      # (docs/development/riscv-musl-stack-alignment.md).
+      - name: Set and check kvm_system's loader and libraries
         run: |
           BIN="$GITHUB_WORKSPACE/build/native-libkvm/kvm_system"
-          readelf -l "$BIN" | grep -q "interpreter: /lib/ld-musl-riscv64xthead.so.1"
+          patchelf --set-interpreter /lib/ld-musl-riscv64.so.1 "$BIN"
+          readelf -l "$BIN" | grep -q "interpreter: /lib/ld-musl-riscv64.so.1"
           ! readelf -A "$BIN" | grep -q v0p7
           for lib in $(patchelf --print-needed "$BIN"); do
             case "$lib" in
@@ -890,7 +893,7 @@ jobs:
             KVM_SYSTEM_SOURCE="$GITHUB_WORKSPACE/build/native-libkvm/kvm_system" \
             scripts/package-rust-kvmapp.sh
 
-      # libc.so, the 4 GCC runtime libs, the 2 T-Head loaders, and libsns_lt6911.so all come from
+      # The 4 GCC runtime libs and libsns_lt6911.so come from
       # this pipeline's own vendor-sdk-stock build (already cached above) -- the real on-device
       # image, not sophgo/host-tools' generic cross-toolchain sysroot (tried first and rejected; see
       # server-rust/native/README.md for the full evidence trail on all 8 files).
@@ -901,12 +904,8 @@ jobs:
       - name: Source the remaining runtime files from our own vendor-sdk-stock build
         run: |
           RUNTIME_DIR="$RUN_ROOT/runtime"
-          mkdir -p "$RUNTIME_DIR/loaders" "$RUNTIME_DIR/kvmapp-dl-lib" "$RUNTIME_DIR/system/usr/lib"
+          mkdir -p "$RUNTIME_DIR/kvmapp-dl-lib" "$RUNTIME_DIR/system/usr/lib"
 
-          scripts/extract-vendor-sdk-stock-file.sh "$RUNTIME_DIR/kvmapp-dl-lib/libc.so" \
-            /lib/libc.so /usr/lib/libc.so \
-            /lib64xthead/lp64d/libc.so /lib64v0p7_xthead/lp64d/libc.so \
-            /usr/lib64xthead/lp64d/libc.so /usr/lib64v0p7_xthead/lp64d/libc.so
           scripts/extract-vendor-sdk-stock-file.sh \
             "$RUNTIME_DIR/kvmapp-dl-lib/libstdc++.so.6.0.28" \
             /lib/libstdc++.so.6.0.28 /usr/lib/libstdc++.so.6.0.28 \
@@ -920,8 +919,6 @@ jobs:
           scripts/extract-vendor-sdk-stock-file.sh "$RUNTIME_DIR/kvmapp-dl-lib/libatomic.so.1.2.0" \
             /lib/libatomic.so.1.2.0 /usr/lib/libatomic.so.1.2.0 \
             /lib64xthead/lp64d/libatomic.so.1.2.0 /lib64v0p7_xthead/lp64d/libatomic.so.1.2.0
-          scripts/extract-vendor-sdk-stock-file.sh \
-            "$RUNTIME_DIR/loaders/ld-musl-riscv64xthead.so.1" /lib/ld-musl-riscv64xthead.so.1
           scripts/extract-vendor-sdk-stock-file.sh "$RUNTIME_DIR/system/usr/lib/libsns_lt6911.so" \
             /mnt/system/usr/lib/libsns_lt6911.so
 

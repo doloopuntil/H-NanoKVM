@@ -7,8 +7,10 @@ last-checked: 2026-11-04
 # riscv64 thread stack alignment
 
 The server, `nanokvm-hwmon` and `kvm_system` run on Buildroot's musl 1.2.6 loader,
-`/lib/ld-musl-riscv64.so.1`, not on the vendor T-Head loader
-`/lib/ld-musl-riscv64xthead.so.1`. This page records why.
+`/lib/ld-musl-riscv64.so.1`. The image no longer ships the vendor T-Head loader
+`/lib/ld-musl-riscv64xthead.so.1` or the vendor `libc.so` in `/kvmapp/server/dl_lib`;
+`kvm_system`, which MaixCDK links for the vendor loader, gets its interpreter set with
+`patchelf` in CI. This page records why.
 
 ## The bug
 
@@ -22,7 +24,7 @@ The RISC-V psABI guarantees a 16-byte-aligned stack, and LLVM relies on it: it m
 compute `sp + 464 + 8` as `(sp + 464) | 8`. On a misaligned stack that address is
 wrong, without any crash at the point where it goes wrong.
 
-Unfixed copies:
+Copies, as of the image that still shipped the vendor files:
 
 | File | Version | `__clone` aligns |
 |---|---|---|

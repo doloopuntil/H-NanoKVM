@@ -1492,27 +1492,9 @@ fn find_busybox_binary() -> Result<PathBuf> {
 }
 
 fn find_musl_loader() -> Result<PathBuf> {
-    for candidate in [
-        "/lib/ld-musl-riscv64v0p7_xthead.so.1",
-        "/lib/ld-musl-riscv64xthead.so.1",
-        "/lib/ld-musl-riscv64.so.1",
-    ] {
-        let path = Path::new(candidate);
-        if path.is_file() {
-            return Ok(path.to_path_buf());
-        }
-    }
-
-    if let Ok(entries) = fs::read_dir("/lib") {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
-                continue;
-            };
-            if name.starts_with("ld-musl-riscv64") && name.ends_with(".so.1") && path.is_file() {
-                return Ok(path);
-            }
-        }
+    let path = Path::new("/lib/ld-musl-riscv64.so.1");
+    if path.is_file() {
+        return Ok(path.to_path_buf());
     }
 
     Err(AppError::Internal(

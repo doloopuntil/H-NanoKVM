@@ -115,7 +115,6 @@ for path in \
 	/mnt/system/ko/soph_vi.ko \
 	/mnt/system/ko/soph_vpss.ko \
 	/mnt/system/usr/lib/libsns_lt6911.so \
-	/lib/ld-musl-riscv64xthead.so.1 \
 	/etc/kvm/system-version.json \
 	/etc/ssh/sshd_config \
 	/etc/ssl/certs/ca-certificates.crt \
@@ -123,7 +122,6 @@ for path in \
 	/kvmapp/server/dl_lib/libgcc_s.so.1 \
 	/kvmapp/server/dl_lib/libgomp.so.1 \
 	/kvmapp/server/dl_lib/libatomic.so.1 \
-	/kvmapp/server/dl_lib/libc.so \
 	/usr/lib/libgomp.so.1 \
 	/usr/lib/libatomic.so.1 \
 	/usr/lib/libstdc++.so.6 \
@@ -224,10 +222,6 @@ verify_matches_staged /kvmapp/server/dl_lib/libkvm.so \
 	"$STAGED_KVMAPP_DIR/server/dl_lib/libkvm.so" libkvm
 verify_matches_staged /kvmapp/server/dl_lib/libkvm_mmf.so \
 	"$STAGED_KVMAPP_DIR/server/dl_lib/libkvm_mmf.so" libkvm-mmf
-verify_sha256 /kvmapp/server/dl_lib/libc.so \
-	fbc494806cad67edbf4584221bdc481593fa04b317d9405cf3418aad9a9500c4 vendor-libc
-verify_sha256 /lib/ld-musl-riscv64xthead.so.1 \
-	e966ce689d386af715ec2ca558a90661731cd875192af91749b52475629cb7d2 xhead-loader
 verify_sha256 /mnt/system/ko/soph_vcodec.ko \
 	"$EXPECTED_SOPH_VCODEC_SHA256" soph-vcodec
 verify_sha256 /mnt/system/ko/soph_jpeg.ko \

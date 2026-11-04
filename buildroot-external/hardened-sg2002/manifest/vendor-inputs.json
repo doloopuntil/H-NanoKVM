@@ -94,9 +94,7 @@
         "libstdc++.so.6.0.28": "9ebc8352014fbb7499194fdca56eb496c51c119b50d08d7b70b96058d3c5be17",
         "libgcc_s.so.1": "4b483b84f730b5e127ee8441cc143d5d90f1a31f0bfb999f94ef834eefa3da8c",
         "libgomp.so.1.0.0": "986f21b24574f0e58672c865b34d9eba102ba45c05f18a608bf612816b84c901",
-        "libatomic.so.1.2.0": "2421e827d033c3a055b973e6fbcf5a78fe987b50dd21e82a422a3728f4d3da3d",
-        "libc.so": "fbc494806cad67edbf4584221bdc481593fa04b317d9405cf3418aad9a9500c4",
-        "ld-musl-riscv64xthead.so.1": "e966ce689d386af715ec2ca558a90661731cd875192af91749b52475629cb7d2"
+        "libatomic.so.1.2.0": "2421e827d033c3a055b973e6fbcf5a78fe987b50dd21e82a422a3728f4d3da3d"
       },
       "status": "local non-redistributable Buildroot package added for recoverable-media tests"
     }
