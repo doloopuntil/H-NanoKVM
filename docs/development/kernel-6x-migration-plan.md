@@ -30,6 +30,7 @@ Nothing here has been run on hardware.
 | Goal | No new closed binaries; keep building everything possible from source (see section 4.4). |
 | Integration shape | **Two `BR2_EXTERNAL` trees** in one build (section 1.1). |
 | Boot payload | **FIT** (kernel + DTBs in one file, the successor of today's `boot.sd`). The FIPs are separate and unchanged in role (section 6.5). |
+| libc | **musl >= 1.2.6** everywhere the server, `nanokvm-hwmon` and `kvm_system` run (section 6.6). Vanilla 1.2.6 is the baseline; a T-Head-flagged rebuild of 1.2.6 is the preferred target if it passes the gates in 6.6. |
 | FIP contents | **Built from source** (`ddr_param.bin`, `cvirtos.bin`, FSBL, OpenSBI, U-Boot). No prebuilt blobs from the licheerv/varyhin packages. |
 
 ### 1.1 The two external trees
@@ -197,7 +198,8 @@ Kernel RAM is 254 MiB; the media region lies inside it and is a reserved node.
 
 Buildroot 2026.05.1, **musl**, SysV init, eudev, BusyBox 1.38 with CVE patches,
 Rust server, React UI, `kvmapp`. Native video code runs on the vendor-provided
-musl "xthead" loader and libc. Image: 32 MiB VFAT `/boot` (FIPs, `boot.sd`,
+musl "xthead" loader and libc (on branch `rust-dependency-updates` these are gone:
+the three processes run on Buildroot's musl 1.2.6 loader, see section 6.6). Image: 32 MiB VFAT `/boot` (FIPs, `boot.sd`,
 flag files), 1.5 GiB ext4 root, exFAT `/data` taking the rest. System updates
 write whole raw images (`boot.vfat`, `rootfs.sd`) to partitions 1 and 2
 (`system_update.rs`); the format is kernel-agnostic.
@@ -208,7 +210,9 @@ Source-built: kernel, osdrv modules, `libkvm`, `libkvm_mmf`, `kvm_system`, the
 cvi_mpi libraries (`libsys libvenc libvdec libvi libvpss libvo libgdc librgn
 libini`, release `693a72a1d52f2e08ea767e0a72905e81f10572a5`, plus the
 `no-vi-dbg-thread` patch), the LT6911 sensor (compiled into `libkvm_mmf`), FSBL,
-OpenSBI, U-Boot, FIP, and the musl loader/runtime from `vendor-sdk-stock`.
+OpenSBI, U-Boot, FIP, and (on this branch) the musl loader/runtime from
+`vendor-sdk-stock`. On `rust-dependency-updates` the vendor loader and `libc.so`
+are no longer extracted or shipped.
 
 Still binary or unlicensed: audio/misc libraries checked into `dl_lib/`
 (`libaac*`, `libcvi_audio`, `libcvi_VoiceEngine`, `libcvi_ssp`, `libcvi_vqe`,
@@ -502,12 +506,79 @@ apart (licheerv's overlap bug). Pick the compression by measuring boot time.
 
 ### 6.6 Toolchain and userland
 
-Keep musl and the vendor xthead loader/libc for the native video binaries; none of
-that depends on kernel headers. `BR2_KERNEL_HEADERS_5_10` becomes `_6_18` (or a
+`BR2_KERNEL_HEADERS_5_10` becomes `_6_18` (or a
 custom header version matching the kernel). Kernel and modules are built with the
 Buildroot toolchain; the media modules must be built with the same compiler as the
 kernel. `BR2_DOWNLOAD_FORCE_CHECK_HASHES=y` requires a hash file for the custom
 kernel version (global patch dir `linux/linux.hash`).
+
+#### musl: required version and the T-Head question
+
+**Why >= 1.2.6 [V, from `rust-dependency-updates`:
+`docs/development/riscv-musl-stack-alignment.md`].** musl's riscv64 `__clone` did
+not round a new thread's stack pointer down to 16 bytes (fixed upstream by commit
+`5e03c03f`, in 1.2.6). Threads start at `sp` 8 mod 16, which the psABI forbids and
+LLVM relies on. Symptoms were silent: corrupted AES-GCM output and an overrun
+AES-CTR loop on a tokio worker (webrtc 0.21), reported by `libkvm`'s signal
+handler as a native-vision crash. The vendor T-Head loader
+(`ld-musl-riscv64xthead.so.1`), the vendor `libc.so` and the Rust 1.99 self-
+contained musl (1.2.5) all have the bug; Buildroot 2026.05.1's musl is 1.2.6.
+
+**State on branch `rust-dependency-updates` [V]** (commits `555eb5d`, `e562d7b`):
+`NanoKVM-Server`, `nanokvm-hwmon` and `kvm_system` run on
+`/lib/ld-musl-riscv64.so.1` (Buildroot musl 1.2.6); `kvm_system`'s interpreter is
+set with `patchelf` in CI; the vendor loader and `dl_lib/libc.so` are no longer
+shipped. The vendor-built native libraries (`libkvm`, `libkvm_mmf`, cvi_mpi, closed
+`dl_lib` files) run unchanged on it (the vendor loader's only extra exports are
+legacy `*64` aliases nothing imports). Tested on the device: Direct, MJPEG and WebRTC.
+This is the **vanilla 1.2.6** option and it already works. Statically linked Rust
+binaries would still carry musl 1.2.5 (R8), so keep everything dynamic.
+
+**Preferred target: musl 1.2.6 rebuilt with the T-Head ISA extensions.** The fix
+comes from 1.2.6's source, so a rebuild keeps it. Benefits are expected to be
+modest (libc string/memory routines and general code generation; an earlier
+comparison of the vendor scalar and vector loaders showed no measurable difference
+for `kvm_system`), so treat it as an optimisation that must earn its place.
+
+How, in Buildroot 2026.05.1 [V for the hooks, U for the ISA string]:
+
+- Musl-only (preferred): `musl.mk` already honours `MUSL_EXTRA_CFLAGS`. Append to it
+  from the Hardened `external.mk`, for example
+  `MUSL_EXTRA_CFLAGS += -march=rv64imafdc_xtheadba_xtheadbb_..._xtheadsync -mtune=thead-c906`
+  (a later `-march` overrides the one in `TARGET_CFLAGS`). Nothing else in the image
+  changes. Keep the loader named `ld-musl-riscv64.so.1`; do **not** reintroduce the
+  `xthead` suffix.
+- Whole system (not preferred): `BR2_riscv_custom` with `BR2_RISCV_ISA_EXTRA`
+  applies the string to every package.
+- GCC must accept the extensions: Buildroot offers GCC 13, 14 and 15; mainline GCC
+  gained `xtheadba/bb/bs/cmo/condmov/fmemidx/mac/memidx/mempair/sync` in 13. The
+  Xuantie GCC 10.2 spelling `xthead` is a bundle; use only the sub-extensions the
+  C906 implements (check against T-Head's C906 documentation and the Xuantie
+  `xthead` set). Confirm with `gcc -march=... -mtune=thead-c906 -c` and that
+  `-mcpu=thead-c906` is accepted if you prefer it [U].
+
+Gates (all must pass before shipping the T-Head build; otherwise stay vanilla):
+
+1. The loader still contains the alignment fix: bytes `c1 99 c1 15` before
+   `88 e1 94 e5` in `__clone` (method in the stack-alignment page).
+2. The documented reproduction (webrtc-rs answerer) connects and streams; run it
+   under `qemu-riscv64 -cpu thead-c906` [I: QEMU has this CPU model; verify the
+   version in use] and on the Lite.
+3. musl's `libc-test` passes on the device or under that QEMU model.
+4. No illegal-instruction faults across a 24 h soak; all supported xthead
+   sub-extensions verified on the Lite, because the Cube and PCIe cannot be tested.
+5. A/B measurement against vanilla 1.2.6 (libc microbenchmarks, then end-to-end FPS
+   and CPU at 1080p). Ship only if the gain justifies the extra variant to maintain.
+
+Other userland pieces keep their toolchains: the Rust server targets generic
+`riscv64gc-unknown-linux-musl` (no T-Head code); the native C/C++ libraries stay
+built by MaixCDK's Xuantie GCC 10.2 with `-march=rv64imafdcxthead` against the
+vendor sysroot headers. Linux headers 6.18 are only an input to building musl.
+
+**Branch dependency.** `rust-dependency-updates` (138 commits past the common
+ancestor `67e5f91`) and `encoder-fixes` / this branch (14 commits past it, including
+the Sophgo Stage B/C middleware move and the encoder fixes) have diverged. The 6.x
+work needs both: merge or rebase them first (Phase 0, step 0).
 
 ## 7. Phased plan
 
@@ -518,6 +589,13 @@ When the system version changes, update the three version places listed in
 `AGENTS.md`.
 
 ### Phase 0: baselines from a working 5.10 Lite (no code changes)
+
+Step 0 (repository, before touching hardware): integrate the two diverged lines,
+`rust-dependency-updates` (musl 1.2.6 loader, webrtc 0.21, UI changes) and
+`encoder-fixes` (Sophgo Stage B/C middleware, encoder fixes). Expect conflicts in
+the workflow, `server-rust/native/README.md`, `hardened-nanokvm-kvmapp`,
+`hardened-sg2002-vendor-runtime`, `S95nanokvm` and the docs. Build and test the
+merged 5.10 image on the Lite first; it is the Phase 0 baseline.
 
 On a running device, save to the repo or release notes:
 
@@ -677,6 +755,8 @@ consider upstreaming it.
 | R5 | Cube/PCIe untested | Tester checklist; keep detection logic close to the 5.10 behaviour. |
 | R6 | licheerv's repo is young (4 commits) and only partly hardware-verified | Treat its patches as inputs, not as proof. |
 | R7 | Two clang-only errors in `cvi_soft_float.c` | Rebuild with GCC. |
+| R8 | A statically linked Rust musl binary carries musl 1.2.5 (stack-alignment bug) | Keep the server, hwmon and tools dynamically linked against `/lib/ld-musl-riscv64.so.1`; check new binaries with the byte pattern in the stack-alignment page. |
+| Q9 | T-Head-flagged musl 1.2.6: does the toolchain accept the extensions, and is it worth shipping? | Section 6.6 gates; vanilla 1.2.6 is the fallback and already works. |
 
 ## Appendix A: trial-build recipe
 
