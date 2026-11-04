@@ -6,16 +6,19 @@ use axum::{
     http::HeaderMap,
     response::IntoResponse,
 };
+use bytes::Bytes;
 use rtc::{
     ice::{mdns::MulticastDnsMode, network_type::NetworkType},
     interceptor::{Attribute, Interceptor, Packet, Slot, StreamInfo, TaggedPacket},
-    media::Sample,
     peer_connection::configuration::media_engine::MIME_TYPE_H264,
     rtcp,
     rtcp::payload_feedbacks::{
         full_intra_request::FullIntraRequest, picture_loss_indication::PictureLossIndication,
     },
-    rtp::extension::{HeaderExtension, playout_delay_extension::PlayoutDelayExtension},
+    rtp::{
+        packetizer::{Packetizer, new_packetizer},
+        sequence::new_random_sequencer,
+    },
     rtp_transceiver::{
         PayloadType,
         rtp_sender::{
@@ -43,12 +46,12 @@ use tracing::{debug, info, warn};
 use webrtc::{
     media_stream::{
         MediaStreamTrack,
-        track_local::{TrackLocal, TrackLocalEvent, static_sample::TrackLocalStaticSample},
+        track_local::{TrackLocal, TrackLocalEvent, static_rtp::TrackLocalStaticRTP},
     },
     peer_connection::{
         MediaEngine, PeerConnection, PeerConnectionBuilder, PeerConnectionEventHandler,
-        RTCConfigurationBuilder, RTCIceCandidateInit, RTCIceConnectionState, RTCIceServer,
-        RTCPeerConnectionIceEvent, RTCSessionDescription, Registry, SettingEngineBuilder,
+        RTCConfigurationBuilder, RTCIceCandidateInit, RTCIceServer, RTCPeerConnectionIceEvent,
+        RTCPeerConnectionState, RTCSessionDescription, Registry, SettingEngineBuilder,
         SrtpProtectionProfile, register_default_interceptors,
     },
     rtp_transceiver::{RTCRtpTransceiverDirection, RtpSender},
@@ -74,6 +77,11 @@ use crate::{
 const SIGNAL_BUFFER: usize = 64;
 const VIDEO_IDLE_CHECK: Duration = Duration::from_secs(1);
 const PLAYOUT_DELAY_URI: &str = "http://www.webrtc.org/experiments/rtp-hdrext/playout-delay";
+// Minimum and maximum delay 0: render frames as they arrive.
+const PLAYOUT_DELAY_ZERO: [u8; 3] = [0; 3];
+const H264_CLOCK_RATE: u32 = 90_000;
+// The MTU TrackLocalStaticSample uses.
+const RTP_MTU: usize = 1200;
 // After the default interceptors, which all sit below 14000.
 const KEYFRAME_REQUEST_SLOT: usize = 14_000;
 
@@ -349,25 +357,18 @@ impl WebRtcManager {
                 info!(bytes = frame.data.len(), "sending first h264 webrtc frame");
             }
 
-            let sample = Sample {
-                data: frame.data,
-                duration: h264_frame_duration(current_h264_screen().fps),
-                ..Sample::new(Instant::now())
-            };
+            let samples = (h264_frame_duration(current_h264_screen().fps).as_secs_f64()
+                * f64::from(H264_CLOCK_RATE)) as u32;
+            let now = Instant::now();
 
             for client in clients {
                 // Not connected yet: the payload type is known only after negotiation.
-                let Some(&payload_type) = client.media.payload_type.get() else {
+                let Some(sending) = client.media.sending.get() else {
                     continue;
                 };
                 if let Err(err) = client
                     .media
-                    .track
-                    .sample_writer(client.media.ssrc, payload_type)
-                    .with_extension(HeaderExtension::PlayoutDelay(PlayoutDelayExtension::new(
-                        0, 0,
-                    )))
-                    .write_sample(&sample)
+                    .write_frame(sending, now, &frame.data, samples)
                     .await
                 {
                     warn!(
@@ -391,10 +392,42 @@ struct WebRtcClient {
 
 /// The sending side of one client, shared with its event handler.
 struct ClientMedia {
-    track: Arc<TrackLocalStaticSample>,
+    track: Arc<TrackLocalStaticRTP>,
     ssrc: u32,
     sender: OnceLock<Arc<dyn RtpSender>>,
-    payload_type: OnceLock<PayloadType>,
+    sending: OnceLock<RtpSending>,
+}
+
+/// Built once the peer connects, from what the browser negotiated. The track keeps the
+/// pre-negotiation extension ids, so packets are made and tagged here instead.
+struct RtpSending {
+    packetizer: std::sync::Mutex<Box<dyn Packetizer>>,
+    playout_delay_id: Option<u8>,
+}
+
+impl ClientMedia {
+    async fn write_frame(
+        &self,
+        sending: &RtpSending,
+        now: Instant,
+        data: &Bytes,
+        samples: u32,
+    ) -> rtc::shared::error::Result<()> {
+        let packets = sending
+            .packetizer
+            .lock()
+            .unwrap_or_else(|err| err.into_inner())
+            .packetize(now, data, samples)?;
+        for mut packet in packets {
+            if let Some(id) = sending.playout_delay_id {
+                packet
+                    .header
+                    .set_extension(id, Bytes::from_static(&PLAYOUT_DELAY_ZERO))?;
+            }
+            self.track.write_rtp(packet).await?;
+        }
+        Ok(())
+    }
 }
 
 impl WebRtcClient {
@@ -430,31 +463,25 @@ impl WebRtcClient {
             .build();
 
         let ssrc = random_ssrc();
-        let track = Arc::new(
-            TrackLocalStaticSample::new(
-                Instant::now(),
-                MediaStreamTrack::new(
-                    "pion-video".to_string(),
-                    "video".to_string(),
-                    "video".to_string(),
-                    RtpCodecKind::Video,
-                    vec![RTCRtpEncodingParameters {
-                        rtp_coding_parameters: RTCRtpCodingParameters {
-                            ssrc: Some(ssrc),
-                            ..Default::default()
-                        },
-                        codec: h264_codec(),
-                        ..Default::default()
-                    }],
-                ),
-            )
-            .map_err(|err| webrtc_error("create h264 track", err))?,
-        );
+        let track = Arc::new(TrackLocalStaticRTP::new(MediaStreamTrack::new(
+            "pion-video".to_string(),
+            "video".to_string(),
+            "video".to_string(),
+            RtpCodecKind::Video,
+            vec![RTCRtpEncodingParameters {
+                rtp_coding_parameters: RTCRtpCodingParameters {
+                    ssrc: Some(ssrc),
+                    ..Default::default()
+                },
+                codec: h264_codec(),
+                ..Default::default()
+            }],
+        )));
         let media = Arc::new(ClientMedia {
             track,
             ssrc,
             sender: OnceLock::new(),
-            payload_type: OnceLock::new(),
+            sending: OnceLock::new(),
         });
 
         let peer: Arc<dyn PeerConnection> = Arc::new(
@@ -501,7 +528,7 @@ impl WebRtcClient {
 fn h264_codec() -> RTCRtpCodec {
     RTCRtpCodec {
         mime_type: MIME_TYPE_H264.to_string(),
-        clock_rate: 90_000,
+        clock_rate: H264_CLOCK_RATE,
         ..Default::default()
     }
 }
@@ -541,39 +568,40 @@ impl PeerConnectionEventHandler for PeerHandler {
         });
     }
 
-    async fn on_ice_connection_state_change(&self, state: RTCIceConnectionState) {
-        if state == RTCIceConnectionState::Connected {
+    // Connected means DTLS is done too; SRTP has no keys before that.
+    async fn on_connection_state_change(&self, state: RTCPeerConnectionState) {
+        if state == RTCPeerConnectionState::Connected {
             tokio::spawn(start_client_media(Arc::clone(&self.media)));
         }
-        debug!(%state, "h264 webrtc ICE connection state changed");
     }
 }
 
 async fn start_client_media(media: Arc<ClientMedia>) {
-    if media.payload_type.get().is_none() {
+    if media.sending.get().is_none() {
         let Some(sender) = media.sender.get() else {
             return;
         };
-        let payload_type = match negotiated_payload_type(sender.as_ref()).await {
-            Ok(payload_type) => payload_type,
+        let sending = match negotiated_sending(sender.as_ref(), media.ssrc).await {
+            Ok(sending) => sending,
             Err(err) => {
-                warn!(error = ?err, "failed to resolve h264 payload type");
+                warn!(error = ?err, "failed to set up h264 rtp sending");
                 return;
             }
         };
-        if media.payload_type.set(payload_type).is_ok() {
+        if media.sending.set(sending).is_ok() {
             tokio::spawn(read_rtcp(Arc::clone(&media.track)));
         }
     }
     manager().start_video_stream();
 }
 
-async fn negotiated_payload_type(sender: &dyn RtpSender) -> Result<PayloadType> {
-    sender
+async fn negotiated_sending(sender: &dyn RtpSender, ssrc: u32) -> Result<RtpSending> {
+    let parameters = sender
         .get_parameters()
         .await
         .map_err(|err| webrtc_error("read h264 sender parameters", err))?
-        .rtp_parameters
+        .rtp_parameters;
+    let payload_type: PayloadType = parameters
         .codecs
         .iter()
         .find(|codec| {
@@ -583,10 +611,32 @@ async fn negotiated_payload_type(sender: &dyn RtpSender) -> Result<PayloadType> 
                 .eq_ignore_ascii_case(MIME_TYPE_H264)
         })
         .map(|codec| codec.payload_type)
-        .ok_or_else(|| AppError::Internal("no negotiated h264 codec".to_string()))
+        .ok_or_else(|| AppError::Internal("no negotiated h264 codec".to_string()))?;
+    // Firefox does not offer playout delay; the packets then go without it.
+    let playout_delay_id = parameters
+        .header_extensions
+        .iter()
+        .find(|ext| ext.uri == PLAYOUT_DELAY_URI)
+        .and_then(|ext| u8::try_from(ext.id).ok());
+    let payloader = h264_codec()
+        .payloader()
+        .map_err(|err| webrtc_error("create h264 payloader", err))?;
+    let packetizer = new_packetizer(
+        Instant::now(),
+        RTP_MTU,
+        payload_type,
+        ssrc,
+        payloader,
+        Box::new(new_random_sequencer()),
+        H264_CLOCK_RATE,
+    );
+    Ok(RtpSending {
+        packetizer: std::sync::Mutex::new(Box::new(packetizer)),
+        playout_delay_id,
+    })
 }
 
-async fn read_rtcp(track: Arc<TrackLocalStaticSample>) {
+async fn read_rtcp(track: Arc<TrackLocalStaticRTP>) {
     // Ends when the peer closes.
     while let Some(event) = track.poll().await {
         let TrackLocalEvent::OnRtcpPacket(packets) = event else {
@@ -743,6 +793,17 @@ mod tests {
         assert_eq!(data[0]["urls"][0], "stun:stun.l.google.com:19302");
         assert!(data[0].get("username").is_none());
         assert!(data[0].get("credential").is_none());
+    }
+
+    #[test]
+    fn playout_delay_constant_is_zero_delay() {
+        use rtc::{
+            rtp::extension::playout_delay_extension::PlayoutDelayExtension,
+            shared::marshal::Marshal,
+        };
+
+        let encoded = PlayoutDelayExtension::new(0, 0).marshal().unwrap();
+        assert_eq!(&encoded[..], &super::PLAYOUT_DELAY_ZERO);
     }
 
     #[test]

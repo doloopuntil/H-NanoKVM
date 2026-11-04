@@ -81,8 +81,15 @@ behaviour. What changed:
 - There is no `signaling_state()`; a pending local or remote description counts as not
   stable.
 - The track has its own SSRC and an H264 codec without fmtp, so it takes the first H264
-  profile the offer and the default codecs share, as 0.17 did. The payload type is read from
-  the sender once ICE connects, and frames go only to clients that have one.
+  profile the offer and the default codecs share, as 0.17 did. Frames go only to clients
+  whose peer connection is connected (ICE and DTLS); 0.21 does not hold senders back
+  until the SRTP keys exist, as 0.17 did.
+- Packets are made by our own packetizer and sent through `TrackLocalStaticRTP`.
+  `TrackLocalStaticSample`'s sample writer tags header extensions with the ids from before
+  negotiation, and the sender drops every packet whose extension id the browser did not
+  negotiate ("Failed to send RTP: extension not found"; found on the device). Once the peer
+  connects, the payload type and the playout-delay id are read from the sender's
+  negotiated parameters; without a negotiated id (Firefox) packets go without the extension.
 - Inbound RTCP stops at the interceptors unless one marks it for the application. A small
   interceptor after the default chain marks PLI and FIR, and `TrackLocal::poll` delivers
   them to `request_h264_keyframe`. The stream ends when the peer closes.
