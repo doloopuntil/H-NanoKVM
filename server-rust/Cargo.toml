@@ -10,7 +10,7 @@ linked-libkvm = []
 
 [dependencies]
 aes = "0.8"
-argon2 = { version = "0.5", features = ["std"] }
+argon2 = "0.6"
 async-stream = "0.3"
 async-trait = "0.1"
 axum = { version = "0.8", features = ["json", "multipart", "ws"] }
@@ -24,18 +24,18 @@ cipher = "0.4"
 data-encoding = "2.11"
 flate2 = "1"
 hmac = "0.12"
+getrandom = "0.4"
 futures-util = { version = "0.3.32", features = ["sink"] }
 md-5 = "0.10"
 nix = { version = "0.31.3", features = ["fs", "mount", "net", "process", "signal", "term"] }
-rand_core = { version = "0.6", features = ["getrandom"] }
 rcgen = "0.14"
 # Types webrtc takes from its sans-I/O core; pinned with webrtc.
 rtc = { version = "=0.21.1", default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_yaml = "0.9"
+serde_norway = "0.9.42"
 sha1 = "0.10"
-sha2 = "0.10"
+sha2 = "0.11"
 subtle = "2.6"
 tar = "0.4"
 thiserror = "2"

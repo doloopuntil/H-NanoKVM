@@ -9,6 +9,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
+use data_encoding::HEXLOWER;
 use flate2::read::GzDecoder;
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
@@ -16,7 +17,8 @@ use serde_json::{Map as JsonMap, Value as JsonValue, json};
 use sha2::{Digest, Sha256};
 use std::{
     ffi::OsString,
-    fs, io,
+    fs,
+    io::{self, Read},
     net::SocketAddr,
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
@@ -2612,8 +2614,15 @@ async fn download_to(url: &str, target: &Path) -> Result<()> {
 fn verify_sha256(path: &Path, expected: &str) -> Result<()> {
     let mut file = fs::File::open(path)?;
     let mut hasher = Sha256::new();
-    io::copy(&mut file, &mut hasher)?;
-    let actual = format!("{:x}", hasher.finalize());
+    let mut buf = [0_u8; 64 * 1024];
+    loop {
+        let n = file.read(&mut buf)?;
+        if n == 0 {
+            break;
+        }
+        hasher.update(&buf[..n]);
+    }
+    let actual = HEXLOWER.encode(&hasher.finalize());
     if actual == expected.to_ascii_lowercase() {
         Ok(())
     } else {
@@ -2817,7 +2826,7 @@ struct ConfigDocument {
     config_path: PathBuf,
     security_path: PathBuf,
     raw: JsonValue,
-    security: serde_yaml::Value,
+    security: serde_norway::Value,
 }
 
 fn load_config_document() -> Result<ConfigDocument> {
@@ -2830,11 +2839,11 @@ fn load_config_document() -> Result<ConfigDocument> {
         .unwrap_or_else(|| Path::new("/root/.picoclaw"))
         .join(".security.yml");
     let security = match fs::read(&security_path) {
-        Ok(data) => serde_yaml::from_slice(&data).map_err(|err| {
+        Ok(data) => serde_norway::from_slice(&data).map_err(|err| {
             AppError::Internal(format!("failed to parse picoclaw security config: {err}"))
         })?,
         Err(err) if err.kind() == io::ErrorKind::NotFound => {
-            serde_yaml::Value::Mapping(serde_yaml::Mapping::new())
+            serde_norway::Value::Mapping(serde_norway::Mapping::new())
         }
         Err(err) => return Err(err.into()),
     };
@@ -2877,7 +2886,11 @@ fn name_occurrence(models: &[JsonValue], index: usize) -> usize {
         .count()
 }
 
-fn is_model_configured(config: &JsonValue, security: &serde_yaml::Value, model_name: &str) -> bool {
+fn is_model_configured(
+    config: &JsonValue,
+    security: &serde_norway::Value,
+    model_name: &str,
+) -> bool {
     if model_name.is_empty() {
         return false;
     }
@@ -2913,7 +2926,7 @@ fn is_model_configured(config: &JsonValue, security: &serde_yaml::Value, model_n
 // A key is in the entry itself (older configs) or in .security.yml under `name:n`.
 fn entry_has_key(
     model: &JsonValue,
-    security: &serde_yaml::Value,
+    security: &serde_norway::Value,
     model_name: &str,
     occurrence: usize,
 ) -> bool {
@@ -2945,7 +2958,7 @@ struct StoredModelConfig {
     key_set: bool,
 }
 
-fn stored_model_config(config: &JsonValue, security: &serde_yaml::Value) -> StoredModelConfig {
+fn stored_model_config(config: &JsonValue, security: &serde_norway::Value) -> StoredModelConfig {
     let model_name = config
         .pointer("/agents/defaults/model_name")
         .and_then(JsonValue::as_str)
@@ -2978,19 +2991,19 @@ fn stored_model_config(config: &JsonValue, security: &serde_yaml::Value) -> Stor
     }
 }
 
-fn security_has_model_key(security: &serde_yaml::Value, model_name: &str, index: usize) -> bool {
+fn security_has_model_key(security: &serde_norway::Value, model_name: &str, index: usize) -> bool {
     let Some(model_list) = security
         .get("model_list")
-        .and_then(serde_yaml::Value::as_mapping)
+        .and_then(serde_norway::Value::as_mapping)
     else {
         return false;
     };
     let keys = [model_name.to_string(), format!("{model_name}:{index}")];
     keys.iter().any(|key| {
         model_list
-            .get(serde_yaml::Value::String(key.clone()))
+            .get(serde_norway::Value::String(key.clone()))
             .and_then(|entry| entry.get("api_keys"))
-            .and_then(serde_yaml::Value::as_sequence)
+            .and_then(serde_norway::Value::as_sequence)
             .map(|items| !items.is_empty())
             .unwrap_or(false)
     })
@@ -3031,7 +3044,11 @@ fn first_entry<'a>(config: &'a JsonValue, model_name: &str) -> Option<&'a JsonVa
         })
 }
 
-fn first_entry_has_key(config: &JsonValue, security: &serde_yaml::Value, model_name: &str) -> bool {
+fn first_entry_has_key(
+    config: &JsonValue,
+    security: &serde_norway::Value,
+    model_name: &str,
+) -> bool {
     first_entry(config, model_name)
         .is_some_and(|entry| entry_has_key(entry, security, model_name, 0))
 }
@@ -3184,18 +3201,18 @@ fn save_json(path: &Path, value: &JsonValue) -> Result<()> {
     Ok(())
 }
 
-fn save_yaml(path: &Path, value: &serde_yaml::Value) -> Result<()> {
+fn save_yaml(path: &Path, value: &serde_norway::Value) -> Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    let data = serde_yaml::to_string(value)
+    let data = serde_norway::to_string(value)
         .map_err(|err| AppError::Internal(format!("failed to encode picoclaw security: {err}")))?;
     fs::write(path, data)?;
     fs::set_permissions(path, fs::Permissions::from_mode(0o600))?;
     Ok(())
 }
 
-fn resolved_pico_token(config: &JsonValue, security: &serde_yaml::Value) -> String {
+fn resolved_pico_token(config: &JsonValue, security: &serde_norway::Value) -> String {
     let security_token = security
         .get("channel_list")
         .and_then(|channels| channels.get("pico"))
@@ -3204,7 +3221,7 @@ fn resolved_pico_token(config: &JsonValue, security: &serde_yaml::Value) -> Stri
                 .and_then(|settings| settings.get("token"))
                 .or_else(|| pico.get("token"))
         })
-        .and_then(serde_yaml::Value::as_str)
+        .and_then(serde_norway::Value::as_str)
         .map(str::trim)
         .filter(|token| !token.is_empty());
     if let Some(token) = security_token {
@@ -3234,88 +3251,88 @@ fn ensure_pico_security_token(doc: &mut ConfigDocument) -> Result<String> {
     Ok(token)
 }
 
-fn set_pico_security_token(security: &mut serde_yaml::Value, token: &str) {
+fn set_pico_security_token(security: &mut serde_norway::Value, token: &str) {
     if !security.is_mapping() {
-        *security = serde_yaml::Value::Mapping(serde_yaml::Mapping::new());
+        *security = serde_norway::Value::Mapping(serde_norway::Mapping::new());
     }
     let root = security.as_mapping_mut().expect("security mapping");
-    let channel_list_key = serde_yaml::Value::String("channel_list".to_string());
+    let channel_list_key = serde_norway::Value::String("channel_list".to_string());
     root.entry(channel_list_key.clone())
-        .or_insert_with(|| serde_yaml::Value::Mapping(serde_yaml::Mapping::new()));
+        .or_insert_with(|| serde_norway::Value::Mapping(serde_norway::Mapping::new()));
     if !root[&channel_list_key].is_mapping() {
         root.insert(
             channel_list_key.clone(),
-            serde_yaml::Value::Mapping(serde_yaml::Mapping::new()),
+            serde_norway::Value::Mapping(serde_norway::Mapping::new()),
         );
     }
 
     let channel_list = root
         .get_mut(&channel_list_key)
-        .and_then(serde_yaml::Value::as_mapping_mut)
+        .and_then(serde_norway::Value::as_mapping_mut)
         .expect("channel_list mapping");
-    let pico_key = serde_yaml::Value::String("pico".to_string());
+    let pico_key = serde_norway::Value::String("pico".to_string());
     channel_list
         .entry(pico_key.clone())
-        .or_insert_with(|| serde_yaml::Value::Mapping(serde_yaml::Mapping::new()));
+        .or_insert_with(|| serde_norway::Value::Mapping(serde_norway::Mapping::new()));
     if !channel_list[&pico_key].is_mapping() {
         channel_list.insert(
             pico_key.clone(),
-            serde_yaml::Value::Mapping(serde_yaml::Mapping::new()),
+            serde_norway::Value::Mapping(serde_norway::Mapping::new()),
         );
     }
 
     let pico = channel_list
         .get_mut(&pico_key)
-        .and_then(serde_yaml::Value::as_mapping_mut)
+        .and_then(serde_norway::Value::as_mapping_mut)
         .expect("pico mapping");
-    let settings_key = serde_yaml::Value::String("settings".to_string());
+    let settings_key = serde_norway::Value::String("settings".to_string());
     pico.entry(settings_key.clone())
-        .or_insert_with(|| serde_yaml::Value::Mapping(serde_yaml::Mapping::new()));
+        .or_insert_with(|| serde_norway::Value::Mapping(serde_norway::Mapping::new()));
     if !pico[&settings_key].is_mapping() {
         pico.insert(
             settings_key.clone(),
-            serde_yaml::Value::Mapping(serde_yaml::Mapping::new()),
+            serde_norway::Value::Mapping(serde_norway::Mapping::new()),
         );
     }
 
     let settings = pico
         .get_mut(&settings_key)
-        .and_then(serde_yaml::Value::as_mapping_mut)
+        .and_then(serde_norway::Value::as_mapping_mut)
         .expect("pico settings mapping");
     settings.insert(
-        serde_yaml::Value::String("token".to_string()),
-        serde_yaml::Value::String(token.to_string()),
+        serde_norway::Value::String("token".to_string()),
+        serde_norway::Value::String(token.to_string()),
     );
 }
 
 fn save_model_secret(
-    security: &mut serde_yaml::Value,
+    security: &mut serde_norway::Value,
     path: &Path,
     model_name: &str,
     index: usize,
     api_key: &str,
 ) -> Result<()> {
     if !security.is_mapping() {
-        *security = serde_yaml::Value::Mapping(serde_yaml::Mapping::new());
+        *security = serde_norway::Value::Mapping(serde_norway::Mapping::new());
     }
     let root = security.as_mapping_mut().expect("security mapping");
-    let model_list_key = serde_yaml::Value::String("model_list".to_string());
+    let model_list_key = serde_norway::Value::String("model_list".to_string());
     root.entry(model_list_key.clone())
-        .or_insert_with(|| serde_yaml::Value::Mapping(serde_yaml::Mapping::new()));
+        .or_insert_with(|| serde_norway::Value::Mapping(serde_norway::Mapping::new()));
     if !root[&model_list_key].is_mapping() {
         root.insert(
             model_list_key.clone(),
-            serde_yaml::Value::Mapping(serde_yaml::Mapping::new()),
+            serde_norway::Value::Mapping(serde_norway::Mapping::new()),
         );
     }
     let model_list = root
         .get_mut(&model_list_key)
-        .and_then(serde_yaml::Value::as_mapping_mut)
+        .and_then(serde_norway::Value::as_mapping_mut)
         .expect("model_list mapping");
-    let mut entry = serde_yaml::Mapping::new();
+    let mut entry = serde_norway::Mapping::new();
     entry.insert(
-        serde_yaml::Value::String("api_keys".to_string()),
-        serde_yaml::Value::Sequence(vec![serde_yaml::Value::String(api_key.to_string())]),
+        serde_norway::Value::String("api_keys".to_string()),
+        serde_norway::Value::Sequence(vec![serde_norway::Value::String(api_key.to_string())]),
     );
     // drop what an older version wrote under another index
     let stale_prefix = format!("{model_name}:");
@@ -3324,8 +3341,8 @@ fn save_model_secret(
             .is_none_or(|key| key != model_name && !key.starts_with(&stale_prefix))
     });
     model_list.insert(
-        serde_yaml::Value::String(format!("{model_name}:{index}")),
-        serde_yaml::Value::Mapping(entry),
+        serde_norway::Value::String(format!("{model_name}:{index}")),
+        serde_norway::Value::Mapping(entry),
     );
 
     if let Some(parent) = path.parent() {
@@ -3678,14 +3695,14 @@ mod tests {
                 }
             ]
         });
-        let none: serde_yaml::Value = serde_yaml::from_str("model_list: {}").unwrap();
+        let none: serde_norway::Value = serde_norway::from_str("model_list: {}").unwrap();
         let stored = stored_model_config(&config, &none);
         assert_eq!(stored.model, "anthropic/claude-haiku-5-5");
         assert_eq!(stored.api_base, "https://api.anthropic.com/v1");
         assert!(!stored.key_set);
 
-        let security: serde_yaml::Value =
-            serde_yaml::from_str("model_list:\n  claude-haiku-5-5:0:\n    api_keys: [k]\n")
+        let security: serde_norway::Value =
+            serde_norway::from_str("model_list:\n  claude-haiku-5-5:0:\n    api_keys: [k]\n")
                 .unwrap();
         assert!(stored_model_config(&config, &security).key_set);
         assert!(first_entry_has_key(&config, &security, "claude-haiku-5-5"));
@@ -3723,15 +3740,15 @@ mod tests {
 
         let config: JsonValue =
             serde_json::from_slice(&fs::read(dir.join("config.json")).unwrap()).unwrap();
-        let security: serde_yaml::Value =
-            serde_yaml::from_slice(&fs::read(dir.join(".security.yml")).unwrap()).unwrap();
+        let security: serde_norway::Value =
+            serde_norway::from_slice(&fs::read(dir.join(".security.yml")).unwrap()).unwrap();
         let stored = stored_model_config(&config, &security);
         assert_eq!(stored.model, "anthropic/x");
         assert_eq!(stored.api_base, "https://api.anthropic.com/v2");
         assert!(stored.key_set);
         assert_eq!(
             security["model_list"]["x:0"]["api_keys"][0],
-            serde_yaml::Value::from("sk-1")
+            serde_norway::Value::from("sk-1")
         );
         assert_eq!(
             config["model_list"][1]["extra_body"],
@@ -3740,11 +3757,11 @@ mod tests {
 
         // a new key replaces it
         update_model_config_file("https://example.test/v1", "sk-2", "anthropic/x").unwrap();
-        let security: serde_yaml::Value =
-            serde_yaml::from_slice(&fs::read(dir.join(".security.yml")).unwrap()).unwrap();
+        let security: serde_norway::Value =
+            serde_norway::from_slice(&fs::read(dir.join(".security.yml")).unwrap()).unwrap();
         assert_eq!(
             security["model_list"]["x:0"]["api_keys"][0],
-            serde_yaml::Value::from("sk-2")
+            serde_norway::Value::from("sk-2")
         );
 
         unsafe { std::env::remove_var("PICOCLAW_HOME") };
@@ -3850,8 +3867,8 @@ mod tests {
     fn model_secret_replaces_keys_written_under_another_index() {
         let dir = std::env::temp_dir().join(format!("picoclaw-secret-{}", std::process::id()));
         let path = dir.join(".security.yml");
-        let mut security: serde_yaml::Value =
-            serde_yaml::from_str("model_list:\n  claude-haiku-5:5:\n    api_keys: [old]\n  other:0:\n    api_keys: [x]\n").unwrap();
+        let mut security: serde_norway::Value =
+            serde_norway::from_str("model_list:\n  claude-haiku-5:5:\n    api_keys: [old]\n  other:0:\n    api_keys: [x]\n").unwrap();
         save_model_secret(&mut security, &path, "claude-haiku-5", 0, "sk-new").unwrap();
         let list = security.get("model_list").unwrap();
         assert!(list.get("claude-haiku-5:5").is_none());
@@ -3991,7 +4008,7 @@ mod tests {
                 }
             }
         });
-        let security: serde_yaml::Value = serde_yaml::from_str(
+        let security: serde_norway::Value = serde_norway::from_str(
             r#"
 channel_list:
   pico:
@@ -4003,7 +4020,7 @@ channel_list:
 
         assert_eq!(resolved_pico_token(&config, &security), "security-token");
         assert_eq!(
-            resolved_pico_token(&config, &serde_yaml::Value::Null),
+            resolved_pico_token(&config, &serde_norway::Value::Null),
             "config-token"
         );
     }

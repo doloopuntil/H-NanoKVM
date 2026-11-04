@@ -1,8 +1,8 @@
 use std::{fs, path::PathBuf};
 
 use argon2::{
-    Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
-    password_hash::{SaltString, rand_core::OsRng},
+    Argon2,
+    password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash},
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -183,10 +183,8 @@ pub fn validate_account_credentials(username: &str, password: &str) -> Result<()
 }
 
 fn hash_password_unchecked(password: &str) -> Result<String> {
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    let hash = argon2
-        .hash_password(password.as_bytes(), &salt)
+    let hash = Argon2::default()
+        .hash_password(password.as_bytes())
         .map_err(|err| AppError::Internal(format!("password hashing failed: {err}")))?;
     Ok(hash.to_string())
 }
@@ -289,6 +287,13 @@ mod tests {
         assert!(verify_password(&hash, "correct horse battery staple").unwrap());
         assert!(!verify_password(&hash, "wrong password").unwrap());
         assert!(hash.starts_with("$argon2"));
+    }
+
+    #[test]
+    fn verifies_hashes_written_by_argon2_0_5() {
+        let hash = "$argon2id$v=19$m=19456,t=2,p=1$ZMRY1LPB1MtSnZUWXI64LQ$LXn662LYRAXhKw8cxWFvGdKa8ZH/Mp+qOaxRG60cFXY";
+        assert!(verify_password(hash, "correct horse battery staple").unwrap());
+        assert!(!verify_password(hash, "wrong password").unwrap());
     }
 
     #[test]

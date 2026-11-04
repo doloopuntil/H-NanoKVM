@@ -6,7 +6,6 @@ use axum::{
 };
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use bytes::Bytes;
-use rand_core::{OsRng, RngCore};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
@@ -29,6 +28,7 @@ use url::{Host, Url};
 use crate::{
     AppError, Result,
     api::account::{require_second_factor, verify_password_limited},
+    auth::token::fill_random,
     config::Config,
     error::ApiResponse,
     http::{middleware::CurrentSession, proxy::ClientInfo},
@@ -1108,7 +1108,7 @@ fn has_boot_signature(sector: &[u8]) -> bool {
 
 fn random_suffix() -> String {
     let mut bytes = [0_u8; 9];
-    OsRng.fill_bytes(&mut bytes);
+    fill_random(&mut bytes);
     URL_SAFE_NO_PAD.encode(bytes)
 }
 

@@ -49,17 +49,15 @@ called by our code); yanked `spin 0.9.8`.
 
 ## Open advisories
 
-| Crate | Advisory | Reachability | Blocker |
-|---|---|---|---|
-| unsafe-libyaml 0.2.11 | RUSTSEC-2024-0449, unmaintained | Via `serde_yaml` (deprecated), used only in `api/picoclaw.rs` | Replace serde_yaml |
+None: `cargo audit` is clean after the webrtc 0.21 and serde_yaml changes below.
 
 ## Held back
 
 | Crate | Current / latest | Reason |
 |---|---|---|
 | tokio-tungstenite | 0.29 / 0.30 | axum's WebSocket support uses tungstenite 0.29, so 0.30 links two tungstenite versions plus a second RustCrypto stack (sha1 0.11, rand 0.10, digest 0.11, chacha20). Wait for axum, or move with the RustCrypto group. Tried and reverted. |
-| aes, cbc, cipher, hmac, md-5, sha1, sha2, argon2, rand_core | 0.8 / 0.1 / 0.4 / 0.12 / 0.10 / 0.10 / 0.10 / 0.5 / 0.6 vs 0.9.4 / 0.2.1 / 0.5.2 / 0.13 / 0.11 / 0.11 / 0.11 / 0.6 / 0.10 | Must move together; webrtc 0.21's `rtc-crypto` still uses aes 0.8, hmac 0.12, sha1 0.10 and md-5 0.10, so moving now links both generations. `argon2` 0.6 and `rand_core` 0.10 also rename features (`std`, `getrandom`; cargo already warns). |
-| serde_yaml | 0.9.34 deprecated | Replace with a maintained crate or a minimal parser; separate task. |
+| hmac, sha1 | 0.12 / 0.10 vs 0.13 / 0.11 | Used by `auth/totp.rs`. webrtc 0.21's `rtc-crypto` uses the same old versions, and axum and tungstenite also use sha1 0.10, so moving ours links both generations. Wait for those to move. |
+| aes, cbc, cipher, md-5 | 0.8 / 0.1 / 0.4 / 0.10 | Only for the CryptoJS password decryption in `auth/compat_crypto.rs`, which branch `drop-password-obfuscation` removes along with these four. |
 
 `cargo machete` flags `md-5` as unused, which is a false positive: `auth/compat_crypto.rs`
 uses `md5::Md5`. No other unused dependencies.
@@ -99,6 +97,24 @@ Stability (from the 0.21.1 crate source and changelog):
 - Still pre-1.0: 0.17 to 0.21 is four breaking releases, and the changelog only starts
   at 0.20.0 (2026-07-31). Hence the exact pin; later 0.x bumps should be smaller.
 
+## serde_yaml, sha2, argon2, rand_core
+
+- `serde_yaml` (deprecated, source of RUSTSEC-2024-0449 via `unsafe-libyaml`) is replaced
+  by `serde_norway` 0.9.42, a fork with the same API on the maintained
+  `unsafe-libyaml-norway`. Used by `config.rs` (the server config) and `api/picoclaw.rs`.
+  `serde_yaml_ng` was rejected because it still links `unsafe-libyaml`; `serde-saphyr` is
+  pure Rust but has no `Value` type, which `picoclaw.rs` edits in place.
+- `sha2` 0.10 to 0.11: hashers no longer implement `io::Write` and digests no longer
+  format with `{:x}`, so `picoclaw.rs` reads in a loop and both hex sites use
+  `data_encoding::HEXLOWER`.
+- `argon2` 0.5 to 0.6: `hash_password` generates the salt itself. Default parameters are
+  unchanged (19 MiB, t=2, p=1). A test checks a hash written by 0.5 still verifies.
+- `rand_core` 0.6 is no longer a direct dependency: 0.10 dropped `OsRng`, and the five call
+  sites only need OS bytes, so `auth::token::fill_random` calls `getrandom` 0.4 directly.
+
+These add no second `digest` generation: `digest` 0.11 was already linked. Binary size
+is unchanged (+8 bytes on the aarch64 host build).
+
 ## Size
 
 Host x86_64 release binary (not the image target):
@@ -115,6 +131,7 @@ Host aarch64 Linux release binary, `video-stack` base:
 |---|---|
 | webrtc 0.17 | 8,475,736 |
 | webrtc 0.21.1 | 7,689,392 (-9.3%) |
+| serde_norway, sha2 0.11, argon2 0.6, getrandom | 7,689,400 |
 
 bcrypt 0.19 adds a second `cipher`/`crypto-common` generation, which accounts for part of
 the growth. The riscv numbers could not be measured: `ring` needs a RISC-V C cross
@@ -130,10 +147,13 @@ compiler (`riscv64-linux-musl-gcc`) that was not available. nix 0.31 was compile
 4. Legacy bcrypt password verification, and certificate generation (`generate_self_signed_cert`).
 5. webrtc 0.21: video in Chrome, Firefox and Safari, a second viewer joining (keyframe on
    PLI), ICE over eth0, USB and WireGuard, STUN/TURN, and reconnect after a network drop.
+6. serde_norway: the server config loads and saves unchanged, and PicoClaw's
+   `.security.yml` keeps its model keys and token. Sign-in with an existing account
+   (argon2 0.6), and an update that checks SHA-256 (sha2 0.11).
 
 ## Next steps
 
-1. Add `deny.toml` with documented ignores for the two open advisories, and a CI step.
-2. Replace serde_yaml.
-3. The RustCrypto group once `rtc-crypto` moves to the new generation, then
+1. Add `deny.toml` and a CI step, so new advisories and duplicate versions show up
+   without a manual audit.
+2. hmac and sha1 once `rtc-crypto`, axum and tungstenite move to the new generation, and
    tokio-tungstenite once axum's WebSocket stack matches.

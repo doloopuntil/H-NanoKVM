@@ -8,9 +8,8 @@ use std::{
 };
 
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use rand_core::{OsRng, RngCore};
 
-use crate::{AppError, Result};
+use crate::{AppError, Result, auth::token::fill_random};
 
 /// Write `data` to `path` atomically with mode 0600.
 ///
@@ -100,7 +99,7 @@ fn ensure_no_symlink_components(path: &Path) -> Result<()> {
 
 fn random_tmp_suffix() -> String {
     let mut bytes = [0_u8; 8];
-    OsRng.fill_bytes(&mut bytes);
+    fill_random(&mut bytes);
     URL_SAFE_NO_PAD.encode(bytes)
 }
 

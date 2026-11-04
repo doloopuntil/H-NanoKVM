@@ -229,7 +229,7 @@ impl Config {
             .unwrap_or_else(|_| PathBuf::from(DEFAULT_CONFIG_PATH));
         let mut config = if path.exists() {
             let data = fs::read_to_string(&path)?;
-            serde_yaml::from_str::<Config>(&data).map_err(|err| {
+            serde_norway::from_str::<Config>(&data).map_err(|err| {
                 AppError::Config(format!("failed to parse {}: {err}", path.display()))
             })?
         } else {
@@ -243,7 +243,7 @@ impl Config {
         let path = std::env::var("NANOKVM_CONFIG")
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from(DEFAULT_CONFIG_PATH));
-        let data = serde_yaml::to_string(self)
+        let data = serde_norway::to_string(self)
             .map_err(|err| AppError::Config(format!("failed to serialize config: {err}")))?;
         write_0600_atomic(&path, data.as_bytes())?;
         Ok(())

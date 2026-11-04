@@ -1,5 +1,6 @@
 use axum::{Json, extract::State, response::IntoResponse};
 use base64::{Engine as _, engine::general_purpose::STANDARD};
+use data_encoding::HEXLOWER;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256, Sha512};
 use std::{
@@ -2837,7 +2838,7 @@ fn hash_file(path: &Path) -> Result<FileHashes> {
     }
 
     Ok(FileHashes {
-        sha256: format!("{:x}", sha256.finalize()),
+        sha256: HEXLOWER.encode(&sha256.finalize()),
         sha512: STANDARD.encode(sha512.finalize()),
     })
 }

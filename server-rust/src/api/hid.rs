@@ -1,5 +1,4 @@
 use axum::{Json, response::IntoResponse};
-use rand_core::{OsRng, RngCore};
 use serde::{Deserialize, Serialize};
 use std::{
     fs, io,
@@ -12,6 +11,7 @@ use tokio::time;
 
 use crate::{
     AppError, Result,
+    auth::token::fill_random,
     error::ApiResponse,
     system::command::{AllowedCommand, run_allowed},
     ws::hid as hid_ws,
@@ -532,7 +532,7 @@ fn validate_key_label(label: &str) -> Result<()> {
 
 fn new_shortcut_id() -> String {
     let mut bytes = [0_u8; 16];
-    OsRng.fill_bytes(&mut bytes);
+    fill_random(&mut bytes);
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 

@@ -6,7 +6,6 @@ use axum::{
     http::HeaderMap,
     response::IntoResponse,
 };
-use rand_core::{OsRng, RngCore};
 use rtc::{
     ice::{mdns::MulticastDnsMode, network_type::NetworkType},
     interceptor::{Attribute, Interceptor, Packet, Slot, StreamInfo, TaggedPacket},
@@ -64,6 +63,7 @@ use crate::{
         },
         system_firewall,
     },
+    auth::token::fill_random,
     config::Config,
     hdmi_idle,
     http::proxy::ClientInfo,
@@ -507,7 +507,9 @@ fn h264_codec() -> RTCRtpCodec {
 }
 
 fn random_ssrc() -> u32 {
-    OsRng.next_u32()
+    let mut bytes = [0_u8; 4];
+    fill_random(&mut bytes);
+    u32::from_ne_bytes(bytes)
 }
 
 struct PeerHandler {
