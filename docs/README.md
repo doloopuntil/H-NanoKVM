@@ -39,6 +39,7 @@ For people running the device.
 - [Web UI layout rules](development/web-ui-layout-rules.md), including the copy rules
 - [CI image build](development/ci-image-build.md): rebuilding the SD image from source
 - [Testing](development/testing.md)
+- [Rust dependency audit](development/dependency-audit.md)
 - [Native runtime libraries](../server-rust/native/README.md): provenance of every native file
 - [AGENTS.md](../AGENTS.md): commands and rules for coding agents
 
