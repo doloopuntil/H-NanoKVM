@@ -128,6 +128,13 @@ export const System = ({ section, setIsLocked }: SystemProps) => {
             <div className="flex flex-col gap-6">
               {certificateBlocked && <Alert type="warning" showIcon title={certificateBlocked} />}
 
+              <SettingSection title={t('settings.device.sections.connectivity')}>
+                <Ssh />
+                <Mdns />
+              </SettingSection>
+
+              <SectionDivider />
+
               <SettingSection title={t('settings.system.sections.webInterface')}>
                 <Tls />
                 <Certificate
@@ -141,13 +148,6 @@ export const System = ({ section, setIsLocked }: SystemProps) => {
 
               <SettingSection title={t('settings.network.trustedProxies.section')}>
                 <TrustedProxies />
-              </SettingSection>
-
-              <SectionDivider />
-
-              <SettingSection title={t('settings.device.sections.connectivity')}>
-                <Ssh />
-                <Mdns />
               </SettingSection>
             </div>
           )}
