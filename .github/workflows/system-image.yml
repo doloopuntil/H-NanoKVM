@@ -39,7 +39,7 @@ jobs:
   # Just the two pinned checkouts (SDK, host-tools) plus the tracked patch. The kernel and module
   # jobs need nothing the stock build produces, so they start from this and run alongside it.
   vendor-sdk-source:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - name: Checkout
@@ -87,7 +87,7 @@ jobs:
   # only the files it reads, small enough to cache, so a cache hit skips the stock build.
   vendor-sdk:
     needs: [vendor-sdk-source]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
       - name: Checkout
@@ -184,7 +184,7 @@ jobs:
   # server-rust/native/README.md) -- the vendor-sdk-stock patch above never reaches the code that
   # actually runs; this is the job that does.
   build-native-libkvm:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     steps:
       - name: Checkout
@@ -416,7 +416,7 @@ jobs:
   # and "re-run failed jobs" reuses these artifacts.
   build-kernel:
     needs: [vendor-sdk-source]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     env:
       RUN_ROOT: ${{ github.workspace }}/build/rc12-run
@@ -527,7 +527,7 @@ jobs:
   # /mnt/system/ko tree (the modules in the three manifests, plus provenance records).
   build-modules:
     needs: [vendor-sdk-source, build-kernel]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     env:
       RUN_ROOT: ${{ github.workspace }}/build/rc12-run
@@ -765,7 +765,7 @@ jobs:
 
   build-image:
     needs: [vendor-sdk, build-native-libkvm, build-kernel, build-modules]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # 360 minutes is the hard cap on GitHub-hosted runners. If this pipeline doesn't fit, the only
     # fix is a self-hosted runner, not a bigger number.
     timeout-minutes: 360
