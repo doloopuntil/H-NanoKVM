@@ -40,6 +40,8 @@ For people running the device.
 - [CI image build](development/ci-image-build.md): rebuilding the SD image from source
 - [Testing](development/testing.md)
 - [Rust dependency audit](development/dependency-audit.md)
+- [riscv64 thread stack alignment](development/riscv-musl-stack-alignment.md): why the
+  server runs on Buildroot's musl loader
 - [Native runtime libraries](../server-rust/native/README.md): provenance of every native file
 - [AGENTS.md](../AGENTS.md): commands and rules for coding agents
 

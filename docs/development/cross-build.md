@@ -75,7 +75,7 @@ This matches CI closely and needs no RISC-V toolchain on the host:
    bind-mounted target directory fails with "File exists (os error 17)" on macOS.
 
 Check the result: a PIE executable with interpreter
-`/lib/ld-musl-riscv64xthead.so.1`, `NEEDED` entries `libkvm.so`, `libgcc_s.so.1`
+`/lib/ld-musl-riscv64.so.1`, `NEEDED` entries `libkvm.so`, `libgcc_s.so.1`
 and `libc.so`, and RUNPATH `/kvmapp/server/dl_lib`.
 
 ### Native prerequisites
@@ -187,7 +187,7 @@ Expected shape:
 
 ```text
 ELF 64-bit LSB pie executable, UCB RISC-V, dynamically linked,
-interpreter /lib/ld-musl-riscv64xthead.so.1
+interpreter /lib/ld-musl-riscv64.so.1
 ```
 
 If `file build/kvmapp-rust/kvmapp/server/NanoKVM-Server` reports `x86-64`, stop

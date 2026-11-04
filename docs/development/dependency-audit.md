@@ -93,6 +93,9 @@ behaviour. What changed:
 - Inbound RTCP stops at the interceptors unless one marks it for the application. A small
   interceptor after the default chain marks PLI and FIR, and `TrackLocal::poll` delivers
   them to `request_h264_keyframe`. The stream ends when the peer closes.
+- On the device, DTLS and SRTP failed until the server moved off the vendor musl loader,
+  whose riscv64 `__clone` leaves thread stacks misaligned; see
+  [riscv64 thread stack alignment](riscv-musl-stack-alignment.md). Not a webrtc-rs bug.
 
 Stability (from the 0.21.1 crate source and changelog):
 
