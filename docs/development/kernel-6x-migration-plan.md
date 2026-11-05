@@ -1,7 +1,7 @@
 ---
 status: plan (the kernel migration is not started; the musl/T-Head userland part is on main)
 applies-to: system 0.4.0 -> next system release on Linux 6.18
-last-checked: 2026-11-05 (reconciled against origin/main 21c22f2)
+last-checked: 2026-11-05 (reconciled against origin/main 21c22f2; osdrv trial re-run on 6.18.29)
 ---
 
 # Plan: migrate from the vendor 5.10 kernel to mainline 6.18
@@ -32,6 +32,7 @@ Nothing here has been run on hardware.
 | Boot payload | **FIT** (kernel + DTBs in one file, the successor of today's `boot.sd`). The FIPs are separate and unchanged in role (section 6.5). |
 | libc | **musl 1.2.6 built for the T-Head extensions**, already on `main` (`MUSL_EXTRA_CFLAGS` in `external.mk`, commit `aebe6ec`); the vendor loader is gone. Remaining: device-side gates (section 6.6). |
 | T-Head ISA extensions | Enable them across the userland where the risk is manageable (section 6.7); **not** in the kernel or boot firmware. One feature set, one switch. |
+| Kernel optimisation | **`CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE` (`-O2`)**, not the vendor 5.10's `-Os`. The out-of-tree media modules inherit it. Measured cost in section 6.4.1. |
 | FIP contents | **Built from source** (`ddr_param.bin`, `cvirtos.bin`, FSBL, OpenSBI, U-Boot). No prebuilt blobs from the licheerv/varyhin packages. |
 
 ### 1.1 The two external trees
@@ -228,8 +229,9 @@ before relying on them.
 
 ## 4. The licheerv tree (what it gives us)
 
-`buildroot-external-licheervnano`, 4 commits, MIT. Mainline stack for the
-LicheeRV Nano B/E/W/WE. [V]
+`buildroot-external-licheervnano`
+(<https://github.com/lone0/buildroot-external-licheervnano>), 4 commits, MIT.
+Mainline stack for the LicheeRV Nano B/E/W/WE. [V]
 
 ### 4.1 Provides
 
@@ -282,36 +284,49 @@ records a hardware run on 2026-06-02; the TPU DT patch still says unverified).
 | Linux | 6.18.29 |
 | U-Boot / OpenSBI | 2025.10 / 1.8.1 |
 | varyhin/licheervnano | `3bf6e4d22956d8d36644abac4b514d68ef8f0e81` |
+| lone0/buildroot-external-licheervnano | `019ffc864bb9353f823afc98f7dd9fdacfa935cb` (HEAD on 2026-11-05) |
 
 osdrv and cvi_mpi must stay on the same Sophgo release; the ioctl ABI between
 them is what keeps the prebuilt closed libraries working.
 
 ## 5. Trial-build evidence (osdrv against 6.18) [V]
 
-Method (Appendix A): the pinned osdrv with the 8 local patches applied, built
-out of tree against Linux **v6.18** (not .29), clang 18, riscv `defconfig`,
-`-Werror` removed, `-ferror-limit=0`. Compile-level only; nothing was linked or
-run, and the config is not the real one.
+Method (Appendix A), re-run 2026-11-05: the pinned osdrv with the 8 local patches
+applied, built out of tree against Linux **6.18.29 with licheerv's 20 patches**,
+riscv `defconfig` plus licheerv's `linux.fragment`, with **both** clang 18.1 and
+GCC 14.2 (Buildroot's compiler family). Module `-Werror` removed; the
+`.remove`-signature error downgraded to a warning (see below). Each module is
+built and linked on its own (`KBUILD_MODPOST_WARN=1`), so cross-module symbols
+show as warnings. Compile and link only; nothing was loaded or run.
 
-First pass (no shim): about 50 hard errors, all mechanical. With a 20-line
-compat header (Appendix B) plus `DEFINE_SEMAPHORE(x)` -> `(x, 1)`:
+With the compat header (Appendix B) plus `DEFINE_SEMAPHORE(x)` -> `(x, 1)`, GCC
+and clang agree except where noted:
 
 | Module | Result |
 | --- | --- |
-| `sys` `vi` `vpss` `vcodec` `jpeg` `rtos_cmdqu` `fast_image` | compile clean |
+| `vi` `vpss` `vcodec` `jpeg` `rtos_cmdqu` `fast_image` `ive` | build a `.ko` with both compilers |
+| `sys` | builds with GCC; clang rejects two `()` prototypes (`common/sys.c:269,278`, `-Werror=strict-prototypes`): write `(void)` |
 | `base` | needs vendor header `tee_cv_private.h` |
 | `cif` (soph_mipi_rx) | needs vendor header `pinctrl-mars.h` (FMUX offsets) |
-| `snsr_i2c` | `struct i2c_adapter.i2c_idx` and `I2C_M_WRSTOP` (vendor I2C core extensions) |
-| `vo` | legacy GPIO API (`of_get_named_gpio_flags`, `GPIOF_*`), `pinctrl-mars.h` |
-| `dwa` | missing `of_device_id` include |
+| `snsr_i2c` | `struct i2c_adapter.i2c_idx` (4 uses) and `I2C_M_WRSTOP` (vendor I2C core extensions; the shim's `0` only hides the latter) |
+| `vo` | legacy GPIO API (`of_get_named_gpio_flags`, `OF_GPIO_ACTIVE_LOW`, `GPIOF_*`), `pinctrl-mars.h` |
+| `dwa` | missing `of_device_id` include; `chip/cv181x/ldc_test.c` includes `ion/ion.h` (test code: drop it from the build) |
 | `rgn` | `<stdbool.h>` include (kernel builds with `-nostdinc`) |
 | `mon` | `hrtimer_init` removed -> `hrtimer_setup` (manual) |
-| `cvi_vc_drv` | missing `of_device_id` include; `set_fs/get_fs/mm_segment_t` in `vdi_osal.c`; two errors in `rcKernel/cvi_float_point/cvi_soft_float.c` (maybe clang-specific; try GCC) |
+| `fb` | `FBINFO_DEFAULT` removed (it was `0`; delete it) |
+| `cvi_vc_drv` | missing `of_device_id` include; `set_fs/get_fs/mm_segment_t` in `vdi_osal.c`; clang only: a `()` prototype in `jpeg/jdi/linux/jdi.c:425`. `cvi_soft_float.c` defines its own `do_div()`, which clashes with the kernel macro once the force-included shim pulls in `asm-generic/div64.h`; the file compiles without the shim with both compilers, so rename the function or keep the shim off that file (R7 is not clang-specific) |
 
-Kernel symbols the modules need that 6.18 does not export [V by `nm`]:
-`arch_sync_dma_for_device` (used by the carveout allocator), `do_exit`,
-`sched_setscheduler`. For the objects that compiled, everything else unresolved
-was intra-osdrv (modules that failed to compile were not checked).
+`.remove` returning `int`: all 15 platform drivers still have the 5.10 signature.
+GCC 14 (`-Wincompatible-pointer-types`) and clang 18
+(`-Wincompatible-function-pointer-types`) reject this by default; the trial only
+gets past it by downgrading the diagnostic. Every driver needs the one-line change.
+
+Kernel symbols the modules need that 6.18.29 does not export [V by `nm` and modpost]:
+`arch_sync_dma_for_device` (`sys`, the carveout allocator) and `sched_setscheduler`
+(`vi`, `vpss`, `dwa`, `vo`, `cvi_vc_drv`; use the exported `sched_set_fifo` /
+`sched_set_fifo_low`). `do_exit` **is** exported (`kernel/exit.c`, `EXPORT_SYMBOL`);
+the earlier v6.18 trial was wrong about it. Everything else unresolved is
+intra-osdrv; a full check needs `base`, `vo`, `rgn` and `cvi_vc_drv` to compile.
 
 Headers that live only in the vendor kernel tree: `pinctrl-mars.h`
 (`pinctrl-cv181x.h` in the SDK), `tee_cv_private.h`, `linux/streamline_annotate.h`.
@@ -458,8 +473,35 @@ Kernel configuration to carry over from the vendor defconfig
 `I2C_GPIO` (module), `CFG80211`/`MAC80211` + AIC8800, `BT`, `RFKILL`, `IPV6`,
 `SERIAL_8250_DW` (5 UARTs), `LEDS_GPIO`, `INPUT_EVDEV`, `MAGIC_SYSRQ`. Hardening:
 `SECURITY_DMESG_RESTRICT=y`, `USER_NS=n`, `SLAB_FREELIST_RANDOM=y`,
-`INIT_ON_ALLOC_DEFAULT_ON=y` (no ION line). Start from a lean config; licheerv's
-Image is about 27 MiB with the arch default config.
+`INIT_ON_ALLOC_DEFAULT_ON=y` (no ION line), `CC_OPTIMIZE_FOR_PERFORMANCE=y`
+(6.4.1). Start from a lean config; licheerv's Image is about 27 MiB with the arch
+default config.
+
+#### 6.4.1 Optimising for speed (`-O2`) and what it costs
+
+The vendor 5.10 kernel is built `-Os` (`CC_OPTIMIZE_FOR_SIZE=y` in
+`support/sg2002/kernel/5.10.265/reference/vendor-sdk-build.config`). The 6.18
+kernel uses `-O2`, the mainline default. The osdrv modules are built with the
+kernel's flags, so the IRQ handlers and buffer management on the capture and
+encode path get `-O2` too.
+
+Measured 2026-11-05 [V]: 6.18.29 + licheerv patches, riscv `defconfig` +
+licheerv `linux.fragment`, GCC 14.2, the same `.config` except the optimisation
+choice:
+
+| | `-O2` | `-Os` | Difference |
+| --- | --- | --- | --- |
+| vmlinux `text` | 12.92 MB | 10.30 MB | +2.62 MB (+25%) |
+| vmlinux `data` + `bss` | 6.67 MB | 6.68 MB | none |
+| `Image` | 27.40 MB | 25.28 MB | +2.12 MB |
+| `Image`, `xz -6` | 7.33 MB | 5.97 MB | +1.37 MB |
+
+RAM: kernel text is resident, so expect roughly **+2.6 MB** of the 256 MiB with
+this fat config, less with the lean NanoKVM config (the ratio should hold, the
+absolute number shrinks with it). Data and bss do not change. `/boot`: about
++1.4 MB in a compressed FIT. Neither cost blocks anything; record the lean-config
+numbers in Phase 1 and the boot-time and streaming CPU difference in Phase 3. If
+RAM gets tight, `-Os` is a one-line revert.
 
 ### 6.5 Boot chain, image size and updates
 
@@ -592,9 +634,8 @@ rewritten commits: the musl 1.2.6 loader, webrtc 0.21 and UI work, and the Sophg
 Stage B/C middleware, no-ION kernel, carveout allocator, `soph_tpu` removal and encoder
 fixes. A diff of the kernel patches, `support/sg2002` and the middleware script
 between `encoder-fixes` and `main` shows only `kvm_system` clean-ups and one sample
-file. All 6.x work should start from `main`. This plan branch (`ccr-b5bfed53-3r59bp`)
-still sits on the old `encoder-fixes` history; carry the plan over by cherry-picking
-its commits onto `main`.
+file. All 6.x work starts from `main`; the plan now lives on branch
+`kernel-6x-migration`, on top of `origin/main`.
 
 ### 6.7 T-Head extensions across the stack
 
@@ -753,7 +794,7 @@ Order: `soph_sys` -> `soph_base` -> `soph_mipi_rx` + `soph_snsr_i2c` -> `soph_vi
    `M=` build per module directory, `depmod`). Re-base the 8 osdrv patches onto the
    compat header approach; add `compat618.h` (Appendix B) with `-include`.
 2. Copy `pinctrl-mars.h` and `tee_cv_private.h`; stub `streamline_annotate.h`;
-   fix the per-module items in section 5; replace the three unexported symbols.
+   fix the per-module items in section 5; replace the two unexported symbols.
 3. `snsr_i2c`: replace `i2c_idx` and `I2C_M_WRSTOP` with an in-tree mechanism
    (the LT6911 bus is I2C4; the module probably only needs to bind the right
    adapter by name or DT phandle) [U: read `snsr_i2c.c` closely].
@@ -861,7 +902,7 @@ consider upstreaming it.
 | R4 | No A/B slots; a bad 6.18 image cannot roll back | Fresh-flash-only preview first; document SD recovery. |
 | R5 | Cube/PCIe untested | Tester checklist; keep detection logic close to the 5.10 behaviour. |
 | R6 | licheerv's repo is young (4 commits) and only partly hardware-verified | Treat its patches as inputs, not as proof. |
-| R7 | Two clang-only errors in `cvi_soft_float.c` | Rebuild with GCC. |
+| R7 | ~~Two clang-only errors in `cvi_soft_float.c`~~ | **Resolved** (2026-11-05 trial): not clang-specific; its local `do_div()` clashes with the kernel macro pulled in by the force-included shim. Rename it or keep the shim off that file. |
 | R9 | T-Head code generation defect or an extension missing on some silicon revision | Instruction probe on the Lite, QEMU `thead-c906`, vector comparisons, soak; one-variable rollback (section 6.7). |
 | R8 | A statically linked Rust musl binary carries musl 1.2.5 (stack-alignment bug) | The server build now links dynamically (`--dynamic-linker=/lib/ld-musl-riscv64.so.1` in `build-linked-libkvm.sh`). Keep it so; check new binaries with the byte pattern in the stack-alignment page. |
 | Q10 | Which Buildroot packages get T-Head builds, and globally or per package | Phase T measurements (section 6.7). |
@@ -869,18 +910,30 @@ consider upstreaming it.
 
 ## Appendix A: trial-build recipe
 
-Prepare (any Linux host with clang/LLVM 18 or newer, `ld.lld`, `flex`, `bison`,
-`libssl-dev`, `libelf-dev`):
+Last run 2026-11-05 in an `ubuntu:24.04` container (arm64 host) with clang 18,
+`lld-18`, `llvm-18`, `gcc-14-riscv64-linux-gnu`, `flex`, `bison`, `bc`,
+`libssl-dev`, `libelf-dev`. There is no host `gcc` in that image, so GCC builds
+pass `HOSTCC=clang`.
 
 ```sh
-# kernel tree at the target tag; osdrv at the pin
-git clone --depth 1 --branch v6.18 https://github.com/torvalds/linux.git linux
+# kernel at the target release, with the licheerv patches; osdrv at the pin
+curl -fLO https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.29.tar.xz
+mkdir linux && tar -xf linux-6.18.29.tar.xz -C linux --strip-components=1
+for p in <licheerv>/board/licheervnano/linux/*.patch; do
+  patch -d linux -p1 --forward --fuzz=0 < "$p"
+done
 git init osdrv && git -C osdrv remote add origin https://github.com/sophgo/osdrv.git
 git -C osdrv fetch --depth 1 origin 1b3a49649d18488ecf54fb4fcb6c27599e433fdc
 git -C osdrv checkout FETCH_HEAD
 
-make -C linux O=$PWD/kbuild LLVM=1 ARCH=riscv defconfig
-make -C linux O=$PWD/kbuild LLVM=1 ARCH=riscv -j"$(nproc)" modules_prepare vmlinux
+# TC is LLVM=1, or CROSS_COMPILE=riscv64-linux-gnu- HOSTCC=clang
+make -C linux O=$PWD/kbuild $TC ARCH=riscv defconfig
+(cd linux && ARCH=riscv scripts/kconfig/merge_config.sh -m -O ../kbuild \
+   ../kbuild/.config <licheerv>/board/licheervnano/linux.fragment)
+make -C linux O=$PWD/kbuild $TC ARCH=riscv olddefconfig
+make -C linux O=$PWD/kbuild $TC ARCH=riscv -j"$(nproc)" modules_prepare vmlinux
+# external modules read Module.symvers; without `make modules` only vmlinux.symvers exists
+cp kbuild/vmlinux.symvers kbuild/Module.symvers
 
 # apply the patches in the order of rebuild-vendor-external-modules-5.10-baseline.sh
 P=buildroot-external/hardened-sg2002/board/sg2002/kernel/patches
@@ -891,28 +944,33 @@ done
 # DEFINE_SEMAPHORE(x) -> (x, 1)
 grep -rlE 'DEFINE_SEMAPHORE\(' osdrv --include=*.c --include=*.h |
   xargs sed -i -E 's/DEFINE_SEMAPHORE\((\w+)\)/DEFINE_SEMAPHORE(\1, 1)/'
+# module Makefiles add -Werror after KCFLAGS; drop it
+find osdrv -name Makefile | xargs sed -i -E 's/-Werror( |$)/\1/g'
+# modules pull each other's symbols through KBUILD_EXTRA_SYMBOLS; seed empty files
+for d in osdrv/interdrv/ osdrv/interdrv/*/; do : > $d/Module.symvers; done
 ```
 
-Build one module directory (repeat for `sys base rtos_cmdqu fast_image cif snsr_i2c
-vi vpss dwa vo rgn mon vcodec jpeg cvi_vc_drv`):
+Build one module directory (repeat for `sys base rtos_cmdqu fast_image cif
+snsr_i2c vi vpss dwa vo rgn mon ive fb vcodec jpeg cvi_vc_drv`). `EXTRA` is
+`-ferror-limit=0 -Wno-error=incompatible-function-pointer-types` for clang and
+`-fmax-errors=0 -Wno-error=incompatible-pointer-types` for GCC (this only gets
+past the `.remove` signature; see section 5):
 
 ```sh
-export CVIARCH_L=cv181x CHIP_ARCH_L=cv181x
 cd osdrv/interdrv/<dir>
-make -k -C <linux> O=<kbuild> LLVM=1 ARCH=riscv M=$PWD \
-  CVIARCH=CV181X CHIP_ARCH=CV181X SDK_VER=musl_riscv64 MW_VER=v2 \
-  BUILD_PATH=/nonexistent KERNEL_DIR=<linux> CVIARCH_L=cv181x CHIP_ARCH_L=cv181x \
-  KCFLAGS="-ferror-limit=0 -Wno-error -w -Wno-incompatible-function-pointer-types \
-           -include <stubs>/compat618.h -I<stubs>" modules
+make -k -C <linux> O=<kbuild> $TC ARCH=riscv M=$PWD PWD=$PWD \
+  CVIARCH=CV181X CHIP_ARCH=CV181X CVIARCH_L=cv181x CHIP_ARCH_L=cv181x \
+  SDK_VER=musl_riscv64 MW_VER=v2 BUILD_PATH=/nonexistent KERNEL_DIR=<linux> \
+  KBUILD_MODPOST_WARN=1 \
+  KCFLAGS="$EXTRA -Wno-error -include <stubs>/compat618.h -I<stubs>" modules
 ```
 
 `<stubs>` also holds a `linux/streamline_annotate.h` with no-op macros
 (`ANNOTATE_GREEN`, `ANNOTATE_NAME_CHANNEL`, `ANNOTATE_CHANNEL_COLOR`,
-`ANNOTATE_CHANNEL_END`) and a `generated/utsversion.h` defining `UTS_VERSION`
-(only needed because `modules_prepare` does not generate it). Remove `-Werror`
-from the module Makefiles if clang's warnings interfere. For missing-symbol
-checks, compare `llvm-nm -u` of the objects against `llvm-nm --defined-only` of
-the same objects and `vmlinux.symvers`.
+`ANNOTATE_CHANNEL_END`). Building `vmlinux` generates `generated/utsversion.h`,
+so no stub is needed for it. modpost prints at most 10 unresolved symbols per
+module; for the full list compare `llvm-nm -u` of the objects against
+`llvm-nm --defined-only` of all osdrv objects and `vmlinux.symvers`.
 
 ## Appendix B: compat shim used in the trial
 
@@ -930,7 +988,7 @@ the same objects and `vmlinux.symvers`.
 #include <linux/sched/prio.h>
 #include <linux/time64.h>
 #include <linux/device/class.h>
-#include "generated/utsversion.h"
+#include <generated/utsversion.h>
 #define PDE_DATA(i) pde_data(i)
 #define MAX_USER_RT_PRIO MAX_RT_PRIO
 #define del_timer_sync(t) timer_delete_sync(t)
@@ -944,7 +1002,10 @@ Not covered by the shim, to be done in the sources: `.remove` returning `void`
 (different signature), `set_fs/get_fs` in `vdi_osal.c` (use `kernel_read`),
 the legacy GPIO calls in `vo_mipi_tx.c` (gpiod), `of_device_id` includes
 (`<linux/mod_devicetable.h>`), `<stdbool.h>` -> `<linux/types.h>`,
-`MODULE_IMPORT_NS("DMA_BUF")` where `dma_buf_*` is used.
+`MODULE_IMPORT_NS("DMA_BUF")` where `dma_buf_*` is used, `FBINFO_DEFAULT`
+(delete), `()` prototypes -> `(void)`, `sched_setscheduler` -> `sched_set_fifo*`.
+Do not force-include the shim into `cvi_soft_float.c` (its `do_div()` clashes
+with the kernel macro).
 
 ## Appendix C: session start checklist
 
@@ -959,5 +1020,5 @@ the legacy GPIO calls in `vo_mipi_tx.c` (gpiod), `of_device_id` includes
    `development`, `faq`) and `.../NanoKVM_PCIe/` (`introduction`, `quick_start`).
    The sandbox needs `wiki.sipeed.com` allowed under the environment's network
    access.
-4. Re-run the Appendix A trial against `v6.18.29` before porting, to refresh the
-   error list.
+4. The Appendix A trial was last re-run against `6.18.29` on 2026-11-05 (section
+   5). Re-run it after bumping the kernel or osdrv pin.
