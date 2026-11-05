@@ -278,6 +278,12 @@ if readelf -A "$KVM_SYSTEM" 2>/dev/null | grep -Fq 'v0p7'; then
 	die "kvm_system is built for the vector extension"
 fi
 
+MUSL_LIBC="$TMP_DIR/libc.so"
+debugfs -R "dump /usr/lib/libc.so $MUSL_LIBC" "$IMAGE" >/dev/null 2>&1 || \
+	die "could not extract /usr/lib/libc.so"
+readelf -A "$MUSL_LIBC" 2>/dev/null | grep -Fq 'xtheadmempair' || \
+	die "/usr/lib/libc.so is not built for the T-Head extensions"
+
 KVMAPP_S95="$TMP_DIR/kvmapp-S95nanokvm"
 ETC_S95="$TMP_DIR/etc-S95nanokvm"
 debugfs -R "dump /kvmapp/system/init.d/S95nanokvm $KVMAPP_S95" "$IMAGE" >/dev/null 2>&1 || \

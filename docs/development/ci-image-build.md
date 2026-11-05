@@ -133,7 +133,13 @@ architecture tag and needs only `libstdc++`, `libgcc_s` and `libc`.
 Nothing we build uses the vector extension (XTheadVector). The MaixCDK projects
 and the middleware are compiled with `-mcpu=c906fd -march=rv64imafdcxthead`
 instead of `c906fdv`/`v0p7`, and link against the scalar `lib64xthead`
-multilib. An audit of the image before this change found vector instructions
+multilib. Buildroot builds musl with the same T-Head scalar extensions as the
+Rust server (`MUSL_EXTRA_CFLAGS` in `buildroot-external/hardened-sg2002/external.mk`),
+and the rootfs validator checks `/usr/lib/libc.so`'s architecture tag; the rest of
+Buildroot's userspace is plain `rv64gc`. Under QEMU's C906 model this musl runs
+25–36% fewer instructions in `memcpy`, `memmove` and `memset` on 4 KB and larger
+buffers, and 5–15% fewer in `malloc`, `qsort`, `strcmp` and `strlen`.
+An audit of the image before this change found vector instructions
 only in the vector loader's `memcpy`, used by `kvm_system` alone; on the scalar
 loader `kvm_system` used the same CPU (7 vs 8 ticks per minute).
 

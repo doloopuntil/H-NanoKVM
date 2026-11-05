@@ -1,5 +1,9 @@
 include $(sort $(wildcard $(BR2_EXTERNAL_HARDENED_SG2002_PATH)/package/*/*.mk))
 
+# Build musl for the C906's T-Head scalar extensions, the set the Rust server uses.
+# A package -march replaces the toolchain wrapper's; the rest of userspace stays rv64gc.
+MUSL_EXTRA_CFLAGS += -march=$(GCC_TARGET_ARCH)_xtheadba_xtheadbb_xtheadbs_xtheadcondmov_xtheadmemidx_xtheadmempair_xtheadmac
+
 # Security-maintenance VEX for the exact raw.11 configuration. Keep these
 # entries tied to source/config evidence; do not use them to suppress an
 # unresolved vulnerable code path.

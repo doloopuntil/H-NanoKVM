@@ -43,7 +43,11 @@ longer links with the non-PIC `crt1.o`.
   T-Head extensions (`THEAD_FEATURES`: `xtheadba`, `xtheadbb`, `xtheadbs`,
   `xtheadcondmov`, `xtheadmemidx`, `xtheadmempair`, `xtheadmac`). LLVM, and so
   `rustc`, has no C906 CPU model, so they are enabled one by one; `rustc` warns
-  that they are unstable. The binary does not run on other RISC-V cores.
+  that they are unstable. The binary does not run on other RISC-V cores. C code
+  that crates compile with `cc` (ring) gets the same extensions through
+  `CFLAGS_riscv64gc_unknown_linux_musl`, which needs clang 17 or newer; Debian
+  bookworm's clang 14 rejects them, so build in `rust:1-trixie` or override that
+  variable. Rust's prebuilt standard library stays plain `rv64gc`.
 - **Optimisation.** The release profile optimises for size (`opt-level = "z"`)
   because the init script runs the server from tmpfs, so its size is RAM. The
   crates that video passes through (TLS, WebSocket, SRTP and their ciphers) are

@@ -33,10 +33,12 @@ done
 export NANOKVM_SYSROOT_LIB="$SYSROOT_LIB"
 export RUSTC_BOOTSTRAP="${RUSTC_BOOTSTRAP:-1}"
 export CC_riscv64gc_unknown_linux_musl="${CC_riscv64gc_unknown_linux_musl:-clang}"
-export CFLAGS_riscv64gc_unknown_linux_musl="${CFLAGS_riscv64gc_unknown_linux_musl:---target=riscv64-unknown-linux-musl -march=rv64gc -mabi=lp64d}"
 # The SG2002's C906 core has the T-Head extensions; LLVM has no C906 CPU model,
 # so they are enabled one by one (rustc warns that they are unstable).
 THEAD_FEATURES="+xtheadba,+xtheadbb,+xtheadbs,+xtheadcondmov,+xtheadmemidx,+xtheadmempair,+xtheadmac"
+THEAD_MARCH="rv64gc_xtheadba_xtheadbb_xtheadbs_xtheadcondmov_xtheadmemidx_xtheadmempair_xtheadmac"
+# C code built by cc (ring) gets the same extensions; needs clang 17 or newer.
+export CFLAGS_riscv64gc_unknown_linux_musl="${CFLAGS_riscv64gc_unknown_linux_musl:---target=riscv64-unknown-linux-musl -march=$THEAD_MARCH -mabi=lp64d}"
 export RUSTFLAGS="-Z unstable-options \
 -C target-feature=-crt-static,$THEAD_FEATURES \
 -C link-self-contained=no \
