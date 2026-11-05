@@ -1040,7 +1040,7 @@ fn has_gpt_header(header: &[u8]) -> bool {
 
 fn has_mbr_partition_table(sector: &[u8]) -> bool {
     has_boot_signature(sector)
-        && sector[446..510].chunks_exact(16).any(|entry| {
+        && sector[446..510].as_chunks::<16>().0.iter().any(|entry| {
             let boot_flag = entry[0];
             let partition_type = entry[4];
             let start_lba = u32::from_le_bytes([entry[8], entry[9], entry[10], entry[11]]);

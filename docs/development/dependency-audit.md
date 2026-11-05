@@ -38,9 +38,9 @@ and `cargo test` (396 passed) on the host.
 
 On the `video-stack` base, the webrtc 0.21.1 rewrite (see below) also passed `cargo fmt
 --check` and `cargo test` (396 passed) in a Linux arm64 container. Clippy with Rust 1.99.1
-reports three lints that are already on the base (`system_update/local.rs` unused
+reported three lints that were already on the base (`system_update/local.rs` unused
 `Engine` import, `download.rs` `chunks_exact`, `picoclaw.rs` `result_large_err`), none in
-`webrtc_stream.rs`. On macOS the crate does not build since nix 0.31: `api/vm.rs`
+`webrtc_stream.rs`; they are fixed, and clippy is clean again. On macOS the crate does not build since nix 0.31: `api/vm.rs`
 multiplies `statvfs` fields that are `u32` and `u64` there.
 
 Fixed by the `cargo update`: rustls RUSTSEC-2026-0285, -0346, -0348, -0349;

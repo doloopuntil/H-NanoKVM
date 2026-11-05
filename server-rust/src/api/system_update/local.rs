@@ -8,7 +8,7 @@ use axum::{
     http::{HeaderMap, header},
     response::IntoResponse,
 };
-use base64::{Engine as _, engine::general_purpose::STANDARD};
+use base64::engine::general_purpose::STANDARD;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{

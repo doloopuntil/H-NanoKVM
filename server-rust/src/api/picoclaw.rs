@@ -2258,17 +2258,14 @@ async fn refresh_runtime_status() -> RuntimeStatus {
         return runtime_status();
     }
 
-    let status = match ensure_runtime_ready().await {
-        Ok(status) => status,
-        Err(status) => status,
-    };
+    let status = ensure_runtime_ready().await;
     set_runtime_status(status);
     runtime_status()
 }
 
-async fn ensure_runtime_ready() -> std::result::Result<RuntimeStatus, RuntimeStatus> {
+async fn ensure_runtime_ready() -> RuntimeStatus {
     if !is_installed() {
-        return Err(RuntimeStatus {
+        return RuntimeStatus {
             ready: false,
             installed: false,
             installing: false,
@@ -2283,7 +2280,7 @@ async fn ensure_runtime_ready() -> std::result::Result<RuntimeStatus, RuntimeSta
             last_error: None,
             checked_at: Some(now_string()),
             current_session: None,
-        });
+        };
     }
 
     if resolve_config_path()
@@ -2297,7 +2294,7 @@ async fn ensure_runtime_ready() -> std::result::Result<RuntimeStatus, RuntimeSta
     let settings = match load_gateway_settings() {
         Ok(settings) => settings,
         Err(err) => {
-            return Err(RuntimeStatus {
+            return RuntimeStatus {
                 ready: false,
                 installed: true,
                 installing: false,
@@ -2312,12 +2309,12 @@ async fn ensure_runtime_ready() -> std::result::Result<RuntimeStatus, RuntimeSta
                 last_error: Some(err.to_string()),
                 checked_at: Some(now_string()),
                 current_session: None,
-            });
+            };
         }
     };
 
     if !settings.model_configured {
-        return Err(RuntimeStatus {
+        return RuntimeStatus {
             ready: false,
             installed: true,
             installing: false,
@@ -2332,13 +2329,13 @@ async fn ensure_runtime_ready() -> std::result::Result<RuntimeStatus, RuntimeSta
             last_error: None,
             checked_at: Some(now_string()),
             current_session: None,
-        });
+        };
     }
 
     let host_port = format!("{}:{}", settings.gateway_host, settings.gateway_port);
     let timeout = Duration::from_millis(DEFAULT_CONNECT_TIMEOUT_MS);
     match time::timeout(timeout, TcpStream::connect(&host_port)).await {
-        Ok(Ok(_)) => Ok(RuntimeStatus {
+        Ok(Ok(_)) => RuntimeStatus {
             ready: true,
             installed: true,
             installing: false,
@@ -2353,8 +2350,8 @@ async fn ensure_runtime_ready() -> std::result::Result<RuntimeStatus, RuntimeSta
             last_error: None,
             checked_at: Some(now_string()),
             current_session: None,
-        }),
-        Ok(Err(err)) => Err(RuntimeStatus {
+        },
+        Ok(Err(err)) => RuntimeStatus {
             ready: false,
             installed: true,
             installing: false,
@@ -2369,8 +2366,8 @@ async fn ensure_runtime_ready() -> std::result::Result<RuntimeStatus, RuntimeSta
             last_error: Some(err.to_string()),
             checked_at: Some(now_string()),
             current_session: None,
-        }),
-        Err(_) => Err(RuntimeStatus {
+        },
+        Err(_) => RuntimeStatus {
             ready: false,
             installed: true,
             installing: false,
@@ -2385,7 +2382,7 @@ async fn ensure_runtime_ready() -> std::result::Result<RuntimeStatus, RuntimeSta
             last_error: Some("gateway connection timed out".to_string()),
             checked_at: Some(now_string()),
             current_session: None,
-        }),
+        },
     }
 }
 
