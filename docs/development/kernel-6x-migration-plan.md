@@ -31,6 +31,7 @@ Nothing here has been run on hardware.
 | Integration shape | **Two `BR2_EXTERNAL` trees** in one build (section 1.1). |
 | Boot payload | **FIT** (kernel + DTBs in one file, the successor of today's `boot.sd`). The FIPs are separate and unchanged in role (section 6.5). |
 | libc | **musl >= 1.2.6** everywhere the server, `nanokvm-hwmon` and `kvm_system` run (section 6.6). Vanilla 1.2.6 is the baseline; a T-Head-flagged rebuild of 1.2.6 is the preferred target if it passes the gates in 6.6. |
+| T-Head ISA extensions | Enable them across the userland where the risk is manageable (section 6.7); **not** in the kernel or boot firmware. One feature set, one switch. |
 | FIP contents | **Built from source** (`ddr_param.bin`, `cvirtos.bin`, FSBL, OpenSBI, U-Boot). No prebuilt blobs from the licheerv/varyhin packages. |
 
 ### 1.1 The two external trees
@@ -544,18 +545,18 @@ How, in Buildroot 2026.05.1 [V for the hooks, U for the ISA string]:
 
 - Musl-only (preferred): `musl.mk` already honours `MUSL_EXTRA_CFLAGS`. Append to it
   from the Hardened `external.mk`, for example
-  `MUSL_EXTRA_CFLAGS += -march=rv64imafdc_xtheadba_xtheadbb_..._xtheadsync -mtune=thead-c906`
-  (a later `-march` overrides the one in `TARGET_CFLAGS`). Nothing else in the image
+  `MUSL_EXTRA_CFLAGS += -march=rv64imafdc_xtheadba_xtheadbb_xtheadbs_xtheadcondmov_xtheadmemidx_xtheadmempair_xtheadmac`
+  (the feature set of section 6.7; a later `-march` overrides the one in
+  `TARGET_CFLAGS`). Nothing else in the image
   changes. Keep the loader named `ld-musl-riscv64.so.1`; do **not** reintroduce the
   `xthead` suffix.
 - Whole system (not preferred): `BR2_riscv_custom` with `BR2_RISCV_ISA_EXTRA`
   applies the string to every package.
 - GCC must accept the extensions: Buildroot offers GCC 13, 14 and 15; mainline GCC
-  gained `xtheadba/bb/bs/cmo/condmov/fmemidx/mac/memidx/mempair/sync` in 13. The
-  Xuantie GCC 10.2 spelling `xthead` is a bundle; use only the sub-extensions the
-  C906 implements (check against T-Head's C906 documentation and the Xuantie
-  `xthead` set). Confirm with `gcc -march=... -mtune=thead-c906 -c` and that
-  `-mcpu=thead-c906` is accepted if you prefer it [U].
+  gained the `xthead*` sub-extensions in 13 [I]. The Xuantie GCC 10.2 spelling
+  `xthead` is a bundle; the sub-extension list in 6.7 is the one the Rust server
+  already runs on the device. Confirm the chosen GCC accepts the string with
+  `gcc -march=... -c` [U].
 
 Gates (all must pass before shipping the T-Head build; otherwise stay vanilla):
 
@@ -579,6 +580,76 @@ vendor sysroot headers. Linux headers 6.18 are only an input to building musl.
 ancestor `67e5f91`) and `encoder-fixes` / this branch (14 commits past it, including
 the Sophgo Stage B/C middleware move and the encoder fixes) have diverged. The 6.x
 work needs both: merge or rebase them first (Phase 0, step 0).
+
+### 6.7 T-Head extensions across the stack
+
+Goal: use the C906's T-Head instructions wherever the risk is manageable. "Manageable"
+means: we build the component from source; a wrong instruction fails loudly (SIGILL),
+not silently; a test suite or soak exercises it; it can be switched off by changing
+one variable; and it is not in the boot path.
+
+**Feature set (single source of truth).** The set the Rust server is already built
+with and has run on the device [V: `server-rust/scripts/build-linked-libkvm.sh`
+`THEAD_FEATURES`, documented in `docs/development/cross-build.md`]:
+`xtheadba xtheadbb xtheadbs xtheadcondmov xtheadmemidx xtheadmempair xtheadmac`.
+Define it once (an ISA string for GCC and a `+feature` list for `rustc`/LLVM) and
+reuse it everywhere. Deliberately **not** included:
+
+- `xtheadvector` (0.7.1): not used by this project; needs kernel support and a
+  different toolchain; out of scope.
+- `xtheadcmo`, `xtheadsync`: privileged or intrinsic-only; compilers do not emit
+  them for general code. The kernel uses cache-maintenance through its errata
+  alternatives (`ERRATA_THEAD_CMO`), unrelated to compiler flags.
+- `xtheadfmemidx`: optional; add only if a benchmark shows a gain (the Rust build
+  omits it today).
+
+**Inventory.**
+
+| Layer | State today | Plan | Risk |
+| --- | --- | --- | --- |
+| Native C/C++ (`libkvm`, `libkvm_mmf`, `kvm_system`, cvi_mpi libs) | Already built with `-mcpu=c906fd -march=rv64imafdcxthead` by MaixCDK's Xuantie GCC 10.2 (scalar multilib, no `v0p7`) [V: `ci-image-build.md`, `build-sdk-middleware.sh`] | Keep as is | none |
+| Rust server, `nanokvm-hwmon` | The 7 features above via `-C target-feature`; `rustc` warns they are unstable [V] | Keep; make the feature list come from the shared definition; check every Rust binary in the image uses it | low |
+| musl 1.2.6 | Vanilla (Buildroot) | Rebuild with the feature set (section 6.6 gates) | low to medium |
+| Buildroot userland (BusyBox, OpenSSL, curl, ssh, nft/iptables, wireguard-tools, avahi, ntp, hostapd, wpa_supplicant) | Plain `rv64imafdc` | Per package, chosen by measurement (see below); a global ISA string only after musl is proven | low per package, medium globally |
+| Go binaries (`tailscaled`) and anything prebuilt | Not buildable with T-Head features (Go's RISC-V profiles use the standard Zb* extensions, which the C906 lacks) | Exclude | n/a |
+| Closed `dl_lib` blobs | As shipped | Cannot change | n/a |
+| Linux 6.18 and the out-of-tree media modules | The vendor 5.10 kernel is built plain (`rv64ima` + `fd`/`c`) [V: vendor `arch/riscv/Makefile`]; mainline derives `-march` from Kconfig | **Exclude.** The kernel gets T-Head behaviour at runtime via errata alternatives (`MAE`, `CMO`). Revisit only if profiling shows meaningful kernel CPU time in the streaming path; `memcpy` there is hand-written assembly and would not change | not worth it |
+| FSBL, OpenSBI, U-Boot, RTOS | Plain or SDK flags | **Exclude.** Boot path; a fault here bricks the device and there is no measurable gain | n/a |
+
+**Where it should pay off (hypotheses to measure, not claims).** Existing device
+numbers: ChaCha20-Poly1305 22.6 MB/s and AES-128-GCM 5.1 MB/s at `-O3` with the
+extensions (3.3 and 9.3 MB/s at `"z"` for AES and ChaCha) [V: `cross-build.md`];
+the cost of opt level and extensions is mixed in those figures. Candidates in the
+Buildroot userland: BusyBox `gzip` and `sha256sum` (system updates stream a
+gzip image and hash it, on one core), OpenSSL (TLS for `curl`, SSH), and the login
+password hash (argon2 in the Rust server; time a login).
+
+**Method.**
+
+1. One definition of the feature set, consumed by: `external.mk`
+   (`MUSL_EXTRA_CFLAGS`, optional per-package `<PKG>_CFLAGS`), the Rust build script,
+   and any MaixCDK flag override. Setting it empty yields the vanilla build.
+2. CI builds both variants; the vanilla variant keeps the generic-CPU QEMU test
+   (the stack-alignment page already reproduces under `qemu-riscv64`), the T-Head
+   variant runs the same tests under `-cpu thead-c906` [I: QEMU has this model]
+   and, for the Rust crates, `cargo test` cross-built and run on the Lite.
+3. Instruction probe: a small program per extension (one instruction each) run on
+   the Lite, catching SIGILL, so a silicon or revision surprise is known before
+   shipping. Repeat on a Cube or PCIe through a tester if one is available (same
+   SoC and core, so no difference is expected).
+4. Per component: benchmark before and after (microbenchmark, then the end-to-end
+   metric), 24 h soak, and compare outputs against known-good vectors (SRTP, TLS,
+   gzip/sha256 of a fixed image).
+5. Ship a component's T-Head build only if the gain is measurable; keep the
+   others vanilla. The rollback is changing the variable and rebuilding.
+
+Known risks: a compiler or assembler defect in `xthead` code generation (silent
+miscompile; caught by tests and vector comparison), misaligned access from
+`xtheadmempair` (compilers pair only aligned accesses; verify in the disassembly of
+hot paths), larger code under `-Os`, and a mixed GCC 10 / GCC 15 / LLVM toolchain
+where all three must agree on the instruction encodings. They do for the 7 features
+today, because Rust/LLVM output already runs beside Xuantie GCC 10 libraries on the
+device [V by operation, I as proof].
 
 ## 7. Phased plan
 
@@ -614,6 +685,24 @@ On a running device, save to the repo or release notes:
 7. Dump the vendor DTB (`dtc -I dtb`) for the 14 or so media nodes.
 
 Exit: a `docs/development/` note or release artifact holding these captures.
+
+### Phase T: T-Head userland on the 5.10 baseline (before the kernel move)
+
+Userland work is independent of the kernel, so do it on the known-good merged 5.10
+image: a failure then points at the toolchain, not at the new kernel.
+
+1. T0: measure the Phase 0 userland metrics (server CPU at 1080p in Direct, MJPEG
+   and WebRTC; login time; update gunzip + sha256 time; TLS handshake; boot time).
+2. T1: define the shared feature set; build musl 1.2.6 with it; run the section 6.6
+   gates.
+3. T2: apply to the Buildroot packages that measurement points at (BusyBox,
+   OpenSSL first); same tests.
+4. T3: only if T1 and T2 are clean, evaluate a global ISA string
+   (`BR2_riscv_custom` + `BR2_RISCV_ISA_EXTRA`) against per-package flags.
+5. T4: align every Rust binary with the shared list; optionally test `xtheadfmemidx`.
+
+Exit: a recorded decision per component (T-Head or vanilla) with its numbers, one
+switch that reverts all of it, and a soak-tested image.
 
 ### Phase 1: 6.18 boots on the Lite, no video
 
@@ -755,7 +844,9 @@ consider upstreaming it.
 | R5 | Cube/PCIe untested | Tester checklist; keep detection logic close to the 5.10 behaviour. |
 | R6 | licheerv's repo is young (4 commits) and only partly hardware-verified | Treat its patches as inputs, not as proof. |
 | R7 | Two clang-only errors in `cvi_soft_float.c` | Rebuild with GCC. |
+| R9 | T-Head code generation defect or an extension missing on some silicon revision | Instruction probe on the Lite, QEMU `thead-c906`, vector comparisons, soak; one-variable rollback (section 6.7). |
 | R8 | A statically linked Rust musl binary carries musl 1.2.5 (stack-alignment bug) | Keep the server, hwmon and tools dynamically linked against `/lib/ld-musl-riscv64.so.1`; check new binaries with the byte pattern in the stack-alignment page. |
+| Q10 | Which Buildroot packages get T-Head builds, and globally or per package | Phase T measurements (section 6.7). |
 | Q9 | T-Head-flagged musl 1.2.6: does the toolchain accept the extensions, and is it worth shipping? | Section 6.6 gates; vanilla 1.2.6 is the fallback and already works. |
 
 ## Appendix A: trial-build recipe
