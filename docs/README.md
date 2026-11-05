@@ -39,6 +39,7 @@ For people running the device.
 - [Web UI layout rules](development/web-ui-layout-rules.md), including the copy rules
 - [CI image build](development/ci-image-build.md): rebuilding the SD image from source
 - [Kernel 6.x migration plan](development/kernel-6x-migration-plan.md): moving from the vendor 5.10 kernel to mainline 6.18 (plan, not implemented)
+- [Kernel 6.x Phase 0 baseline](development/kernel-6x-phase0-baseline.md): what the 5.10 Lite uses and how fast it is, for comparison
 - [Testing](development/testing.md)
 - [Rust dependency audit](development/dependency-audit.md)
 - [riscv64 thread stack alignment](development/riscv-musl-stack-alignment.md): why the

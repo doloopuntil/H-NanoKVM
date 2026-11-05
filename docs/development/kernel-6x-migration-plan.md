@@ -1,5 +1,5 @@
 ---
-status: plan (the kernel migration is not started; the musl/T-Head userland part is on main)
+status: plan (Phase 0 done; the musl/T-Head userland part is on main)
 applies-to: system 0.4.0 -> next system release on Linux 6.18
 last-checked: 2026-11-05 (reconciled against origin/main 21c22f2; osdrv trial re-run on 6.18.29)
 ---
@@ -32,6 +32,7 @@ Nothing here has been run on hardware.
 | Boot payload | **FIT** (kernel + DTBs in one file, the successor of today's `boot.sd`). The FIPs are separate and unchanged in role (section 6.5). |
 | libc | **musl 1.2.6 built for the T-Head extensions**, already on `main` (`MUSL_EXTRA_CFLAGS` in `external.mk`, commit `aebe6ec`); the vendor loader is gone. Remaining: device-side gates (section 6.6). |
 | T-Head ISA extensions | Enable them across the userland where the risk is manageable (section 6.7); **not** in the kernel or boot firmware. One feature set, one switch. |
+| Framebuffer | **None.** No `cvifb` boot-logo reservation (7.8 MiB) and no `soph_fb`: the NanoKVM has no display output, and the OLED is an I2C device driven from user space by `kvm_system`. |
 | Kernel optimisation | **`CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE` (`-O2`)**, not the vendor 5.10's `-Os`. The out-of-tree media modules inherit it. Measured cost in section 6.4.1. |
 | FIP contents | **Built from source** (`ddr_param.bin`, `cvirtos.bin`, FSBL, OpenSBI, U-Boot). No prebuilt blobs from the licheerv/varyhin packages. |
 
@@ -150,13 +151,14 @@ GPIO numbers hard-coded in `S15kvmhwd` and `server-rust/src/api/vm.rs`:
 - beta: reset key 505 (A25), power key 503 (A23), power LED 504 (A24), OLED reset 502 (A22).
 - pcie adds HDMI-chip reset **451**.
 - Wi-Fi enable 506 (A26).
-- These are vendor-kernel sysfs numbers (port A base 480 [I]; 451 is port B, pin 3
-  [I]). **They will not be stable under 6.18** (section 6.4).
+- These are vendor-kernel sysfs numbers (port A base 480, B 448, C 416, D 384, PWR
+  352; 451 is port B pin 3 [V, Phase 0]). **They will not be stable under 6.18**
+  (section 6.4).
 
 HDMI bridge variant, probed on **I2C bus 4** (the camera I2C, pads
 `PWR_GPIO6/8` = `IIC4`): `0x2c` = `c`, `0x2b` without `0x44` = `d`, `0x2b` with
-`0x44` = `ux`, none = `ue`. Written to `/etc/kvm/hdmi_version`. The Lite will have
-one of these; find out which with a manual probe in Phase 0.
+`0x44` = `ux`, none = `ue`. Written to `/etc/kvm/hdmi_version`. The Lite used for
+testing has `ux` [V, Phase 0].
 
 Vendor DTS facts worth keeping [V]: `mipi_rx { snsr-reset = <&porte 1 ...> }`;
 bit-bang `i2c5@gpio` on A15/A27; `spi4@gpio` on A22/A23/A24/A25 (these pads are
@@ -176,7 +178,10 @@ BootROM -> **vendor FSBL** (with `fsbl-boot-guard.patch` and
 Vendor memory map (`reference/cvi_board_memmap.h`, `memmap.py`) [V]:
 DRAM `0x80000000`, 256 MiB. FreeRTOS `0x8fe00000` (2 MiB). ION/media region
 **75 MiB at `0x8b300000`** (just below FreeRTOS). Boot logo 7.8 MiB below that.
-Kernel RAM is 254 MiB; the media region lies inside it and is a reserved node.
+Kernel RAM is 254 MiB; the media region lies inside it and is a reserved node. On
+the running Lite the kernel actually placed the media region at
+**`0x85178000-0x89c77fff`**, not at `0x8b300000` [V, Phase 0]; the boot-logo
+region is at `0x8ab30000` as listed.
 
 ### 3.2 Kernel and modules [V]
 
@@ -372,8 +377,8 @@ Changes needed:
    `no-map` region; **untested** [U].
 2. Vendor reality check [V]: the vendor `ion_reserved` node (`ion-region`,
    `size` only, no `reg`, no `no-map`) is an ordinary **reserved RAM** region that
-   the kernel places top-down at the end of its 254 MiB memory node, which is where
-   `0x8b300000` comes from. It stays in the linear map, so the 5.10 allocator's
+   the kernel places wherever its allocator finds room (`0x85178000` on the Lite,
+   [V, Phase 0]; the memmap's `0x8b300000` is not what 5.10 uses). It stays in the linear map, so the 5.10 allocator's
    `memremap(MEMREMAP_WB)` simply returned the cached linear address. The RTOS
    region (`0x8fe00000`, 2 MiB) is **outside** the vendor memory node, so the
    vendor DT needs no reservation for it. Two ways to reproduce this in 6.18:
@@ -395,7 +400,10 @@ Changes needed:
    deterministic) and either shrink the memory node to 254 MiB like the vendor DT or
    keep 256 MiB and reserve the RTOS region `0x8fe00000` (2 MiB, `no-map`). Give
    `soph_sys` a `memory-region`. Omit the `cvitek,rtos_image` node so
-   `sys_mem_rtos_size()` skips nothing.
+   `sys_mem_rtos_size()` skips nothing. Do not carry over the vendor `cvifb`
+   node (the vendor U-Boot's boot-logo buffer, `CVIMMAP_BOOTLOGO_ADDR`
+   `0x8ab30000`, 7.8 MiB): nothing uses it (no `/dev/fb*`, `soph_fb` not loaded,
+   `S95nanokvm` deletes `/boot/logo.jpeg`), so the RAM goes back to the kernel.
 5. Drop licheerv's 64 MiB CMA and dma-heaps (they compete for the same RAM) or
    shrink them; keep `ERRATA_THEAD_MAE` and `ERRATA_THEAD_CMO` on (verify in the
    final `.config`).
@@ -409,9 +417,16 @@ VPSS frame into it and read it from user space.
 
 ### 6.2 Media modules
 
-Keep: `sys base mipi_rx(cif) snsr_i2c vi vpss vcodec jpeg vc_driver`. Decide with
-Phase 0 `strace` data (section 7, Phase 0): `dwa vo rgn ive mon fb`.
-Drop: `rtos_cmdqu` and `fast_image` (the cmdqu's only shipped-middleware user is
+Phase 0 data ([baseline](kernel-6x-phase0-baseline.md): module use counts and the
+server's open files at idle, MJPEG and H.264) decides the list.
+
+Keep: `sys base mipi_rx(cif) vi vpss vcodec jpeg vc_driver`.
+Keep for now: `dwa vo rgn`. The middleware opens `/dev/cvi-dwa`, `/dev/cvi-vo`
+and `/dev/cvi-rgn` at start-up but never uses them for KVM; drop each one only
+after the server starts and streams without it.
+Drop: `snsr_i2c` (use count 0, no device node; the LT6911 is reached through
+`/dev/i2c-4`), `ive` and `mon` (use count 0, never opened), `fb` (no display;
+section 1), `rtos_cmdqu` and `fast_image` (the cmdqu's only shipped-middleware user is
 the ISP library, which is not shipped; `fast_image` and `rgn` reference it from
 the kernel side, so check `rgn` for a hard dependency), `clock_cooling`, `wdt` (use mainline `dw_wdt`),
 `rtc` (mainline `rtc-cv1800`), `pwm`, `wiegand`, `saradc`.
@@ -426,7 +441,7 @@ clock and reset cells byte-for-byte against the vendor node. IRQ rule:
 DT nodes to write (compatibles from osdrv): `cvitek,sys`, `cvitek,base`,
 `cvitek,cif`, `cvitek,vi`, `cvitek,vpss`, `cvitek,cvi_vc_drv`,
 `cvitek,asic-vcodec`, `cvitek,asic-jpeg`, plus whichever of `cvitek,vo`,
-`cvitek,dwa`, `cvitek,rgn`, `cvitek,ive`, `cvitek,mon`, `cvitek,fb` survive.
+`cvitek,dwa`, `cvitek,rgn`, `cvitek,ive`, `cvitek,mon` survive.
 
 ### 6.3 Second CPU, mailbox, RTOS
 
@@ -436,6 +451,10 @@ DT nodes to write (compatibles from osdrv): `cvitek,sys`, `cvitek,base`,
 sides. The only user of `/dev/cvi-rtos-cmdqu` in the shipped middleware is the ISP
 library (`isp_mailbox.c`), which this project does not ship. `fast_image` waits for
 `RTOS_INIT_DONE`; nothing on the capture path does.
+
+On the 5.10 Lite the C906L does not answer at all: `soph_rtos_cmdqu` waits 210 ms
+at load and logs `communicate with rtos fail` [V, Phase 0]. Nothing in the KVM
+path depends on the RTOS today.
 
 Decisions: use the mainline mailbox driver (`CONFIG_CV1800_MBOX`, node `0023`);
 keep a `cvirtos.bin` in the FIP and keep its region `no-map`; do not load
@@ -450,10 +469,11 @@ cores. Not in scope for this migration.
 
 | Interface | Used by | 5.10 | 6.18 action |
 | --- | --- | --- | --- |
-| `/sys/class/gpio/gpioNNN` (503-507, 451, 502, 506) | `S15kvmhwd` (35 refs), `vm.rs` (11), `kvm_vision.cpp` (HDMI reset 451); `kvm_system` only has comments | fixed bases (port A 480, B 448, ... [I]) | bases are dynamic in 6.18 (start at 512, count down; `dwapb` passes base -1) and sysfs GPIO needs `EXPERT` + `GPIO_SYSFS`. Stopgap: enable it and check the numbers. Target: `gpio-line-names` in the DT, char-device access by name, `gpio-hog` for lines that must stay at a fixed level (OLED reset, HDMI reset, Wi-Fi enable). Test what a released output line does (keeps its level or not) [U]. Also drop the alpha entry in `vm.rs` |
+| `/sys/class/gpio/gpioNNN` (503-507, 451, 502, 506) | `S15kvmhwd` (35 refs), `vm.rs` (11), `kvm_vision.cpp` (HDMI reset 451); `kvm_system` only has comments | fixed bases (A 480, B 448, C 416, D 384, PWR 352 [V]) | bases are dynamic in 6.18 (start at 512, count down; `dwapb` passes base -1) and sysfs GPIO needs `EXPERT` + `GPIO_SYSFS`. Stopgap: enable it and check the numbers. Target: `gpio-line-names` in the DT, char-device access by name, `gpio-hog` for lines that must stay at a fixed level (OLED reset, HDMI reset, Wi-Fi enable). Test what a released output line does (keeps its level or not) [U]. Also drop the alpha entry in `vm.rs` |
 | `/sys/class/cvi-base/base_uid` | `S03usbdev` MACs/serial | osdrv `soph_base` | unchanged (comes from the module) |
 | `/proc/cvitek/*` (`vb`, `sys_mem`, `vi_dbg`) | diagnostics | osdrv | unchanged |
-| `/dev/cvi-*` | middleware | osdrv | unchanged; confirm with strace |
+| `/dev/cvi-*` | middleware | osdrv | unchanged; the server opens `base sys vi vpss mipi-rx dwa vo rgn` and `cvi_vc_enc0/1` [V, Phase 0] |
+| `rmmod`/`insmod` of `soph_*` from `/mnt/system/ko/` | `libkvm_mmf` `reinit_soph_vb()` (stale VB pools) | 5.10 module names and paths | update the list and path to the 6.18 package |
 | `/proc/cviusb/otg_role` | `S03usbdev`, `S03usbhid` | vendor dwc2 (also sets a TOP register to force the ID pin: bits `0xC0` device / `0x40` host) | not in mainline; set `dr_mode = "peripheral"` in the DT and remove the writes (mainline `sophgo,cv1800b-usb` compat exists in `params.c`) |
 | `/sys/bus/platform/drivers/dwc2/{bind,unbind}` with `4340000.usb` | USB scripts | works | keep node name `usb@4340000` |
 | `/sys/class/udc/4340000.usb/state` | hwmon, `kvm_system`, UI | works | same node name |
@@ -524,12 +544,19 @@ apart (licheerv's overlap bug). Pick the compression by measuring boot time.
   compressed FIT (kernel + DTB) instead of a raw `Image` and boot it from
   extlinux or a boot script. Measure before choosing [U].
 - **U-Boot.** Mainline 2025.10 uses extlinux; the vendor U-Boot 2021.10 provides
-  things you will lose: boot logo (`/boot/logo.jpeg`), `cvi_update`, the vendor
-  USB download magic. The Cube wiki documents a BOOT-button USB reflash mode that
-  exposes the TF card as a USB drive; whether it lives in BootROM, FSBL or the
-  vendor U-Boot is **unknown** [U]. If it is in U-Boot, rebuild it with the `ums`
-  command plus a GPIO check in the boot script. Also keep the password-reset
-  BOOT-button hold (handled in `kvm_system`).
+  things you will lose: `cvi_update` and the vendor USB download magic. Its boot
+  logo (`/boot/logo.jpeg` on a MIPI panel) is not a loss: there is no panel,
+  `S95nanokvm` already deletes the file, and the OLED logo is `/boot/logo.bin`,
+  drawn by `kvm_system`. Stop shipping `logo.jpeg` in the 6.18 `genimage.cfg`.
+- **BOOT-button USB reflash** [V, Phase 0]: it lives in the vendor **initramfs**
+  (`ramdisk-1` in `boot.sd`), not in U-Boot. Its `/init` exports `/dev/mmcblk0` as
+  USB mass storage through configfs and `/proc/cviusb/otg_role` when `/boot/rec`
+  exists, when the User Key (A30) is held at power-on, or when the root partition
+  does not mount after `e2fsck`; otherwise it mounts `mmcblk0p2` and runs
+  `switch_root`. For 6.18, either rebuild it as a small source-built initramfs in
+  the FIT (`USB_CONFIGFS_MASS_STORAGE` built in, no `otg_role`), or do it in U-Boot
+  with `ums` and a GPIO check in the boot script, and boot without an initramfs.
+  Also keep the password-reset BOOT-button hold (handled in `kvm_system`).
 - **FSBL.** Port `fsbl-boot-guard.patch` and `fsbl-overdrive-clocks.patch` to the
   licheerv FSBL commit. licheerv hard-codes `OD_CLK_SEL=y`; keep the standard and
   overdrive FIP pair and the existing `cpu.overdrive` flow. The boot guard uses
@@ -743,6 +770,11 @@ On a running device, save to the repo or release notes:
 
 Exit: a `docs/development/` note or release artifact holding these captures.
 
+**Done 2026-11-05** on system 0.4.34: [Phase 0 baseline](kernel-6x-phase0-baseline.md).
+`strace` is not in the image; open files and module use counts replaced it, and
+item 4 came from `/etc/kvm/hdmi_version` without probing. Not measured: latency
+and a clean-boot time (needs a reboot).
+
 ### Phase T: T-Head userland on the 5.10 baseline (before the kernel move)
 
 Userland work is independent of the kernel, so do it on the known-good merged 5.10
@@ -892,12 +924,13 @@ consider upstreaming it.
 | Q2 | ~~Boot payload~~ | **Decided:** FIT (section 6.5). Still measure `/boot` headroom and boot time. |
 | Q3 | ~~FIP blobs~~ | **Decided:** build from source. Verify in Phase 1 that the SDK/FSBL build produces `ddr_param.bin` and `cvirtos.bin` (the Hardened `vendor-sdk-stock` already builds a FIP). |
 | Q4 | RTOS image and its address | Follows Q3: SDK-built FreeRTOS at `0x8fe00000`. Three things must agree: the FSBL `BLCP_2ND_RUNADDR` (`CVIMMAP_FSBL_C906L_START_ADDR`), the RTOS linker origin (`CVIMMAP_FREERTOS_ADDR` in `cv181x_lscript.ld`), and the DT. All derive from the board `memmap.py`, so build them together. Drop licheerv's `0x83f40000` region. |
-| Q5 | Where the BOOT-button USB reflash mode lives | Read the wiki's open-source image tree and the FSBL; test on the Lite. |
-| Q6 | Which optional media modules to keep (`vo dwa rgn ive mon fb`) | Phase 0 strace. |
+| Q5 | ~~Where the BOOT-button USB reflash mode lives~~ | **Answered** (Phase 0): the vendor initramfs `/init`. Rebuild it in a source-built initramfs or in U-Boot (section 6.5). |
+| Q6 | ~~Which optional media modules to keep~~ | **Answered** (Phase 0): drop `ive mon fb snsr_i2c`; keep `dwa vo rgn` until the server is shown to start without them (section 6.2). |
 | Q7 | GPIO strategy | Phase 1: sysfs stopgap (needs `EXPERT` + `GPIO_SYSFS`) and `gpio-line-names` in the DT from day one. Phase 4: char-device access by line name; `gpio-hog` for static lines. See section 6.4. |
 | Q8 | `STRICT_DEVMEM` and the carveout region type | Phase 2 cache/`/dev/mem` test. |
 | R1 | Cache coherency and memory attributes on the carveout (stale/corrupt frames) | Phase 2 cache test; Phase 3 soak. |
-| R2 | `snsr_i2c` vendor I2C extensions (LT6911 path) | Read the module; may need a small I2C adapter shim. |
+| R2 | ~~`snsr_i2c` vendor I2C extensions (LT6911 path)~~ | **Gone** if `snsr_i2c` is dropped (Phase 0: unused; the LT6911 goes through `/dev/i2c-4`). |
+| R10 | The 5.10 codec driver leaves `clk_h264c` enabled (enable count about 432,000 after 1.5 h) | Check enable/disable balance in the 6.18 port; mainline clk warns on unbalanced disables. |
 | R3 | Modules poke clock/reset/FMUX registers directly beside the mainline clk and pinctrl drivers | Compare `clk_summary` before and after; convert hot spots to the clk/reset API. |
 | R4 | No A/B slots; a bad 6.18 image cannot roll back | Fresh-flash-only preview first; document SD recovery. |
 | R5 | Cube/PCIe untested | Tester checklist; keep detection logic close to the 5.10 behaviour. |
