@@ -1,14 +1,14 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-03
+last-checked: 2026-11-05
 ---
 
 # Rust dependency audit (server-rust)
 
-Audit of `server-rust/` dependencies on 2026-11-03, the updates already made on
-`main`, and what is held back with the reason. Nothing here was measured on the
-device or with the RISC-V toolchain; see "What to verify on hardware".
+Audit of `server-rust/` dependencies (first run 2026-11-03, re-checked against `main` at
+21c22f2 on 2026-11-05), the updates already made, and what is held back with the reason.
+The host sizes below are not the image target; see "Size" and "What to verify on hardware".
 
 ## Build context
 
@@ -20,7 +20,7 @@ device or with the RISC-V toolchain; see "What to verify on hardware".
 - The highest `rust-version` in the lock is 1.88 (`time`, `rcgen 0.14`), so MSRV does not block
   any update.
 - Tools used: `cargo outdated --root-deps-only`, `cargo audit`, `cargo machete`.
-  `cargo deny` is not configured (no `deny.toml`).
+  `cargo deny` is not configured (no `deny.toml`), and CI runs no audit step.
 
 ## Done on main
 
@@ -32,8 +32,11 @@ device or with the RISC-V toolchain; see "What to verify on hardware".
 | a93f036 | bcrypt 0.16 to 0.19 (legacy-hash verification only) |
 | cc77dad | rcgen 0.13 to 0.14 (`CertifiedKey.key_pair` is now `signing_key`) |
 | 00fadb4 | nix 0.29 to 0.31 |
+| 0e32eb2 | webrtc 0.17.1 to 0.21.1 (pinned `=0.21.1`, plus `rtc`) |
+| 64e050e | serde_yaml to serde_norway; sha2 0.11, argon2 0.6, `rand_core` dropped |
+| 7514be1 | webrtc 0.21 fixes found on the device |
 
-Each commit passed `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`
+The first six commits each passed `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`
 and `cargo test` (396 passed) on the host.
 
 On the `video-stack` base, the webrtc 0.21.1 rewrite (see below) also passed `cargo fmt
@@ -49,7 +52,10 @@ called by our code); yanked `spin 0.9.8`.
 
 ## Open advisories
 
-None: `cargo audit` is clean after the webrtc 0.21 and serde_yaml changes below.
+None. On 2026-11-05 `cargo audit` scanned 334 crates and reported no vulnerabilities,
+warnings or yanked crates. The two that were open on 2026-11-03 are gone: crypto-bigint
+RUSTSEC-2026-0387 (webrtc 0.21 dropped the old `dtls`/`p256` stack) and unsafe-libyaml
+RUSTSEC-2024-0449 (serde_yaml replaced), see below.
 
 ## Held back
 
@@ -57,7 +63,12 @@ None: `cargo audit` is clean after the webrtc 0.21 and serde_yaml changes below.
 |---|---|---|
 | tokio-tungstenite | 0.29 / 0.30 | axum's WebSocket support uses tungstenite 0.29, so 0.30 links two tungstenite versions plus a second RustCrypto stack (sha1 0.11, rand 0.10, digest 0.11, chacha20). Wait for axum, or move with the RustCrypto group. Tried and reverted. |
 | hmac, sha1 | 0.12 / 0.10 vs 0.13 / 0.11 | Used by `auth/totp.rs`. webrtc 0.21's `rtc-crypto` uses the same old versions, and axum and tungstenite also use sha1 0.10, so moving ours links both generations. Wait for those to move. |
-| aes, cbc, cipher, md-5 | 0.8 / 0.1 / 0.4 / 0.10 | Only for the CryptoJS password decryption in `auth/compat_crypto.rs`, which branch `drop-password-obfuscation` removes along with these four. |
+| aes, cbc, cipher, md-5 | 0.8 / 0.1 / 0.4 / 0.10 | `cbc`, `cipher` and `md-5` are used only by the CryptoJS password decryption in `auth/compat_crypto.rs`; `aes` is also pulled in by `rtc-crypto`. A `drop-password-obfuscation` branch was meant to remove the former, but it is not on origin as of 2026-11-05. |
+
+`cargo outdated --root-deps-only` on 2026-11-05 lists only these as outdated: `aes`, `cbc`,
+`cipher`, `hmac`, `md-5`, `sha1` and `tokio-tungstenite`. Duplicate versions still in the
+tree: base64 (0.22 via webrtc/rtc, 0.23), cipher, digest, crypto-common, rand,
+getrandom and rand_core.
 
 `cargo machete` flags `md-5` as unused, which is a false positive: `auth/compat_crypto.rs`
 uses `md5::Md5`. No other unused dependencies.
@@ -144,8 +155,9 @@ Host aarch64 Linux release binary, `video-stack` base:
 | serde_norway, sha2 0.11, argon2 0.6, getrandom | 7,689,400 |
 
 bcrypt 0.19 adds a second `cipher`/`crypto-common` generation, which accounts for part of
-the growth. The riscv numbers could not be measured: `ring` needs a RISC-V C cross
-compiler (`riscv64-linux-musl-gcc`) that was not available. nix 0.31 was compile-checked on the host only.
+the growth. The riscv numbers have not been recorded here: `ring` needs a RISC-V C cross
+compiler (`riscv64-linux-musl-gcc`) that was not available in the audit sandbox. nix 0.31
+was compile-checked on the host only.
 
 ## What to verify on hardware
 
@@ -163,7 +175,9 @@ compiler (`riscv64-linux-musl-gcc`) that was not available. nix 0.31 was compile
 
 ## Next steps
 
-1. Add `deny.toml` and a CI step, so new advisories and duplicate versions show up
-   without a manual audit.
+1. Optionally add a minimal `deny.toml` (advisories, sources, duplicate-version warnings)
+   and a non-blocking CI job, so new advisories show up without a manual audit. It needs
+   no ignore entries now. Changing the workflow needs a real CI run
+   ([CI image build](ci-image-build.md)).
 2. hmac and sha1 once `rtc-crypto`, axum and tungstenite move to the new generation, and
    tokio-tungstenite once axum's WebSocket stack matches.
