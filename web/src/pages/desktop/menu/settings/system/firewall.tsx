@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Button, Segmented, Spin, Tag } from 'antd';
 import type { TFunction } from 'i18next';
 import {
@@ -35,6 +35,7 @@ export const FirewallSettings = () => {
 
   const [status, setStatus] = useState<FirewallStatus | null>(null);
   const [rulesTab, setRulesTab] = useState<RulesTab>('ipv4');
+  const rulesTabPicked = useRef(false);
   const [isApplying, setIsApplying] = useState(false);
 
   const selectedRules = useMemo(() => {
@@ -100,6 +101,10 @@ export const FirewallSettings = () => {
   const { status: loadState, reload } = useSettingsLoadState(api.getStatus, (rsp) => {
     if (!rsp.data) throw new Error('missing firewall status');
     setStatus(rsp.data);
+    // With nftables the iptables views are empty; show the ruleset unless a tab was picked.
+    if (!rulesTabPicked.current && rsp.data.backend.preferred === 'nftables') {
+      setRulesTab('nft');
+    }
   });
   const isLoading = loadState === 'loading';
 
@@ -238,7 +243,10 @@ export const FirewallSettings = () => {
               { value: 'ipv6', label: 'IPv6' },
               { value: 'nft', label: 'nft' }
             ]}
-            onChange={(value) => setRulesTab(value as RulesTab)}
+            onChange={(value) => {
+              rulesTabPicked.current = true;
+              setRulesTab(value as RulesTab);
+            }}
           />
         </div>
         <pre className="max-h-90 min-h-65 overflow-auto rounded-sm bg-black/50 p-3 font-mono text-xs leading-relaxed text-neutral-200">

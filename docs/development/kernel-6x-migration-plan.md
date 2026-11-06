@@ -854,9 +854,10 @@ guard counter resets; `dmesg` clean of unexpected warnings.
 - Boot path for the first test: FSBL -> OpenSBI -> U-Boot -> extlinux ->
   `Image` + DTB, no initramfs (`DEVTMPFS_MOUNT=y`), so the BOOT-button reflash
   mode is absent on the test card.
-- Firewall: the rootfs uses **legacy** `iptables`/`ip6tables`
-  (`xtables-legacy-multi`, filter table, `-m state`), so the fragment builds
-  `IP_NF_IPTABLES_LEGACY` and `IP6_NF_IPTABLES_LEGACY` in.
+- Firewall: the 0.4.x rootfs uses **legacy** `iptables`/`ip6tables`
+  (`xtables-legacy-multi`, filter table, `-m state`), so the first boot built
+  `IP_NF_IPTABLES_LEGACY` and `IP6_NF_IPTABLES_LEGACY` in (since replaced by
+  nftables, see below).
 - Without `soph_base` there is no `/sys/class/cvi-base/base_uid`, so `S30eth`
   and `S03usbdev` keep U-Boot's Ethernet MAC and fall back for the USB MACs and
   serial. Phase 2 restores it; a mainline efuse/nvmem reader would remove the
@@ -894,7 +895,7 @@ Exit criteria:
 | USB gadget | UDC `configured` with HID x3, mass storage, RNDIS; host-side use not tested |
 | `S15kvmhwd` | Runs; its sysfs GPIO numbers are the 5.10 ones (bank A is 512 on 6.18, 480 on 5.10), deferred to Phase 4 |
 | exFAT `/data` | Mounts (read-only by design while the USB disk shares it) |
-| WireGuard, nftables | Built in; legacy `iptables`/`ip6tables` rules load. The rootfs has no `nft` binary |
+| WireGuard, nftables | Built in; the 0.4.x rootfs loads legacy `iptables`/`ip6tables` rules (it has no `nft` binary). The nftables firewall below was checked with `nft` copied to `/tmp` |
 | Watchdog | `dw_wdt` adopts the FSBL timer; the feeder's 60 s request becomes 85 s (next TOP) |
 | Boot guard reset | Yes, once the server is up (`RTC_INFO1` back to `0xDEADBEEF`) |
 | `dmesg` | Clean apart from DMI absent, `dwc2 g_dma_desc`, and the RTC having no time yet |
@@ -904,9 +905,18 @@ chips register); nothing in user space uses it. The debug pieces used for the
 bring-up (ramoops at `0x8e000000`, heartbeat LED trigger, `loglevel=8`, U-Boot
 preboot LED codes) are not in the committed configuration.
 
-Next step after the first boot: **move the firewall from legacy iptables to
-nftables** (`S40firewall`, `S45wireguard`, the server's rule writers, Buildroot's
-`iptables` package config), then drop the legacy options from the fragment.
+**Firewall on nftables (2026-11-06).** `S40firewall` builds one `inet
+kvm_firewall` table and loads it with a single `nft -f`; the ACME window is the
+`acme` set. Without `nft` (older system images taking an app update) it applies
+the previous rules through `iptables-nft`, and either way it resets the legacy
+tables first. The IPv6-off drop from `S30eth` is its own `ip6 kvm_ipv6_off`
+table. `S45wireguard` never wrote rules. The 6.x defconfig ships `nftables`
+instead of `iptables`, and the fragment turns off xtables and everything that
+selects it (the arch defconfig's bridge netfilter, IPVS and `ip(6)_tables`
+modules). Checked on the Lite: all four modes validate with `nft -c` against
+the 6.18 kernel, and moderate ran live (SSH, web UI, ACME open/close, restart).
+5.10 has the full nf_tables stack (`NF_TABLES_INET`, `NFT_CT`, `NFT_COMPAT`), so
+the same script works there once its image carries `nft`.
 
 ### Phase 2: media modules and the first frames
 

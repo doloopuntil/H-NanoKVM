@@ -1,14 +1,19 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-28
+last-checked: 2026-11-06
 ---
 
 # Firewall modes
 
-The device runs a managed `iptables`/`ip6tables` firewall (`S40firewall`). Pick
-the mode in **Settings > Network > Firewall**; the page also shows the rules in
-force.
+The device runs a managed firewall (`S40firewall`). Pick the mode in
+**Settings > Network > Firewall**; the page also shows the rules in force.
+
+With the `nft` tool (system images from the Linux 6.18 line) the rules are one
+nftables table, `inet kvm_firewall`, replaced in a single transaction on every
+change. Older system images without `nft` get the same rules through
+`iptables-nft`/`ip6tables-nft`, or plain `iptables`/`ip6tables` where those are
+missing.
 
 "Local" below means private IPv4 (`10/8`, `172.16/12`, `192.168/16`), IPv4
 link-local and loopback, IPv6 unique-local (`fc00::/7`), link-local and loopback

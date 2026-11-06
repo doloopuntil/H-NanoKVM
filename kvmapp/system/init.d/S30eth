@@ -72,15 +72,36 @@ find_udhcpc6() {
     return 1
 }
 
+NFT=/usr/sbin/nft
+IPV6_OFF_TABLE=kvm_ipv6_off
+
+ipv6_tool() {
+    for tool in ip6tables-nft ip6tables; do
+        command -v "$tool" >/dev/null 2>&1 && echo "$tool" && return 0
+    done
+    return 1
+}
+
+# A table of its own, so firewall restarts leave it in place.
 ensure_ipv6_drop_rule() {
-    command -v ip6tables >/dev/null 2>&1 || return
-    ip6tables -C INPUT -i eth0 -j DROP 2>/dev/null || \
-        ip6tables -I INPUT 1 -i eth0 -j DROP 2>/dev/null || true
+    if [ -x "$NFT" ]; then
+        printf '%s\n' "table ip6 $IPV6_OFF_TABLE" "delete table ip6 $IPV6_OFF_TABLE" \
+            "table ip6 $IPV6_OFF_TABLE { chain input { type filter hook input priority filter - 10; iifname \"eth0\" drop; }; }" |
+            "$NFT" -f - 2>/dev/null || true
+        return
+    fi
+    tool=$(ipv6_tool) || return
+    "$tool" -C INPUT -i eth0 -j DROP 2>/dev/null || \
+        "$tool" -I INPUT 1 -i eth0 -j DROP 2>/dev/null || true
 }
 
 remove_ipv6_drop_rule() {
-    command -v ip6tables >/dev/null 2>&1 || return
-    while ip6tables -D INPUT -i eth0 -j DROP 2>/dev/null
+    if [ -x "$NFT" ]; then
+        "$NFT" delete table ip6 "$IPV6_OFF_TABLE" 2>/dev/null || true
+        return
+    fi
+    tool=$(ipv6_tool) || return
+    while "$tool" -D INPUT -i eth0 -j DROP 2>/dev/null
     do
         :
     done
