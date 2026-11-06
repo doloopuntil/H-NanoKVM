@@ -1,0 +1,76 @@
+mmc: cv1800b: set up the SD clock and PHY like the vendor U-Boot
+
+On the NanoKVM Lite the card does not initialise with the PHY state the boot
+ROM leaves behind. Set the default-speed PHY registers after the controller
+reset and run clk_sd0 at the 375 MHz the driver assumes.
+
+--- a/drivers/mmc/cv1800b_sdhci.c
++++ b/drivers/mmc/cv1800b_sdhci.c
+@@ -3,6 +3,7 @@
+  * Copyright (c) 2024, Kongyang Liu <seashell11234455@gmail.com>
+  */
+ 
++#include <clk.h>
+ #include <dm.h>
+ #include <mmc.h>
+ #include <sdhci.h>
+@@ -13,7 +14,12 @@
+ #define TUNE_MAX_PHCODE      128
+ 
+ #define PHY_TX_SRC_INVERT  BIT(8)
++#define PHY_RX_SRC_INVERT  BIT(24)
+ 
++#define SDHCI_VENDOR_MSHC_CTRL  0x200
++#define SDHCI_PHY_CONFIG        0x24c
++#define PHY_TX_BPS              BIT(0)
++
+ struct cv1800b_sdhci_plat {
+ 	struct mmc_config cfg;
+ 	struct mmc mmc;
+@@ -70,6 +76,15 @@
+ #endif
+ };
+ 
++/* Default-speed PHY setup, as the vendor U-Boot does; the boot ROM state does not work */
++static void cv1800b_sdhci_phy_init(struct sdhci_host *host)
++{
++	sdhci_writel(host, sdhci_readl(host, SDHCI_VENDOR_MSHC_CTRL) | BIT(1) | BIT(8) | BIT(9),
++		     SDHCI_VENDOR_MSHC_CTRL);
++	sdhci_writel(host, PHY_RX_SRC_INVERT | PHY_TX_SRC_INVERT, SDHCI_PHY_TX_RX_DLY);
++	sdhci_writel(host, sdhci_readl(host, SDHCI_PHY_CONFIG) | PHY_TX_BPS, SDHCI_PHY_CONFIG);
++}
++
+ static int cv1800b_sdhci_bind(struct udevice *dev)
+ {
+ 	struct cv1800b_sdhci_plat *plat = dev_get_plat(dev);
+@@ -82,8 +97,15 @@
+ 	struct mmc_uclass_priv *upriv = dev_get_uclass_priv(dev);
+ 	struct cv1800b_sdhci_plat *plat = dev_get_plat(dev);
+ 	struct sdhci_host *host = dev_get_priv(dev);
++	struct clk clk;
+ 	int ret;
+ 
++	/* clk_sd0 resets to fpll/15; the controller is set up for 375 MHz */
++	if (!clk_get_by_name(dev, "bus", &clk)) {
++		clk_set_rate(&clk, MMC_MAX_CLOCK);
++		clk_enable(&clk);
++	}
++
+ 	host->name = dev->name;
+ 	host->ioaddr = devfdt_get_addr_ptr(dev);
+ 
+@@ -102,7 +124,13 @@
+ 	if (ret)
+ 		return ret;
+ 
+-	return sdhci_probe(dev);
++	ret = sdhci_probe(dev);
++	if (ret)
++		return ret;
++
++	cv1800b_sdhci_phy_init(host);
++
++	return 0;
+ }
+ 
+ static const struct udevice_id cv1800b_sdhci_match[] = {
