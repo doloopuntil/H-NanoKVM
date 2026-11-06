@@ -1,0 +1,36 @@
+From: Daniele Masato <daniele.masato@pm.me>
+Subject: [PATCH] usb: dwc2: gadget: read DTXFSTS by endpoint index
+
+DTXFSTSn belongs to IN endpoint n, not to TX FIFO n. With dedicated FIFOs
+the gadget picks the smallest free FIFO that fits, so an endpoint's FIFO
+number can differ from its endpoint number. In PIO mode (g_dma = false, as
+on the Sophgo CV18xx) dwc2_hsotg_write_fifo() then reads another
+endpoint's free space, writes nothing, and re-arms the TX FIFO empty
+interrupt forever. On the NanoKVM Lite the mass storage bulk IN endpoint
+(ep6in on FIFO 2) never sent data and raised ~46000 interrupts a second.
+
+Same change as Minas Harutyunyan's 2017 "usb: dwc2: Use ep->index in
+context of FIFO registers", which was not merged.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/drivers/usb/dwc2/gadget.c
++++ b/drivers/usb/dwc2/gadget.c
+@@ -562,7 +562,7 @@
+ 		}
+ 	} else if (hsotg->dedicated_fifos && hs_ep->index != 0) {
+ 		can_write = dwc2_readl(hsotg,
+-				       DTXFSTS(hs_ep->fifo_index));
++				       DTXFSTS(hs_ep->index));
+ 
+ 		can_write &= 0xffff;
+ 		can_write *= 4;
+@@ -3299,7 +3299,7 @@
+ 
+ 	if (!hsotg->dedicated_fifos)
+ 		return;
+-	size = (dwc2_readl(hsotg, DTXFSTS(ep->fifo_index)) & 0xffff) * 4;
++	size = (dwc2_readl(hsotg, DTXFSTS(ep->index)) & 0xffff) * 4;
+ 	if (size < ep->fifo_size)
+ 		dwc2_hsotg_txfifo_flush(hsotg, ep->fifo_index);
+ }

@@ -1,0 +1,21 @@
+From: Daniele Masato <daniele.masato@pm.me>
+Subject: [PATCH] usb: dwc2: use DMA on the Sophgo CV18xx
+
+The CV18xx DWC2 reports DMA and descriptor DMA support (GHWCFG), and the
+vendor 5.10 kernel runs it with g_dma = 1 and g_dma_desc = 1. Mainline's
+dwc2_set_cv1800_params() forces PIO, which moves every USB byte with the
+CPU and costs the single core the FIFO refill interrupts. Drop the
+override so both modes come from the hardware parameters.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/drivers/usb/dwc2/params.c
++++ b/drivers/usb/dwc2/params.c
+@@ -225,7 +225,6 @@
+ 	p->otg_caps.hnp_support = false;
+ 	p->otg_caps.srp_support = false;
+ 	p->host_dma = false;
+-	p->g_dma = false;
+ 	p->speed = DWC2_SPEED_PARAM_HIGH;
+ 	p->phy_type = DWC2_PHY_TYPE_PARAM_UTMI;
+ 	p->phy_utmi_width = 16;

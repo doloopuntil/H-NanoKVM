@@ -35,6 +35,7 @@ Nothing here has been run on hardware.
 | Framebuffer | **None.** No `cvifb` boot-logo reservation (7.8 MiB) and no `soph_fb`: the NanoKVM has no display output, and the OLED is an I2C device driven from user space by `kvm_system`. |
 | Kernel optimisation | **`CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE` (`-O2`)**, not the vendor 5.10's `-Os`. The out-of-tree media modules inherit it. Measured cost in section 6.4.1. |
 | FIP contents | **Built from source**: FSBL (from the pinned SDK), OpenSBI, U-Boot. `ddr_param.bin` has no source anywhere and comes from the pinned SDK's FSBL tree (section 6.5). No C906L image for now. Nothing from the licheerv/varyhin firmware packages. |
+| 5.10 compatibility | **None where it costs anything.** Devices move to 6.x by a full reflash, so scripts and the server may drop 5.10-only paths (`/proc/cviusb/otg_role`, the 5.10 module list) as they are touched. Until the 6.x workflow exists, the 5.10 CI image is only a source of rootfs for test cards. |
 
 ### 1.1 The two external trees
 
@@ -892,7 +893,9 @@ Exit criteria:
 | Boots to login | Yes over SSH (no UART on the test unit) |
 | Ethernet and DHCP | Yes; MAC from licheerv's U-Boot eFuse patch, stable across boots |
 | Web UI | Yes, without video. libkvm built the camera in a static initialiser whose failed `mmf_init()` threw before `main`, so the server died every 10 s on a kernel without `/dev/cvi-sys`; `kvmv_init` now opens it and runs on without it |
-| USB gadget | UDC `configured` with HID x3, mass storage, RNDIS; host-side use not tested |
+| USB gadget | UDC `configured` with HID x3, mass storage, RNDIS. **Mass storage fails on a Linux host**: the first `READ(10)` (sector 0, 4 KiB) never completes, so every ~30 s the host aborts it and resets the whole device (RNDIS and HID drop too). Cause: mainline forces PIO on this SoC (`g_dma = false`), and in PIO mode `dwc2_hsotg_write_fifo()` reads `DTXFSTS` by FIFO number instead of endpoint number (`ep6in` sits on FIFO 2), so it never fills the FIFO and re-arms the FIFO-empty interrupt (~46000/s). Kernel patch `0001` fixes the index (test 12: one enumeration, no resets); `0002` restores DMA with descriptors as on the vendor 5.10 kernel (test 13: one enumeration, under 1 USB interrupt/s, the first 256 MiB read by the host hash the same as on the device) |
+| nftables firewall (test 11, CI rootfs) | `S40firewall` loads `table inet kvm_firewall` with the `nft` binary; the kernel has no xtables |
+| Virtual disk toggle | Works from the web UI once `S03usbdev` no longer writes `/proc/cviusb/otg_role` |
 | `S15kvmhwd` | Runs; its sysfs GPIO numbers are the 5.10 ones (bank A is 512 on 6.18, 480 on 5.10), deferred to Phase 4 |
 | exFAT `/data` | Mounts (read-only by design while the USB disk shares it) |
 | WireGuard, nftables | Built in; the 0.4.x rootfs loads legacy `iptables`/`ip6tables` rules (it has no `nft` binary). The nftables firewall below was checked with `nft` copied to `/tmp` |
@@ -1003,8 +1006,8 @@ This repo (`Hardened_NanoKVM`):
   new `/boot` contents.
 - `buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/`: re-check
   the two FSBL patches against the licheerv FSBL commit.
-- `kvmapp/system/init.d/`: `S00kmod` (module list), `S03usbdev`, `S03usbhid` (drop
-  `otg_role`), `S15kvmhwd` (drop alpha; name-based GPIO), `S95nanokvm` (boot-guard
+- `kvmapp/system/init.d/`: `S00kmod` (module list), `S03usbdev`, `S03usbhid` (`otg_role`
+  writes dropped), `S15kvmhwd` (drop alpha; name-based GPIO), `S95nanokvm` (boot-guard
   write stays; module and path checks).
 - `server-rust/src/api/vm.rs` and other GPIO users (`rg 'sys/class/gpio'`): GPIO
   lookup by name; `support/sg2002/kvm_system` for `/dev/input/event0` and any GPIO.
