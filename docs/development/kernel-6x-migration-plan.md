@@ -1019,8 +1019,7 @@ frame reaches user space.
   `cvitask_isp_{pre,err,blank}` wait in `D` state, as on 5.10 (Phase 0 baseline).
   Not a regression; a CPU comparison with 5.10 belongs to Phase 3 with matched
   measurements (Phase 0 used single `top` snapshots).
-- Open for Phase 3: `libkvm_mmf`'s `reinit_soph_vb()` reloads modules with
-  hard-coded `/mnt/system/ko` paths and the 5.10 list.
+- `libkvm_mmf`'s `reinit_soph_vb()`: ported in Phase 3 (below).
 
 ### Phase 3: capture and encode end to end on the Lite
 
@@ -1032,6 +1031,59 @@ frames (cache bug signature), IRQ storms, clock rate differences (check
 register writes can disagree).
 
 Exit: parity or better on the Phase 0 numbers; no crashes in the soak.
+
+**State 2026-11-06** (test 16 on the Lite):
+
+- Clocks: every media and CPU rate difference against Phase 0 comes from the FIP,
+  not from 6.18. Phase 0 ran `fip.od.bin`; the test card boots `fip.std.bin`. The
+  6.18 rates are exactly the FSBL's standard-mode values (`sys_pll_nd`): CPU 850 MHz,
+  `clk_axi_video_codec`/`h264c`/`h265c`/`jpeg` 360 MHz (CAM1PLL/3), `vc_src0` 396,
+  `src_vip_sys_0` 198, `_1` and `_3` 300. Phase 0 shows the overdrive values (CPU
+  1050, codec 450, `vc_src0` 515, `vip_sys_0/1/3` 250/396/450). The mainline clk
+  driver keeps what the FSBL set, so it and the modules agree. CPU and FPS
+  comparisons need the overdrive FIP on the test card.
+- `soph_jpeg` no longer looks up its unused IRQ (no `irq = 0` error; `jpu_irq` stays 0
+  so remove does not `free_irq` an IRQ it never requested).
+- `libkvm_mmf`'s `reinit_soph_vb()` reloads the 6.18 set from
+  `/lib/modules/<release>/extra` with `S00kmod`'s order and `vc_driver` parameters.
+  The 5.10 version never removed `soph_vo`, so `rmmod soph_base` failed and the stale
+  pools survived. Not yet run (needs a CI `libkvm_mmf.so` and a 6.x image).
+- MJPEG, overdrive FIP, one client (`notes/6x-test-17/mjpeg-od.txt`,
+  `notes/6x-test-18-boot/mjpeg-preempt.txt`), against Phase 0:
+
+  | | Phase 0 (5.10) | 6.18 `PREEMPT_NONE` | 6.18 `PREEMPT` |
+  | --- | --- | --- | --- |
+  | Capture (VI) | 61 fps, 0 lost | 43 to 46 fps, 0 lost | 60 fps, 0 lost |
+  | Encoded | 12 fps (q99) | 11 fps (q99) | 11 fps (q99) |
+  | JPEG hardware time | 7.4 ms (max 11.7) | 13.3 ms (max 34.9) | 4.4 ms (max 11.2) |
+  | CPU busy | 100% (server 67%) | 99% (server 79%): 42% user, 44% system, 13% softirq | 99% (server 86%): 43% user, 43% system, 13% softirq |
+  | Carveout | 43.8 MB (H.264 and MJPEG) | 31.4 MB (MJPEG only, `jpeg_ion` 9 MiB) | 43.8 MB (H.264 and MJPEG) |
+  | `MemTotal` / available | 158 MiB / 103 MiB idle | 134 MiB / 84 MiB streaming | 134 MiB / 80 MiB streaming |
+
+  MJPEG stays CPU-bound in the server on every kernel: the encoder is idle most of
+  each frame, and eth0 runs at about 660 IRQ/s.
+
+  The 5.10 kernel is `CONFIG_PREEMPT=y` (vendor defconfig); 6.18 gets the riscv
+  default `PREEMPT_NONE`, both at `HZ=250`. With the server at 100% CPU on one core,
+  the VI threads and the polling JPEG driver wait for a voluntary schedule point,
+  which fits the lower VI rate and the longer JPEG times. `nanokvm.fragment` now sets
+  `CONFIG_PREEMPT=y` (test 18), which restores the VI rate and JPEG times. RAM: 6.18 reserves 127 MB at
+  boot against 101 MB, a 24 MB kernel (`-O2`, everything built in) against 9 MB, plus
+  an unexplained 16 MiB kernel allocation at boot (memblock `0x8ede1600`).
+- H.264 WebRTC, overdrive FIP, one client, JPEG channel idle
+  (`notes/6x-test-17/h264-webrtc-od.txt`, `notes/6x-test-18-boot/h264-webrtc-preempt.txt`):
+
+  | | Phase 0 (5.10) | 6.18 `PREEMPT_NONE` | 6.18 `PREEMPT` |
+  | --- | --- | --- | --- |
+  | Capture (VI) | 60 fps, 0 lost | 47 fps, 0 lost | 60 fps, 0 lost |
+  | Encoded | 53 fps (57 sent) | 40 to 48 fps, the VI rate (`SrcFr 60`) | 59 fps (59 sent) |
+  | H.264 hardware time | 9.1 ms (max 9.7) | 9.1 ms (max 9.3) | 9.1 ms (max 9.2) |
+  | CPU busy | 59% (server 39%; a second client pulled MJPEG) | 42% (server 30%): 22% user, 19% system | 57% (server 44%): 29% user, 28% system |
+  | Carveout peak | 43.8 MB | 43.8 MB | 31.3 MB (no JPEG buffer since boot) |
+
+  On `PREEMPT_NONE` VI delivered 45 to 55 fps in every mode, idle included, with the
+  CPU 58% idle. `CONFIG_PREEMPT=y` (test 18) restores 60 fps idle and while
+  streaming; the extra CPU is the extra frames.
 
 ### Phase 4: platform integration
 
