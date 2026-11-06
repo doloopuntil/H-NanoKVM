@@ -11,6 +11,12 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/linux-event-codes.h>
 
+/* CSI PHY resets (bits in the 0x3003000 block) that cv18xx-reset.h does not name */
+#define RST_CSIPHY0		70
+#define RST_CSIPHY0RST_APB	71
+#define RST_CSIPHY1		72
+#define RST_CSIPHY1RST_APB	73
+
 / {
 	model = "Sipeed NanoKVM Lite";
 	compatible = "sipeed,nanokvm-lite", "sipeed,licheerv-nano-e",
@@ -21,6 +27,7 @@
 		gpio1 = &gpio1;
 		gpio2 = &gpio2;
 		gpio3 = &gpio3;
+		gpio4 = &gpio4;
 		serial0 = &uart0;
 		serial1 = &uart1;
 		serial2 = &uart2;
@@ -43,6 +50,14 @@
 		c906l_rtos: rtos@8fe00000 {
 			reg = <0x8fe00000 0x200000>;
 			no-map;
+		};
+
+		/* soph_sys carveout, mapped for cached access. Size only, as on 5.10: U-Boot may */
+		/* relocate the DTB into a fixed region, and soph_sys zeroes it at probe. */
+		media_carveout: media {
+			size = <0x4b00000>;
+			alignment = <0x100000>;
+			alloc-ranges = <0x80000000 0xfe00000>;
 		};
 	};
 
@@ -165,6 +180,19 @@
 		};
 	};
 
+	/* RX0N as CAM_MCLK1 and PWR_GPIO1 as the bridge reset, as the vendor U-Boot sets them */
+	mipi_rx_cfg: mipi-rx-cfg {
+		cam-mclk1-pins {
+			pinmux = <PINMUX(PIN_MIPIRX0N, 5)>;
+			power-source = <1800>;
+		};
+
+		snsr-reset-pins {
+			pinmux = <PINMUX(PIN_PWR_GPIO1, 0)>;
+			power-source = <1800>;
+		};
+	};
+
 	user_led_cfg: user-led-cfg {
 		user-led-pins {
 			pinmux = <PINMUX(PIN_SD0_PWR_EN, 3)>;
@@ -267,4 +295,180 @@
 
 &tpu {
 	status = "disabled";
+};
+
+/*
+ * Media blocks for the osdrv modules (hardened-soph-media), from the vendor
+ * soph_base.dtsi and soph_base_riscv.dtsi with mainline clock and reset IDs.
+ * Vendor interrupt numbers are PLIC numbers: SOC_PERIPHERAL_IRQ(n - 16).
+ */
+&{/soc} {
+	/* RTC-domain GPIO bank (vendor PWR_GPIO, "porte") */
+	gpio4: gpio@5021000 {
+		compatible = "snps,dw-apb-gpio";
+		reg = <0x05021000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		porte: gpio-controller@0 {
+			compatible = "snps,dw-apb-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			reg = <0>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <SOC_PERIPHERAL_IRQ(54) IRQ_TYPE_LEVEL_HIGH>;
+			gpio-line-names =
+				"", "hdmi-bridge-reset", "", "", "", "", "", "",
+				"", "", "", "", "", "", "", "",
+				"", "", "", "", "", "", "", "",
+				"", "", "", "", "", "", "", "";
+		};
+	};
+
+	sys {
+		compatible = "cvitek,sys";
+		memory-region = <&media_carveout>;
+	};
+
+	base@a0c8000 {
+		compatible = "cvitek,base";
+		reg = <0x0a0c8000 0x20>;
+		reg-names = "vip_sys";
+		/* eFuse (base_uid) and the media clocks the vendor clk driver marks critical; */
+		/* soph_base keeps them on while loaded. */
+		clocks = <&clk CLK_EFUSE>, <&clk CLK_APB_EFUSE>,
+			 <&clk CLK_CFG_REG_VIP>, <&clk CLK_VIP_IP0>, <&clk CLK_VIP_IP1>,
+			 <&clk CLK_VIP_IP2>, <&clk CLK_VIP_IP3>, <&clk CLK_CSI0_RX_VIP>,
+			 <&clk CLK_CSI1_RX_VIP>, <&clk CLK_CSI_BE_VIP>, <&clk CLK_RAW_VIP>,
+			 <&clk CLK_OSDC_VIP>, <&clk CLK_CAM0_VIP>, <&clk CLK_PAD_VI_VIP>,
+			 <&clk CLK_PAD_VI1_VIP>, <&clk CLK_PAD_VI2_VIP>, <&clk CLK_LVDS0_VIP>,
+			 <&clk CLK_LVDS1_VIP>, <&clk CLK_IVE_VIP>, <&clk CLK_CAM0_200>;
+	};
+
+	cif@a0c2000 {
+		compatible = "cvitek,cif";
+		reg = <0x0a0c2000 0x2000>, <0x0a0d0000 0x1000>,
+		      <0x0a0c4000 0x2000>, <0x0a0c6000 0x2000>,
+		      <0x03001c30 0x30>;
+		reg-names = "csi_mac0", "csi_wrap0", "csi_mac1", "csi_mac2", "pad_ctrl";
+		interrupts = <SOC_PERIPHERAL_IRQ(10) IRQ_TYPE_LEVEL_HIGH>,
+			     <SOC_PERIPHERAL_IRQ(11) IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "csi0", "csi1";
+		snsr-reset-gpios = <&porte 1 GPIO_ACTIVE_LOW>;
+		resets = <&rst RST_CSIPHY0>, <&rst RST_CSIPHY1>,
+			 <&rst RST_CSIPHY0RST_APB>, <&rst RST_CSIPHY1RST_APB>;
+		reset-names = "phy0", "phy1", "phy-apb0", "phy-apb1";
+		clocks = <&clk CLK_CAM0>, <&clk CLK_CAM1>, <&clk CLK_SRC_VIP_SYS_2>,
+			 <&clk CLK_MIPIMPLL>, <&clk CLK_DISPPLL>, <&clk CLK_FPLL>;
+		clock-names = "clk_cam0", "clk_cam1", "clk_sys_2",
+			      "clk_mipimpll", "clk_disppll", "clk_fpll";
+		pinctrl-names = "default";
+		pinctrl-0 = <&mipi_rx_cfg>;
+	};
+
+	vi@a000000 {
+		compatible = "cvitek,vi";
+		reg = <0x0a000000 0x80000>;
+		interrupts = <SOC_PERIPHERAL_IRQ(8) IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "isp";
+		clocks = <&clk CLK_SRC_VIP_SYS_0>, <&clk CLK_SRC_VIP_SYS_1>,
+			 <&clk CLK_SRC_VIP_SYS_2>, <&clk CLK_SRC_VIP_SYS_3>,
+			 <&clk CLK_AXI_VIP>, <&clk CLK_CSI_BE_VIP>,
+			 <&clk CLK_RAW_VIP>, <&clk CLK_ISP_TOP_VIP>,
+			 <&clk CLK_CSI_MAC0_VIP>, <&clk CLK_CSI_MAC1_VIP>,
+			 <&clk CLK_CSI_MAC2_VIP>;
+		clock-names = "clk_sys_0", "clk_sys_1", "clk_sys_2", "clk_sys_3",
+			      "clk_axi", "clk_csi_be", "clk_raw", "clk_isp_top",
+			      "clk_csi_mac0", "clk_csi_mac1", "clk_csi_mac2";
+		clock-freq-vip-sys1 = <300000000>;
+	};
+
+	vpss@a080000 {
+		compatible = "cvitek,vpss";
+		reg = <0x0a080000 0x10000>, <0x0a0d1000 0x100>;
+		reg-names = "sc";
+		interrupts = <SOC_PERIPHERAL_IRQ(9) IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "sc";
+		clocks = <&clk CLK_SRC_VIP_SYS_0>, <&clk CLK_SRC_VIP_SYS_1>,
+			 <&clk CLK_SRC_VIP_SYS_2>, <&clk CLK_IMG_D_VIP>,
+			 <&clk CLK_IMG_V_VIP>, <&clk CLK_SC_TOP_VIP>,
+			 <&clk CLK_SC_D_VIP>, <&clk CLK_SC_V1_VIP>,
+			 <&clk CLK_SC_V2_VIP>, <&clk CLK_SC_V3_VIP>;
+		clock-names = "clk_sys_0", "clk_sys_1", "clk_sys_2", "clk_img_d",
+			      "clk_img_v", "clk_sc_top", "clk_sc_d", "clk_sc_v1",
+			      "clk_sc_v2", "clk_sc_v3";
+		clock-freq-vip-sys1 = <300000000>;
+	};
+
+	/* No display; the middleware opens /dev/cvi-vo at start-up */
+	vo {
+		compatible = "cvitek,vo";
+		clocks = <&clk CLK_DISP_VIP>, <&clk CLK_DSI_MAC_VIP>, <&clk CLK_BT_VIP>;
+		clock-names = "clk_disp", "clk_dsi", "clk_bt";
+	};
+
+	dwa@a0c0000 {
+		compatible = "cvitek,dwa";
+		reg = <0x0a0c0000 0x1000>;
+		reg-names = "dwa";
+		interrupts = <SOC_PERIPHERAL_IRQ(12) IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "dwa";
+		clocks = <&clk CLK_SRC_VIP_SYS_0>, <&clk CLK_SRC_VIP_SYS_1>,
+			 <&clk CLK_SRC_VIP_SYS_2>, <&clk CLK_SRC_VIP_SYS_3>,
+			 <&clk CLK_SRC_VIP_SYS_4>, <&clk CLK_DWA_VIP>;
+		clock-names = "clk_sys_0", "clk_sys_1", "clk_sys_2", "clk_sys_3",
+			      "clk_sys_4", "clk_dwa";
+		clock-freq-vip-sys1 = <300000000>;
+	};
+
+	rgn {
+		compatible = "cvitek,rgn";
+	};
+
+	vcodec@b020000 {
+		compatible = "cvitek,asic-vcodec";
+		reg = <0x0b020000 0x10000>, <0x0b010000 0x10000>, <0x0b030000 0x100>,
+		      <0x0b058000 0x100>, <0x0b050000 0x400>;
+		reg-names = "h265", "h264", "vc_ctrl", "vc_sbm", "vc_addr_remap";
+		interrupts = <SOC_PERIPHERAL_IRQ(6) IRQ_TYPE_LEVEL_HIGH>,
+			     <SOC_PERIPHERAL_IRQ(5) IRQ_TYPE_LEVEL_HIGH>,
+			     <SOC_PERIPHERAL_IRQ(7) IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "h265", "h264", "sbm";
+		clocks = <&clk CLK_AXI_VIDEO_CODEC>,
+			 <&clk CLK_H264C>, <&clk CLK_APB_H264C>,
+			 <&clk CLK_H265C>, <&clk CLK_APB_H265C>,
+			 <&clk CLK_VC_SRC0>, <&clk CLK_VC_SRC1>,
+			 <&clk CLK_VC_SRC2>, <&clk CLK_CFG_REG_VC>;
+		clock-names = "clk_axi_video_codec",
+			      "clk_h264c", "clk_apb_h264c",
+			      "clk_h265c", "clk_apb_h265c",
+			      "clk_vc_src0", "clk_vc_src1",
+			      "clk_vc_src2", "clk_cfg_reg_vc";
+	};
+
+	jpu@b000000 {
+		compatible = "cvitek,asic-jpeg";
+		reg = <0x0b000000 0x300>, <0x0b030000 0x100>, <0x0b058000 0x100>;
+		reg-names = "jpeg", "vc_ctrl", "vc_sbm";
+		interrupts = <SOC_PERIPHERAL_IRQ(4) IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "jpeg";
+		clocks = <&clk CLK_AXI_VIDEO_CODEC>,
+			 <&clk CLK_JPEG>, <&clk CLK_APB_JPEG>,
+			 <&clk CLK_VC_SRC0>, <&clk CLK_VC_SRC1>,
+			 <&clk CLK_VC_SRC2>, <&clk CLK_CFG_REG_VC>;
+		clock-names = "clk_axi_video_codec",
+			      "clk_jpeg", "clk_apb_jpeg",
+			      "clk_vc_src0", "clk_vc_src1",
+			      "clk_vc_src2", "clk_cfg_reg_vc";
+		resets = <&rst RST_JPEG>;
+		reset-names = "jpeg";
+	};
+
+	cvi-vc-drv@b030000 {
+		compatible = "cvitek,cvi_vc_drv";
+		reg = <0x0b030000 0x100>, <0x0b058000 0x100>, <0x0b050000 0x400>;
+		reg-names = "vc_ctrl", "vc_sbm", "vc_addr_remap";
+	};
 };

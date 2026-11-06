@@ -1,7 +1,7 @@
 ---
-status: plan (Phase 0 done, Phase 1 boots on the Lite; the musl/T-Head userland part is on main)
+status: plan (Phases 0 to 2 done on the Lite: 6.18 boots, media modules load, HDMI capture streams; the musl/T-Head userland part is on main)
 applies-to: system 0.4.0 -> next system release on Linux 6.18
-last-checked: 2026-11-06 (Phase 1 booted on the Lite; osdrv trial re-run on 6.18.29)
+last-checked: 2026-11-06 (Phase 2 on the Lite: 11 media modules, MJPEG, WebRTC and Direct H.264)
 ---
 
 # Plan: migrate from the vendor 5.10 kernel to mainline 6.18
@@ -398,9 +398,9 @@ Changes needed:
 3. `/dev/mem`: riscv uses the generic `STRICT_DEVMEM` check, which blocks System
    RAM [I]. The 5.10 system already needs `/dev/mem`; record this in
    `docs/reference/security-model.md`.
-4. DT: add a fixed-address `reserved-memory` node for the media region (75 MiB at
-   `0x8b300000` unless re-planned; give it an explicit `reg` so it is
-   deterministic) and either shrink the memory node to 254 MiB like the vendor DT or
+4. DT: add a size-only `reserved-memory` node for the media region (75 MiB, as
+   the vendor `ion_reserved` node; a fixed `reg` at `0x8b300000` held the DTB that
+   U-Boot relocates near the top of RAM, and `soph_sys` zeroes the region at probe) and either shrink the memory node to 254 MiB like the vendor DT or
    keep 256 MiB and reserve the RTOS region `0x8fe00000` (2 MiB, `no-map`). Give
    `soph_sys` a `memory-region`. Omit the `cvitek,rtos_image` node so
    `sys_mem_rtos_size()` skips nothing. Do not carry over the vendor `cvifb`
@@ -946,6 +946,72 @@ Order: `soph_sys` -> `soph_base` -> `soph_mipi_rx` + `soph_snsr_i2c` -> `soph_vi
 Exit: `soph_*` modules load with no unresolved symbols; `/dev/cvi-*` nodes appear;
 `/proc/cvitek/sys_mem` reports the carveout; the cache test passes; a single HDMI
 frame reaches user space.
+
+**State 2026-11-06** (built, not yet loaded on hardware):
+
+- `package/hardened-soph-media` builds the 11 kept modules (`sys base cif vcodec
+  jpeg cvi_vc_drv vi vpss dwa rgn vo`) with the `kernel-module` infrastructure into
+  `/lib/modules/<version>/extra`. It applies the eight 5.10 osdrv patches in their
+  order, then `sophgo-osdrv-1b3a496-linux-6.18.patch`, and copies `include/`
+  (the CV181X pinmux headers from the vendor kernel, a no-op
+  `streamline_annotate.h`) into the tree. GCC 14 builds every module with the
+  vendor `-Werror` and no warnings; modpost resolves every symbol. Not built:
+  `snsr_i2c ive mon fb rtos_cmdqu fast_image` (dropped, section 6.2) and
+  `soph_mipi_tx` (MIPI panels; never loaded on 5.10).
+- The 6.18 patch, beyond the renames in section 5: the carveout's cache
+  maintenance goes through `dma_sync_single_for_device/_for_cpu` on the `sys`
+  device instead of `arch_sync_dma_for_device`. `sched_setscheduler` becomes
+  `sched_setattr_nocheck` with the vendor policies and priorities (RR 95/99 in
+  the codec, FIFO `MAX_RT_PRIO - 10` in VI/VPSS/VO, 50 in DWA). `cif` takes the
+  sensor reset as a gpiod line from the DT (`snsr-reset-gpios`), refuses
+  `CVI_MIPI_GPIO_INIT` (it took a global GPIO number from user space; nothing
+  calls it), and uses the clk API path (`CONFIG_CLK_SOPHGO_CV1800`) instead of raw
+  PLL register writes. `lt_int` reads an optional `lt-int-gpios` line; the DT has
+  none, so `/proc/lt_int` stays 0, as on 5.10 where `cif` held the line. `base`
+  reads `base_uid` once at probe from the eFuse shadow registers (with the
+  node's eFuse clocks), and the eFuse dump and programming attributes are gone.
+  `vo` ignores display GPIO numbers. Unchecked `mutex_lock_interruptible` calls
+  (which went on without the lock after a signal) are now `mutex_lock`. The
+  ION-based `dwa` self-test is not built.
+- DT (`sg2002-nanokvm-lite.dts`): the RTC-domain GPIO bank (`gpio@5021000`,
+  `porte`, IRQ 70), the carveout as a mapped, size-only `reserved-memory`
+  node (75 MiB, option (a) of 6.1; the kernel picks the address), and the media nodes with mainline
+  clock IDs. The CSI PHY resets are local defines (bits 70 to 73; mainline's
+  `cv18xx-reset.h` does not name them). A pinctrl state sets RX0N to CAM_MCLK1
+  (`sensor_cfg.ini.beta` enables MCLK 1) and PWR_GPIO1 to GPIO.
+- `S00kmod` loads the 6.18 set from `/lib/modules/$(uname -r)/extra`; the 5.10 list
+  from `/mnt/system/ko` is gone (section 1, 5.10 compatibility).
+- First load (test 11 DTB, fixed `reg` at `0x8b300000`): `soph_sys` probed and
+  zeroed the carveout, which held the boot DTB, so every `/proc/device-tree`
+  property read as zeros and `soph_base` matched no node. U-Boot leaves the DTB at
+  `0x8e712000`, and since 6.4 (`ef69d2559fe9`) RISC-V `setup_bootmem()` places
+  reserved-memory before it reserves the DTB, so a size-only node landed on it too.
+  Kernel patch `0003` restores the 5.10 order (DTB first); the node stays size-only.
+- Second load (test 15): `soph_base` hung the bus and the watchdog reset the board.
+  Mainline gates every unused clock, and `base_probe()` writes `vip_sys` (`0x0a0c8000`)
+  with `clk_cfg_reg_vip` off; the vendor `clk-cv181x.c` marks the VIP bus, register
+  and CSI clocks `CLK_IS_CRITICAL`. The `base` node now lists those clocks (and the
+  eFuse pair), and `soph_base` enables them before any register access and keeps them
+  on while loaded (`devm_clk_bulk_get_all_enabled`).
+- Test 16: `soph_sys` and `soph_base` load; the carveout is at `0x89c00000`, the DTB
+  stays intact, `/dev/cvi-sys`, `/dev/cvi-base` and `/proc/cvitek/{sys_mem,vb,log,sys,power}`
+  exist, `sys_mem` reports the 78643200-byte heap, and `base_uid` reads a UID (not yet
+  compared with 5.10's).
+- Test 16, rest: `mipi_rx`, `vi`, `vpss`, `dwa`, `vo`, `rgn`, `vcodec`, `jpeg` and
+  `vc_driver` (`MaxVencChnNum=9 MaxVdecChnNum=9`) load in that order without hangs; all
+  `/dev/cvi-*` nodes and `cvi_vc_{enc,dec}0..8` exist, and the VI, VPSS, DWA, H.264 and
+  H.265 IRQs register. `jpu_probe` logs `irq = 0`: it looks the IRQ up as an
+  `IORESOURCE_IRQ`, which DT no longer provides, but its `request_irq` is compiled out.
+- Server restart with HDMI connected: `kvmv_init` sets up VI for the LT6911
+  (1920x1080 UYVY over MIPI, 4 lanes); the VB pools come from the carveout
+  (`VbPool0` at `0x89c00000`, 18.9 MB used); `/proc/cvitek/vi` reports about 53 fps
+  with no lost frames. `kvm_system` logs `family ID request : receive error`
+  (LT6911 I2C, not yet looked at). The web UI shows the host's picture in MJPEG
+  and WebRTC (H.264), and Direct H.264 works over HTTPS. Section 6.1 defines no separate cache
+  test: correct frames through VI, VPSS and both encoders stand in for it here, and
+  R1 stays open for the Phase 3 soak.
+- Open for Phase 3: `libkvm_mmf`'s `reinit_soph_vb()` reloads modules with
+  hard-coded `/mnt/system/ko` paths and the 5.10 list.
 
 ### Phase 3: capture and encode end to end on the Lite
 
