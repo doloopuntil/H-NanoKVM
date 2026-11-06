@@ -890,13 +890,13 @@ Exit criteria:
 |---|---|
 | Boots to login | Yes over SSH (no UART on the test unit) |
 | Ethernet and DHCP | Yes; MAC from licheerv's U-Boot eFuse patch, stable across boots |
-| Web UI | **No**: the server dies in `mmf_init()`; the vision wrapper throws a C++ exception through the FFI boundary because `/dev/cvi-sys` and `/dev/cvi-base` do not exist. Phase 2 removes the cause; the server should still survive it |
+| Web UI | Yes, without video. libkvm built the camera in a static initialiser whose failed `mmf_init()` threw before `main`, so the server died every 10 s on a kernel without `/dev/cvi-sys`; `kvmv_init` now opens it and runs on without it |
 | USB gadget | UDC `configured` with HID x3, mass storage, RNDIS; host-side use not tested |
 | `S15kvmhwd` | Runs; its sysfs GPIO numbers are the 5.10 ones (bank A is 512 on 6.18, 480 on 5.10), deferred to Phase 4 |
 | exFAT `/data` | Mounts (read-only by design while the USB disk shares it) |
 | WireGuard, nftables | Built in; legacy `iptables`/`ip6tables` rules load. The rootfs has no `nft` binary |
 | Watchdog | `dw_wdt` adopts the FSBL timer; the feeder's 60 s request becomes 85 s (next TOP) |
-| Boot guard reset | **No**: the counter is reset by the server once healthy |
+| Boot guard reset | Yes, once the server is up (`RTC_INFO1` back to `0xDEADBEEF`) |
 | `dmesg` | Clean apart from DMI absent, `dwc2 g_dma_desc`, and the RTC having no time yet |
 
 Also noted: mainline's DT has no node for the PWR-domain GPIO bank (only four
