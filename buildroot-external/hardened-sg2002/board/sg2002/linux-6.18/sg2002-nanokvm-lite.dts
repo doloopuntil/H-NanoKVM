@@ -1,0 +1,270 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * NanoKVM Lite: LicheeRV Nano E (SG2002, 100M Ethernet, no Wi-Fi) with the
+ * HDMI-to-CSI board. Pin setup follows the vendor U-Boot cvi_board_init.c.
+ */
+
+/dts-v1/;
+
+#include "sophgo/sg2002.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/linux-event-codes.h>
+
+/ {
+	model = "Sipeed NanoKVM Lite";
+	compatible = "sipeed,nanokvm-lite", "sipeed,licheerv-nano-e",
+		     "sipeed,licheerv-nano", "sophgo,sg2002";
+
+	aliases {
+		gpio0 = &gpio0;
+		gpio1 = &gpio1;
+		gpio2 = &gpio2;
+		gpio3 = &gpio3;
+		serial0 = &uart0;
+		serial1 = &uart1;
+		serial2 = &uart2;
+		i2c1 = &i2c1;
+		i2c4 = &i2c4;
+		i2c5 = &i2c5;
+		ethernet0 = &gmac0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* C906L firmware, as in the vendor memmap; empty until the core gets a job */
+		c906l_rtos: rtos@8fe00000 {
+			reg = <0x8fe00000 0x200000>;
+			no-map;
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		key-user {
+			label = "User Key";
+			linux,code = <KEY_DISPLAYTOGGLE>;
+			debounce-interval = <10>;
+			gpios = <&porta 30 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&user_led_cfg>;
+
+		led-user {
+			label = "nanokvm:blue:user";
+			gpios = <&porta 14 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "activity";
+		};
+	};
+
+	/* OLED on the Full and PCIe; probed by kvm_system */
+	i2c5: i2c-gpio {
+		compatible = "i2c-gpio";
+		pinctrl-names = "default";
+		pinctrl-0 = <&i2c5_cfg>;
+		scl-gpios = <&porta 15 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		sda-gpios = <&porta 27 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <5>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
+
+&osc {
+	clock-frequency = <25000000>;
+};
+
+&pinctrl {
+	uart0_cfg: uart0-cfg {
+		uart0-pins {
+			pinmux = <PINMUX(PIN_UART0_TX, 0)>,
+				 <PINMUX(PIN_UART0_RX, 0)>;
+			bias-pull-up;
+			drive-strength-microamp = <10800>;
+			power-source = <3300>;
+		};
+	};
+
+	sdhci0_cfg: sdhci0-cfg {
+		sdhci0-clk-pins {
+			pinmux = <PINMUX(PIN_SD0_CLK, 0)>;
+			bias-pull-up;
+			drive-strength-microamp = <16100>;
+			power-source = <3300>;
+		};
+
+		sdhci0-cmd-pins {
+			pinmux = <PINMUX(PIN_SD0_CMD, 0)>;
+			bias-pull-up;
+			drive-strength-microamp = <10800>;
+			power-source = <3300>;
+		};
+
+		sdhci0-data-pins {
+			pinmux = <PINMUX(PIN_SD0_D0, 0)>,
+				 <PINMUX(PIN_SD0_D1, 0)>,
+				 <PINMUX(PIN_SD0_D2, 0)>,
+				 <PINMUX(PIN_SD0_D3, 0)>;
+			bias-pull-up;
+			drive-strength-microamp = <10800>;
+			power-source = <3300>;
+		};
+
+		sdhci0-cd-pins {
+			pinmux = <PINMUX(PIN_SD0_CD, 0)>;
+			bias-pull-up;
+			drive-strength-microamp = <10800>;
+			power-source = <3300>;
+		};
+	};
+
+	/* A18/A19 (JTAG pads) as UART1, A28/A29 as UART2: the two user serial ports */
+	uart1_cfg: uart1-cfg {
+		uart1-pins {
+			pinmux = <PINMUX(PIN_JTAG_CPU_TMS, 6)>,
+				 <PINMUX(PIN_JTAG_CPU_TCK, 6)>;
+			power-source = <3300>;
+		};
+	};
+
+	uart2_cfg: uart2-cfg {
+		uart2-pins {
+			pinmux = <PINMUX(PIN_IIC0_SCL, 2)>,
+				 <PINMUX(PIN_IIC0_SDA, 2)>;
+			power-source = <3300>;
+		};
+	};
+
+	/* HDMI bridge I2C: PWR_GPIO6/8 in vendor names */
+	i2c4_cfg: i2c4-cfg {
+		i2c4-pins {
+			pinmux = <PINMUX(PIN_PWR_WAKEUP0, 5)>,
+				 <PINMUX(PIN_PWR_BUTTON1, 5)>;
+			power-source = <1800>;
+		};
+	};
+
+	/* A15 SCL, A27 SDA */
+	i2c5_cfg: i2c5-cfg {
+		i2c5-pins {
+			pinmux = <PINMUX(PIN_SPK_EN, 3)>,
+				 <PINMUX(PIN_EMMC_DAT3, 3)>;
+			power-source = <3300>;
+		};
+	};
+
+	user_led_cfg: user-led-cfg {
+		user-led-pins {
+			pinmux = <PINMUX(PIN_SD0_PWR_EN, 3)>;
+			power-source = <3300>;
+		};
+	};
+
+	/* A22 OLED reset, A23 power key, A24 power LED, A25 reset key, A26 Wi-Fi enable */
+	kvm_gpio_cfg: kvm-gpio-cfg {
+		kvm-gpio-pins {
+			pinmux = <PINMUX(PIN_EMMC_CLK, 3)>,
+				 <PINMUX(PIN_EMMC_CMD, 3)>,
+				 <PINMUX(PIN_EMMC_DAT1, 3)>,
+				 <PINMUX(PIN_EMMC_DAT0, 3)>,
+				 <PINMUX(PIN_EMMC_DAT2, 3)>;
+			power-source = <3300>;
+		};
+	};
+};
+
+&gpio0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&kvm_gpio_cfg>;
+};
+
+&porta {
+	gpio-line-names =
+		"", "", "", "", "", "", "", "",
+		"", "", "", "", "", "", "user-led", "i2c5-scl",
+		"", "", "uart1", "uart1", "", "", "oled-reset", "atx-power",
+		"atx-power-led", "atx-reset", "wifi-enable", "i2c5-sda",
+		"uart2", "uart2", "user-key", "";
+};
+
+&portb {
+	gpio-line-names =
+		"", "", "", "hdmi-reset", "", "", "", "",
+		"", "", "", "", "", "", "", "",
+		"", "", "", "", "", "", "", "",
+		"", "", "", "", "", "", "", "";
+};
+
+&sdhci0 {
+	pinctrl-0 = <&sdhci0_cfg>;
+	pinctrl-names = "default";
+	status = "okay";
+	bus-width = <4>;
+	no-1-8-v;
+	no-mmc;
+	no-sdio;
+	disable-wp;
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0_cfg>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_cfg>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2_cfg>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&ephy_init {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+};
+
+&gmac0 {
+	status = "okay";
+};
+
+/* Kept so /dev/i2c-1 exists for kvm_system; its pads stay SDIO */
+&i2c1 {
+	status = "okay";
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_cfg>;
+	pinctrl-names = "default";
+	clock-frequency = <400000>;
+	status = "okay";
+};
+
+&usb {
+	dr_mode = "peripheral";
+	status = "okay";
+};
+
+&tpu {
+	status = "disabled";
+};

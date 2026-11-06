@@ -12,5 +12,6 @@ source "$BR2_EXTERNAL_HARDENED_SG2002_PATH/package/hardened-aic8800-sdio-firmwar
 source "$BR2_EXTERNAL_HARDENED_SG2002_PATH/package/hardened-cvitek-riscv64-musl-sysroot/Config.in"
 source "$BR2_EXTERNAL_HARDENED_SG2002_PATH/package/hardened-nanokvm-kvmapp/Config.in"
 source "$BR2_EXTERNAL_HARDENED_SG2002_PATH/package/hardened-sg2002-vendor-runtime/Config.in"
+source "$BR2_EXTERNAL_HARDENED_SG2002_PATH/package/hardened-sg2002-fip/Config.in"
 
 endmenu

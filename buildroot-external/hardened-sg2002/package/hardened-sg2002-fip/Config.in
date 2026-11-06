@@ -1,0 +1,26 @@
+config BR2_PACKAGE_HARDENED_SG2002_FIP
+	bool "SG2002 FSBL and FIPs (standard and overdrive clocks)"
+	depends on BR2_riscv
+	depends on BR2_TARGET_OPENSBI
+	depends on BR2_TARGET_UBOOT
+	select BR2_PACKAGE_HOST_PYTHON3
+	select BR2_PACKAGE_HOST_PYTHON3_XZ # fiptool.py compresses U-Boot with lzma
+	help
+	  Build the vendor FSBL from the pinned LicheeRV Nano SDK twice
+	  (standard and overdrive clock tables) with the boot guard,
+	  and pack fip.std.bin and fip.od.bin with the Buildroot OpenSBI
+	  and U-Boot. fip.bin is a copy of the standard one.
+
+	  The source is a sparse SDK checkout made by
+	  scripts/fetch-sg2002-boot-source.sh. ddr_param.bin is the
+	  vendor's checked-in DDR training blob; no source exists.
+
+if BR2_PACKAGE_HARDENED_SG2002_FIP
+
+config BR2_PACKAGE_HARDENED_SG2002_FIP_C906L_IMAGE
+	string "C906L firmware image"
+	help
+	  Binary loaded onto the C906L core by the FSBL. Empty leaves
+	  the core idle, as on the 5.10 images.
+
+endif

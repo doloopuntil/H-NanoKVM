@@ -1,7 +1,7 @@
 ---
-status: plan (Phase 0 done; the musl/T-Head userland part is on main)
+status: plan (Phase 0 done, Phase 1 boots on the Lite; the musl/T-Head userland part is on main)
 applies-to: system 0.4.0 -> next system release on Linux 6.18
-last-checked: 2026-11-05 (reconciled against origin/main 21c22f2; osdrv trial re-run on 6.18.29)
+last-checked: 2026-11-06 (Phase 1 booted on the Lite; osdrv trial re-run on 6.18.29)
 ---
 
 # Plan: migrate from the vendor 5.10 kernel to mainline 6.18
@@ -34,7 +34,7 @@ Nothing here has been run on hardware.
 | T-Head ISA extensions | Enable them across the userland where the risk is manageable (section 6.7); **not** in the kernel or boot firmware. One feature set, one switch. |
 | Framebuffer | **None.** No `cvifb` boot-logo reservation (7.8 MiB) and no `soph_fb`: the NanoKVM has no display output, and the OLED is an I2C device driven from user space by `kvm_system`. |
 | Kernel optimisation | **`CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE` (`-O2`)**, not the vendor 5.10's `-Os`. The out-of-tree media modules inherit it. Measured cost in section 6.4.1. |
-| FIP contents | **Built from source** (`ddr_param.bin`, `cvirtos.bin`, FSBL, OpenSBI, U-Boot). No prebuilt blobs from the licheerv/varyhin packages. |
+| FIP contents | **Built from source**: FSBL (from the pinned SDK), OpenSBI, U-Boot. `ddr_param.bin` has no source anywhere and comes from the pinned SDK's FSBL tree (section 6.5). No C906L image for now. Nothing from the licheerv/varyhin firmware packages. |
 
 ### 1.1 The two external trees
 
@@ -172,8 +172,10 @@ device controller (UDC name used by scripts and by `kvm_system`).
 BootROM -> **vendor FSBL** (with `fsbl-boot-guard.patch` and
 `fsbl-overdrive-clocks.patch`; produces `fip.od.bin` and `fip.std.bin`, with
 `fip.bin` a copy of one of them) -> OpenSBI -> **vendor U-Boot 2021.10** ->
-`boot.sd` (FIT with kernel + DTB). The FSBL loads the vendor FreeRTOS image
-(`cvirtos.bin`) onto the C906L core at `0x8fe00000` (2 MiB).
+`boot.sd` (FIT with kernel, initramfs and DTB). The Hardened FIPs carry **no**
+C906L image (`BLCP_2ND` size and run address are 0 in both `fip.std.bin` and
+`fip.od.bin` [V, Phase 1]), so the FSBL leaves the C906L idle; the vendor memmap
+still sets aside `0x8fe00000` (2 MiB) for one.
 
 Vendor memory map (`reference/cvi_board_memmap.h`, `memmap.py`) [V]:
 DRAM `0x80000000`, 256 MiB. FreeRTOS `0x8fe00000` (2 MiB). ION/media region
@@ -457,9 +459,17 @@ at load and logs `communicate with rtos fail` [V, Phase 0]. Nothing in the KVM
 path depends on the RTOS today.
 
 Decisions: use the mainline mailbox driver (`CONFIG_CV1800_MBOX`, node `0023`);
-keep a `cvirtos.bin` in the FIP and keep its region `no-map`; do not load
-`soph_rtos_cmdqu`. The RTOS source (FreeRTOS + CVITEK drivers + `build_freertos.sh`)
-is in the Sipeed SDK `freertos/` tree, so it can be built from source.
+keep the C906L region `0x8fe00000` (2 MiB) `no-map` in the DT; do not load
+`soph_rtos_cmdqu`. The FIP carries no C906L image, as on 5.10 (the FSBL logs
+`No C906L image.`); `BR2_PACKAGE_HARDENED_SG2002_FIP_C906L_IMAGE` adds one.
+
+When the C906L gets a job, the firmware needs a bare-metal newlib toolchain: the
+SDK FreeRTOS links `-lm -lc -lgcc -lsim`. Buildroot 2026.05.1 has one
+(`toolchain-bare-metal-buildroot`). Two sources: the SDK `freertos/` tree, or the
+`xrobot-org/bsp-lichee-rvnano-c906l` BSP (same vendor FreeRTOS port from Milk-V's
+`duo-buildroot-sdk-v2`, LicheeRV Nano memmap at `0x8fe00000`, an ELF for Linux
+remoteproc and a `.bin` for the FIP; it has no license file). Loading through
+remoteproc would need Sophgo's `cvitek_remoteproc` driver, which mainline lacks.
 Future use (video-stream encryption on the C906L): messages must use
 `ip_id < IP_LIMIT` and `cmd_id < SYS_CMD_INFO_LIMIT` if the vendor protocol is
 kept, shared buffers must be below 4 GiB, and cache maintenance is manual on both
@@ -816,6 +826,88 @@ reachable; USB gadget enumerates on a host with HID, mass storage and RNDIS;
 mounts; WireGuard and nftables load; watchdog adopts the FSBL-armed timer; boot
 guard counter resets; `dmesg` clean of unexpected warnings.
 
+**State 2026-11-05** (built locally, not yet booted):
+
+- `configs/hardened_sg2002_nanokvm_6x_defconfig`: the 5.10 defconfig plus Linux
+  6.18.29 (headers from the kernel, `BR2_KERNEL_HEADERS_AS_KERNEL`), OpenSBI 1.8.1
+  and U-Boot 2025.10 as licheerv configures them. Global patch dirs: licheerv's
+  first, then Hardened's. Hashes for the three custom versions are in
+  `board/sg2002/patches/{linux,linux-headers,uboot,opensbi}/<version>/`.
+  `ftp.denx.de` was unreachable during the build; Buildroot fell back to
+  `sources.buildroot.net` (contents checked against the GitHub `v2025.10` tag).
+- `package/hardened-sg2002-fip`: builds the FSBL from a sparse checkout of the
+  pinned SDK (`scripts/fetch-sg2002-boot-source.sh`, `fsbl/` + board memmap,
+  34 MB) with licheerv's toolchain patches 0001/0004/0005 and the boot guard,
+  twice (standard, `OD_CLK_SEL=y`), and packs `fip.std.bin`/`fip.od.bin` with the
+  SDK's `fiptool.py` (U-Boot wrapped by the package's `pack-bl33.py`). The SDK's
+  `fsbl/` is identical at our pin and at licheerv's `d4003f1`. Not used:
+  licheerv's `fsbl-sg200x`, `fip-sg200x`, `licheervnano-firmware` (varyhin).
+- `board/sg2002/linux-6.18/`: `nanokvm.fragment` (everything built in; the test
+  rootfs has no 6.18 modules), `sg2002-nanokvm-lite.dts` (written on
+  `sg2002.dtsi`, not on licheerv's E board: their audio, SD1 I2C muxing and RTOS
+  region do not fit), `extlinux.conf`, `genimage-boot.cfg`, `post-image.sh`.
+  I2C4 (HDMI bridge) is on `PIN_PWR_WAKEUP0`/`PIN_PWR_BUTTON1` function 5 (vendor
+  `PWR_GPIO6/8`, FMUX `0x090`/`0x098`, from the vendor U-Boot `cvi_board_init.c`);
+  the vendor DT's `0xf0`/`0xf4` pinmux entries are generic leftovers.
+- Sizes: `Image` 25.2 MB raw at `-O2`; boot partition 27.0 MB used of 32 MiB;
+  FIPs 602 KB each (U-Boot lzma-compressed). FIT compression is still to do.
+- Boot path for the first test: FSBL -> OpenSBI -> U-Boot -> extlinux ->
+  `Image` + DTB, no initramfs (`DEVTMPFS_MOUNT=y`), so the BOOT-button reflash
+  mode is absent on the test card.
+- Firewall: the rootfs uses **legacy** `iptables`/`ip6tables`
+  (`xtables-legacy-multi`, filter table, `-m state`), so the fragment builds
+  `IP_NF_IPTABLES_LEGACY` and `IP6_NF_IPTABLES_LEGACY` in.
+- Without `soph_base` there is no `/sys/class/cvi-base/base_uid`, so `S30eth`
+  and `S03usbdev` keep U-Boot's Ethernet MAC and fall back for the USB MACs and
+  serial. Phase 2 restores it; a mainline efuse/nvmem reader would remove the
+  dependency.
+
+**State 2026-11-06** (booted on the Lite from a test card: 6.18 boot partition,
+0.4.x rootfs, no UART; checked over SSH):
+
+Fixes needed to get there:
+
+- **BL33 run address.** The FSBL copies the 32-byte BL33 header to `runaddr` and
+  enters at `runaddr + 0x20`. licheerv's `pack-uboot.py` (unused by their own
+  build) sets `runaddr = 0x80200000`, so U-Boot ran 32 bytes off its link address
+  and died before its console. `pack-bl33.py` sets `CONFIG_TEXT_BASE - 0x20`, as
+  varyhin's fiptool does.
+- **U-Boot SD PHY.** Mainline U-Boot's `cv1800b_sdhci` resets the controller and
+  never sets the vendor PHY registers, so the card does not initialise (card
+  detect and pad supply were fine). `patches/uboot/2025.10/0001` sets
+  `MSHC_CTRL` bits 1/8/9, `PHY_TX_RX_DLY = 0x01000100` and `PHY_TX_BPS` after
+  probe, as the vendor U-Boot does, and sets `clk_sd0` to 375 MHz (it resets to
+  `fpll/15`). Found by bisecting the vendor setup with LED codes from the preboot.
+- **Ethernet.** The CV1800B MAC binds through `dwmac-generic`
+  (`snps,dwmac-3.70a`); `dwmac-sophgo` only matches SG2042/SG2044. Both
+  `DWMAC_GENERIC` and the MDIO mux are built in.
+- U-Boot's `CONFIG_SYS_CBSIZE` is 512: a longer extlinux `append` line makes the
+  label fail silently.
+
+Exit criteria:
+
+| Criterion | Result |
+|---|---|
+| Boots to login | Yes over SSH (no UART on the test unit) |
+| Ethernet and DHCP | Yes; MAC from licheerv's U-Boot eFuse patch, stable across boots |
+| Web UI | **No**: the server dies in `mmf_init()`; the vision wrapper throws a C++ exception through the FFI boundary because `/dev/cvi-sys` and `/dev/cvi-base` do not exist. Phase 2 removes the cause; the server should still survive it |
+| USB gadget | UDC `configured` with HID x3, mass storage, RNDIS; host-side use not tested |
+| `S15kvmhwd` | Runs; its sysfs GPIO numbers are the 5.10 ones (bank A is 512 on 6.18, 480 on 5.10), deferred to Phase 4 |
+| exFAT `/data` | Mounts (read-only by design while the USB disk shares it) |
+| WireGuard, nftables | Built in; legacy `iptables`/`ip6tables` rules load. The rootfs has no `nft` binary |
+| Watchdog | `dw_wdt` adopts the FSBL timer; the feeder's 60 s request becomes 85 s (next TOP) |
+| Boot guard reset | **No**: the counter is reset by the server once healthy |
+| `dmesg` | Clean apart from DMI absent, `dwc2 g_dma_desc`, and the RTC having no time yet |
+
+Also noted: mainline's DT has no node for the PWR-domain GPIO bank (only four
+chips register); nothing in user space uses it. The debug pieces used for the
+bring-up (ramoops at `0x8e000000`, heartbeat LED trigger, `loglevel=8`, U-Boot
+preboot LED codes) are not in the committed configuration.
+
+Next step after the first boot: **move the firewall from legacy iptables to
+nftables** (`S40firewall`, `S45wireguard`, the server's rule writers, Buildroot's
+`iptables` package config), then drop the legacy options from the fragment.
+
 ### Phase 2: media modules and the first frames
 
 Order: `soph_sys` -> `soph_base` -> `soph_mipi_rx` + `soph_snsr_i2c` -> `soph_vi`
@@ -922,8 +1014,8 @@ consider upstreaming it.
 | --- | --- | --- |
 | Q1 | ~~Integration shape~~ | **Decided:** two externals (section 1.1). |
 | Q2 | ~~Boot payload~~ | **Decided:** FIT (section 6.5). Still measure `/boot` headroom and boot time. |
-| Q3 | ~~FIP blobs~~ | **Decided:** build from source. Verify in Phase 1 that the SDK/FSBL build produces `ddr_param.bin` and `cvirtos.bin` (the Hardened `vendor-sdk-stock` already builds a FIP). |
-| Q4 | RTOS image and its address | Follows Q3: SDK-built FreeRTOS at `0x8fe00000`. Three things must agree: the FSBL `BLCP_2ND_RUNADDR` (`CVIMMAP_FSBL_C906L_START_ADDR`), the RTOS linker origin (`CVIMMAP_FREERTOS_ADDR` in `cv181x_lscript.ld`), and the DT. All derive from the board `memmap.py`, so build them together. Drop licheerv's `0x83f40000` region. |
+| Q3 | ~~FIP blobs~~ | **Answered** (Phase 1): `ddr_param.bin` is the same vendor blob (sha256 `5b7d4472...`) in the Hardened SDK pin, the licheerv FSBL commit and varyhin's repo; nobody builds it. The FSBL, OpenSBI and U-Boot are built from source. |
+| Q4 | RTOS image and its address | No image for now (5.10 has none either). If one is added: the FSBL `BLCP_2ND_RUNADDR` (`CVIMMAP_FSBL_C906L_START_ADDR`), the RTOS linker origin (`CVIMMAP_FREERTOS_ADDR`) and the DT must agree; all derive from the board `memmap.py`. licheerv's `0x83f40000` region is dropped. |
 | Q5 | ~~Where the BOOT-button USB reflash mode lives~~ | **Answered** (Phase 0): the vendor initramfs `/init`. Rebuild it in a source-built initramfs or in U-Boot (section 6.5). |
 | Q6 | ~~Which optional media modules to keep~~ | **Answered** (Phase 0): drop `ive mon fb snsr_i2c`; keep `dwa vo rgn` until the server is shown to start without them (section 6.2). |
 | Q7 | GPIO strategy | Phase 1: sysfs stopgap (needs `EXPERT` + `GPIO_SYSFS`) and `gpio-line-names` in the DT from day one. Phase 4: char-device access by line name; `gpio-hog` for static lines. See section 6.4. |
