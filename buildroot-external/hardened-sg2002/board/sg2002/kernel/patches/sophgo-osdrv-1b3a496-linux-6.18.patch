@@ -1,0 +1,1901 @@
+diff --git a/interdrv/Makefile.interdrv.param b/interdrv/Makefile.interdrv.param
+index 40db130..1100948 100644
+--- a/interdrv/Makefile.interdrv.param
++++ b/interdrv/Makefile.interdrv.param
+@@ -7,3 +7,6 @@ ccflags-y += -D__CV180X__
+ endif
+ # 5.10.265 minmax.h trips -Wtype-limits inside kernel headers.
+ ccflags-y += -Wno-type-limits
++# Linux 6.18: no-op stubs for vendor-kernel headers; 6.8+ turns on -Wmissing-prototypes.
++ccflags-y += -I$(src)/../include/compat
++ccflags-y += -Wno-missing-prototypes -Wno-missing-declarations
+diff --git a/interdrv/base/base.c b/interdrv/base/base.c
+index bdb90ab..9cd4b39 100644
+--- a/interdrv/base/base.c
++++ b/interdrv/base/base.c
+@@ -21,7 +21,6 @@
+ #endif
+ #include <linux/security.h>
+ #include <linux/cred.h>
+-#include "tee_cv_private.h"
+ #include "base.h"
+ #include "vb.h"
+ #include "cvi_vb_proc.h"
+@@ -33,7 +32,10 @@
+ #include <sys_k.h>
+ #include <vip_common.h>
+ 
+-#include "linux/cv180x_efuse.h"
++/* The UID from the eFuse shadow registers; mainline has no vendor efuse driver. */
++#define EFUSE_SHADOW_BASE 0x03050100
++static u32 base_uid[2];
++static bool base_uid_valid;
+ 
+ #ifndef UNUSED
+ #define UNUSED(x) ((void)(x))
+@@ -96,85 +98,19 @@ CVI_U32 base_log_lv = CVI_BASE_DBG_ERR;
+ module_param(base_log_lv, int, 0644);
+ 
+ 
+-static ssize_t base_efuse_shadow_show(struct class *class,
+-				      struct class_attribute *attr, char *buf)
++static ssize_t base_uid_show(const struct class *class,
++			     const struct class_attribute *attr, char *buf)
+ {
+-	int ret = 0;
+ 	UNUSED(class);
+ 	UNUSED(attr);
+ 
+-	ret = cvi_efuse_read_buf(0, buf, PAGE_SIZE);
+-
+-	return ret;
+-}
+-
+-static ssize_t base_efuse_shadow_store(struct class *class,
+-				       struct class_attribute *attr,
+-				       const char *buf, size_t count)
+-{
+-	unsigned long addr;
+-	CVI_U32 value = 0xDEAFBEEF;
+-	int ret;
+-	UNUSED(class);
+-	UNUSED(attr);
+-
+-	ret = kstrtoul(buf, 0, &addr);
+-	if (ret < 0) {
+-		CVI_TRACE_BASE(CVI_BASE_DBG_ERR, "efuse_read: ret=%d\n", ret);
+-		return ret;
+-	}
+-
+-	ret = cvi_efuse_read_buf(addr, &value, sizeof(value));
+-	CVI_TRACE_BASE(CVI_BASE_DBG_INFO, "efuse_read: 0x%04lx=0x%08x ret=%d\n", addr, value, ret);
+-
+-	return count;
+-}
+-
+-static ssize_t base_efuse_prog_show(struct class *class,
+-				    struct class_attribute *attr, char *buf)
+-{
+-	UNUSED(class);
+-	UNUSED(attr);
+-
+-	return scnprintf(buf, PAGE_SIZE, "%s\n", "PROG_SHOW");
+-}
+-
+-static ssize_t base_efuse_prog_store(struct class *class,
+-				     struct class_attribute *attr,
+-				     const char *buf, size_t count)
+-{
+-	int err;
+-	CVI_U32 addr = 0, value = 0;
+-	UNUSED(class);
+-	UNUSED(attr);
+-
+-	if (sscanf(buf, "0x%x=0x%x", &addr, &value) != 2)
+-		return -ENOMEM;
+-
+-	CVI_TRACE_BASE(CVI_BASE_DBG_INFO, "%s: addr=0x%02x value=0x%08x\n", __func__, addr, value);
+-	err = cvi_efuse_write(addr, value);
+-	if (err < 0)
+-		return err;
+-
+-	return count;
+-}
+-
+-static ssize_t base_uid_show(struct class *class,
+-			     struct class_attribute *attr, char *buf)
+-{
+-	CVI_U32 uid_3 = 0xDEAFBEEF;
+-	CVI_U32 uid_4 = 0xDEAFBEEF;
+-	UNUSED(class);
+-	UNUSED(attr);
+-
+-	uid_3 = cvi_efuse_read_from_shadow(0x0c);
+-	uid_4 = cvi_efuse_read_from_shadow(0x10);
+-
+-	return scnprintf(buf, PAGE_SIZE, "UID: %08x_%08x\n", uid_3, uid_4);
++	if (!base_uid_valid)
++		return -ENODEV;
++	return scnprintf(buf, PAGE_SIZE, "UID: %08x_%08x\n", base_uid[0], base_uid[1]);
+ }
+ 
+-static ssize_t base_rosc_show(struct class *class,
+-			      struct class_attribute *attr, char *buf)
++static ssize_t base_rosc_show(const struct class *class,
++			      const struct class_attribute *attr, char *buf)
+ {
+ 	int count = 0;
+ 	void __iomem *rosc_base;
+@@ -201,8 +137,8 @@ static ssize_t base_rosc_show(struct class *class,
+ 	return count;
+ }
+ 
+-static ssize_t base_rosc_store(struct class *class,
+-			       struct class_attribute *attr,
++static ssize_t base_rosc_store(const struct class *class,
++			       const struct class_attribute *attr,
+ 			       const char *buf, size_t count)
+ {
+ 	CVI_U32 chip_id;
+@@ -242,8 +178,6 @@ static ssize_t base_rosc_store(struct class *class,
+ 	return count;
+ }
+ 
+-CLASS_ATTR_RW(base_efuse_shadow);
+-CLASS_ATTR_RW(base_efuse_prog);
+ CLASS_ATTR_RO(base_uid);
+ CLASS_ATTR_RW(base_rosc);
+ 
+@@ -422,7 +356,6 @@ static int base_open(struct inode *inode, struct file *filp)
+ 	INIT_LIST_HEAD(&ps->list);
+ 	ps->state_pid = get_pid(task_pid(current));
+ 	ps->cred = get_current_cred();
+-	security_task_getsecid(current, &ps->secid);
+ 	/* memory barrier in smp case. */
+ 	smp_wmb();
+ 	/* replace the private data with base state */
+@@ -695,7 +628,7 @@ static int set_power_hdler(struct base_device *ndev, char const *input)
+ 
+ static ssize_t power_proc_write(struct file *file, const char __user *user_buf, size_t count, loff_t *ppos)
+ {
+-	struct base_device *ndev = PDE_DATA(file_inode(file));
++	struct base_device *ndev = pde_data(file_inode(file));
+ 	UNUSED(ppos);
+ 
+ 	set_power_hdler(ndev, user_buf);
+@@ -705,7 +638,7 @@ static ssize_t power_proc_write(struct file *file, const char __user *user_buf,
+ 
+ static int proc_power_open(struct inode *inode, struct file *file)
+ {
+-	struct base_device *ndev = PDE_DATA(inode);
++	struct base_device *ndev = pde_data(inode);
+ 
+ 	return single_open(file, proc_power_show, ndev);
+ }
+@@ -813,10 +746,25 @@ static int base_pm_notif(struct notifier_block *b, unsigned long v, void *d)
+ 	}
+ }
+ 
++/* Reads the UID once; the eFuse clocks are on with the node's other clocks. */
++static void base_read_uid(void)
++{
++	void __iomem *shadow;
++
++	shadow = ioremap(EFUSE_SHADOW_BASE, 0x14);
++	if (shadow) {
++		base_uid[0] = ioread32(shadow + 0x0c);
++		base_uid[1] = ioread32(shadow + 0x10);
++		base_uid_valid = true;
++		iounmap(shadow);
++	}
++}
++
+ static int base_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct base_device *ndev;
++	struct clk_bulk_data *clks;
+ 	struct resource *res;
+ 	void __iomem *reg_base;
+ 	int ret;
+@@ -827,6 +775,12 @@ static int base_probe(struct platform_device *pdev)
+ 	if (!ndev)
+ 		return -ENOMEM;
+ 
++	/* 5.10 kept the VIP bus and register clocks always on; vip_sys hangs the bus without them. */
++	ret = devm_clk_bulk_get_all_enabled(dev, &clks);
++	if (ret <= 0)
++		return dev_err_probe(dev, ret ? ret : -ENOENT, "no media clocks\n");
++	base_read_uid();
++
+ 	ndev->shared_mem = kzalloc(BASE_SHARE_MEM_SIZE, GFP_KERNEL);
+ 	if (!ndev->shared_mem)
+ 		return -ENOMEM;
+@@ -889,7 +843,7 @@ static int base_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int base_remove(struct platform_device *pdev)
++static void base_remove(struct platform_device *pdev)
+ {
+ 	struct base_device *ndev = platform_get_drvdata(pdev);
+ 
+@@ -907,7 +861,7 @@ static int base_remove(struct platform_device *pdev)
+ 	platform_set_drvdata(pdev, NULL);
+ 	CVI_TRACE_BASE(CVI_BASE_DBG_DEBUG, "%s DONE\n", __func__);
+ 
+-	return 0;
++	return;
+ }
+ 
+ static const struct of_device_id cvi_base_dt_match[] = { { .compatible = "cvitek,base" }, {} };
+@@ -924,8 +878,6 @@ static struct platform_driver base_driver = {
+ 
+ static void base_cleanup(void)
+ {
+-	class_remove_file(pbase_class, &class_attr_base_efuse_shadow);
+-	class_remove_file(pbase_class, &class_attr_base_efuse_prog);
+ 	class_remove_file(pbase_class, &class_attr_base_uid);
+ 	class_remove_file(pbase_class, &class_attr_base_rosc);
+ 	class_destroy(pbase_class);
+@@ -938,25 +890,13 @@ static int __init base_init(void)
+ 
+ 	top_base = ioremap(TOP_BASE, TOP_REG_BANK_SIZE);
+ 
+-	pbase_class = class_create(THIS_MODULE, BASE_CLASS_NAME);
++	pbase_class = class_create(BASE_CLASS_NAME);
+ 	if (IS_ERR(pbase_class)) {
+ 		CVI_TRACE_BASE(CVI_BASE_DBG_ERR, "create class failed\n");
+ 		rc = PTR_ERR(pbase_class);
+ 		goto cleanup;
+ 	}
+ 
+-	rc = class_create_file(pbase_class, &class_attr_base_efuse_shadow);
+-	if (rc) {
+-		CVI_TRACE_BASE(CVI_BASE_DBG_ERR, "base: can't create sysfs base_efuse_shadow file\n");
+-		goto cleanup;
+-	}
+-
+-	rc = class_create_file(pbase_class, &class_attr_base_efuse_prog);
+-	if (rc) {
+-		CVI_TRACE_BASE(CVI_BASE_DBG_ERR, "base: can't create sysfs base_efuse_prog) file\n");
+-		goto cleanup;
+-	}
+-
+ 	rc = class_create_file(pbase_class, &class_attr_base_uid);
+ 	if (rc) {
+ 		CVI_TRACE_BASE(CVI_BASE_DBG_ERR, "base: can't create sysfs base_uid file\n");
+diff --git a/interdrv/base/cvi_sys_proc.c b/interdrv/base/cvi_sys_proc.c
+index d1479df..acccdeb 100644
+--- a/interdrv/base/cvi_sys_proc.c
++++ b/interdrv/base/cvi_sys_proc.c
+@@ -1,4 +1,5 @@
+ #include "cvi_sys_proc.h"
++#include <generated/utsversion.h>
+ 
+ #define SYS_PROC_NAME			"sys"
+ #define SYS_PROC_PERMS			(0644)
+diff --git a/interdrv/base/cvi_vb_proc.c b/interdrv/base/cvi_vb_proc.c
+index a1964ed..f1d89db 100644
+--- a/interdrv/base/cvi_vb_proc.c
++++ b/interdrv/base/cvi_vb_proc.c
+@@ -1,4 +1,5 @@
+ #include "cvi_vb_proc.h"
++#include <generated/utsversion.h>
+ #include "sys.h"
+ 
+ #define VB_PROC_NAME			"vb"
+diff --git a/interdrv/cif/chip/cv181x/cif.c b/interdrv/cif/chip/cv181x/cif.c
+index b1a529e..9250aab 100644
+--- a/interdrv/cif/chip/cv181x/cif.c
++++ b/interdrv/cif/chip/cv181x/cif.c
+@@ -1,4 +1,5 @@
+ #include <linux/module.h>
++#include <generated/utsversion.h>
+ #include <linux/kernel.h>
+ #include <linux/interrupt.h>
+ #include <linux/of_platform.h>
+@@ -39,13 +40,12 @@
+ #include <base_cb.h>
+ #include <cif_cb.h>
+ #include <snsr_i2c.h>
+-#include <linux/gpio.h>
++#include <linux/gpio/consumer.h>
+ 
+ /* LT6911 INT edge counter for kvm_vision (/proc/lt_int), ported from the LicheeRV SDK. */
+-#define LT_INT_GPIO 353
++static struct gpio_desc *lt_int_gpio;
+ static atomic_t lt_int_count = ATOMIC_INIT(0);
+ static int lt_int_irq = -1;
+-static bool lt_int_gpio_ok;
+ static struct proc_dir_entry *lt_int_proc;
+ 
+ static int lt_int_show(struct seq_file *m, void *v)
+@@ -86,7 +86,7 @@ static const struct proc_ops lt_int_fops = {
+ static irqreturn_t lt_int_isr(int irq, void *data)
+ {
+ 	pr_debug("LT6911 INT\n");
+-	atomic_add(gpio_get_value(LT_INT_GPIO) ? 1 : 10, &lt_int_count);
++	atomic_add(gpiod_get_value(lt_int_gpio) ? 1 : 10, &lt_int_count);
+ 	return IRQ_HANDLED;
+ }
+ 
+@@ -98,16 +98,18 @@ static void lt_int_init(struct device *dev)
+ 	if (!lt_int_proc)
+ 		dev_err(dev, "lt_int: can't create proc entry\n");
+ 
+-	rc = gpio_request(LT_INT_GPIO, "LT-INT");
+-	if (rc) {
+-		dev_err(dev, "lt_int: gpio %d request failed, %d\n", LT_INT_GPIO, rc);
++	/* Optional lt-int-gpios; without it the count stays 0, as on 5.10 where cif held the line. */
++	lt_int_gpio = devm_gpiod_get_optional(dev, "lt-int", GPIOD_IN);
++	if (IS_ERR_OR_NULL(lt_int_gpio)) {
++		if (IS_ERR(lt_int_gpio))
++			dev_err(dev, "lt_int: gpio request failed, %ld\n", PTR_ERR(lt_int_gpio));
++		lt_int_gpio = NULL;
+ 		return;
+ 	}
+-	lt_int_gpio_ok = true;
+ 
+-	lt_int_irq = gpio_to_irq(LT_INT_GPIO);
++	lt_int_irq = gpiod_to_irq(lt_int_gpio);
+ 	if (lt_int_irq < 0) {
+-		dev_err(dev, "lt_int: no irq for gpio %d, %d\n", LT_INT_GPIO, lt_int_irq);
++		dev_err(dev, "lt_int: no irq for the gpio, %d\n", lt_int_irq);
+ 		return;
+ 	}
+ 	rc = request_irq(lt_int_irq, lt_int_isr, IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+@@ -123,9 +125,7 @@ static void lt_int_exit(void)
+ 	if (lt_int_irq >= 0)
+ 		free_irq(lt_int_irq, NULL);
+ 	lt_int_irq = -1;
+-	if (lt_int_gpio_ok)
+-		gpio_free(LT_INT_GPIO);
+-	lt_int_gpio_ok = false;
++	lt_int_gpio = NULL;
+ 	proc_remove(lt_int_proc);
+ 	lt_int_proc = NULL;
+ }
+@@ -1884,7 +1884,7 @@ static int _cif_set_mac_clk(struct cvi_cif_dev *cdev, uint32_t devno,
+ 		clk_set_parent(cdev->vip_sys2.clk_o, cdev->clk_disppll.clk_o);
+ 	}
+ 
+-#if defined(CONFIG_COMMON_CLK_CVITEK)
++#if defined(CONFIG_COMMON_CLK_CVITEK) || defined(CONFIG_CLK_SOPHGO_CV1800)
+ 	{
+ 	/* target = source * (1 + ratio) / 32, ratio <= 0x1F */
+ 	u32 tmp = clk_val * 32 / cdev->max_mac_clk;
+@@ -2211,7 +2211,7 @@ static inline int cif_set_lvds_fp_vs(struct cvi_cif_dev *dev,
+ 	return 0;
+ }
+ 
+-#if defined(CONFIG_COMMON_CLK_CVITEK)
++#if defined(CONFIG_COMMON_CLK_CVITEK) || defined(CONFIG_CLK_SOPHGO_CV1800)
+ struct cam_pll_s {
+ //	uint32_t	pll_rate;
+ 	uint32_t	clk_rate;
+@@ -2295,7 +2295,7 @@ static int _cif_enable_snsr_clk(struct device *dev,
+ 
+ 		/* camera interface. */
+ 		// PINMUX_CONFIG(CAM_MCLK0, CAM_MCLK0);
+-	#if defined(CONFIG_COMMON_CLK_CVITEK)
++	#if defined(CONFIG_COMMON_CLK_CVITEK) || defined(CONFIG_CLK_SOPHGO_CV1800)
+ 		(void)value;
+ 		/* set rate of clk_cam0pll */
+ 		// clk_set_rate(clk_get_parent(cdev->clk_cam0.clk_o), clk->pll_rate);
+@@ -2368,7 +2368,7 @@ static int _cif_enable_snsr_clk(struct device *dev,
+ 
+ 		/* camera interface. */
+ 		// PINMUX_CONFIG(CAM_MCLK1, CAM_MCLK1);
+-	#if defined(CONFIG_COMMON_CLK_CVITEK)
++	#if defined(CONFIG_COMMON_CLK_CVITEK) || defined(CONFIG_CLK_SOPHGO_CV1800)
+ 		(void)value;
+ 		/* set rate of clk_cam1pll */
+ 		// clk_set_rate(clk_get_parent(cdev->clk_cam1.clk_o), clk->pll_rate);
+@@ -2462,20 +2462,14 @@ static int cif_reset_snsr_gpio(struct cvi_cif_dev *dev,
+ 			       unsigned int devno, uint8_t on)
+ {
+ 	struct cvi_link *link;
+-	int reset;
+ 
+ 	if (devno >= MAX_LINK_NUM)
+ 		return -EINVAL;
+ 
+ 	link = &dev->link[devno];
+-	reset = (link->snsr_rst_pol == OF_GPIO_ACTIVE_LOW) ? 0 : 1;
+-
+-	if (!gpio_is_valid(link->snsr_rst_pin))
++	if (!link->snsr_rst)
+ 		return 0;
+-	if (on)
+-		gpio_direction_output(link->snsr_rst_pin, reset);
+-	else
+-		gpio_direction_output(link->snsr_rst_pin, !reset);
++	gpiod_direction_output(link->snsr_rst, on ? 1 : 0);
+ 
+ 	return 0;
+ }
+@@ -2497,28 +2491,10 @@ static inline int cif_bt_fmt_out(struct cvi_cif_dev *dev,
+ 	return 0;
+ }
+ 
++/* Took a global GPIO number from user space; the reset line now comes from the DT. */
+ static int cif_gpio_init(struct platform_device *pdev, struct snsr_rst_gpio_s snsr_gpio)
+ {
+-	struct cvi_cif_dev *dev;
+-	struct cvi_link *link;
+-	char sns_rst_gpio_name[64];
+-	dev = dev_get_drvdata(&pdev->dev);
+-
+-	link = &dev->link[snsr_gpio.devno];
+-	link->snsr_rst_pin = snsr_gpio.snsr_rst_pin;
+-	link->snsr_rst_pol = snsr_gpio.snsr_rst_pol;
+-
+-	if (link->snsr_rst_pin < 0 || link->snsr_rst_pol < 0)
+-		return -1;
+-
+-	sprintf(sns_rst_gpio_name, "snsr-rst-gpio-%d", link->snsr_rst_pin);
+-
+-	if (gpio_request(link->snsr_rst_pin, sns_rst_gpio_name))
+-		return 0;
+-
+-	dev_info(&pdev->dev, "rst_pin = %d, pol = %d\n", link->snsr_rst_pin, link->snsr_rst_pol);
+-
+-	return 0;
++	return -EOPNOTSUPP;
+ }
+ 
+ static long _cif_ioctl(struct cvi_cif_dev *dev, unsigned int cmd,
+@@ -3029,16 +3005,11 @@ static int _init_resource(struct platform_device *pdev)
+ 		link = &dev->link[i];
+ 		link->dev = &pdev->dev;
+ 		link->mac_clk = RX_MAC_CLK_400M;
+-		link->snsr_rst_pin = of_get_named_gpio_flags(pdev->dev.of_node,
+-				"snsr-reset", i, &link->snsr_rst_pol);
+-		if (link->snsr_rst_pin < 0)
++		link->snsr_rst = devm_gpiod_get_index_optional(&pdev->dev, "snsr-reset", i, GPIOD_ASIS);
++		if (IS_ERR(link->snsr_rst))
++			return PTR_ERR(link->snsr_rst);
++		if (!link->snsr_rst)
+ 			break;
+-
+-		if (gpio_request(link->snsr_rst_pin, "snsr-rst-gpio"))
+-			return 0;
+-
+-		dev_info(&pdev->dev, "rst_pin = %d, pol = %d\n",
+-			link->snsr_rst_pin, link->snsr_rst_pol);
+ 	}
+ 
+ 	/* sw reset */
+@@ -3234,7 +3205,6 @@ static int dbg_hdler(struct cvi_cif_dev *dev, char const *input)
+ {
+ 	struct cvi_link *link = &dev->link[0];
+ 	struct cif_ctx *ctx;
+-	int reset;
+ 	u32 num;
+ 	u8 str[80] = {0};
+ 	u8 t = 0;
+@@ -3304,14 +3274,9 @@ static int dbg_hdler(struct cvi_cif_dev *dev, char const *input)
+ 		link = &dev->link[a];
+ 		ctx = &link->cif_ctx;
+ 
+-		reset = (link->snsr_rst_pol == OF_GPIO_ACTIVE_LOW) ? 0 : 1;
+-
+-		if (!gpio_is_valid(link->snsr_rst_pin))
++		if (!link->snsr_rst)
+ 			return 0;
+-		if (v)
+-			gpio_direction_output(link->snsr_rst_pin, reset);
+-		else
+-			gpio_direction_output(link->snsr_rst_pin, !reset);
++		gpiod_direction_output(link->snsr_rst, v ? 1 : 0);
+ 		break;
+ 	case 3:
+ 		/* sensor enable */
+@@ -3358,7 +3323,7 @@ static int dbg_hdler(struct cvi_cif_dev *dev, char const *input)
+ 
+ static ssize_t cif_proc_write(struct file *file, const char __user *user_buf, size_t count, loff_t *ppos)
+ {
+-	struct cvi_cif_dev *dev = PDE_DATA(file_inode(file));
++	struct cvi_cif_dev *dev = pde_data(file_inode(file));
+ #if (KERNEL_VERSION(5, 10, 0) <= LINUX_VERSION_CODE)
+ 	char txt_buff[MAX_CIF_PROC_BUF];
+ 
+@@ -3376,7 +3341,7 @@ static ssize_t cif_proc_write(struct file *file, const char __user *user_buf, si
+ 
+ static int proc_cif_open(struct inode *inode, struct file *file)
+ {
+-	struct cvi_cif_dev *dev = PDE_DATA(inode);
++	struct cvi_cif_dev *dev = pde_data(inode);
+ 
+ 	return single_open(file, proc_cif_show, dev);
+ }
+@@ -3441,13 +3406,13 @@ static int cvi_cif_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int cvi_cif_remove(struct platform_device *pdev)
++static void cvi_cif_remove(struct platform_device *pdev)
+ {
+ 	struct cvi_cif_dev *dev;
+ 
+ 	if (!pdev) {
+ 		dev_err(&pdev->dev, "invalid param");
+-		return -EINVAL;
++		return;
+ 	}
+ 
+ 	/* rm cif_cb */
+@@ -3457,7 +3422,7 @@ static int cvi_cif_remove(struct platform_device *pdev)
+ 	dev = dev_get_drvdata(&pdev->dev);
+ 	if (!dev) {
+ 		dev_err(&pdev->dev, "Can not get cvi_cif drvdata");
+-		return 0;
++		return;
+ 	}
+ 
+ 	lt_int_exit();
+@@ -3467,7 +3432,7 @@ static int cvi_cif_remove(struct platform_device *pdev)
+ #ifdef CONFIG_PROC_FS
+ 	proc_remove(cif_proc_entry);
+ #endif
+-	return 0;
++	return;
+ }
+ 
+ #ifdef CONFIG_PM_SLEEP
+diff --git a/interdrv/cif/chip/cv181x/cif.h b/interdrv/cif/chip/cv181x/cif.h
+index 75e1428..89e6449 100644
+--- a/interdrv/cif/chip/cv181x/cif.h
++++ b/interdrv/cif/chip/cv181x/cif.h
+@@ -1,6 +1,8 @@
+ #ifndef _CIF_H_
+ #define _CIF_H_
+ 
++#include <linux/gpio/consumer.h>
++
+ #include <linux/miscdevice.h>
+ #include "drv/cif_drv.h"
+ #include "linux/cif_uapi.h"
+@@ -31,8 +33,7 @@ struct cvi_link {
+ 	enum output_msb_e		msb;
+ 	unsigned int			crop_top;
+ 	unsigned int			distance_fp;
+-	int				snsr_rst_pin;
+-	enum of_gpio_flags		snsr_rst_pol;
++	struct gpio_desc		*snsr_rst;
+ 	union {
+ 		struct cvi_csi_status	sts_csi;
+ 		struct cvi_lvds_status	sts_lvds;
+diff --git a/interdrv/cvi_vc_drv/cvi_vc_drv.c b/interdrv/cvi_vc_drv/cvi_vc_drv.c
+index 30530c8..d21a105 100644
+--- a/interdrv/cvi_vc_drv/cvi_vc_drv.c
++++ b/interdrv/cvi_vc_drv/cvi_vc_drv.c
+@@ -1,4 +1,7 @@
+ #include <linux/cvi_base_ctx.h>
++#include <linux/mod_devicetable.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
+ #include <linux/slab.h>
+ #include <base_cb.h>
+ #include <base_ctx.h>
+@@ -1357,7 +1360,7 @@ static int cvi_vc_drv_register_cdev(struct cvi_vc_drv_device *vdev)
+ 	int err = 0;
+ 	int i = 0;
+ 
+-	vdev->cvi_vc_class = class_create(THIS_MODULE, CVI_VC_DRV_CLASS_NAME);
++	vdev->cvi_vc_class = class_create(CVI_VC_DRV_CLASS_NAME);
+ 	if (IS_ERR(vdev->cvi_vc_class)) {
+ 		pr_err("create class failed\n");
+ 		return PTR_ERR(vdev->cvi_vc_class);
+@@ -1662,7 +1665,7 @@ ERROR_PROBE_DEVICE:
+ 	return err;
+ }
+ 
+-static int cvi_vc_drv_remove(struct platform_device *pdev)
++static void cvi_vc_drv_remove(struct platform_device *pdev)
+ {
+ 	struct cvi_vc_drv_device *vdev = platform_get_drvdata(pdev);
+ 
+@@ -1697,7 +1700,7 @@ static int cvi_vc_drv_remove(struct platform_device *pdev)
+ 	}
+ #endif
+ 	class_destroy(vdev->cvi_vc_class);
+-	return 0;
++	return;
+ }
+ 
+ unsigned int cvi_vc_drv_read_vc_reg(REG_TYPE eRegType, unsigned long addr)
+diff --git a/interdrv/cvi_vc_drv/cvi_vc_drv_proc.c b/interdrv/cvi_vc_drv/cvi_vc_drv_proc.c
+index 92ea900..dc146bb 100644
+--- a/interdrv/cvi_vc_drv/cvi_vc_drv_proc.c
++++ b/interdrv/cvi_vc_drv/cvi_vc_drv_proc.c
+@@ -1,5 +1,6 @@
+ 
+ #include <linux/proc_fs.h>
++#include <generated/utsversion.h>
+ #include <linux/seq_file.h>
+ #include <linux/uaccess.h>
+ #include <linux/platform_device.h>
+@@ -537,7 +538,7 @@ static int venc_proc_show(struct seq_file *m, void *v)
+ 
+ static int venc_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, venc_proc_show, PDE_DATA(inode));
++	return single_open(file, venc_proc_show, pde_data(inode));
+ }
+ 
+ static ssize_t
+@@ -779,7 +780,7 @@ static int h265e_proc_show(struct seq_file *m, void *v)
+ 
+ static int h265e_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, h265e_proc_show, PDE_DATA(inode));
++	return single_open(file, h265e_proc_show, pde_data(inode));
+ }
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+@@ -831,7 +832,7 @@ static int codecinst_proc_show(struct seq_file *m, void *v)
+ 
+ static int codecinst_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, codecinst_proc_show, PDE_DATA(inode));
++	return single_open(file, codecinst_proc_show, pde_data(inode));
+ }
+ 
+ 
+@@ -984,7 +985,7 @@ static int h264e_proc_show(struct seq_file *m, void *v)
+ 
+ static int h264e_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, h264e_proc_show, PDE_DATA(inode));
++	return single_open(file, h264e_proc_show, pde_data(inode));
+ }
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+@@ -1129,7 +1130,7 @@ static int jpege_proc_show(struct seq_file *m, void *v)
+ 
+ static int jpege_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, jpege_proc_show, PDE_DATA(inode));
++	return single_open(file, jpege_proc_show, pde_data(inode));
+ }
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+@@ -1759,7 +1760,7 @@ static int rc_proc_show(struct seq_file *m, void *v)
+ 
+ static int rc_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, rc_proc_show, PDE_DATA(inode));
++	return single_open(file, rc_proc_show, pde_data(inode));
+ }
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+@@ -2046,7 +2047,7 @@ static int vdec_proc_show(struct seq_file *m, void *v)
+ 
+ static int vdec_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, vdec_proc_show, PDE_DATA(inode));
++	return single_open(file, vdec_proc_show, pde_data(inode));
+ }
+ 
+ static ssize_t vdec_proc_write(struct file *file, const char __user *user_buf,
+diff --git a/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/src/cvi_jpg_enc_internal.c b/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/src/cvi_jpg_enc_internal.c
+index 563f85e..ecb4d7b 100644
+--- a/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/src/cvi_jpg_enc_internal.c
++++ b/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/src/cvi_jpg_enc_internal.c
+@@ -1512,8 +1512,6 @@ int cviJpgEncGetInputDataBuf(CVIJpgHandle jpgHandle, void *data)
+ 	pJpgInst = (JpgEncHandle)jpgHandle;
+ 	pEncInfo = &pJpgInst->JpgInfo.encInfo;
+ 
+-	if (NULL == pEncInfo->pFrame)
+-		return JPG_RET_WRONG_CALL_SEQUENCE;
+ 	if (NULL == data)
+ 		return JPG_RET_INVALID_PARAM;
+ 
+diff --git a/interdrv/cvi_vc_drv/jpeg/jpuapi/jpuapifunc.c b/interdrv/cvi_vc_drv/jpeg/jpuapi/jpuapifunc.c
+index 0d8850a..baf60b6 100644
+--- a/interdrv/cvi_vc_drv/jpeg/jpuapi/jpuapifunc.c
++++ b/interdrv/cvi_vc_drv/jpeg/jpuapi/jpuapifunc.c
+@@ -2236,7 +2236,7 @@ int JpgEncEncodeHeader(JpgEncHandle handle, JpgEncParamSet *para)
+ 
+ JpgRet JpgEnterLock(void)
+ {
+-	mutex_lock_interruptible(&jpgLock);
++	mutex_lock(&jpgLock);
+ 
+ 	return JPG_RET_SUCCESS;
+ }
+diff --git a/interdrv/cvi_vc_drv/module/src/cvi_vdec.c b/interdrv/cvi_vc_drv/module/src/cvi_vdec.c
+index 1c64c12..e9f5fa1 100644
+--- a/interdrv/cvi_vc_drv/module/src/cvi_vdec.c
++++ b/interdrv/cvi_vc_drv/module/src/cvi_vdec.c
+@@ -1132,7 +1132,7 @@ CVI_S32 CVI_VDEC_SendStream(VDEC_CHN VdChn, const VDEC_STREAM_S *pstStream,
+ 		pVbCtx->currBindMode = CVI_TRUE;
+ 		pVbCtx->thread = kthread_run(vdec_event_handler,
+ 				(CVI_VOID *) pChnHandle, "cvitask_vdec_%d", VdChn);
+-		sched_setscheduler(pVbCtx->thread, SCHED_RR, &param);
++		sched_setattr_nocheck(pVbCtx->thread, &(struct sched_attr){ .size = sizeof(struct sched_attr), .sched_policy = SCHED_RR, .sched_priority = param.sched_priority });
+ 	}
+ 
+ 
+diff --git a/interdrv/cvi_vc_drv/module/src/cvi_venc.c b/interdrv/cvi_vc_drv/module/src/cvi_venc.c
+index 57fb189..091747d 100644
+--- a/interdrv/cvi_vc_drv/module/src/cvi_venc.c
++++ b/interdrv/cvi_vc_drv/module/src/cvi_venc.c
+@@ -3121,7 +3121,7 @@ CVI_S32 CVI_VENC_StartRecvFrame(VENC_CHN VeChn,
+ 					VeChn);
+ 				return CVI_FAILURE;
+ 			}
+-			sched_setscheduler(pVbCtx->thread, SCHED_RR, &param);
++			sched_setattr_nocheck(pVbCtx->thread, &(struct sched_attr){ .size = sizeof(struct sched_attr), .sched_policy = SCHED_RR, .sched_priority = param.sched_priority });
+ 			SEMA_POST(&pChnVars->sem_send);
+ 		}
+ 	}
+@@ -6979,7 +6979,7 @@ CVI_S32 cvi_VENC_CB_SendFrame(CVI_S32 VpssGrp, CVI_S32 VpssChn, CVI_S32 VpssChn1
+ 						priChn);
+ 					goto SBM_CB_FAILURE;
+ 				}
+-				sched_setscheduler(pSbmHandle->pSBMSendFrameThread, SCHED_RR, &param);
++				sched_setattr_nocheck(pSbmHandle->pSBMSendFrameThread, &(struct sched_attr){ .size = sizeof(struct sched_attr), .sched_policy = SCHED_RR, .sched_priority = param.sched_priority });
+ 			}
+ 		}
+ 
+diff --git a/interdrv/cvi_vc_drv/module/src/enc_ctx.c b/interdrv/cvi_vc_drv/module/src/enc_ctx.c
+index 2c3d0d1..fb60921 100644
+--- a/interdrv/cvi_vc_drv/module/src/enc_ctx.c
++++ b/interdrv/cvi_vc_drv/module/src/enc_ctx.c
+@@ -1157,7 +1157,7 @@ static CVI_S32 vidEnc_get_stream(CVI_VOID *ctx, VENC_STREAM_S *pstStream,
+ 		return CVI_ERR_VENC_NULL_PTR;
+ 	}
+ 
+-	MUTEX_LOCK(&psp->packMutex);
++	mutex_lock(&psp->packMutex);
+ 	pstStream->u32PackCount = 0;
+ 	for (idx = 0; (idx < psp->totalPacks) && (idx < MAX_NUM_PACKS); idx++) {
+ 		ppack = &pstStream->pstPack[idx];
+diff --git a/interdrv/cvi_vc_drv/vcodec/cvi/cvi_enc_internal.c b/interdrv/cvi_vc_drv/vcodec/cvi/cvi_enc_internal.c
+index 5d1f78e..4ab3634 100644
+--- a/interdrv/cvi_vc_drv/vcodec/cvi/cvi_enc_internal.c
++++ b/interdrv/cvi_vc_drv/vcodec/cvi/cvi_enc_internal.c
+@@ -81,7 +81,7 @@ static int cviEncode265HeaderByType(stTestEncoder *pTestEnc,
+ 
+ 	#if CACHE_ENCODE_HEADER
+ 		if (pTestEnc->bEncHeader == 1) {
+-			MUTEX_LOCK(&psp->packMutex);
++			mutex_lock(&psp->packMutex);
+ 			if (psp->totalPacks >= MAX_NUM_PACKS) {
+ 				CVI_VC_ERR("hevc cache header droped, type:%d, totalpacks:%d\n",
+ 					nal_type, psp->totalPacks);
+@@ -258,7 +258,7 @@ int cviEncode264Header(stTestEncoder *pTestEnc)
+ 					continue;
+ 				}
+ 
+-				MUTEX_LOCK(&psp->packMutex);
++				mutex_lock(&psp->packMutex);
+ 				if (psp->totalPacks >= MAX_NUM_PACKS) {
+ 					CVI_VC_ERR("avc cache header droped, type:%d, totalpacks:%d\n",
+ 						nalType, psp->totalPacks);
+@@ -579,7 +579,7 @@ static int cviInsertOneUserDataSegment(stStreamPack *psp, Uint8 *pUserData,
+ 	stPack *pPack;
+ 	Uint8 *pBuffer;
+ 
+-	MUTEX_LOCK(&psp->packMutex);
++	mutex_lock(&psp->packMutex);
+ 	if (psp->totalPacks >= MAX_NUM_PACKS) {
+ 		CVI_VC_ERR("totalPacks (%d) >= MAX_NUM_PACKS\n",
+ 			   psp->totalPacks);
+@@ -596,7 +596,7 @@ static int cviInsertOneUserDataSegment(stStreamPack *psp, Uint8 *pUserData,
+ 
+ 	memcpy(pBuffer, pUserData, userDataLen);
+ 
+-	MUTEX_LOCK(&psp->packMutex);
++	mutex_lock(&psp->packMutex);
+ 	pPack = &psp->pack[psp->totalPacks++];
+ 	pPack->addr = pBuffer;
+ 	pPack->len = userDataLen;
+@@ -703,7 +703,7 @@ int cviPutEsInPack(stTestEncoder *pTestEnc, PhysicalAddress paBsBufStart,
+ 		return FALSE;
+ 	}
+ 
+-	MUTEX_LOCK(&psp->packMutex);
++	mutex_lock(&psp->packMutex);
+ 	if (psp->totalPacks >= MAX_NUM_PACKS) {
+ 		CVI_VENC_DEBUG("[WARN]totalPacks (%d) >= MAX_NUM_PACKS,drop this packet\n",
+ 			   psp->totalPacks);
+diff --git a/interdrv/cvi_vc_drv/vcodec/sample/main_enc_cvitest.c b/interdrv/cvi_vc_drv/vcodec/sample/main_enc_cvitest.c
+index f5174d6..b74ef9f 100644
+--- a/interdrv/cvi_vc_drv/vcodec/sample/main_enc_cvitest.c
++++ b/interdrv/cvi_vc_drv/vcodec/sample/main_enc_cvitest.c
+@@ -1109,7 +1109,7 @@ static int cviH264SpsAddVui(stTestEncoder *pTestEnc)
+ 	cviH264Vui *pVui = &pTestEnc->encConfig.cviEc.h264Vui;
+ 	int i;
+ 
+-	MUTEX_LOCK(&psp->packMutex);
++	mutex_lock(&psp->packMutex);
+ 	for (i = 0; i < psp->totalPacks; i++) {
+ 		if (psp->pack[i].cviNalType == NAL_SPS) {
+ 			H264SpsAddVui(pVui, &psp->pack[i].addr,
+@@ -1129,7 +1129,7 @@ static int cviH265SpsAddVui(stTestEncoder *pTestEnc)
+ 	cviH265Vui *pVui = &pTestEnc->encConfig.cviEc.h265Vui;
+ 	int i;
+ 
+-	MUTEX_LOCK(&psp->packMutex);
++	mutex_lock(&psp->packMutex);
+ 	for (i = 0; i < psp->totalPacks; i++) {
+ 		if (psp->pack[i].cviNalType == NAL_SPS) {
+ 			H265SpsAddVui(pVui, &psp->pack[i].addr,
+@@ -3139,7 +3139,7 @@ static int cviGetOneStream(void *handle, cviVEncStreamInfo *pStreamInfo,
+ 
+ 		// if drop IDR, need clear vps sps pps header
+ 		if (pTestEnc->encParam.is_idr_frame) {
+-			MUTEX_LOCK(&pTestEnc->streamPack.packMutex);
++			mutex_lock(&pTestEnc->streamPack.packMutex);
+ 			cviDropEsPacks(&pTestEnc->streamPack);
+ 			MUTEX_UNLOCK(&pTestEnc->streamPack.packMutex);
+ 		}
+@@ -3290,7 +3290,7 @@ static int cviReEncodeIDR(stTestEncoder *pTestEnc,
+ 
+ 	pTestEnc->encParam.idr_request = TRUE;
+ 
+-	MUTEX_LOCK(&pStreamInfo->psp->packMutex);
++	mutex_lock(&pStreamInfo->psp->packMutex);
+ 	// only drop latest super frame
+ 	totalPacks = pStreamInfo->psp->totalPacks;
+ 	if (totalPacks >= 1) {
+@@ -3355,7 +3355,7 @@ int cviVEncReleaseStream(void *handle, cviVEncStreamInfo *pStreamInfo)
+ 
+ 	CVI_VC_IF("\n");
+ 
+-	MUTEX_LOCK(&psp->packMutex);
++	mutex_lock(&psp->packMutex);
+ 	if (psp->totalPacks) {
+ 		for (idx = 0; idx < psp->totalPacks; idx++) {
+ 			pPack = &psp->pack[idx];
+@@ -5084,7 +5084,7 @@ static int cviVEncStart(stTestEncoder *pTestEnc, void *arg)
+ 	}
+ 
+ 	psp = &pTestEnc->streamPack;
+-	MUTEX_LOCK(&psp->packMutex);
++	mutex_lock(&psp->packMutex);
+ 	if (psp->totalPacks) {
+ 		for (idx = 0; idx < psp->totalPacks; idx++) {
+ 			pPack = &psp->pack[idx];
+@@ -6491,7 +6491,7 @@ int cvitest_venc_main(int argc, char **argv)
+ 			ret = 0;
+ 			goto BAILOUT;
+ 		}
+-		sched_setscheduler(thread_id[i], SCHED_RR, &param);
++		sched_setattr_nocheck(thread_id[i], &(struct sched_attr){ .size = sizeof(struct sched_attr), .sched_policy = SCHED_RR, .sched_priority = param.sched_priority });
+ 	}
+ 
+ 	for (i = 0; i < gNumInstance; i++) {
+diff --git a/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi.c b/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi.c
+index aed1ff7..d14dd78 100644
+--- a/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi.c
++++ b/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi.c
+@@ -1151,7 +1151,7 @@ int vdi_disp_lock(unsigned long core_idx)
+ 	}
+ 
+ #if defined(ANDROID) || !defined(PTHREAD_MUTEX_ROBUST_NP)
+-	MUTEX_LOCK((MUTEX_HANDLE *)vdi->vpu_disp_mutex);
++	mutex_lock((MUTEX_HANDLE *)vdi->vpu_disp_mutex);
+ #else
+ 	if (MUTEX_LOCK((MUTEX_HANDLE *)vdi->vpu_disp_mutex) != 0) {
+ 		CVI_VC_ERR("failed to pthread_mutex_lock\n");
+diff --git a/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi_osal.c b/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi_osal.c
+index 70be2cf..7b0ab8b 100644
+--- a/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi_osal.c
++++ b/interdrv/cvi_vc_drv/vcodec/vdi/linux/vdi_osal.c
+@@ -36,7 +36,6 @@ static FILE *fpLog;
+ 
+ struct cvi_osal_file {
+ 	struct file *filep;
+-	mm_segment_t old_fs;
+ };
+ 
+ 
+@@ -222,7 +221,6 @@ osal_file_t osal_fopen(const char *osal_file_tname, const char *mode)
+ 		return NULL;
+ 	}
+ 
+-	cvi_fp->old_fs = get_fs();
+ 	return cvi_fp;
+ }
+ size_t osal_fwrite(const void *p, int size, int count, osal_file_t fp)
+@@ -267,7 +265,6 @@ int osal_fclose(osal_file_t fp)
+ 
+ 	filep = cvi_fp->filep;
+ 	filp_close(filep, 0);
+-	set_fs(cvi_fp->old_fs);
+ 	vfree(cvi_fp);
+ 	return 0;
+ }
+diff --git a/interdrv/dwa/chip/cv181x/chip.mk b/interdrv/dwa/chip/cv181x/chip.mk
+index df48172..9d36ca7 100644
+--- a/interdrv/dwa/chip/cv181x/chip.mk
++++ b/interdrv/dwa/chip/cv181x/chip.mk
+@@ -3,4 +3,3 @@ soph_dwa-y += chip/$(CVIARCH_L)/vip_dwa.o
+ soph_dwa-y += chip/$(CVIARCH_L)/gdc.o
+ soph_dwa-y += chip/$(CVIARCH_L)/ldc.o
+ soph_dwa-y += chip/$(CVIARCH_L)/mesh.o
+-soph_dwa-y += chip/$(CVIARCH_L)/ldc_test.o
+diff --git a/interdrv/dwa/chip/cv181x/cmdq.c b/interdrv/dwa/chip/cv181x/cmdq.c
+index 62475ad..72f8b22 100644
+--- a/interdrv/dwa/chip/cv181x/cmdq.c
++++ b/interdrv/dwa/chip/cv181x/cmdq.c
+@@ -1,11 +1,11 @@
+ #ifdef ENV_CVITEST
+ #include <common.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include "system_common.h"
+ #include "timer.h"
+ #elif defined(ENV_EMU)
+ #include <stdlib.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+diff --git a/interdrv/dwa/chip/cv181x/gdc.c b/interdrv/dwa/chip/cv181x/gdc.c
+index c07a520..45959a9 100644
+--- a/interdrv/dwa/chip/cv181x/gdc.c
++++ b/interdrv/dwa/chip/cv181x/gdc.c
+@@ -613,8 +613,8 @@ int cvi_gdc_init(struct cvi_dwa_vdev *wdev)
+ 				   "gdc_work");
+ 
+ 	// Same as sched_set_fifo in linux 5.x
+-	tsk.sched_priority = MAX_USER_RT_PRIO / 2;
+-	ret = sched_setscheduler(wdev->thread, SCHED_FIFO, &tsk);
++	tsk.sched_priority = MAX_RT_PRIO / 2;
++	ret = sched_setattr_nocheck(wdev->thread, &(struct sched_attr){ .size = sizeof(struct sched_attr), .sched_policy = SCHED_FIFO, .sched_priority = tsk.sched_priority });
+ 	if (ret)
+ 		CVI_TRACE_DWA(CVI_DBG_WARN, "gdc thread priority update failed: %d\n", ret);
+ 
+@@ -983,8 +983,8 @@ s32 dwa_start_handler(struct cvi_dwa_vdev *wdev_dwa)
+ 				   "gdc_work");
+ 
+ 	// Same as sched_set_fifo in linux 5.x
+-	tsk.sched_priority = MAX_USER_RT_PRIO / 2;
+-	ret = sched_setscheduler(wdev_dwa->thread, SCHED_FIFO, &tsk);
++	tsk.sched_priority = MAX_RT_PRIO / 2;
++	ret = sched_setattr_nocheck(wdev_dwa->thread, &(struct sched_attr){ .size = sizeof(struct sched_attr), .sched_policy = SCHED_FIFO, .sched_priority = tsk.sched_priority });
+ 	if (ret)
+ 		CVI_TRACE_DWA(CVI_DBG_WARN, "gdc thread priority update failed: %d\n", ret);
+ 
+diff --git a/interdrv/dwa/chip/cv181x/ldc.c b/interdrv/dwa/chip/cv181x/ldc.c
+index 7b462ee..5754e28 100644
+--- a/interdrv/dwa/chip/cv181x/ldc.c
++++ b/interdrv/dwa/chip/cv181x/ldc.c
+@@ -1,13 +1,13 @@
+ #ifdef ENV_CVITEST
+ #include <common.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include "system_common.h"
+ #include "timer.h"
+ #elif defined(ENV_EMU)
+ #include <stdlib.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+diff --git a/interdrv/dwa/chip/cv181x/ldc_test.c b/interdrv/dwa/chip/cv181x/ldc_test.c
+index d58da8b..00c8a92 100644
+--- a/interdrv/dwa/chip/cv181x/ldc_test.c
++++ b/interdrv/dwa/chip/cv181x/ldc_test.c
+@@ -275,7 +275,7 @@ static int ldc_test_proc_show(struct seq_file *m, void *v)
+ 
+ static int ldc_test_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, ldc_test_proc_show, PDE_DATA(inode));
++	return single_open(file, ldc_test_proc_show, pde_data(inode));
+ }
+ 
+ static ssize_t ldc_test_proc_write(struct file *file, const char __user *user_buf, size_t count, loff_t *ppos)
+diff --git a/interdrv/dwa/chip/cv181x/ldc_test.h b/interdrv/dwa/chip/cv181x/ldc_test.h
+index 58fd813..081a570 100644
+--- a/interdrv/dwa/chip/cv181x/ldc_test.h
++++ b/interdrv/dwa/chip/cv181x/ldc_test.h
+@@ -3,12 +3,12 @@
+ 
+ #include <linux/cvi_type.h>
+ 
+-extern CVI_U8 ldc_test_enabled;
++/* The LDC self-test allocates through ION, which Linux 6.18 lacks; not built. */
++#define ldc_test_enabled 0
+ 
+-void ldc_dump_register(void);
+-CVI_S32 ldc_test_proc_init(void);
+-CVI_S32 ldc_test_proc_deinit(void);
+-
+-void ldc_test_irq_handler(CVI_U32 intr_raw_status);
++static inline void ldc_dump_register(void) {}
++static inline CVI_S32 ldc_test_proc_init(void) { return 0; }
++static inline CVI_S32 ldc_test_proc_deinit(void) { return 0; }
++static inline void ldc_test_irq_handler(CVI_U32 intr_raw_status) {}
+ 
+ #endif /* _LDC_TEST_H_ */
+diff --git a/interdrv/dwa/common/cvi_vip_gdc_proc.c b/interdrv/dwa/common/cvi_vip_gdc_proc.c
+index a1ec994..d650a15 100644
+--- a/interdrv/dwa/common/cvi_vip_gdc_proc.c
++++ b/interdrv/dwa/common/cvi_vip_gdc_proc.c
+@@ -1,4 +1,5 @@
+ #include "cvi_vip_gdc_proc.h"
++#include <generated/utsversion.h>
+ 
+ #define GENERATE_STRING(STRING)	(#STRING),
+ #define GDC_PROC_NAME "cvitek/gdc"
+@@ -146,7 +147,7 @@ static int gdc_proc_show(struct seq_file *m, void *v)
+ 
+ static int gdc_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, gdc_proc_show, PDE_DATA(inode));
++	return single_open(file, gdc_proc_show, pde_data(inode));
+ }
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+diff --git a/interdrv/dwa/common/dwa_platform.c b/interdrv/dwa/common/dwa_platform.c
+index 380d195..087124f 100644
+--- a/interdrv/dwa/common/dwa_platform.c
++++ b/interdrv/dwa/common/dwa_platform.c
+@@ -3,6 +3,7 @@
+ #include <linux/clk.h>
+ #include <linux/io.h>
+ #include <linux/mm.h>
++#include <linux/mod_devicetable.h>
+ #include <linux/of_device.h>
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
+@@ -517,7 +518,7 @@ err_irq:
+  * cvi_ldc_remove - device remove method.
+  * @pdev: Pointer of platform device.
+  */
+-static int cvi_dwa_remove(struct platform_device *pdev)
++static void cvi_dwa_remove(struct platform_device *pdev)
+ {
+ 	struct cvi_dwa_vdev *wdev;
+ 
+@@ -533,18 +534,18 @@ static int cvi_dwa_remove(struct platform_device *pdev)
+ 
+ 	if (!pdev) {
+ 		dev_err(&pdev->dev, "invalid param");
+-		return -EINVAL;
++		return;
+ 	}
+ 
+ 	wdev = dev_get_drvdata(&pdev->dev);
+ 	if (!wdev) {
+ 		dev_err(&pdev->dev, "Can not get cvi_vip drvdata");
+-		return 0;
++		return;
+ 	}
+ 
+ 	dev_set_drvdata(&pdev->dev, NULL);
+ 
+-	return 0;
++	return;
+ }
+ 
+ static const struct of_device_id cvi_dwa_dt_match[] = {
+diff --git a/interdrv/dwa/common/reg.c b/interdrv/dwa/common/reg.c
+index 64b2210..70ac252 100644
+--- a/interdrv/dwa/common/reg.c
++++ b/interdrv/dwa/common/reg.c
+@@ -1,13 +1,13 @@
+ #ifdef ENV_CVITEST
+ #include <common.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include "system_common.h"
+ #include "timer.h"
+ #elif defined(ENV_EMU)
+ #include <stdlib.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+diff --git a/interdrv/include/common/kapi/base_ctx.h b/interdrv/include/common/kapi/base_ctx.h
+index b85cc42..91066e3 100644
+--- a/interdrv/include/common/kapi/base_ctx.h
++++ b/interdrv/include/common/kapi/base_ctx.h
+@@ -1,6 +1,8 @@
+ #ifndef __BASE_CTX_H__
+ #define __BASE_CTX_H__
+ 
++#include <linux/time64.h>
++#include <linux/version.h>
+ #include <linux/cvi_base_ctx.h>
+ #include <linux/vb_uapi.h>
+ 
+diff --git a/interdrv/jpeg/cvi_jpeg.c b/interdrv/jpeg/cvi_jpeg.c
+index 5d275ff..8f9dc2f 100644
+--- a/interdrv/jpeg/cvi_jpeg.c
++++ b/interdrv/jpeg/cvi_jpeg.c
+@@ -18,6 +18,7 @@
+ #include <linux/uaccess.h>
+ #include <linux/cdev.h>
+ #include <linux/slab.h>
++#include <linux/vmalloc.h>
+ #include <linux/sched.h>
+ #include <linux/of.h>
+ #include <linux/of_address.h>
+@@ -58,7 +59,7 @@
+ #define MJPEG_PIC_STATUS_REG 0x4
+ #define MJPEG_INTR_MASK_REG  0x0C0
+ 
+-static DEFINE_SEMAPHORE(s_jpu_sem);
++static DEFINE_SEMAPHORE(s_jpu_sem, 1);
+ 
+ int jpu_mask = JPU_MASK_ERR;
+ module_param(jpu_mask, int, 0644);
+@@ -509,7 +510,7 @@ static int cvi_jpu_register_cdev(struct cvi_jpu_device *jdev)
+ {
+ 	int err = 0;
+ 
+-	jdev->jpu_class = class_create(THIS_MODULE, JPU_CLASS_NAME);
++	jdev->jpu_class = class_create(JPU_CLASS_NAME);
+ 	if (IS_ERR(jdev->jpu_class)) {
+ 		pr_err("create class failed\n");
+ 		return PTR_ERR(jdev->jpu_class);
+@@ -578,7 +579,7 @@ static int jpu_allocate_memory(struct cvi_jpu_device *jdev, struct platform_devi
+ }
+ #endif // #ifndef USE_VMALLOC_FOR_INSTANCE_POOL_MEMORY
+ 
+-static int jpu_remove(struct platform_device *pdev)
++static void jpu_remove(struct platform_device *pdev)
+ {
+ 	struct cvi_jpu_device *jdev = platform_get_drvdata(pdev);
+ 
+@@ -614,7 +615,7 @@ static int jpu_remove(struct platform_device *pdev)
+ 		jdev->jpu_control_register.virt_addr = 0x00;
+ 	}
+ 
+-	return 0;
++	return;
+ }
+ 
+ static void cvi_jpu_unregister_cdev(struct platform_device *pdev)
+diff --git a/interdrv/rgn/chip/cv181x/proc/rgn_proc.c b/interdrv/rgn/chip/cv181x/proc/rgn_proc.c
+index d452f52..3c85235 100644
+--- a/interdrv/rgn/chip/cv181x/proc/rgn_proc.c
++++ b/interdrv/rgn/chip/cv181x/proc/rgn_proc.c
+@@ -1,4 +1,5 @@
+ #include "rgn_proc.h"
++#include <generated/utsversion.h>
+ 
+ #define GENERATE_STRING(STRING)	(#STRING),
+ #define RGN_PROC_NAME "cvitek/rgn"
+@@ -249,7 +250,7 @@ static int rgn_proc_show(struct seq_file *m, void *v)
+ 
+ static int rgn_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, rgn_proc_show, PDE_DATA(inode));
++	return single_open(file, rgn_proc_show, pde_data(inode));
+ }
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+diff --git a/interdrv/rgn/chip/cv181x/vip/rgn_drv.h b/interdrv/rgn/chip/cv181x/vip/rgn_drv.h
+index 2aafd4f..06b7c39 100644
+--- a/interdrv/rgn/chip/cv181x/vip/rgn_drv.h
++++ b/interdrv/rgn/chip/cv181x/vip/rgn_drv.h
+@@ -7,7 +7,7 @@
+ 
+ #include <linux/delay.h>
+ #include <linux/types.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ 
+ #include <rgn_common.h>
+ 
+diff --git a/interdrv/rgn/common/rgn_core.c b/interdrv/rgn/common/rgn_core.c
+index 44e0f6f..4ca4b59 100644
+--- a/interdrv/rgn/common/rgn_core.c
++++ b/interdrv/rgn/common/rgn_core.c
+@@ -108,7 +108,7 @@ err_create_instance:
+ 	return ret;
+ }
+ 
+-static int cvi_rgn_remove(struct platform_device *pdev)
++static void cvi_rgn_remove(struct platform_device *pdev)
+ {
+ 	struct cvi_rgn_dev *rdev = platform_get_drvdata(pdev);
+ 	int ret = 0;
+@@ -129,7 +129,7 @@ static int cvi_rgn_remove(struct platform_device *pdev)
+ err_destroy_instance:
+ 	CVI_TRACE_RGN(RGN_INFO, "%s -\n", __func__);
+ 
+-	return ret;
++	return;
+ }
+ 
+ static const struct of_device_id cvi_rgn_dt_match[] = {
+diff --git a/interdrv/sys/common/sys.c b/interdrv/sys/common/sys.c
+index de3281b..7d12827 100644
+--- a/interdrv/sys/common/sys.c
++++ b/interdrv/sys/common/sys.c
+@@ -13,6 +13,7 @@
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+ #include <linux/dma-map-ops.h>
+ #endif
++#include <linux/dma-mapping.h>
+ 
+ #include "sys_context.h"
+ #include "sys.h"
+@@ -62,6 +63,18 @@ static phys_addr_t sys_mem_base;
+ static size_t sys_mem_size, sys_mem_used, sys_mem_peak;
+ static struct list_head sys_mem_bufs = LIST_HEAD_INIT(sys_mem_bufs);
+ static DEFINE_MUTEX(sys_mem_lock);
++static struct device *sys_mem_dev;
++
++/* Cache maintenance by physical address; the soc bus is not DMA-coherent. */
++static void sys_cache_sync(phys_addr_t pa, size_t len, enum dma_data_direction dir)
++{
++	if (!sys_mem_dev)
++		return;
++	if (dir == DMA_TO_DEVICE)
++		dma_sync_single_for_device(sys_mem_dev, pa, len, DMA_TO_DEVICE);
++	else
++		dma_sync_single_for_cpu(sys_mem_dev, pa, len, DMA_FROM_DEVICE);
++}
+ 
+ static int ion_debug_alloc_free;
+ module_param(ion_debug_alloc_free, int, 0644);
+@@ -102,13 +115,14 @@ static int sys_mem_init(struct device *dev)
+ 		return -ENODEV;
+ 	}
+ 
++	sys_mem_dev = dev;
+ 	skip = min_t(size_t, PAGE_ALIGN(sys_mem_rtos_size()), rmem->size);
+ 	if (rmem->size > skip) {
+ 		va = memremap(rmem->base + skip, rmem->size - skip, MEMREMAP_WB);
+ 		if (!va)
+ 			return -ENOMEM;
+ 		memset(va, 0, rmem->size - skip);
+-		arch_sync_dma_for_device(rmem->base + skip, rmem->size - skip, DMA_TO_DEVICE);
++		sys_cache_sync(rmem->base + skip, rmem->size - skip, DMA_TO_DEVICE);
+ 		memunmap(va);
+ 	}
+ 
+@@ -131,6 +145,7 @@ static void sys_mem_exit(void)
+ {
+ 	struct sys_mem_buf *buf, *n;
+ 
++	sys_mem_dev = NULL;
+ 	if (!sys_mem_pool)
+ 		return;
+ 	list_for_each_entry_safe(buf, n, &sys_mem_bufs, list) {
+@@ -390,7 +405,7 @@ EXPORT_SYMBOL_GPL(sys_ion_get_memory_state);
+ 
+ CVI_S32 sys_cache_invalidate(CVI_U64 addr_p, void *addr_v, CVI_U32 u32Len)
+ {
+-	arch_sync_dma_for_device(addr_p, u32Len, DMA_FROM_DEVICE);
++	sys_cache_sync(addr_p, u32Len, DMA_FROM_DEVICE);
+ 
+ 	/*	*/
+ 	smp_mb();
+@@ -400,7 +415,7 @@ EXPORT_SYMBOL_GPL(sys_cache_invalidate);
+ 
+ CVI_S32 sys_cache_flush(CVI_U64 addr_p, void *addr_v, CVI_U32 u32Len)
+ {
+-	arch_sync_dma_for_device(addr_p, u32Len, DMA_TO_DEVICE);
++	sys_cache_sync(addr_p, u32Len, DMA_TO_DEVICE);
+ 
+ 	/*  */
+ 	smp_mb();
+@@ -420,9 +435,9 @@ static CVI_S32 sys_cache_op_userv(unsigned long arg, enum enum_cache_op op_code)
+ 	}
+ 
+ 	if (op_code == enum_cache_op_invalid)
+-		arch_sync_dma_for_device(ioctl_arg.addr_p, ioctl_arg.size, DMA_FROM_DEVICE);
++		sys_cache_sync(ioctl_arg.addr_p, ioctl_arg.size, DMA_FROM_DEVICE);
+ 	else if (op_code == enum_cache_op_flush)
+-		arch_sync_dma_for_device(ioctl_arg.addr_p, ioctl_arg.size, DMA_TO_DEVICE);
++		sys_cache_sync(ioctl_arg.addr_p, ioctl_arg.size, DMA_TO_DEVICE);
+ 
+ 	/*	*/
+ 	smp_mb();
+@@ -927,7 +942,7 @@ static int cvi_sys_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int cvi_sys_remove(struct platform_device *pdev)
++static void cvi_sys_remove(struct platform_device *pdev)
+ {
+ 	struct cvi_sys_device *ndev = platform_get_drvdata(pdev);
+ 
+@@ -937,7 +952,7 @@ static int cvi_sys_remove(struct platform_device *pdev)
+ 	sys_mem_exit();
+ 	platform_set_drvdata(pdev, NULL);
+ 
+-	return 0;
++	return;
+ }
+ 
+ static const struct of_device_id cvitek_sys_match[] = {
+diff --git a/interdrv/sys/common/sys_test.c b/interdrv/sys/common/sys_test.c
+index 45491c3..81e0e40 100644
+--- a/interdrv/sys/common/sys_test.c
++++ b/interdrv/sys/common/sys_test.c
+@@ -83,7 +83,7 @@ static int sys_test_proc_show(struct seq_file *m, void *v)
+ 
+ static int sys_test_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, sys_test_proc_show, PDE_DATA(inode));
++	return single_open(file, sys_test_proc_show, pde_data(inode));
+ }
+ 
+ static ssize_t sys_test_proc_write(struct file *file, const char __user *user_buf, size_t count, loff_t *ppos)
+diff --git a/interdrv/vcodec/cvi_vcodec.c b/interdrv/vcodec/cvi_vcodec.c
+index 3389bcc..c599a59 100644
+--- a/interdrv/vcodec/cvi_vcodec.c
++++ b/interdrv/vcodec/cvi_vcodec.c
+@@ -126,7 +126,7 @@ static spinlock_t s_vpu_lock = __SPIN_LOCK_UNLOCKED(s_vpu_lock);
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
+ static DECLARE_MUTEX(s_vpu_sem);
+ #else
+-static DEFINE_SEMAPHORE(s_vpu_sem);
++static DEFINE_SEMAPHORE(s_vpu_sem, 1);
+ #endif
+ static struct list_head s_vbp_head = LIST_HEAD_INIT(s_vbp_head);
+ static struct list_head s_inst_list_head = LIST_HEAD_INIT(s_inst_list_head);
+@@ -1402,7 +1402,7 @@ static int cvi_vcodec_register_cdev(struct cvi_vpu_device *vdev)
+ {
+ 	int err = 0;
+ 
+-	vdev->vpu_class = class_create(THIS_MODULE, VPU_CLASS_NAME);
++	vdev->vpu_class = class_create(VPU_CLASS_NAME);
+ 	if (IS_ERR(vdev->vpu_class)) {
+ 		VCODEC_DBG_ERR("create class failed\n");
+ 		return PTR_ERR(vdev->vpu_class);
+@@ -1568,7 +1568,7 @@ static int cvi_vcodec_allocate_memory(struct platform_device *pdev)
+ }
+ #endif
+ 
+-static int vpu_remove(struct platform_device *pdev)
++static void vpu_remove(struct platform_device *pdev)
+ {
+ 	struct cvi_vpu_device *vdev = platform_get_drvdata(pdev);
+ 
+@@ -1608,14 +1608,14 @@ static int vpu_remove(struct platform_device *pdev)
+ 
+ 	cviReleaseRegResource(vdev);
+ 
+-	return 0;
++	return;
+ }
+ 
+ struct mutex vcodec_mutex;
+ 
+ void vcodec_lock(void)
+ {
+-	mutex_lock_interruptible(&vcodec_mutex);
++	mutex_lock(&vcodec_mutex);
+ }
+ EXPORT_SYMBOL(vcodec_lock);
+ 
+diff --git a/interdrv/vi/chip/cv181x/cmdq.c b/interdrv/vi/chip/cv181x/cmdq.c
+index 62475ad..72f8b22 100644
+--- a/interdrv/vi/chip/cv181x/cmdq.c
++++ b/interdrv/vi/chip/cv181x/cmdq.c
+@@ -1,11 +1,11 @@
+ #ifdef ENV_CVITEST
+ #include <common.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include "system_common.h"
+ #include "timer.h"
+ #elif defined(ENV_EMU)
+ #include <stdlib.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+diff --git a/interdrv/vi/chip/cv181x/proc/vi_dbg_proc.c b/interdrv/vi/chip/cv181x/proc/vi_dbg_proc.c
+index 7fa1f28..ca79c5e 100644
+--- a/interdrv/vi/chip/cv181x/proc/vi_dbg_proc.c
++++ b/interdrv/vi/chip/cv181x/proc/vi_dbg_proc.c
+@@ -168,7 +168,7 @@ static ssize_t vi_dbg_proc_write(struct file *file, const char __user *user_buf,
+ 
+ static int vi_dbg_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, vi_dbg_proc_show, PDE_DATA(inode));
++	return single_open(file, vi_dbg_proc_show, pde_data(inode));
+ }
+ 
+ #if (KERNEL_VERSION(5, 10, 0) <= LINUX_VERSION_CODE)
+diff --git a/interdrv/vi/chip/cv181x/proc/vi_isp_proc.c b/interdrv/vi/chip/cv181x/proc/vi_isp_proc.c
+index d0af9ad..33de7a8 100644
+--- a/interdrv/vi/chip/cv181x/proc/vi_isp_proc.c
++++ b/interdrv/vi/chip/cv181x/proc/vi_isp_proc.c
+@@ -64,12 +64,12 @@ static int _isp_proc_show(struct seq_file *m, void *v)
+ 
+ static int _isp_proc_open(struct inode *inode, struct file *file)
+ {
+-	struct cvi_vi_dev *vdev = PDE_DATA(inode);
++	struct cvi_vi_dev *vdev = pde_data(inode);
+ 
+ 	isp_prc_unit.isp_prc_int_flag = 0;
+ 	vi_event_queue(vdev, VI_EVENT_ISP_PROC_READ, 0);
+ 
+-	return single_open(file, _isp_proc_show, PDE_DATA(inode));
++	return single_open(file, _isp_proc_show, pde_data(inode));
+ }
+ 
+ #if (KERNEL_VERSION(5, 10, 0) <= LINUX_VERSION_CODE)
+diff --git a/interdrv/vi/chip/cv181x/proc/vi_proc.c b/interdrv/vi/chip/cv181x/proc/vi_proc.c
+index 9c48fb9..ff583b2 100644
+--- a/interdrv/vi/chip/cv181x/proc/vi_proc.c
++++ b/interdrv/vi/chip/cv181x/proc/vi_proc.c
+@@ -339,7 +339,7 @@ static int _vi_proc_show(struct seq_file *m, void *v)
+ 
+ static int _vi_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, _vi_proc_show, PDE_DATA(inode));
++	return single_open(file, _vi_proc_show, pde_data(inode));
+ }
+ #if (KERNEL_VERSION(5, 10, 0) <= LINUX_VERSION_CODE)
+ static const struct proc_ops _vi_proc_fops = {
+diff --git a/interdrv/vi/chip/cv181x/vi.c b/interdrv/vi/chip/cv181x/vi.c
+index 79a2982..2349e1b 100644
+--- a/interdrv/vi/chip/cv181x/vi.c
++++ b/interdrv/vi/chip/cv181x/vi.c
+@@ -81,7 +81,7 @@ struct cvi_gdc_mesh g_vi_mesh[VI_MAX_CHN_NUM];
+ #if (KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE)
+ static void legacy_timer_emu_func(struct timer_list *t)
+ {
+-	struct legacy_timer_emu *lt = from_timer(lt, t, t);
++	struct legacy_timer_emu *lt = timer_container_of(lt, t, t);
+ 
+ 	lt->function(lt->data);
+ }
+@@ -2154,11 +2154,11 @@ void usr_pic_time_remove(void)
+ {
+ #if (KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE)
+ 	if (timer_pending(&usr_pic_timer.t)) {
+-		del_timer_sync(&usr_pic_timer.t);
++		timer_delete_sync(&usr_pic_timer.t);
+ 		timer_setup(&usr_pic_timer.t, legacy_timer_emu_func, 0);
+ #else
+ 	if (timer_pending(&usr_pic_timer)) {
+-		del_timer_sync(&usr_pic_timer);
++		timer_delete_sync(&usr_pic_timer);
+ 		init_timer(&usr_pic_timer);
+ #endif
+ 	}
+@@ -4643,7 +4643,7 @@ int vi_create_thread(struct cvi_vi_dev *vdev, enum E_VI_TH th_id)
+ 		return -1;
+ 	}
+ 
+-	param.sched_priority = MAX_USER_RT_PRIO - 10;
++	param.sched_priority = MAX_RT_PRIO - 10;
+ 
+ 	if (vdev->vi_th[th_id].w_thread == NULL) {
+ 		switch (th_id) {
+@@ -4679,7 +4679,7 @@ int vi_create_thread(struct cvi_vi_dev *vdev, enum E_VI_TH th_id)
+ 			return -1;
+ 		}
+ 
+-		sched_setscheduler(vdev->vi_th[th_id].w_thread, SCHED_FIFO, &param);
++		sched_setattr_nocheck(vdev->vi_th[th_id].w_thread, &(struct sched_attr){ .size = sizeof(struct sched_attr), .sched_policy = SCHED_FIFO, .sched_priority = param.sched_priority });
+ 
+ 		vdev->vi_th[th_id].flag = 0;
+ 		atomic_set(&vdev->vi_th[th_id].thread_exit, 0);
+@@ -5128,7 +5128,8 @@ static int ai_isp_resolve_cfg(struct cvi_vi_dev *vdev, ai_isp_cfg_t cfg)
+ 			}
+ 
+ 			if (cfg.param_size == sizeof(ai_isp_bnr_cfg_t)) {
+-				copy_from_user(&bnr_cfg, (void *)(uintptr_t)cfg.param_addr, cfg.param_size);
++				if (copy_from_user(&bnr_cfg, (void __user *)(uintptr_t)cfg.param_addr, cfg.param_size))
++					return -EFAULT;
+ 				ctx->isp_pipe_cfg[raw_num].is_rgbmap_ai_isp = bnr_cfg.ai_rgbmap;
+ 				vi_pr(VI_INFO, "is ai isp rgbmap %d\n", ctx->isp_pipe_cfg[raw_num].is_rgbmap_ai_isp);
+ 			} else {
+diff --git a/interdrv/vi/common/vi_core.c b/interdrv/vi/common/vi_core.c
+index 7f2a3a7..d6e98d9 100644
+--- a/interdrv/vi/common/vi_core.c
++++ b/interdrv/vi/common/vi_core.c
+@@ -101,7 +101,7 @@ static int vi_core_register_cdev(struct cvi_vi_dev *dev)
+ 	struct device *dev_t;
+ 	int err = 0;
+ 
+-	dev->vi_class = class_create(THIS_MODULE, CVI_VI_CLASS_NAME);
++	dev->vi_class = class_create(CVI_VI_CLASS_NAME);
+ 	if (IS_ERR(dev->vi_class)) {
+ 		dev_err(dev->dev, "create class failed\n");
+ 		return PTR_ERR(dev->vi_class);
+@@ -253,7 +253,7 @@ err_req_irq:
+ 	return ret;
+ }
+ 
+-static int vi_core_remove(struct platform_device *pdev)
++static void vi_core_remove(struct platform_device *pdev)
+ {
+ 	int ret = 0;
+ 
+@@ -280,7 +280,7 @@ static int vi_core_remove(struct platform_device *pdev)
+ err_destroy_instance:
+ 	vi_pr(VI_INFO, "%s -\n", __func__);
+ 
+-	return ret;
++	return;
+ }
+ 
+ #ifdef CONFIG_PM_SLEEP
+diff --git a/interdrv/vo/Makefile b/interdrv/vo/Makefile
+index 2d7ef7c..56b98b8 100644
+--- a/interdrv/vo/Makefile
++++ b/interdrv/vo/Makefile
+@@ -7,7 +7,6 @@ soph_vo-objs += common/vo_core.o
+ soph_vo-objs += common/vo_rgn_ctrl.o
+ 
+ obj-m += soph_vo.o
+-obj-m += soph_mipi_tx.o
+ 
+ ccflags-y +=-Wall -Wextra -Werror -Wno-unused-parameter -Wno-sign-compare
+ 
+diff --git a/interdrv/vo/chip/cv181x/proc/vo_disp_proc.c b/interdrv/vo/chip/cv181x/proc/vo_disp_proc.c
+index 624c083..73d0f2b 100644
+--- a/interdrv/vo/chip/cv181x/proc/vo_disp_proc.c
++++ b/interdrv/vo/chip/cv181x/proc/vo_disp_proc.c
+@@ -81,7 +81,7 @@ static ssize_t _vo_disp_proc_write(struct file *file, const char __user *user_bu
+ 
+ static int _vo_disp_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, _vo_disp_proc_show, PDE_DATA(inode));
++	return single_open(file, _vo_disp_proc_show, pde_data(inode));
+ 
+ }
+ 
+diff --git a/interdrv/vo/chip/cv181x/proc/vo_mipi_tx_proc.c b/interdrv/vo/chip/cv181x/proc/vo_mipi_tx_proc.c
+index 23dbcb6..70681e8 100644
+--- a/interdrv/vo/chip/cv181x/proc/vo_mipi_tx_proc.c
++++ b/interdrv/vo/chip/cv181x/proc/vo_mipi_tx_proc.c
+@@ -1,4 +1,5 @@
+ #include <proc/vo_mipi_tx_proc.h>
++#include <generated/utsversion.h>
+ #include <linux/version.h>
+ 
+ #define MIPI_TX_PROC_NAME "cvitek/mipi_tx"
+@@ -118,7 +119,7 @@ static int mipi_tx_proc_show(struct seq_file *m, void *v)
+ 
+ static int mipi_tx_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, mipi_tx_proc_show, PDE_DATA(inode));
++	return single_open(file, mipi_tx_proc_show, pde_data(inode));
+ }
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+diff --git a/interdrv/vo/chip/cv181x/proc/vo_proc.c b/interdrv/vo/chip/cv181x/proc/vo_proc.c
+index f35b0f4..dbb3250 100644
+--- a/interdrv/vo/chip/cv181x/proc/vo_proc.c
++++ b/interdrv/vo/chip/cv181x/proc/vo_proc.c
+@@ -1,4 +1,5 @@
+ #include <proc/vo_proc.h>
++#include <generated/utsversion.h>
+ #include <linux/version.h>
+ #include <linux/cvi_vip.h>
+ #include <linux/cvi_vo_ctx.h>
+@@ -385,7 +386,7 @@ static int _vo_proc_show(struct seq_file *m, void *v)
+ 				i,
+ 				"#",
+ 				j,
+-				(pvoCtx->is_chn_enable[j]) ? "Y" : "N",
++				(pvoCtx->is_chn_enable[i][j]) ? "Y" : "N",
+ 				pvoCtx->stChnAttr.u32Priority,
+ 				pvoCtx->stChnAttr.stRect.s32X,
+ 				pvoCtx->stChnAttr.stRect.s32Y,
+@@ -424,7 +425,7 @@ static int _vo_proc_show(struct seq_file *m, void *v)
+ 
+ static int _vo_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, _vo_proc_show, PDE_DATA(inode));
++	return single_open(file, _vo_proc_show, pde_data(inode));
+ }
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+diff --git a/interdrv/vo/chip/cv181x/vo.c b/interdrv/vo/chip/cv181x/vo.c
+index 0f18fa4..acdb059 100644
+--- a/interdrv/vo/chip/cv181x/vo.c
++++ b/interdrv/vo/chip/cv181x/vo.c
+@@ -245,44 +245,15 @@ static void _disp_sel_pinmux(enum cvi_disp_intf intf_type, void *param)
+ 	}
+ }
+ 
++/* Panel GPIOs came as global numbers from user space; there is no display here. */
+ void _disp_ctrlpin_set(unsigned int gpio_num, enum GPIO_ACTIVE_E active)
+ {
+-	enum of_gpio_flags flags;
+-	static int count;
+-	char name[16] = "";
+-	int rc = 0;
+-
+-	if (gpio_is_valid(gpio_num)) {
+-		flags = GPIOF_DIR_OUT | (active ? GPIOF_INIT_HIGH : GPIOF_INIT_LOW);
+-		snprintf(name, sizeof(name), "disp_ctrl_pin_%d", count++);
+-		rc = devm_gpio_request_one(&g_pdev->dev, gpio_num, flags, name);
+-		if (rc) {
+-			CVI_TRACE_VO(CVI_DBG_ERR, "gpio_num(%d) failed\n",  gpio_num);
+-			return;
+-		}
+-		gpio_set_value(gpio_num, active);
+-	}
++	CVI_TRACE_VO(CVI_DBG_WARN, "display gpio %u ignored\n", gpio_num);
+ }
+ 
+ static void _disp_resetpin_set(unsigned int gpio_num, enum GPIO_ACTIVE_E active)
+ {
+-	enum of_gpio_flags flags;
+-	int rc = 0;
+-
+-	if (gpio_is_valid(gpio_num)) {
+-		flags = GPIOF_DIR_OUT | (active ? GPIOF_INIT_HIGH : GPIOF_INIT_LOW);
+-		rc = devm_gpio_request_one(&g_pdev->dev, gpio_num, flags, NULL);
+-		if (rc) {
+-			CVI_TRACE_VO(CVI_DBG_ERR, "reset gpio_num(%d) failed\n",  gpio_num);
+-		} else {
+-			gpio_set_value(gpio_num, !active);
+-			usleep_range(5 * 1000, 10 * 1000);
+-			gpio_set_value(gpio_num, active);
+-			usleep_range(5 * 1000, 10 * 1000);
+-			gpio_set_value(gpio_num, !active);
+-			msleep(100);
+-		}
+-	}
++	CVI_TRACE_VO(CVI_DBG_WARN, "display reset gpio %u ignored\n", gpio_num);
+ }
+ 
+ const struct vo_disp_pattern patterns[CVI_VIP_PAT_MAX] = {
+@@ -1319,7 +1290,7 @@ int vo_create_thread(struct cvi_vo_dev *vdev, enum E_VO_TH th_id)
+ 		CVI_TRACE_VO(CVI_DBG_ERR, "_vo_create_thread fail\n");
+ 		return -1;
+ 	}
+-	param.sched_priority = MAX_USER_RT_PRIO - 10;
++	param.sched_priority = MAX_RT_PRIO - 10;
+ 
+ 	if (vdev->vo_th[th_id].w_thread == NULL) {
+ 		switch (th_id) {
+@@ -1340,7 +1311,7 @@ int vo_create_thread(struct cvi_vo_dev *vdev, enum E_VO_TH th_id)
+ 			CVI_TRACE_VO(CVI_DBG_ERR, "Unable to start %s.\n", vdev->vo_th[th_id].th_name);
+ 			return -1;
+ 		}
+-		sched_setscheduler(vdev->vo_th[th_id].w_thread, SCHED_FIFO, &param);
++		sched_setattr_nocheck(vdev->vo_th[th_id].w_thread, &(struct sched_attr){ .size = sizeof(struct sched_attr), .sched_policy = SCHED_FIFO, .sched_priority = param.sched_priority });
+ 		vdev->vo_th[th_id].flag = 0;
+ 		atomic_set(&vdev->vo_th[th_id].thread_exit, 0);
+ 		init_waitqueue_head(&vdev->vo_th[th_id].wq);
+diff --git a/interdrv/vo/chip/cv181x/vo_mipi_tx.c b/interdrv/vo/chip/cv181x/vo_mipi_tx.c
+index 1e5812e..34d2feb 100644
+--- a/interdrv/vo/chip/cv181x/vo_mipi_tx.c
++++ b/interdrv/vo/chip/cv181x/vo_mipi_tx.c
+@@ -810,14 +810,14 @@ err_res:
+ 	return rc;
+ }
+ 
+-static int cvi_mipi_tx_remove(struct platform_device *pdev)
++static void cvi_mipi_tx_remove(struct platform_device *pdev)
+ {
+ 	struct cvi_vip_mipi_tx_dev *tdev;
+ 
+ 	tdev = dev_get_drvdata(&pdev->dev);
+ 	if (!tdev) {
+ 		dev_err(&pdev->dev, "Can not get cvi_mipi_tx drvdata");
+-		return -ENODEV;
++		return;
+ 	}
+ 
+ 	unregister_reboot_notifier(&_reboot_notifier);
+@@ -837,7 +837,7 @@ static int cvi_mipi_tx_remove(struct platform_device *pdev)
+ 
+ 	mipi_tx_proc_remove();
+ 
+-	return 0;
++	return;
+ }
+ 
+ #if 0
+diff --git a/interdrv/vo/common/vo_core.c b/interdrv/vo/common/vo_core.c
+index 078f72f..aa92ed8 100644
+--- a/interdrv/vo/common/vo_core.c
++++ b/interdrv/vo/common/vo_core.c
+@@ -82,7 +82,7 @@ static int vo_core_register_cdev(struct cvi_vo_dev *dev)
+ 	struct device *dev_t;
+ 	int err = 0;
+ 
+-	dev->vo_class = class_create(THIS_MODULE, CVI_VO_CLASS_NAME);
++	dev->vo_class = class_create(CVI_VO_CLASS_NAME);
+ 	if (IS_ERR(dev->vo_class)) {
+ 		dev_err(dev->dev, "create class failed\n");
+ 		return PTR_ERR(dev->vo_class);
+@@ -236,7 +236,7 @@ err_clk_init:
+ 	return ret;
+ }
+ 
+-static int vo_core_remove(struct platform_device *pdev)
++static void vo_core_remove(struct platform_device *pdev)
+ {
+ 	int ret = 0;
+ 	bool status = false;
+@@ -266,7 +266,7 @@ static int vo_core_remove(struct platform_device *pdev)
+ err_destroy_instance:
+ 	CVI_TRACE_VO(CVI_DBG_INFO, "%s -\n", __func__);
+ 
+-	return ret;
++	return;
+ }
+ 
+ #if defined(CONFIG_PM)
+diff --git a/interdrv/vpss/chip/cv181x/cmdq.c b/interdrv/vpss/chip/cv181x/cmdq.c
+index 62475ad..72f8b22 100644
+--- a/interdrv/vpss/chip/cv181x/cmdq.c
++++ b/interdrv/vpss/chip/cv181x/cmdq.c
+@@ -1,11 +1,11 @@
+ #ifdef ENV_CVITEST
+ #include <common.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include "system_common.h"
+ #include "timer.h"
+ #elif defined(ENV_EMU)
+ #include <stdlib.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+diff --git a/interdrv/vpss/chip/cv181x/dsi_phy.c b/interdrv/vpss/chip/cv181x/dsi_phy.c
+index de00150..a7a96c7 100644
+--- a/interdrv/vpss/chip/cv181x/dsi_phy.c
++++ b/interdrv/vpss/chip/cv181x/dsi_phy.c
+@@ -1,11 +1,11 @@
+ #ifdef ENV_CVITEST
+ #include <common.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include <string.h>
+ #include <errno.h>
+ #include "system_common.h"
+ #elif defined(ENV_EMU)
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+diff --git a/interdrv/vpss/chip/cv181x/scaler.c b/interdrv/vpss/chip/cv181x/scaler.c
+index c1a220a..e099b31 100644
+--- a/interdrv/vpss/chip/cv181x/scaler.c
++++ b/interdrv/vpss/chip/cv181x/scaler.c
+@@ -1,11 +1,11 @@
+ #ifdef ENV_CVITEST
+ #include <common.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include <string.h>
+ #include <errno.h>
+ #include "system_common.h"
+ #elif defined(ENV_EMU)
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+diff --git a/interdrv/vpss/chip/cv181x/sclr_test.c b/interdrv/vpss/chip/cv181x/sclr_test.c
+index 165a425..e5ff14b 100644
+--- a/interdrv/vpss/chip/cv181x/sclr_test.c
++++ b/interdrv/vpss/chip/cv181x/sclr_test.c
+@@ -1894,7 +1894,7 @@ static int sclr_test_proc_show(struct seq_file *m, void *v)
+ 
+ static int sclr_test_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, sclr_test_proc_show, PDE_DATA(inode));
++	return single_open(file, sclr_test_proc_show, pde_data(inode));
+ }
+ 
+ static CVI_U32 sclr_test_init(void)
+diff --git a/interdrv/vpss/chip/cv181x/vpss_core.c b/interdrv/vpss/chip/cv181x/vpss_core.c
+index a716fa4..8a19a43 100644
+--- a/interdrv/vpss/chip/cv181x/vpss_core.c
++++ b/interdrv/vpss/chip/cv181x/vpss_core.c
+@@ -1709,13 +1709,13 @@ err_irq:
+  * bmd_remove - device remove method.
+  * @pdev: Pointer of platform device.
+  */
+-static int cvi_vpss_remove(struct platform_device *pdev)
++static void cvi_vpss_remove(struct platform_device *pdev)
+ {
+ 	struct cvi_vip_dev *dev;
+ 
+ 	if (!pdev) {
+ 		dev_err(&pdev->dev, "invalid param");
+-		return -EINVAL;
++		return;
+ 	}
+ 
+ 	/* scaler rm cb */
+@@ -1726,7 +1726,7 @@ static int cvi_vpss_remove(struct platform_device *pdev)
+ 	dev = dev_get_drvdata(&pdev->dev);
+ 	if (!dev) {
+ 		dev_err(&pdev->dev, "Can not get cvi_vpss drvdata");
+-		return -EINVAL;
++		return;
+ 	}
+ 
+ #if defined(CONFIG_SCLR_TEST)
+@@ -1740,7 +1740,7 @@ static int cvi_vpss_remove(struct platform_device *pdev)
+ 	misc_deregister(&dev->miscdev);
+ 	dev_set_drvdata(&pdev->dev, NULL);
+ 
+-	return 0;
++	return;
+ }
+ 
+ #ifdef CONFIG_PM_SLEEP
+diff --git a/interdrv/vpss/common/cvi_vip_vpss_proc.c b/interdrv/vpss/common/cvi_vip_vpss_proc.c
+index b4d9946..22012bb 100644
+--- a/interdrv/vpss/common/cvi_vip_vpss_proc.c
++++ b/interdrv/vpss/common/cvi_vip_vpss_proc.c
+@@ -1,4 +1,5 @@
+ #include <linux/slab.h>
++#include <generated/utsversion.h>
+ #include <linux/proc_fs.h>
+ #include <linux/uaccess.h>
+ 
+@@ -532,7 +533,7 @@ static ssize_t vpss_proc_write(struct file *file, const char __user *user_buf, s
+ 
+ static int vpss_proc_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, vpss_proc_show, PDE_DATA(inode));
++	return single_open(file, vpss_proc_show, pde_data(inode));
+ }
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+diff --git a/interdrv/vpss/common/reg.c b/interdrv/vpss/common/reg.c
+index 1fa3795..d258c9d 100644
+--- a/interdrv/vpss/common/reg.c
++++ b/interdrv/vpss/common/reg.c
+@@ -1,13 +1,13 @@
+ #ifdef ENV_CVITEST
+ #include <common.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include "system_common.h"
+ #include "timer.h"
+ #elif defined(ENV_EMU)
+ #include <stdlib.h>
+-#include <stdbool.h>
++#include <linux/types.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+diff --git a/interdrv/vpss/common/vpss.c b/interdrv/vpss/common/vpss.c
+index bfdf73b..9c961f0 100644
+--- a/interdrv/vpss/common/vpss.c
++++ b/interdrv/vpss/common/vpss.c
+@@ -5146,7 +5146,7 @@ static void vpss_start_handler(void)
+ 	char thread_name[32];
+ 
+ 	// Same as sched_set_fifo in linux 5.x
+-	tsk.sched_priority = MAX_USER_RT_PRIO - 10;
++	tsk.sched_priority = MAX_RT_PRIO - 10;
+ 
+ 	for (u8VpssDev = 0; u8VpssDev < VPSS_IP_NUM; u8VpssDev++) {
+ 		handler_ctx[u8VpssDev].u8VpssDev = u8VpssDev;
+@@ -5169,7 +5169,7 @@ static void vpss_start_handler(void)
+ 			pr_err("failed to create vpss kthread, u8VpssDev=%d\n", u8VpssDev);
+ 		}
+ 
+-		ret = sched_setscheduler(handler_ctx[u8VpssDev].thread, SCHED_FIFO, &tsk);
++		ret = sched_setattr_nocheck(handler_ctx[u8VpssDev].thread, &(struct sched_attr){ .size = sizeof(struct sched_attr), .sched_policy = SCHED_FIFO, .sched_priority = tsk.sched_priority });
+ 		if (ret)
+ 			pr_warn("vpss thread priority update failed: %d\n", ret);
+ 		CVI_TRACE_VPSS(CVI_DBG_WARN, "handler for dev(%d) started", u8VpssDev);
