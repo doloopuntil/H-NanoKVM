@@ -1,0 +1,48 @@
+From: Daniele Masato <daniele.masato@pm.me>
+Subject: [PATCH] riscv: mm: reserve the DTB before scanning reserved-memory
+
+Since commit ef69d2559fe9 ("riscv: Move early dtb mapping into the fixmap
+region"), setup_bootmem() calls early_init_fdt_scan_reserved_mem() before
+memblock_reserve() of the DTB. Dynamically placed /reserved-memory regions
+(size only, no reg) are allocated in that scan, so one can land on the DTB.
+Linux keeps the unflattened tree's property values in that blob, so a
+driver that clears its region wipes the device tree.
+
+On the NanoKVM Lite U-Boot leaves the DTB at 0x8e712000; a 75 MiB
+size-only region was placed at 0x8b300000..0x8fdfffff over it, and
+soph_sys zeroed it at probe. Reserve the DTB first, as before 6.4.
+Reserving is not an allocation, so the scan still runs before any.
+
+Fixes: ef69d2559fe9 ("riscv: Move early dtb mapping into the fixmap region")
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/arch/riscv/mm/init.c
++++ b/arch/riscv/mm/init.c
+@@ -297,13 +297,6 @@
+ 	dma32_phys_limit = min(4UL * SZ_1G, (unsigned long)PFN_PHYS(max_low_pfn));
+ 
+ 	reserve_initrd_mem();
+-
+-	/*
+-	 * No allocation should be done before reserving the memory as defined
+-	 * in the device tree, otherwise the allocation could end up in a
+-	 * reserved region.
+-	 */
+-	early_init_fdt_scan_reserved_mem();
+ 
+ 	/*
+ 	 * If DTB is built in, no need to reserve its memblock.
+@@ -314,6 +307,13 @@
+ 	if (!IS_ENABLED(CONFIG_BUILTIN_DTB))
+ 		memblock_reserve(dtb_early_pa, fdt_totalsize(dtb_early_va));
+ 
++	/*
++	 * No allocation should be done before reserving the memory as defined
++	 * in the device tree, otherwise the allocation could end up in a
++	 * reserved region.
++	 */
++	early_init_fdt_scan_reserved_mem();
++
+ 	dma_contiguous_reserve(dma32_phys_limit);
+ 	if (IS_ENABLED(CONFIG_64BIT))
+ 		hugetlb_cma_reserve(PUD_SHIFT - PAGE_SHIFT);
