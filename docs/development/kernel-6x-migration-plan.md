@@ -1112,6 +1112,29 @@ for `/dev/mem` and the 6.18 hardening settings).
 
 Exit: a CI-built image flashes, boots and passes the Phase 1-3 checks unattended.
 
+**State 2026-11-07** (test 20 on the Lite):
+
+- Kernel config: `board/sg2002/linux-6.18/nanokvm_defconfig` (a `savedefconfig`)
+  replaces the riscv arch defconfig and licheerv's `linux.fragment`;
+  `nanokvm.fragment` stays on top for the deliberate choices. Dropped: EFI, ACPI,
+  suspend, cpufreq/cpuidle, kexec, compat, hugetlb, KVM, other SoCs' drivers
+  (SG2042, SiFive, Cadence, Goldfish, AXP20x, RISC-V IOMMU/APLIC/IMSIC), virtio,
+  ATA/SCSI/MD/DM/NVMe/MTD/SPI, USB host and dwc2 dual role (now
+  `USB_DWC2_PERIPHERAL`), HID host drivers, NFS/9P/Btrfs/XFS/overlay/FUSE/ISO
+  9660/SquashFS, SELinux, AppArmor, audit, ftrace, kprobes/uprobes, BPF, perf,
+  cgroups, namespaces, io_uring, tc, IPsec, bridge/VLAN, IP autoconfig, other
+  Ethernet/PHY/Wi-Fi vendors. Kept: `DEBUG_FS` (the server reads `clk_summary`),
+  swap, loop, initrd, nftables, WireGuard, TUN, and cfg80211/mac80211/BT as
+  modules for the Wi-Fi boards. 1381 built-in options and 135 modules become 945
+  and 45.
+- Sizes: `Image` 25.2 MB to 17.6 MB; the kernel image in RAM 26 MiB to 17 MiB, of
+  which about 3.7 MB is 2 MiB section padding from `STRICT_KERNEL_RWX` (kept).
+  `MemTotal` 150 MiB to 158 MiB, the same as 5.10. A raw `Image` plus three FIPs
+  fits a 32 MiB `/boot`, not a 16 MiB one.
+- On the Lite: boots, reboots through SBI, adopts the watchdog, Ethernet, USB
+  gadget (HID, mass storage, RNDIS) and nftables work, the media modules load,
+  VI captures 60 fps, and MJPEG and WebRTC stream.
+
 ### Phase 5: Cube (Full) and PCIe by review
 
 Cube/Full = beta hardware plus OLED and ATX: validate what the Lite cannot:
