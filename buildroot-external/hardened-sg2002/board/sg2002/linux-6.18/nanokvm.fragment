@@ -11,6 +11,10 @@ CONFIG_ERRATA_THEAD_CMO=y
 # CONFIG_PREEMPT_NONE is not set
 CONFIG_PREEMPT=y
 
+# Flat memory model: SPARSEMEM_EXTREME allocates a 16 MiB section root table for 56-bit PAs
+CONFIG_FLATMEM_MANUAL=y
+# CONFIG_SPARSEMEM_MANUAL is not set
+
 # Hardening carried over from 5.10
 CONFIG_SECURITY_DMESG_RESTRICT=y
 # CONFIG_USER_NS is not set
