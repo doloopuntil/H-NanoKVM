@@ -1067,9 +1067,16 @@ Exit: parity or better on the Phase 0 numbers; no crashes in the soak.
   default `PREEMPT_NONE`, both at `HZ=250`. With the server at 100% CPU on one core,
   the VI threads and the polling JPEG driver wait for a voluntary schedule point,
   which fits the lower VI rate and the longer JPEG times. `nanokvm.fragment` now sets
-  `CONFIG_PREEMPT=y` (test 18), which restores the VI rate and JPEG times. RAM: 6.18 reserves 127 MB at
-  boot against 101 MB, a 24 MB kernel (`-O2`, everything built in) against 9 MB, plus
-  an unexplained 16 MiB kernel allocation at boot (memblock `0x8ede1600`).
+  `CONFIG_PREEMPT=y` (test 18), which restores the VI rate and JPEG times. RAM: 6.18 reserved 127 MB at
+  boot against 101 MB: a 24 MB kernel (`-O2`, everything built in) against 9 MB, plus
+  a 16 MiB memblock allocation at `0x8ede1600`. That is `SPARSEMEM_EXTREME`'s section
+  root table, sized for riscv's 56-bit `MAX_PHYSMEM_BITS` (2^29 sections / 256 per
+  root x 8 bytes). `nanokvm.fragment` now selects `FLATMEM` (test 19): reserved drops
+  to 111 MB and `MemTotal` rises from 134 to 150 MiB (5.10: 158); VI, MJPEG and WebRTC
+  work as before. The rest is the
+  kernel size: the riscv `defconfig` builds in EFI, ACPI, NFS, 9P, virtio, SCSI/ATA,
+  the USB host controllers, SELinux, AppArmor, audit, kexec and ftrace; the config
+  trim in section 6.5 covers it.
 - H.264 WebRTC, overdrive FIP, one client, JPEG channel idle
   (`notes/6x-test-17/h264-webrtc-od.txt`, `notes/6x-test-18-boot/h264-webrtc-preempt.txt`):
 
