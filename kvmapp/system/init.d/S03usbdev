@@ -210,12 +210,10 @@ start_usb_dev(){
     fi
 
     ls /sys/class/udc/ | cat > UDC
-    echo device > /proc/cviusb/otg_role
 }
 
 start_usb_host(){
     echo '' > /sys/kernel/config/usb_gadget/g0/UDC
-    echo host > /proc/cviusb/otg_role
 }
 
 restart_usb_dev(){
