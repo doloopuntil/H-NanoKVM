@@ -149,8 +149,8 @@ typedef struct {
     mmf_venc_cfg_t kvm_venc_cfg;
 } kvm_venc_t;
 
-camera::Camera *cam = new camera::Camera(default_vpss_width, default_vpss_height, image::FMT_YVU420SP);
-// camera::Camera *cam = new camera::Camera(320, 240, image::FMT_RGB888);
+// Opened by kvmv_init; stays NULL when the media stack is missing, and the server runs without video.
+camera::Camera *cam = NULL;
 
 kvmv_cfg_t kvmv_cfg;
 
@@ -261,7 +261,7 @@ static bool restart_camera_from_worker()
     }
 
     bool restarted = false;
-    if (!stop_threads.load(std::memory_order_acquire)) {
+    if (cam != NULL && !stop_threads.load(std::memory_order_acquire)) {
         cam->restart(default_vpss_width, default_vpss_height, image::FMT_YVU420SP);
         restarted = true;
     }
@@ -1834,6 +1834,31 @@ int8_t raw_to_h264(image::Image *raw, kvmv_data_t* ret_stream, uint16_t _qlty)
     return ret;
 }
 
+// The camera constructor throws when MMF init fails, so MMF is checked first.
+static bool open_camera()
+{
+    if (mmf_init() != 0) {
+        fprintf(stderr, "[kvmv] media init failed; running without video\n");
+        if (mmf_is_init()) {
+            mmf_try_deinit(true);
+        }
+        return false;
+    }
+    try {
+        cam = new camera::Camera(default_vpss_width, default_vpss_height, image::FMT_YVU420SP);
+    } catch (...) {
+        cam = NULL;
+    }
+    if (cam == NULL) {
+        fprintf(stderr, "[kvmv] camera open failed; running without video\n");
+        mmf_try_deinit(true);
+        return false;
+    }
+    // The camera holds its own MMF reference.
+    mmf_deinit();
+    return true;
+}
+
 void kvmv_init(uint8_t _debug_info_en)
 {
     pthread_mutex_lock(&lifecycle_mutex);
@@ -1858,6 +1883,12 @@ void kvmv_init(uint8_t _debug_info_en)
     stop_threads.store(false, std::memory_order_release);
     vi_detection_thread_started = false;
     watchdog_thread_started = false;
+
+    if (cam == NULL && !open_camera()) {
+        lifecycle_state = kvmv_lifecycle_state_t::running;
+        pthread_mutex_unlock(&lifecycle_mutex);
+        return;
+    }
 
     // debug("[kvmv]kvmv_init - 1\r\n");
 
@@ -1909,7 +1940,7 @@ uint8_t check_kvmv(uint8_t _try_num)
         return 0;
     }
     // if(sync_vi_res() != 0){
-    if(kvmv_cfg.reopen_cam_flag == 1){
+    if(kvmv_cfg.reopen_cam_flag == 1 && cam != NULL){
         // vi size changed
         kvmv_cfg.reopen_cam_flag = 0;
         // cam->open(kvmv_cfg.vpss_width, kvmv_cfg.vpss_height, image::FMT_YVU420SP, 3);
@@ -1958,6 +1989,9 @@ int kvmv_read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _ql
 {
     *_pp_kvm_data = NULL;
     *_p_kvmv_data_size = 0;
+    if (cam == NULL) {
+        return -1;
+    }
     static uint8_t frame_undetact_count = 0;
 	// uint64_t __attribute__((unused)) start_time = time::time_ms();
     debug("[kvmv]kvmv_read_img type = %d...\n", _type);
@@ -2211,7 +2245,9 @@ void kvmv_deinit()
 
     set_hdmi_capture_enabled(0);
     pthread_mutex_lock(&vi_mutex);
-    cam->close();
+    if (cam != NULL) {
+        cam->close();
+    }
     /* Camera and the optional JPEG encoder each hold an MMF reference.  A
      * process-level shutdown must release the complete vendor stack rather
      * than decrementing only one reference and leaving VB/VENC initialized
