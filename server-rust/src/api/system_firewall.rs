@@ -17,6 +17,8 @@ use crate::{
 };
 
 const CONFIG_FILE: &str = "/etc/kvm/firewall.json";
+const NFT_PATH: &str = "/usr/sbin/nft";
+const IPTABLES_NFT_PATH: &str = "/usr/sbin/iptables-nft";
 // On the root filesystem, not in /tmp: a crash or power loss inside the confirmation window must
 // still leave the record, so that the next start can undo the unconfirmed mode.
 const PENDING_FILE: &str = "/etc/kvm/firewall-pending.json";
@@ -211,8 +213,8 @@ async fn build_status() -> Result<FirewallStatusRsp> {
         backend: FirewallBackendRsp {
             iptables: tool_status("/usr/sbin/iptables"),
             ip6tables: tool_status("/usr/sbin/ip6tables"),
-            nft: tool_status("/usr/sbin/nft"),
-            preferred: "iptables-legacy",
+            nft: tool_status(NFT_PATH),
+            preferred: firewall_backend().name(),
         },
         rules: read_rules().await,
         message,
@@ -441,11 +443,59 @@ pub async fn apply_firewall() -> Result<()> {
     Ok(())
 }
 
+/// The tools S40firewall uses, chosen the same way: nft, then iptables-nft, then iptables.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum FirewallBackend {
+    Nftables,
+    IptablesNft,
+    Iptables,
+}
+
+impl FirewallBackend {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Nftables => "nftables",
+            Self::IptablesNft => "iptables-nft",
+            Self::Iptables => "iptables",
+        }
+    }
+}
+
+fn firewall_backend() -> FirewallBackend {
+    backend_for(
+        Path::new(NFT_PATH).exists(),
+        Path::new(IPTABLES_NFT_PATH).exists(),
+    )
+}
+
+fn backend_for(nft: bool, iptables_nft: bool) -> FirewallBackend {
+    if nft {
+        FirewallBackend::Nftables
+    } else if iptables_nft {
+        FirewallBackend::IptablesNft
+    } else {
+        FirewallBackend::Iptables
+    }
+}
+
 async fn read_rules() -> FirewallRulesRsp {
-    FirewallRulesRsp {
-        ipv4: command_text(AllowedCommand::IptablesSave, std::iter::empty::<&str>()).await,
-        ipv6: command_text(AllowedCommand::Ip6tablesSave, std::iter::empty::<&str>()).await,
-        nft: command_text(AllowedCommand::Nft, ["list", "ruleset"]).await,
+    let no_args = std::iter::empty::<&str>;
+    match firewall_backend() {
+        FirewallBackend::Nftables => FirewallRulesRsp {
+            ipv4: String::new(),
+            ipv6: String::new(),
+            nft: command_text(AllowedCommand::Nft, ["list", "ruleset"]).await,
+        },
+        FirewallBackend::IptablesNft => FirewallRulesRsp {
+            ipv4: command_text(AllowedCommand::IptablesNftSave, no_args()).await,
+            ipv6: command_text(AllowedCommand::Ip6tablesNftSave, no_args()).await,
+            nft: String::new(),
+        },
+        FirewallBackend::Iptables => FirewallRulesRsp {
+            ipv4: command_text(AllowedCommand::IptablesSave, no_args()).await,
+            ipv6: command_text(AllowedCommand::Ip6tablesSave, no_args()).await,
+            nft: String::new(),
+        },
     }
 }
 
@@ -581,6 +631,15 @@ mod tests {
             fs::read_to_string(&config).unwrap(),
             r#"{"mode":"restricted"}"#
         );
+    }
+
+    #[test]
+    fn picks_the_backend_s40firewall_uses() {
+        assert_eq!(backend_for(true, true), FirewallBackend::Nftables);
+        assert_eq!(backend_for(true, false), FirewallBackend::Nftables);
+        assert_eq!(backend_for(false, true), FirewallBackend::IptablesNft);
+        assert_eq!(backend_for(false, false), FirewallBackend::Iptables);
+        assert_eq!(FirewallBackend::Nftables.name(), "nftables");
     }
 
     #[test]
