@@ -1084,6 +1084,13 @@ Exit: parity or better on the Phase 0 numbers; no crashes in the soak.
   On `PREEMPT_NONE` VI delivered 45 to 55 fps in every mode, idle included, with the
   CPU 58% idle. `CONFIG_PREEMPT=y` (test 18) restores 60 fps idle and while
   streaming; the extra CPU is the extra frames.
+- HDMI hot-plug (test 18, MJPEG streaming): on unplug `/kvmapp/kvm/state` goes to 0,
+  the VI IRQ stops, the CPU goes 90% idle, and VPSS logs a `base_get_chn_buffer`
+  timeout every 6 s. On replug `state` returns to 1 and MJPEG resumes at 11 fps with
+  VI at 61 fps, without a server restart; the timeouts stop.
+- Resolution changes (WebUI stream size and host HDMI mode), the EDID flow, idle
+  timeout and HID-only mode: deferred to the first image built from source, which
+  also loads the modules through `S00kmod`.
 
 ### Phase 4: platform integration
 
