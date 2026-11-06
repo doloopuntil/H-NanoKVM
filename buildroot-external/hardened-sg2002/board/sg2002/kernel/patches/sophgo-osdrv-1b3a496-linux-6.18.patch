@@ -1116,7 +1116,7 @@ index b85cc42..91066e3 100644
  #include <linux/vb_uapi.h>
  
 diff --git a/interdrv/jpeg/cvi_jpeg.c b/interdrv/jpeg/cvi_jpeg.c
-index 5d275ff..8f9dc2f 100644
+index 5d275ff..c2c7cef 100644
 --- a/interdrv/jpeg/cvi_jpeg.c
 +++ b/interdrv/jpeg/cvi_jpeg.c
 @@ -18,6 +18,7 @@
@@ -1136,7 +1136,24 @@ index 5d275ff..8f9dc2f 100644
  
  int jpu_mask = JPU_MASK_ERR;
  module_param(jpu_mask, int, 0644);
-@@ -509,7 +510,7 @@ static int cvi_jpu_register_cdev(struct cvi_jpu_device *jdev)
+@@ -441,15 +442,7 @@ static int jpu_probe(struct platform_device *pdev)
+ 			jdev->pdata->ops->clk_get(jdev);  // jpu_clk_get
+ 	}
+ 
+-	if (pdev)
+-		res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+-	// if platform driver is implemented
+-	if (res) {
+-		jdev->jpu_irq = res->start;
+-		JPU_DBG_INFO("jpu irq number irq = %d\n", jdev->jpu_irq);
+-	} else {
+-		JPU_DBG_ERR("jpu irq number irq = %d\n", jdev->jpu_irq);
+-	}
++	/* The JPU IRQ is unused (request_irq below is compiled out); jpu_irq stays 0 so remove skips free_irq. */
+ #if 0
+ 	err = request_irq(jdev->jpu_irq, jpu_irq_handler, 0, "JPU_CODEC_IRQ", jdev);
+ 	if (err) {
+@@ -509,7 +502,7 @@ static int cvi_jpu_register_cdev(struct cvi_jpu_device *jdev)
  {
  	int err = 0;
  
@@ -1145,7 +1162,7 @@ index 5d275ff..8f9dc2f 100644
  	if (IS_ERR(jdev->jpu_class)) {
  		pr_err("create class failed\n");
  		return PTR_ERR(jdev->jpu_class);
-@@ -578,7 +579,7 @@ static int jpu_allocate_memory(struct cvi_jpu_device *jdev, struct platform_devi
+@@ -578,7 +571,7 @@ static int jpu_allocate_memory(struct cvi_jpu_device *jdev, struct platform_devi
  }
  #endif // #ifndef USE_VMALLOC_FOR_INSTANCE_POOL_MEMORY
  
@@ -1154,7 +1171,7 @@ index 5d275ff..8f9dc2f 100644
  {
  	struct cvi_jpu_device *jdev = platform_get_drvdata(pdev);
  
-@@ -614,7 +615,7 @@ static int jpu_remove(struct platform_device *pdev)
+@@ -614,7 +607,7 @@ static int jpu_remove(struct platform_device *pdev)
  		jdev->jpu_control_register.virt_addr = 0x00;
  	}
  

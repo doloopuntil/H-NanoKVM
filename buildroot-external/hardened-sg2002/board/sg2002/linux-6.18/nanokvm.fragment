@@ -7,6 +7,10 @@ CONFIG_ERRATA_THEAD=y
 CONFIG_ERRATA_THEAD_MAE=y
 CONFIG_ERRATA_THEAD_CMO=y
 
+# Full preemption, as the vendor 5.10: the VI threads and the polling codecs share one core
+# CONFIG_PREEMPT_NONE is not set
+CONFIG_PREEMPT=y
+
 # Hardening carried over from 5.10
 CONFIG_SECURITY_DMESG_RESTRICT=y
 # CONFIG_USER_NS is not set

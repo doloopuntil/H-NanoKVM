@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <sys/param.h>
 #include <sys/mman.h>
+#include <sys/utsname.h>
 #include "math.h"
 #include <inttypes.h>
 
@@ -242,20 +243,25 @@ static int _is_module_in_use(const char *module_name) {
 
 static int reinit_soph_vb(void)
 {
+	// Same order and parameters as S00kmod; soph_sys (the carveout), soph_vcodec and
+	// soph_jpeg do not use soph_base and stay loaded.
+	static const char *const mods[][2] = {
+		{"soph_base", ""}, {"soph_mipi_rx", ""}, {"soph_vi", ""}, {"soph_vpss", ""},
+		{"soph_dwa", ""}, {"soph_vo", ""}, {"soph_rgn", ""},
+		{"soph_vc_driver", " MaxVencChnNum=9 MaxVdecChnNum=9"},
+	};
+	struct utsname uts;
+	char cmd[256];
+
 	printf("mmf insmod..\r\n");
-	system("rmmod soph_ive soph_vc_driver soph_rgn soph_dwa soph_vpss soph_vi soph_snsr_i2c soph_mipi_rx soph_fast_image soph_rtos_cmdqu soph_base");
-	// system("insmod /mnt/system/ko/soph_sys.ko");
-	system("insmod /mnt/system/ko/soph_base.ko");
-	system("insmod /mnt/system/ko/soph_rtos_cmdqu.ko");
-	system("insmod /mnt/system/ko/soph_fast_image.ko");
-	system("insmod /mnt/system/ko/soph_mipi_rx.ko");
-	system("insmod /mnt/system/ko/soph_snsr_i2c.ko");
-	system("insmod /mnt/system/ko/soph_vi.ko");
-	system("insmod /mnt/system/ko/soph_vpss.ko");
-	system("insmod /mnt/system/ko/soph_dwa.ko");
-	system("insmod /mnt/system/ko/soph_rgn.ko");
-	system("insmod /mnt/system/ko/soph_vc_driver.ko");
-	system("insmod /mnt/system/ko/soph_ive.ko");
+	if (uname(&uts) != 0)
+		return -1;
+	system("rmmod soph_vc_driver soph_rgn soph_vo soph_dwa soph_vpss soph_vi soph_mipi_rx soph_base");
+	for (size_t i = 0; i < sizeof(mods) / sizeof(mods[0]); i++) {
+		snprintf(cmd, sizeof(cmd), "insmod /lib/modules/%s/extra/%s.ko%s",
+			 uts.release, mods[i][0], mods[i][1]);
+		system(cmd);
+	}
 
 	return 0;
 }
