@@ -915,8 +915,9 @@ instead of `iptables`, and the fragment turns off xtables and everything that
 selects it (the arch defconfig's bridge netfilter, IPVS and `ip(6)_tables`
 modules). Checked on the Lite: all four modes validate with `nft -c` against
 the 6.18 kernel, and moderate ran live (SSH, web UI, ACME open/close, restart).
-5.10 has the full nf_tables stack (`NF_TABLES_INET`, `NFT_CT`, `NFT_COMPAT`), so
-the same script works there once its image carries `nft`.
+5.10 has the full nf_tables stack built in (`NF_TABLES_INET`, `NFT_CT`,
+`NFT_COMPAT`), and its defconfig now ships `nftables` beside `iptables`, so the
+5.10 image takes the same nftables path.
 
 ### Phase 2: media modules and the first frames
 

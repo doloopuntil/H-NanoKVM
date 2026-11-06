@@ -9,9 +9,9 @@ last-checked: 2026-11-06
 The device runs a managed firewall (`S40firewall`). Pick the mode in
 **Settings > Network > Firewall**; the page also shows the rules in force.
 
-With the `nft` tool (system images from the Linux 6.18 line) the rules are one
-nftables table, `inet kvm_firewall`, replaced in a single transaction on every
-change. Older system images without `nft` get the same rules through
+With the `nft` tool (system 0.4.0 and later) the rules are one nftables table,
+`inet kvm_firewall`, replaced in a single transaction on every change. Older
+system images without `nft` get the same rules through
 `iptables-nft`/`ip6tables-nft`, or plain `iptables`/`ip6tables` where those are
 missing.
 
