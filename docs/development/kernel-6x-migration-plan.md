@@ -1005,11 +1005,20 @@ frame reaches user space.
 - Server restart with HDMI connected: `kvmv_init` sets up VI for the LT6911
   (1920x1080 UYVY over MIPI, 4 lanes); the VB pools come from the carveout
   (`VbPool0` at `0x89c00000`, 18.9 MB used); `/proc/cvitek/vi` reports about 53 fps
-  with no lost frames. `kvm_system` logs `family ID request : receive error`
-  (LT6911 I2C, not yet looked at). The web UI shows the host's picture in MJPEG
+  with no lost frames. `family ID request : receive error` comes from the
+  middleware's thermal thread (`cvi_thermal.c`, started by `CVI_SYS_Init`): it looks up
+  the `thermal` generic-netlink family, which needs `CONFIG_THERMAL_NETLINK` (off), and
+  the thread then exits. It would only act at a trip point by writing
+  `cooling_device0`, which 6.18 lacks (5.10's `soph_clock_cooling` is not ported;
+  5.10 trips were 110/120 °C passive, 130 °C critical, mainline's are 85/95/110 °C). The web UI shows the host's picture in MJPEG
   and WebRTC (H.264), and Direct H.264 works over HTTPS. Section 6.1 defines no separate cache
   test: correct frames through VI, VPSS and both encoders stand in for it here, and
   R1 stays open for the Phase 3 soak.
+- Load average about 4.4 while streaming H.264 at 30 fps, with the CPU 81% idle over
+  5 s (4% user, 12% system, 2% softirq): the `vi` threads `vi_event_handler` and
+  `cvitask_isp_{pre,err,blank}` wait in `D` state, as on 5.10 (Phase 0 baseline).
+  Not a regression; a CPU comparison with 5.10 belongs to Phase 3 with matched
+  measurements (Phase 0 used single `top` snapshots).
 - Open for Phase 3: `libkvm_mmf`'s `reinit_soph_vb()` reloads modules with
   hard-coded `/mnt/system/ko` paths and the 5.10 list.
 
