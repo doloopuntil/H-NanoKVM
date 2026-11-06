@@ -1,5 +1,5 @@
-# NanoKVM on top of the riscv defconfig and licheerv's linux.fragment.
-# Everything the system needs is built in; modules are only for the media drivers.
+# Deliberate choices on top of nanokvm_defconfig (savedefconfig of the trimmed config).
+# Everything the system needs is built in; modules are only for the media drivers and Wi-Fi/BT.
 
 # Build for speed (kernel-6x-migration-plan.md, 6.4.1)
 CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y
