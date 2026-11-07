@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fs, io,
-    sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering},
+    sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicUsize, Ordering},
     sync::{Arc, LazyLock, Mutex},
     time::{Duration, Instant},
 };
@@ -51,6 +51,10 @@ const SCREEN_TYPE_FILE: &str = "/kvmapp/kvm/type";
 const SCREEN_FPS_FILE: &str = "/kvmapp/kvm/fps";
 const SCREEN_QUALITY_FILE: &str = "/kvmapp/kvm/qlty";
 const SCREEN_RESOLUTION_FILE: &str = "/kvmapp/kvm/res";
+// libkvm writes the HDMI input size here when the bridge reports a new mode
+const SOURCE_WIDTH_FILE: &str = "/kvmapp/kvm/width";
+const SOURCE_HEIGHT_FILE: &str = "/kvmapp/kvm/height";
+const SOURCE_SIZE_REFRESH: Duration = Duration::from_secs(1);
 const H264_SAFE_MODE_FILE: &str = "/etc/kvm/h264_safe_mode";
 const MJPEG_FAILURE_LIMIT: usize = 3;
 const MJPEG_FAILURE_BACKOFF: Duration = Duration::from_millis(500);
@@ -71,6 +75,9 @@ const DIRECT_READ_IDLE: Duration = Duration::from_secs(30);
 const H264_KEYFRAME_REQUEST_INTERVAL: Duration = Duration::from_secs(1);
 
 static SCREEN: LazyLock<Mutex<Screen>> = LazyLock::new(|| Mutex::new(Screen::default()));
+// Auto resolution: the last HDMI input size read, packed as width << 16 | height.
+static SOURCE_SIZE: AtomicU32 = AtomicU32::new((1920 << 16) | 1080);
+static SOURCE_SIZE_READ_AT: LazyLock<Mutex<Option<Instant>>> = LazyLock::new(|| Mutex::new(None));
 static LATEST_MJPEG_FRAME: LazyLock<Mutex<Option<LatestMjpegFrame>>> =
     LazyLock::new(|| Mutex::new(None));
 static MJPEG_FANOUT: LazyLock<StreamFanout<MjpegFrame>> =
@@ -1002,9 +1009,48 @@ fn apply_quality(screen: &mut Screen, value: i32) {
 }
 
 fn current_screen() -> Screen {
-    let mut screen = SCREEN.lock().expect("screen lock should not be poisoned");
-    normalize_screen(&mut screen);
-    *screen
+    let mut screen = {
+        let mut screen = SCREEN.lock().expect("screen lock should not be poisoned");
+        normalize_screen(&mut screen);
+        *screen
+    };
+    if screen.height == 0 {
+        (screen.width, screen.height) = source_size();
+    }
+    screen
+}
+
+// The cached HDMI input size; a blocking task rereads it at most once a second.
+fn source_size() -> (u16, u16) {
+    let due = SOURCE_SIZE_READ_AT.lock().is_ok_and(|mut read_at| {
+        let due = read_at.is_none_or(|at| at.elapsed() >= SOURCE_SIZE_REFRESH);
+        if due {
+            *read_at = Some(Instant::now());
+        }
+        due
+    });
+    if due && let Ok(handle) = tokio::runtime::Handle::try_current() {
+        handle.spawn_blocking(|| {
+            let (width, height) =
+                source_capture_size(read_i32(SOURCE_WIDTH_FILE), read_i32(SOURCE_HEIGHT_FILE));
+            SOURCE_SIZE.store(
+                (u32::from(width) << 16) | u32::from(height),
+                Ordering::Relaxed,
+            );
+        });
+    }
+    let packed = SOURCE_SIZE.load(Ordering::Relaxed);
+    ((packed >> 16) as u16, packed as u16)
+}
+
+// Fits the input size to what VPSS and the encoders take; anything odd falls back to 1080p.
+fn source_capture_size(width: Option<i32>, height: Option<i32>) -> (u16, u16) {
+    match (width, height) {
+        (Some(width @ 640..=1920), Some(height @ 480..=1080)) => {
+            ((width as u16) & !15, (height as u16) & !7)
+        }
+        _ => (1920, 1080),
+    }
 }
 
 pub fn current_h264_screen() -> H264Screen {
@@ -1272,9 +1318,9 @@ fn frame_interval(fps: u64) -> time::Interval {
 
 fn capture_resolution(height: u16) -> Option<(u16, u16)> {
     match height {
-        // Avoid passing 0x0 to libkvm. The Go backend lets the native layer
-        // resolve "auto", but H.264 capture can abort the Rust process on 0x0.
-        0 => Some((1920, 1080)),
+        // Auto stays 0x0 here; current_screen resolves it to the HDMI input size,
+        // because H.264 capture can abort the process when libkvm gets 0x0.
+        0 => Some((0, 0)),
         1080 => Some((1920, 1080)),
         720 => Some((1280, 720)),
         600 => Some((800, 600)),
@@ -1383,7 +1429,7 @@ mod tests {
     use super::{
         H264_SOURCE, H264_WEBRTC_CONSUMERS, H264ConsumerKind, H264DirectProducerAction, H264Frame,
         H264Subscription, KeyframeGate, Screen, StreamMode, h264_direct_packet,
-        h264_direct_producer_action, normalize_screen, serve_h264_direct,
+        h264_direct_producer_action, normalize_screen, serve_h264_direct, source_capture_size,
     };
     use crate::api::direct_flow::MAX_CONTROL_BYTES;
     use axum::extract::ws::WebSocketUpgrade;
@@ -1478,7 +1524,7 @@ mod tests {
     }
 
     #[test]
-    fn auto_resolution_uses_safe_native_capture_size() {
+    fn auto_resolution_stays_auto_until_capture() {
         let mut screen = Screen {
             mode: StreamMode::Mjpeg,
             width: 0,
@@ -1489,8 +1535,22 @@ mod tests {
         };
         normalize_screen(&mut screen);
 
-        assert_eq!(screen.width, 1920);
-        assert_eq!(screen.height, 1080);
+        assert_eq!((screen.width, screen.height), (0, 0));
+    }
+
+    #[test]
+    fn auto_resolution_follows_the_input_size() {
+        assert_eq!(source_capture_size(Some(1024), Some(768)), (1024, 768));
+        assert_eq!(source_capture_size(Some(1280), Some(720)), (1280, 720));
+        assert_eq!(source_capture_size(Some(1366), Some(768)), (1360, 768));
+        assert_eq!(source_capture_size(Some(1920), Some(1080)), (1920, 1080));
+    }
+
+    #[test]
+    fn auto_resolution_falls_back_to_1080p() {
+        assert_eq!(source_capture_size(None, Some(768)), (1920, 1080));
+        assert_eq!(source_capture_size(Some(0), Some(0)), (1920, 1080));
+        assert_eq!(source_capture_size(Some(2560), Some(1440)), (1920, 1080));
     }
 
     #[test]
