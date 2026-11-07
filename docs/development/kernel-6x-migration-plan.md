@@ -1152,6 +1152,35 @@ Exit: a CI-built image flashes, boots and passes the Phase 1-3 checks unattended
   direction bits read back 1 after the claiming process exits). The WebUI power and
   reset buttons pulse `atx-power` and `atx-reset` high for about a second each (no
   ATX board attached; seen in `/sys/kernel/debug/gpio`).
+- Boot payload: `boot.scr` (from `boot.cmd`) loads `boot.itb` at `0x84000000` and
+  `bootm`s it; U-Boot checks the sha256 hash of each part. The FIT (`boot.its`) holds
+  the LZ4 kernel (load `0x80200000`), the DTB and a 2.5 MB uncompressed initramfs
+  (busybox, e2fsck and their libraries, `initramfs-init`). `post-image.sh` builds it
+  with the kernel's `gen_init_cpio` and host `mkimage`; `extlinux.conf` is gone. The
+  board U-Boot has no `ramdisk_addr_r`, so extlinux could not load an initrd. Linux
+  reserves the initrd before it scans reserved-memory, so the size-only media
+  carveout cannot land on it.
+- Boot time on the Lite (time counter since reset minus uptime, then the kernel's
+  root mount; U-Boot's 2 s `bootdelay` included):
+
+  | Payload | `/boot` | Before the kernel | Reset to root mounted |
+  | --- | --- | --- | --- |
+  | raw `Image` + initramfs (`booti`, test only) | 20.2 MB | 5.52 s | 6.96 s |
+  | FIT, LZ4 (chosen, two runs) | 8.4 MB | 5.92 s | 7.36 s |
+  | FIT, LZMA | 6.8 MB | 6.74 s | 8.18 s |
+  | FIT, uncompressed | 20.2 MB | 6.90 s | 8.34 s |
+
+  The kernel reaches the root mount at 1.44 s in every case; the initramfs adds about
+  0.3 s of that. `CONFIG_BOOTDELAY=0` in U-Boot would save 2 s more (needs a FIP rebuild).
+- USB reflash: `initramfs-init` exports `/dev/mmcblk0` as USB mass storage
+  (configfs, `0x3346:0x1009`, product "NanoKVM recovery") when `/boot/rec` exists,
+  the User Key is held at power-on (read from `/sys/kernel/debug/gpio`, as the vendor
+  initramfs did), or the root partition does not mount after `e2fsck -fp`;
+  otherwise it moves `/dev` and `switch_root`s. The kernel keeps feeding the
+  FSBL-armed watchdog (`WATCHDOG_OPEN_TIMEOUT=0`). On the Lite the User Key path
+  shows the card on the host. A first try failed: `/init` was `#!/bin/sh` with no
+  `/bin/sh` in the archive, and without `rootwait` the kernel's fallback root mount
+  panicked; the archive now links `/bin/sh` and `boot.cmd` passes `rootwait`.
 
 ### Phase 5: Cube (Full) and PCIe by review
 

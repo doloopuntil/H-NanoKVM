@@ -1,0 +1,56 @@
+/dts-v1/;
+
+/ {
+	description = "NanoKVM Linux 6.18";
+	#address-cells = <1>;
+
+	images {
+		kernel {
+			description = "Linux";
+			data = /incbin/("Image.fit");
+			type = "kernel";
+			arch = "riscv";
+			os = "linux";
+			compression = "@KERNEL_COMPRESSION@";
+			load = <0x80200000>;
+			entry = <0x80200000>;
+			hash {
+				algo = "sha256";
+			};
+		};
+
+		fdt {
+			description = "Device tree";
+			data = /incbin/("sg2002-nanokvm-lite.dtb");
+			type = "flat_dt";
+			arch = "riscv";
+			compression = "none";
+			hash {
+				algo = "sha256";
+			};
+		};
+
+		ramdisk {
+			description = "Recovery initramfs";
+			data = /incbin/("initramfs.cpio");
+			type = "ramdisk";
+			arch = "riscv";
+			os = "linux";
+			compression = "none";
+			hash {
+				algo = "sha256";
+			};
+		};
+	};
+
+	configurations {
+		default = "nanokvm";
+
+		nanokvm {
+			description = "NanoKVM Lite";
+			kernel = "kernel";
+			fdt = "fdt";
+			ramdisk = "ramdisk";
+		};
+	};
+};

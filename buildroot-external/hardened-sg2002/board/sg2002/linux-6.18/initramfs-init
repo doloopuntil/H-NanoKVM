@@ -1,0 +1,68 @@
+#!/bin/sh
+# Initramfs /init: export the whole SD card over USB for reflashing, or boot the root
+# partition. Recovery starts when /boot/rec exists, the User Key is held at power-on,
+# or the root file system does not mount even after e2fsck.
+
+export PATH=/bin:/sbin
+
+# USB mass storage of /dev/mmcblk0 until power-off; the user LED blinks with card access.
+recovery() {
+	echo "initramfs: USB recovery ($1)"
+	umount /boot 2>/dev/null
+	umount /root 2>/dev/null
+	for led in /sys/class/leds/*user*; do
+		echo mmc0 > "$led/trigger" 2>/dev/null
+	done
+	g=/sys/kernel/config/usb_gadget/recovery
+	mkdir -p "$g/strings/0x409" "$g/configs/c.1" "$g/functions/mass_storage.disk0"
+	echo 0x3346 > "$g/idVendor"
+	echo 0x1009 > "$g/idProduct"
+	echo 'sipeed' > "$g/strings/0x409/manufacturer"
+	echo 'NanoKVM recovery' > "$g/strings/0x409/product"
+	echo 1 > "$g/functions/mass_storage.disk0/lun.0/removable"
+	echo /dev/mmcblk0 > "$g/functions/mass_storage.disk0/lun.0/file"
+	ln -s "$g/functions/mass_storage.disk0" "$g/configs/c.1/"
+	ls /sys/class/udc > "$g/UDC"
+	# The kernel keeps feeding the FSBL-armed watchdog while nothing opens it.
+	while true; do
+		sleep 1
+		sync
+	done
+}
+
+user_key_held() {
+	grep 'User Key' /sys/kernel/debug/gpio | grep -q ' lo '
+}
+
+/bin/busybox --install -s /bin
+mount -t devtmpfs devtmpfs /dev
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t configfs configfs /sys/kernel/config
+mount -t debugfs debugfs /sys/kernel/debug
+
+# The SD card probes asynchronously.
+n=0
+while [ ! -b /dev/mmcblk0p2 ] && [ $n -lt 100 ]; do
+	sleep 0.1
+	n=$((n + 1))
+done
+
+if mount -o ro /dev/mmcblk0p1 /boot; then
+	[ -e /boot/rec ] && recovery "/boot/rec"
+	umount /boot
+fi
+
+if user_key_held; then
+	sleep 0.5
+	user_key_held && recovery "User Key"
+fi
+
+if ! mount -o rw /dev/mmcblk0p2 /root; then
+	e2fsck -fp /dev/mmcblk0p2
+	mount -o rw /dev/mmcblk0p2 /root || recovery "root file system"
+fi
+
+umount /sys/kernel/debug /sys/kernel/config /sys /proc
+mount --move /dev /root/dev
+exec switch_root /root /sbin/init
