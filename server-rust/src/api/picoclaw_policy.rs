@@ -166,7 +166,8 @@ pub(crate) fn enforce(config: &mut JsonValue, home: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Ok only for a pair that already carries the policy, so it may be launched.
+/// Ok only for a pair that already carries the policy.
+#[cfg(test)]
 pub(crate) fn check(config: &JsonValue, home: &Path) -> Result<()> {
     let mut enforced = config.clone();
     enforce(&mut enforced, home)?;
