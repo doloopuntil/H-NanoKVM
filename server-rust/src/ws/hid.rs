@@ -1,6 +1,6 @@
 use axum::{
     extract::{
-        State,
+        Extension, State,
         ws::{Message, WebSocket, WebSocketUpgrade},
     },
     http::HeaderMap,
@@ -26,7 +26,13 @@ use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 use tokio::sync::{broadcast, mpsc};
 
 use crate::{
-    AppError, Result, http::proxy::ClientInfo, state::AppState, ws::origin::validate_ws_origin,
+    AppError, Result,
+    http::{
+        middleware::{CurrentSession, TransportSession},
+        proxy::ClientInfo,
+    },
+    state::AppState,
+    ws::origin::validate_ws_origin,
 };
 
 const HID_KEYBOARD: &str = "/dev/hidg0";
@@ -493,24 +499,31 @@ pub fn broadcast_event(kind: &str, data: &str) {
 pub async fn connect(
     State(state): State<AppState>,
     client: ClientInfo,
+    current: Option<Extension<CurrentSession>>,
     headers: HeaderMap,
     ws: WebSocketUpgrade,
 ) -> Result<impl IntoResponse> {
+    let session = TransportSession::capture(&state.config, current)?;
     if !validate_ws_origin(&headers, &state.config, &client) {
         return Err(AppError::Forbidden("invalid websocket origin".to_string()));
     }
 
     Ok(ws
         .max_message_size(MAX_WS_MESSAGE_BYTES)
-        .on_upgrade(handle_socket))
+        .on_upgrade(move |socket| handle_socket(socket, session)))
 }
 
-async fn handle_socket(socket: WebSocket) {
+async fn handle_socket(socket: WebSocket, session: TransportSession) {
+    // The socket lives as long as the login that opened it: logout, a password change or expiry
+    // end it, and the keys and buttons it held are released.
+    if !session.is_active() {
+        return;
+    }
     let (mut ws_tx, mut ws_rx) = socket.split();
     let (keyboard_tx, keyboard_rx) = mpsc::channel(HID_EVENT_QUEUE_CAPACITY);
     let (mouse_tx, mouse_rx) = mpsc::channel(HID_EVENT_QUEUE_CAPACITY);
-    let keyboard_worker = tokio::spawn(keyboard_worker(keyboard_rx));
-    let mouse_worker = tokio::spawn(mouse_worker(mouse_rx));
+    let keyboard_worker = tokio::spawn(keyboard_worker(keyboard_rx, session.clone()));
+    let mouse_worker = tokio::spawn(mouse_worker(mouse_rx, session.clone()));
     send_capture_status_snapshot(&mut ws_tx).await;
     send_keyboard_led_snapshot(&mut ws_tx).await;
 
@@ -529,7 +542,15 @@ async fn handle_socket(socket: WebSocket) {
         }
     });
 
-    while let Some(message) = ws_rx.next().await {
+    loop {
+        let message = tokio::select! {
+            biased;
+            _ = session.ended() => break,
+            message = ws_rx.next() => match message {
+                Some(message) => message,
+                None => break,
+            },
+        };
         let Ok(message) = message else {
             break;
         };
@@ -553,7 +574,7 @@ async fn handle_socket(socket: WebSocket) {
                 }
                 touch_mouse_jiggler();
                 let report = data[1..].to_vec();
-                if keyboard_tx.send(report).await.is_err() {
+                if !enqueue_report(&keyboard_tx, report, &session).await {
                     break;
                 }
             }
@@ -561,14 +582,14 @@ async fn handle_socket(socket: WebSocket) {
                 4 => {
                     touch_mouse_jiggler();
                     let report = data[1..].to_vec();
-                    if mouse_tx.send(report).await.is_err() {
+                    if !enqueue_report(&mouse_tx, report, &session).await {
                         break;
                     }
                 }
                 6 => {
                     touch_mouse_jiggler();
                     let report = data[1..].to_vec();
-                    if mouse_tx.send(report).await.is_err() {
+                    if !enqueue_report(&mouse_tx, report, &session).await {
                         break;
                     }
                 }
@@ -617,8 +638,25 @@ fn ws_event_message(kind: &str, data: &str) -> Option<String> {
     serde_json::to_string(&WsEnvelope { kind, data }).ok()
 }
 
-async fn keyboard_worker(mut queue: mpsc::Receiver<Vec<u8>>) {
+// A full queue must not hold the socket after its login has ended.
+async fn enqueue_report(
+    queue: &mpsc::Sender<Vec<u8>>,
+    report: Vec<u8>,
+    session: &TransportSession,
+) -> bool {
+    tokio::select! {
+        biased;
+        _ = session.ended() => false,
+        sent = queue.send(report) => sent.is_ok(),
+    }
+}
+
+async fn keyboard_worker(mut queue: mpsc::Receiver<Vec<u8>>, session: TransportSession) {
     while let Some(report) = queue.recv().await {
+        // Reports queued before the login ended are not executed; the release below still is.
+        if !session.is_active() {
+            break;
+        }
         if report.len() != 8 {
             continue;
         }
@@ -631,11 +669,14 @@ async fn keyboard_worker(mut queue: mpsc::Receiver<Vec<u8>>) {
     let _ = write_hid_blocking(|| HID.write_keyboard(&[0; 8])).await;
 }
 
-async fn mouse_worker(mut queue: mpsc::Receiver<Vec<u8>>) {
+async fn mouse_worker(mut queue: mpsc::Receiver<Vec<u8>>, session: TransportSession) {
     let mut absolute_buttons_active = false;
     let mut absolute_release_report = [0_u8; 6];
 
     while let Some(report) = queue.recv().await {
+        if !session.is_active() {
+            break;
+        }
         match report.len() {
             4 => {
                 if !write_hid_blocking(move || HID.write_relative_mouse(&report)).await {
