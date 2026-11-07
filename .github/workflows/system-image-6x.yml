@@ -1,0 +1,627 @@
+name: H-NanoKVM system image (Linux 6.18)
+
+# Manual only: builds the vendor SDK runtime inputs, libkvm, and one Buildroot tree with Linux
+# 6.18, the Sophgo media modules, the FIPs, U-Boot and the rootfs, then the SD image and an
+# unsigned system-update archive. Multi-hour; do not run it on every push.
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: sg2002-image-build-6x
+  cancel-in-progress: false
+
+env:
+  BUILDROOT_VERSION: "2026.05.1"
+  RUST_VERSION: "1.99.0"
+  LICHEERV_NANO_SDK_SHA: d88d58feca49ef15f4cc7bd1f27dbf17dc25f85e
+  # One Sophgo weekly release (2026-08-24) for every video kernel module and middleware library,
+  # and the sensor list (enum and names) that release's sample code reads.
+  SOPHGO_OSDRV_SHA: 1b3a49649d18488ecf54fb4fcb6c27599e433fdc
+  SOPHGO_CVI_MPI_SHA: 693a72a1d52f2e08ea767e0a72905e81f10572a5
+  SOPHGO_SENSOR_LIST_SHA: e2824e1d07f516c41238e123fefbab71a34843bc
+  # Real upstream (GPL-3.0, sipeed/NanoKVM): source for the 4 OpenCV modules libkvm.so needs
+  # (verified near-byte-identical; see server-rust/native/README.md).
+  NANOKVM_UPSTREAM_COMMIT: bd070b2f5ce27d22618e8a1c8d2bdca543429882
+  NANOKVM_UPSTREAM_OPENCV_CORE_SHA256: fc4ffdd709d2241e7392bb0f6f7ade1a5b1dbbefe5b5551dd2f5ae5ec11ff566
+  NANOKVM_UPSTREAM_OPENCV_HIGHGUI_SHA256: 77ac57b3f652d3df598f89dcbebabb61a31a5794933d4fe703e2875fa83f261f
+  NANOKVM_UPSTREAM_OPENCV_IMGCODECS_SHA256: 4ffc0253a75c47374ba5400d5ba3687c072943c99f83774150b4b800f00029c0
+  NANOKVM_UPSTREAM_OPENCV_IMGPROC_SHA256: b01ee9a078c25fbe80aae6ebc5d3da52eebbbef2cb51362808d1d5fe139abff1
+  # libkvm.so/libkvm_mmf.so build inputs. libkvm_mmf.so statically compiles in a whole separate,
+  # frozen copy of the LT6911 sensor driver -- the vendor-sdk-stock patch above never reaches the
+  # code that actually runs; see server-rust/native/README.md.
+  MAIXCDK_SHA: 5b0aa5b1a8c91d213433189cfab8c999775fa13a
+  LICHEERV_EXTERNAL_SHA: 019ffc864bb9353f823afc98f7dd9fdacfa935cb
+
+jobs:
+  # The vendor SDK source, its stock build (runtime libraries and libsns_lt6911.so) and libkvm
+  # are the same jobs as in system-image.yml.
+  vendor-sdk-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install host build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git zstd
+
+      - name: Bootstrap vendor SDK
+        run: make vendor-sdk
+
+      # lt6911_sensor_ctl.c's chip-ID I2C probe never succeeds on this board (confirmed on real
+      # hardware); HDMI works without it, so it's removed. fsbl-overdrive-clocks selects the
+      # FSBL's overdrive clock table (C906 1050 MHz, VDDC 1.00 V). fsbl-boot-guard counts boots that
+      # never reached a healthy system in RTC_INFO1: the FSBL arms the top watchdog, falls back to the
+      # standard clocks after 2 such boots and leaves the watchdog off after 4.
+      - name: Apply tracked vendor SDK patches
+        run: |
+          for patch in lt6911-sensor-id-probe-removed fsbl-overdrive-clocks fsbl-boot-guard; do
+            file="$GITHUB_WORKSPACE/buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/$patch.patch"
+            git -C build/vendor/LicheeRV-Nano-Build apply --check "$file"
+            git -C build/vendor/LicheeRV-Nano-Build apply "$file"
+          done
+
+      # Tarred because artifacts drop file permissions and symlinks.
+      - name: Package vendor SDK source
+        run: |
+          mkdir -p "$RUNNER_TEMP/vendor-sdk-source"
+          tar -I 'zstd -T0 -3' -cf "$RUNNER_TEMP/vendor-sdk-source/vendor-sdk-source.tar.zst" \
+            -C build vendor
+          ls -l "$RUNNER_TEMP/vendor-sdk-source"
+
+      - name: Upload vendor SDK source
+        uses: actions/upload-artifact@v4
+        with:
+          name: vendor-sdk-source
+          path: ${{ runner.temp }}/vendor-sdk-source/vendor-sdk-source.tar.zst
+          compression-level: 0
+          retention-days: 2
+          if-no-files-found: error
+
+  # Isolated: the most expensive, most fragile stage (~14 GiB, long compile). Hands build-image
+  # only the files it reads, small enough to cache, so a cache hit skips the stock build.
+  vendor-sdk:
+    needs: [vendor-sdk-source]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Bump the version when the stock build changes in a way the hashed files do not show.
+      - name: Restore the stock vendor SDK handoff
+        id: stock-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/vendor-sdk/vendor-sdk.tar.zst
+          key: vendor-sdk-stock-v1-${{ env.LICHEERV_NANO_SDK_SHA }}-${{ hashFiles('scripts/bootstrap-vendor-sdk.sh', 'scripts/build-vendor-sdk-stock.sh', 'buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/**') }}
+
+      - name: Install host build dependencies
+        if: steps.stock-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential git wget curl unzip rsync bc cpio \
+            libncurses-dev python3 perl bison flex device-tree-compiler \
+            dosfstools mtools file libssl-dev pkg-config e2fsprogs zstd
+
+      - name: Download vendor SDK source
+        if: steps.stock-cache.outputs.cache-hit != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: vendor-sdk-source
+          path: ${{ runner.temp }}/vendor-sdk-source
+
+      - name: Unpack vendor SDK source
+        if: steps.stock-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p build
+          tar -I zstd -xf "$RUNNER_TEMP/vendor-sdk-source/vendor-sdk-source.tar.zst" -C build
+          rm -f "$RUNNER_TEMP/vendor-sdk-source/vendor-sdk-source.tar.zst"
+          test -d build/vendor/LicheeRV-Nano-Build/.git
+
+      - name: Build stock vendor SDK image
+        if: steps.stock-cache.outputs.cache-hit != 'true'
+        run: make vendor-sdk-stock
+
+      # Only what build-image reads: the stock rootfs.sd (runtime files), boot.sd, fip.bin (standard
+      # clocks) and fip.od.bin (overdrive),
+      # the ramdisk inputs and keys for the boot FIT, the vendor mkimage with the host/ libraries
+      # it loads, and the boot logo. Tarred because artifacts drop permissions and symlinks.
+      - name: Package vendor SDK for build-image
+        if: steps.stock-cache.outputs.cache-hit != 'true'
+        run: |
+          SDK=vendor/LicheeRV-Nano-Build
+          OUT=$SDK/install/soc_sg2002_licheervnano_sd
+          MKIMAGE=$SDK/build/tools/common/prebuild/mkimage
+          set -- \
+            "$OUT/rawimages/rootfs.sd" \
+            "$OUT/rawimages/boot.sd" \
+            "$OUT/fip.bin" \
+            "$OUT/fip.od.bin" \
+            "$SDK/ramdisk/build/sg2002_licheervnano_sd/workspace/boot.cpio" \
+            "$SDK/ramdisk/build/sg2002_licheervnano_sd/workspace/multi.its" \
+            "$SDK/ramdisk/keys" \
+            "$MKIMAGE" \
+            "$SDK/build/tools/common/sd_tools/logo.jpeg"
+          cd build
+          for path in "$@"; do
+            test -e "$path" || { echo "missing from the stock build: $path" >&2; exit 1; }
+          done
+          du -sh "$SDK/host" || true
+          for lib in $(LD_LIBRARY_PATH="$PWD/$SDK/host" ldd "$MKIMAGE" | awk '{ print $3 }' | grep "^$PWD/$SDK/host/" || true); do
+            set -- "$@" "${lib#"$PWD/"}"
+          done
+          printf '%s\n' "$@"
+          mkdir -p "$RUNNER_TEMP/vendor-sdk"
+          tar -h -I 'zstd -T0 -10' -cf "$RUNNER_TEMP/vendor-sdk/vendor-sdk.tar.zst" "$@"
+          ls -l "$RUNNER_TEMP/vendor-sdk"
+
+      - name: Save the stock vendor SDK handoff
+        if: steps.stock-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/vendor-sdk/vendor-sdk.tar.zst
+          key: ${{ steps.stock-cache.outputs.cache-primary-key }}
+
+      - name: Upload vendor SDK
+        uses: actions/upload-artifact@v4
+        with:
+          name: vendor-sdk
+          path: ${{ runner.temp }}/vendor-sdk/vendor-sdk.tar.zst
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+  # Isolated, independent of vendor-sdk: one toolchain (MaixCDK's pinned Xuantie musl gcc) builds
+  # the SDK middleware, libkvm.so/libkvm_mmf.so and kvm_system from source.
+  # libkvm_mmf.so statically compiles in its own frozen copy of the LT6911 sensor driver (see
+  # server-rust/native/README.md) -- the vendor-sdk-stock patch above never reaches the code that
+  # actually runs; this is the job that does.
+  build-native-libkvm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install host build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential cmake git curl python3 python3-venv python3-pip \
+            autoconf automake libtool patchelf patch file
+
+      - name: Fetch MaixCDK
+        run: |
+          mkdir -p "$HOME/MaixCDK"
+          git -C "$HOME/MaixCDK" init -q
+          git -C "$HOME/MaixCDK" remote add origin https://github.com/sipeed/MaixCDK.git
+          git -C "$HOME/MaixCDK" fetch --depth 1 origin "$MAIXCDK_SHA"
+          git -C "$HOME/MaixCDK" checkout -q FETCH_HEAD
+          python3 -m venv "$HOME/MaixCDK"
+          "$HOME/MaixCDK/bin/pip" install -U -r "$HOME/MaixCDK/requirements.txt"
+          echo "$HOME/MaixCDK/bin" >> "$GITHUB_PATH"
+
+      # Same source as vendor-sdk-stock's own copy, so the same patch applies. Embedded paths
+      # differ between the two trees, so target the file directly with `patch` instead of `git
+      # apply`.
+      - name: Apply the LT6911 sensor-id-probe-removed patch to MaixCDK's vendored copy
+        run: |
+          LT6911_FILE="$HOME/MaixCDK/components/3rd_party/sophgo-middleware/sophgo-middleware/v2/component/isp/sensor/sg200x/lontium_lt6911/lt6911_sensor_ctl.c"
+          patch --fuzz=0 --forward -p1 -o /tmp/lt6911_sensor_ctl.c.patched "$LT6911_FILE" \
+            < "$GITHUB_WORKSPACE/buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/lt6911-sensor-id-probe-removed.patch"
+          cp /tmp/lt6911_sensor_ctl.c.patched "$LT6911_FILE"
+          ! grep -q "LT6911_CHIP_ID_ADDR_H)" "$LT6911_FILE"
+
+      # Nothing we ship needs XTheadVector: build for the scalar xthead multilib and loader.
+      - name: Build MaixCDK projects without the vector extension
+        run: |
+          YAML="$HOME/MaixCDK/platforms/maixcam.yaml"
+          sed -i 's/-mcpu=c906fdv -march=rv64imafdcv0p7xthead/-mcpu=c906fd -march=rv64imafdcxthead/g' "$YAML"
+          ! grep -q v0p7 "$YAML"
+
+      # The middleware, the uapi headers of the same Sophgo release, and our kernel's ION uapi.
+      - name: Fetch the Sophgo middleware source
+        run: |
+          sparse_fetch() {
+            dir="$1" url="$2" sha="$3"
+            shift 3
+            git init -q "$dir"
+            git -C "$dir" remote add origin "$url"
+            git -C "$dir" sparse-checkout set --no-cone "$@"
+            git -C "$dir" fetch -q --depth 1 --filter=blob:none origin "$sha"
+            git -C "$dir" checkout -q FETCH_HEAD
+            [ "$(git -C "$dir" rev-parse HEAD)" = "$sha" ]
+          }
+          sparse_fetch "$RUNNER_TEMP/cvi_mpi" https://github.com/sophgo/cvi_mpi.git \
+            "$SOPHGO_CVI_MPI_SHA" \
+            /Makefile.param /include/ /sample/common/ /component/panel/cv181x/ \
+            /modules/sys/ /modules/venc/ /modules/vdec/ /modules/vi/ /modules/vpss/ /modules/vo/ \
+            /modules/gdc/ /modules/rgn/ /modules/bin/include/ /modules/isp/include/cv181x/ \
+            /modules/ive/include/ /3rdparty/inih/
+          sparse_fetch "$RUNNER_TEMP/osdrv-uapi" https://github.com/sophgo/osdrv.git \
+            "$SOPHGO_OSDRV_SHA" /interdrv/include/
+          sparse_fetch "$RUNNER_TEMP/sensor-list" https://github.com/sophgo/SensorSupportList.git \
+            "$SOPHGO_SENSOR_LIST_SHA" /common/
+          sparse_fetch "$RUNNER_TEMP/sdk-ion" https://github.com/sipeed/LicheeRV-Nano-Build.git \
+            "$LICHEERV_NANO_SDK_SHA" /linux_5.10/drivers/staging/android/uapi/
+          patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
+            < support/sg2002/middleware-patches/cvi-mpi-693a72a-no-vi-dbg-thread.patch
+          ! grep -q vi_dbg_handler "$RUNNER_TEMP/cvi_mpi/modules/vi/src/cvi_vi.c"
+
+      # Replaces MaixCDK's prebuilt libsys/libvenc/libvdec/libvpu/libini, so libkvm_mmf.so links
+      # against these and the image ships them. libvpu is split into libvi/libvpss/libvo/libgdc/
+      # librgn; together they must keep every export of the old prebuilts.
+      # Same toolchain as the MaixCDK build below, which reuses the fetched copy.
+      - name: Build the Sophgo middleware from source
+        run: |
+          OUT="$GITHUB_WORKSPACE/build/native-libkvm/middleware"
+          TOOLCHAIN_BIN="$(scripts/fetch-maixcdk-toolchain.sh "$HOME/MaixCDK")"
+          SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh "$RUNNER_TEMP/cvi_mpi" \
+            "$RUNNER_TEMP/osdrv-uapi" "$RUNNER_TEMP/sdk-ion" "$OUT" \
+            "$TOOLCHAIN_BIN" server-rust/native/dl_lib
+          MW_LIB="$HOME/MaixCDK/components/3rd_party/sophgo-middleware/sophgo-middleware/v2/lib"
+          cp "$OUT/libsys.so" "$OUT/libvenc.so" "$OUT/libvdec.so" "$OUT/libvi.so" "$OUT/libvpss.so" \
+            "$OUT/libvo.so" "$OUT/libgdc.so" "$OUT/librgn.so" "$MW_LIB/"
+          cp "$OUT/libini.so" "$MW_LIB/3rd/"
+
+      # kvm_mmf compiles against these headers and sample code, so they must match the libraries
+      # above. The LT6911 sensor headers stay MaixCDK's; ./build adds our sample_common_sensor.c.
+      - name: Replace MaixCDK's middleware headers with the cvi_mpi ones
+        run: |
+          MPI="$RUNNER_TEMP/cvi_mpi"
+          UAPI="$RUNNER_TEMP/osdrv-uapi/interdrv/include"
+          MW="$HOME/MaixCDK/components/3rd_party/sophgo-middleware/sophgo-middleware/v2"
+          rm -rf "$MW/include" "$MW/sample/common" "$MW/uapi" "$MW/modules/ive/include" \
+            "$MW/component/panel/cv181x"
+          cp -r "$MPI/include" "$MW/include"
+          # cvi_mpi's own uapi copy (cv180x cvi_defines.h): <linux/...> must come from osdrv.
+          rm -rf "$MW/include/linux"
+          mkdir -p "$MW/include/isp/cv181x" "$MW/uapi/linux" "$MW/modules/ive"
+          cp "$MPI"/modules/isp/include/cv181x/*.h "$MW/include/isp/cv181x/"
+          cp -r "$MPI/sample/common" "$MW/sample/common"
+          cp "$UAPI"/common/uapi/linux/*.h "$UAPI"/chip/cv181x/uapi/linux/*.h "$MW/uapi/linux/"
+          cp -r "$MPI/modules/ive/include" "$MW/modules/ive/include"
+          cp -r "$MPI/component/panel/cv181x" "$MW/component/panel/cv181x"
+          grep -q "define MO_TBL_SIZE 2048" "$MW/uapi/linux/vi_uapi.h"
+          mkdir -p "$MW/component/isp/common"
+          cp "$RUNNER_TEMP"/sensor-list/common/sensor_list.[ch] "$MW/component/isp/common/"
+          # Sensor names come from sensor_list.c, indexed by its own enum: the override must not
+          # carry a table of its own.
+          ! grep -q "snsr_type_name\[SAMPLE_SNS_TYPE_BUTT\] =" \
+            support/sg2002/additional/sophgo-middleware/v2/sample/common/sample_common_sensor.c
+          # Sophgo's name table has drifted from its enum before: check LT6911's slot.
+          cat > "$RUNNER_TEMP/lt6911.c" <<'EOF'
+          #include <string.h>
+          #include "sensor_list.h"
+          int main(void)
+          {
+          	const char *n = snsr_type_name[LONTIUM_LT6911_2M_60FPS_8BIT];
+
+          	return !n || strcmp(n, "LONTIUM_LT6911_2M_60FPS_8BIT") != 0;
+          }
+          EOF
+          gcc -DARCH_CV181X -D__CV181X__ -I"$MW/include" -I"$MW/include/isp/cv181x" -I"$MW/uapi" \
+            -I"$MW/component/isp/common" "$RUNNER_TEMP/lt6911.c" \
+            "$MW/component/isp/common/sensor_list.c" -o "$RUNNER_TEMP/lt6911"
+          "$RUNNER_TEMP/lt6911"
+
+      # ./build's own first-time logic (no $MAIXCDK_PATH/components/kvm yet, always true on this
+      # fresh clone) copies support/sg2002/additional/{kvm,kvm_mmf,vision,peripheral bits} into
+      # MaixCDK and answers its interactive platform prompt with "2" (maixcam) via heredoc -- the
+      # exact sequence upstream's own docker/Dockerfile uses for `./build kvm_system`.
+      - name: Build libkvm.so + libkvm_mmf.so via MaixCDK
+        run: |
+          cd "$GITHUB_WORKSPACE/support/sg2002"
+
+          # The sources must carry the native changes this image relies on.
+          grep -q "no stale sys state to release" additional/kvm_mmf/src/kvm_mmf.cpp
+          grep -q "mmf_vi_frame_release" additional/kvm_mmf/src/kvm_mmf.cpp
+          grep -q "kvmv_hdmi_signal_active" additional/kvm/src/kvm_vision.cpp
+          grep -q "fresh_frame_count" additional/kvm/src/kvm_vision.cpp
+
+          ./build kvm_vision
+
+          DL_LIB="$GITHUB_WORKSPACE/support/sg2002/kvm_vision_test/dist/kvm_vision_test_release/dl_lib"
+          test -s "$DL_LIB/libkvm.so"
+          test -s "$DL_LIB/libkvm_mmf.so"
+          file "$DL_LIB/libkvm.so" "$DL_LIB/libkvm_mmf.so"
+
+          mkdir -p "$GITHUB_WORKSPACE/build/native-libkvm"
+          cp "$DL_LIB/libkvm.so" "$DL_LIB/libkvm_mmf.so" "$GITHUB_WORKSPACE/build/native-libkvm/"
+
+      # Reuses the MaixCDK components the libkvm build just installed.
+      - name: Build kvm_system via MaixCDK
+        run: |
+          cd "$GITHUB_WORKSPACE/support/sg2002"
+
+          # The VI state reader that pairs with libkvm's shared state writer.
+          grep -q "vi_state_shared::read_state" kvm_system/main/lib/system_state/system_state.cpp
+
+          ./build kvm_system
+
+          BIN="$GITHUB_WORKSPACE/support/sg2002/kvm_system/dist/kvm_system_release/kvm_system"
+          test -s "$BIN"
+          file "$BIN"
+          cp "$BIN" "$GITHUB_WORKSPACE/build/native-libkvm/kvm_system"
+
+      # MaixCDK's CMake build embeds a build-host RPATH (e.g.
+      # /home/runner/NanoKVM/support/sg2002/kvm_vision_test/build/kvm_mmf) into libkvm.so by
+      # default -- register_component(DYNAMIC) doesn't set CMAKE_SKIP_RPATH. scripts/package-
+      # rust-kvmapp.sh hard-fails on any RPATH/RUNPATH in these two libraries (a real portability/
+      # security check, not something to work around by disabling it), so strip it here instead,
+      # the same way the previously-published binaries must have been prepared.
+      - name: Strip build-host RPATH from libkvm.so + libkvm_mmf.so + kvm_system
+        run: |
+          for lib in libkvm.so libkvm_mmf.so kvm_system; do
+            LIB="$GITHUB_WORKSPACE/build/native-libkvm/$lib"
+            if patchelf --print-rpath "$LIB" | grep -q .; then
+              patchelf --remove-rpath "$LIB"
+              echo "removed RPATH from $lib"
+            else
+              echo "$lib has no RPATH; nothing to strip"
+            fi
+          done
+
+      # Matches server-rust/native/README.md's "libkvm.so: removed video NEEDED entry" finding
+      # (symbol-table analysis found zero real call path into video/dnn/calib3d/features2d/flann;
+      # this fresh build is a different compile of the same MaixCDK link-everything convention, not
+      # a different call graph) -- but re-checked, not assumed, since this build's dependency set
+      # could legitimately differ. Skips cleanly if the NEEDED entry isn't there at all.
+      - name: Re-trim libkvm.so's unused OpenCV NEEDED entries
+        run: |
+          LIBKVM="$GITHUB_WORKSPACE/build/native-libkvm/libkvm.so"
+          if patchelf --print-needed "$LIBKVM" | grep -q '^libopencv_video\.so\.409$'; then
+            patchelf --remove-needed libopencv_video.so.409 "$LIBKVM"
+            echo "removed libopencv_video.so.409 NEEDED entry"
+          else
+            echo "libopencv_video.so.409 not NEEDED by this build; nothing to trim"
+          fi
+
+      # kvm_system must run with only what the image already has. MaixCDK links it for the vendor
+      # T-Head loader, whose __clone misaligns thread stacks; the image runs musl 1.2.6 instead
+      # (docs/development/riscv-musl-stack-alignment.md).
+      - name: Set and check kvm_system's loader and libraries
+        run: |
+          BIN="$GITHUB_WORKSPACE/build/native-libkvm/kvm_system"
+          patchelf --set-interpreter /lib/ld-musl-riscv64.so.1 "$BIN"
+          readelf -l "$BIN" | grep -q "interpreter: /lib/ld-musl-riscv64.so.1"
+          ! readelf -A "$BIN" | grep -q v0p7
+          for lib in $(patchelf --print-needed "$BIN"); do
+            case "$lib" in
+              libstdc++.so.6|libgcc_s.so.1|libc.so) ;;
+              *) echo "unexpected NEEDED entry in kvm_system: $lib" >&2; exit 1 ;;
+            esac
+          done
+
+      # The build-image job downloads this by name -- this is the actual handoff, not just a
+      # diagnostic copy (kept separate from actions/cache deliberately; see that job's download
+      # step for why).
+      - name: Upload native libkvm build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-libkvm-build
+          path: build/native-libkvm/**
+          retention-days: 14
+          if-no-files-found: warn
+
+  build-image:
+    needs: [vendor-sdk, build-native-libkvm]
+    runs-on: ubuntu-24.04
+    # 360 minutes is the hard cap on GitHub-hosted runners.
+    timeout-minutes: 360
+    env:
+      RUN_ROOT: ${{ github.workspace }}/build/rc12-run
+      EXPECTED_SYSTEM_VERSION: 1.0.0
+      EXPECTED_KVMAPP_VERSION: 3.0.0
+      EXPECTED_KERNEL_RELEASE: 6.18.29
+      EXPECTED_SECURITY_PATCH_LEVEL: Buildroot 2026.05.1 security maintenance Linux 6.18.29
+      NANOKVM_KVMAPP_SOURCE_DIR: ${{ github.workspace }}/build/kvmapp-rust/kvmapp
+      HARDENED_SG2002_VENDOR_SDK_DIR: ${{ github.workspace }}/build/vendor/LicheeRV-Nano-Build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install host build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential git wget curl unzip rsync bc cpio \
+            libncurses-dev python3 perl bison flex device-tree-compiler \
+            dosfstools mtools file libssl-dev pkg-config e2fsprogs \
+            u-boot-tools zstd xz-utils util-linux
+
+      # Pinned: the runner's moving `stable` changed the link behaviour once already.
+      - name: Install Rust ${{ env.RUST_VERSION }} with the riscv64gc-unknown-linux-musl target
+        run: |
+          rustup toolchain install "$RUST_VERSION" --profile minimal \
+            --target riscv64gc-unknown-linux-musl
+          rustup default "$RUST_VERSION"
+          rustc --version
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Download vendor SDK
+        uses: actions/download-artifact@v4
+        with:
+          name: vendor-sdk
+          path: ${{ runner.temp }}/vendor-sdk
+
+      - name: Unpack vendor SDK
+        run: |
+          mkdir -p build
+          tar -I zstd -xf "$RUNNER_TEMP/vendor-sdk/vendor-sdk.tar.zst" -C build
+          rm -f "$RUNNER_TEMP/vendor-sdk/vendor-sdk.tar.zst"
+          test -d "$HARDENED_SG2002_VENDOR_SDK_DIR" || {
+            echo "vendor SDK missing after unpack: $HARDENED_SG2002_VENDOR_SDK_DIR" >&2
+            exit 1
+          }
+          df -h /
+
+      # Artifact, not actions/cache: cache entries can be evicted between jobs of the same run.
+      - name: Download native libkvm build
+        uses: actions/download-artifact@v4
+        with:
+          name: native-libkvm-build
+          path: build/native-libkvm
+
+      - name: Cache Buildroot source download
+        uses: actions/cache@v4
+        with:
+          path: build/downloads
+          key: buildroot-${{ env.BUILDROOT_VERSION }}
+
+      # Same standalone path as system-image.yml, so both workflows share the package downloads.
+      - name: Cache shared Buildroot package download directory
+        uses: actions/cache@v4
+        with:
+          path: build/buildroot-package-dl-cache
+          key: buildroot-dl-v2-${{ env.BUILDROOT_VERSION }}
+
+      - name: Bootstrap Buildroot + security-patched source
+        run: |
+          mkdir -p build/buildroot-package-dl-cache
+          make latest-buildroot-bootstrap
+          BUILDROOT_SECURITY_DL_DIR="${{ github.workspace }}/build/buildroot-package-dl-cache" \
+            make latest-buildroot-security-source
+
+      # licheerv's external tree (board patches, FSBL patches) and the FSBL source for the FIPs.
+      - name: Fetch the licheerv external tree and the FSBL source
+        run: |
+          LICHEERV_EXTERNAL_SHA="$LICHEERV_EXTERNAL_SHA" scripts/fetch-licheerv-external.sh
+          LICHEERV_NANO_SDK_SHA="$LICHEERV_NANO_SDK_SHA" scripts/fetch-sg2002-boot-source.sh
+
+      - name: Stage NanoKVM runtime sysroot for linked libkvm build
+        run: |
+          scripts/extract-vendor-sdk-stock-file.sh server-rust/sysroot/lib/libc.so \
+            /lib/libc.so /usr/lib/libc.so \
+            /lib64xthead/lp64d/libc.so /lib64v0p7_xthead/lp64d/libc.so \
+            /usr/lib64xthead/lp64d/libc.so /usr/lib64v0p7_xthead/lp64d/libc.so
+          scripts/extract-vendor-sdk-stock-file.sh server-rust/sysroot/lib/libgcc_s.so.1 \
+            /lib/libgcc_s.so.1 /usr/lib/libgcc_s.so.1 \
+            /lib64xthead/lp64d/libgcc_s.so.1 /lib64v0p7_xthead/lp64d/libgcc_s.so.1
+
+      # This run's libkvm.so, libkvm_mmf.so and middleware replace the checked-in copies.
+      - name: Use freshly-built libkvm.so, libkvm_mmf.so and middleware
+        run: |
+          cp build/native-libkvm/libkvm.so server-rust/native/dl_lib/libkvm.so
+          cp build/native-libkvm/libkvm_mmf.so server-rust/native/dl_lib/libkvm_mmf.so
+          for lib in libsys.so libvenc.so libvdec.so libvi.so libvpss.so libvo.so libgdc.so librgn.so \
+            libini.so; do
+            cp "build/native-libkvm/middleware/$lib" "server-rust/native/dl_lib/$lib"
+          done
+          rm server-rust/native/dl_lib/libvpu.so
+
+      - name: Build Hardened kvmapp bridge
+        run: |
+          cargo test --manifest-path server-rust/Cargo.toml
+          corepack pnpm --dir web install --frozen-lockfile
+          corepack pnpm --dir web build
+          server-rust/scripts/build-linked-libkvm.sh
+          RUST_TARGET=riscv64gc-unknown-linux-musl \
+            APP_VERSION="$(cat kvmapp/version)" \
+            KVM_SYSTEM_SOURCE="$GITHUB_WORKSPACE/build/native-libkvm/kvm_system" \
+            scripts/package-rust-kvmapp.sh
+
+      # The GCC runtime libraries and libsns_lt6911.so come from the stock vendor SDK image, as in
+      # system-image.yml; the media modules come from Buildroot (hardened-soph-media).
+      - name: Source the remaining runtime files from our own vendor-sdk-stock build
+        run: |
+          RUNTIME_DIR="$RUN_ROOT/runtime"
+          mkdir -p "$RUNTIME_DIR/kvmapp-dl-lib" "$RUNTIME_DIR/system/usr/lib"
+
+          scripts/extract-vendor-sdk-stock-file.sh \
+            "$RUNTIME_DIR/kvmapp-dl-lib/libstdc++.so.6.0.28" \
+            /lib/libstdc++.so.6.0.28 /usr/lib/libstdc++.so.6.0.28 \
+            /lib64xthead/lp64d/libstdc++.so.6.0.28 /lib64v0p7_xthead/lp64d/libstdc++.so.6.0.28
+          scripts/extract-vendor-sdk-stock-file.sh "$RUNTIME_DIR/kvmapp-dl-lib/libgcc_s.so.1" \
+            /lib/libgcc_s.so.1 /usr/lib/libgcc_s.so.1 \
+            /lib64xthead/lp64d/libgcc_s.so.1 /lib64v0p7_xthead/lp64d/libgcc_s.so.1
+          scripts/extract-vendor-sdk-stock-file.sh "$RUNTIME_DIR/kvmapp-dl-lib/libgomp.so.1.0.0" \
+            /lib/libgomp.so.1.0.0 /usr/lib/libgomp.so.1.0.0 \
+            /lib64xthead/lp64d/libgomp.so.1.0.0 /lib64v0p7_xthead/lp64d/libgomp.so.1.0.0
+          scripts/extract-vendor-sdk-stock-file.sh "$RUNTIME_DIR/kvmapp-dl-lib/libatomic.so.1.2.0" \
+            /lib/libatomic.so.1.2.0 /usr/lib/libatomic.so.1.2.0 \
+            /lib64xthead/lp64d/libatomic.so.1.2.0 /lib64v0p7_xthead/lp64d/libatomic.so.1.2.0
+          scripts/extract-vendor-sdk-stock-file.sh "$RUNTIME_DIR/system/usr/lib/libsns_lt6911.so" \
+            /mnt/system/usr/lib/libsns_lt6911.so
+
+      - name: Source OpenCV core/highgui/imgcodecs/imgproc from upstream
+        run: |
+          DL_LIB="$RUN_ROOT/runtime/kvmapp-dl-lib"
+          verify_and_replace() {
+            name="$1"
+            expected_sha256="$2"
+            curl --fail --location --retry 2 \
+              --output "/tmp/$name" \
+              "https://raw.githubusercontent.com/sipeed/NanoKVM/$NANOKVM_UPSTREAM_COMMIT/server/dl_lib/$name"
+            echo "$expected_sha256  /tmp/$name" | sha256sum -c -
+            cp "/tmp/$name" "$DL_LIB/$name"
+          }
+          verify_and_replace libopencv_core.so.409 "$NANOKVM_UPSTREAM_OPENCV_CORE_SHA256"
+          verify_and_replace libopencv_highgui.so.409 "$NANOKVM_UPSTREAM_OPENCV_HIGHGUI_SHA256"
+          verify_and_replace libopencv_imgcodecs.so.409 "$NANOKVM_UPSTREAM_OPENCV_IMGCODECS_SHA256"
+          verify_and_replace libopencv_imgproc.so.409 "$NANOKVM_UPSTREAM_OPENCV_IMGPROC_SHA256"
+
+      - name: Build the Linux 6.18 SD image
+        run: |
+          HARDENED_SG2002_6X_OUTPUT_DIR="$RUN_ROOT/buildroot" \
+          HARDENED_SG2002_6X_REPORT_DIR="$RUN_ROOT/_reports/image" \
+          NANOKVM_VENDOR_RUNTIME_SOURCE_DIR="$RUN_ROOT/runtime" \
+            scripts/build-buildroot-6x-image.sh
+          df -h /
+
+      - name: Upload Buildroot logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buildroot-6x-diagnostics
+          path: |
+            build/rc12-run/buildroot/.config
+            build/rc12-run/buildroot/build/*/config.log
+            build/rc12-run/buildroot/build/linux-*/.config
+            build/rc12-run/_reports/**
+          retention-days: 7
+          if-no-files-found: warn
+
+      # The unsigned raw update archive, plus the script that signs it with a local key.
+      - name: Package the unsigned system-update archive
+        run: |
+          SYSTEM_VERSION="${EXPECTED_SYSTEM_VERSION%.*}.${{ github.run_number }}" \
+          KERNEL_VERSION="$EXPECTED_KERNEL_RELEASE" \
+          SECURITY_PATCH_LEVEL="$EXPECTED_SECURITY_PATCH_LEVEL" \
+          BUILDROOT_VERSION="$BUILDROOT_VERSION" \
+          REQUIRED_APP_VERSION=2.0.41 \
+            scripts/package-local-system-update.sh \
+            "$RUN_ROOT/buildroot/images/hardened-sg2002-6x.img" \
+            "$RUN_ROOT/system-update"
+
+      - name: Compress the SD image
+        run: |
+          mkdir -p "$RUN_ROOT/sd-image"
+          xz -T0 -6 -c "$RUN_ROOT/buildroot/images/hardened-sg2002-6x.img" \
+            > "$RUN_ROOT/sd-image/hardened-sg2002-6x.img.xz"
+          (cd "$RUN_ROOT/sd-image" && sha256sum hardened-sg2002-6x.img.xz > SHA256SUMS)
+
+      - name: Upload the system-update archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-update-archive-6x
+          path: build/rc12-run/system-update/**
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload the SD image and reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: sg2002-6x-sd-image
+          path: |
+            build/rc12-run/sd-image/**
+            build/rc12-run/_reports/**
+          retention-days: 14
+          if-no-files-found: error
