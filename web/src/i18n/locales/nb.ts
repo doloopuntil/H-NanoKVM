@@ -91,6 +91,9 @@ const nb = {
     },
     screen: {
       scale: 'Skala',
+      size: 'Størrelse',
+      sizeFill: 'Fyll vinduet',
+      sizeNative: 'Opprinnelig størrelse',
       title: 'Skjerm',
       video: 'Videomodus',
       videoDirectTips:

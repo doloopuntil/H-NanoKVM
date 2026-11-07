@@ -91,6 +91,9 @@ const uk = {
     },
     screen: {
       scale: 'Масштаб',
+      size: 'Розмір',
+      sizeFill: 'Заповнити вікно',
+      sizeNative: 'Початковий розмір',
       title: 'Екран',
       video: 'Відеорежим',
       videoDirectTips:

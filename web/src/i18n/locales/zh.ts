@@ -86,6 +86,9 @@ const zh = {
     },
     screen: {
       scale: '缩放',
+      size: '尺寸',
+      sizeFill: '填满窗口',
+      sizeNative: '原始尺寸',
       title: '屏幕',
       video: '视频模式',
       videoDirectTips: '该模式需启用 HTTPS，请前往「设置 > 网络 > 服务」中开启',

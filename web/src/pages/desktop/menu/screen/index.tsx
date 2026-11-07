@@ -17,6 +17,7 @@ import { Quality } from './quality';
 import { Reset } from './reset.tsx';
 import { Resolution } from './resolution';
 import { Scale } from './scale';
+import { Size } from './size';
 import { VideoMode } from './video-mode.tsx';
 
 export const Screen = () => {
@@ -77,6 +78,7 @@ export const Screen = () => {
         <Resolution />
         <Quality quality={quality} setQuality={setQuality} />
         <Fps fps={fps} setFps={setFps} />
+        <Size />
         <Scale />
         {videoMode === 'mjpeg' && <FrameDetect />}
         {isPcie && (

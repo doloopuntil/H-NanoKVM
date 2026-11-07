@@ -89,6 +89,9 @@ const da = {
     },
     screen: {
       scale: 'Skala',
+      size: 'Størrelse',
+      sizeFill: 'Udfyld vinduet',
+      sizeNative: 'Oprindelig størrelse',
       title: 'Skærm',
       video: 'Videotilstand',
       videoDirectTips:

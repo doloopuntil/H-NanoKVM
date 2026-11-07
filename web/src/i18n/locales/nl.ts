@@ -91,6 +91,9 @@ const nl = {
     },
     screen: {
       scale: 'Schaal',
+      size: 'Grootte',
+      sizeFill: 'Venster vullen',
+      sizeNative: 'Oorspronkelijke grootte',
       title: 'Scherm',
       video: 'Videomodus',
       videoDirectTips:

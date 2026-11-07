@@ -88,6 +88,9 @@ const ko = {
     },
     screen: {
       scale: '배율',
+      size: '크기',
+      sizeFill: '창에 맞추기',
+      sizeNative: '원래 크기',
       title: '화면',
       video: '비디오 모드',
       videoDirectTips: '이 모드를 사용하려면 "설정 > 네트워크 > 서비스"에서 HTTPS를 활성화하세요',

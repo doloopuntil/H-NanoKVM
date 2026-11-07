@@ -1,7 +1,9 @@
 import type { CSSProperties, RefObject } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useAtomValue } from 'jotai';
 
 import type { Resolution } from '@/types';
+import { screenFillAtom } from '@/jotai/screen.ts';
 
 type ScreenFit = {
   containerRef: RefObject<HTMLDivElement | null>;
@@ -39,6 +41,7 @@ export function useScreenFit(
   const containerRef = useRef<HTMLDivElement>(null);
   const [fitScale, setFitScale] = useState(1);
   const [sourceSize, setSourceSize] = useState<Resolution | null>(null);
+  const fill = useAtomValue(screenFillAtom);
   const isAuto = !resolution?.width || !resolution?.height;
   const size = isAuto ? sourceSize : resolution;
 
@@ -69,7 +72,8 @@ export function useScreenFit(
         return;
       }
 
-      const nextScale = Math.min(rect.width / width, rect.height / height, 1);
+      const maxScale = fill ? Number.POSITIVE_INFINITY : 1;
+      const nextScale = Math.min(rect.width / width, rect.height / height, maxScale);
       setFitScale(Math.max(0.05, nextScale));
     }
 
@@ -93,7 +97,7 @@ export function useScreenFit(
       observer.disconnect();
       window.removeEventListener('orientationchange', updateFitScale);
     };
-  }, [size?.height, size?.width]);
+  }, [fill, size?.height, size?.width]);
 
   useEffect(() => {
     if (!containerRef.current) return;

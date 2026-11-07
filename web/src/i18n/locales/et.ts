@@ -89,6 +89,9 @@ const et = {
     },
     screen: {
       scale: 'Skaala',
+      size: 'Suurus',
+      sizeFill: 'Täida aken',
+      sizeNative: 'Algsuurus',
       title: 'Ekraan',
       video: 'Videorežiim',
       videoDirectTips: 'Selle režiimi kasutamiseks luba HTTPS menüüs "Seaded > Võrk > Teenused"',

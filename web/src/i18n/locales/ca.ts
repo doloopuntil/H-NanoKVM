@@ -90,6 +90,9 @@ const ca = {
     },
     screen: {
       scale: 'Escala',
+      size: 'Mida',
+      sizeFill: 'Omple la finestra',
+      sizeNative: 'Mida nativa',
       title: 'Pantalla',
       video: 'Mode de vídeo',
       videoDirectTips: 'Activa HTTPS a "Configuració > Xarxa > Serveis" per utilitzar aquest mode',

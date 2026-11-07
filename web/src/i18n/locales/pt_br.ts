@@ -89,6 +89,9 @@ const pt_br = {
     },
     screen: {
       scale: 'Escala',
+      size: 'Tamanho',
+      sizeFill: 'Preencher a janela',
+      sizeNative: 'Tamanho nativo',
       title: 'Tela',
       video: 'Modo de vídeo',
       videoDirectTips: 'Ative o HTTPS em "Configurações > Rede > Serviços" para usar este modo',

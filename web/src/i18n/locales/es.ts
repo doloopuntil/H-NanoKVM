@@ -91,6 +91,9 @@ const es = {
     },
     screen: {
       scale: 'Escala',
+      size: 'Tamaño',
+      sizeFill: 'Llenar la ventana',
+      sizeNative: 'Tamaño nativo',
       title: 'Pantalla',
       video: 'Modo de vídeo',
       videoDirectTips: 'Activa HTTPS en "Ajustes > Red > Servicios" para usar este modo',

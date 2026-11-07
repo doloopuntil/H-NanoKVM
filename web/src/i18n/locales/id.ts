@@ -89,6 +89,9 @@ const id = {
     },
     screen: {
       scale: 'Skala',
+      size: 'Ukuran',
+      sizeFill: 'Penuhi jendela',
+      sizeNative: 'Ukuran asli',
       title: 'Layar',
       video: 'Mode video',
       videoDirectTips:

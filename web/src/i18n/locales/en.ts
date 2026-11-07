@@ -89,6 +89,9 @@ const en = {
     },
     screen: {
       scale: 'Scale',
+      size: 'Size',
+      sizeFill: 'Fill window',
+      sizeNative: 'Native size',
       title: 'Screen',
       video: 'Video mode',
       videoDirectTips: 'Enable HTTPS in "Settings > Network > Services" to use this mode',

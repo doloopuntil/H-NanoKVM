@@ -89,6 +89,9 @@ const hu = {
     },
     screen: {
       scale: 'Skála',
+      size: 'Méret',
+      sizeFill: 'Ablak kitöltése',
+      sizeNative: 'Eredeti méret',
       title: 'Képernyő',
       video: 'Videó mód',
       videoDirectTips:
