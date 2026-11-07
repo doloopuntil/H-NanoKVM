@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-03
+last-checked: 2026-11-07
 ---
 
 # Security model
@@ -32,9 +32,9 @@ behaviour is in the guides ([sign-in](../guide/sign-in.md),
 | Sessions | Opaque in-memory sessions, per-device secret, revoked on logout and password change. Optional idle lock. |
 | Two-factor | Optional TOTP with backup codes; every change needs the password and, once enrolled, a fresh code; `security.require_totp` confines an unenrolled session to enrolment. |
 | CSRF and origin | CSRF token plus `Origin`/`Referer` check on every state-changing request; WebSockets check `Origin`. |
-| Brute force | Lockout after 5 failures per address and user, for 10 minutes. TOTP failures count too. The address is the TCP peer's, or, from a peer in `security.trusted_proxies` only, the rightmost `X-Forwarded-For` hop that is not itself trusted. |
+| Brute force | Lockout after 5 failures per source and user, for 10 minutes; the source is an IPv4 address or the /64 of an IPv6 address, so one host cannot rotate through its network. One password check runs at a time on a blocking thread, and a wrong username takes as long as a wrong password. TOTP failures count too. The address is the TCP peer's, or, from a peer in `security.trusted_proxies` only, the rightmost `X-Forwarded-For` hop that is not itself trusted. |
 | Reverse proxy | `X-Forwarded-For` and `X-Forwarded-Proto` are ignored unless the peer is in `security.trusted_proxies` (empty by default). A trusted peer sets the client address of the lockout and the log, the `Secure` flag of the cookies, and pins the scheme of the `Origin` checks. The raw peer still decides loopback-only routes. [Guide](../guide/reverse-proxy.md). |
-| Step-up | Changing the password, disabling two-factor, reissuing backup codes, unlocking the terminal, setting or removing the local update key, changing the HTTPS certificate source, changing the trusted proxies and turning remote image download on need the password and, when the account has two-factor, a fresh code. |
+| Step-up | Changing the password, disabling two-factor, reissuing backup codes, unlocking the terminal, uploading or running a script, setting or removing the local update key, changing the HTTPS certificate source, changing the trusted proxies and turning remote image download on need the password and, when the account has two-factor, a fresh code. |
 | Password re-checks | Password change, two-factor changes, the local update key and the terminal share one lockout per address and user, apart from the login's. Wrong codes lock out separately. |
 | Browser | Security headers on every response; the CSP allows scripts and images only from the device (images also from `data:`), so chat output cannot load external content. |
 | Commands | Privileged commands go through an argv-only allowlist (`system/command.rs`) with timeouts and bounded output; no shell strings. |
@@ -98,7 +98,12 @@ Main command call sites:
 Known exceptions:
 
 - `server-rust/src/api/script.rs` runs user-managed scripts from the configured
-  script inventory and remains a root-required administrative feature.
+  script inventory and remains a root-required administrative feature. Upload and
+  run pass the terminal's gate: terminal access is on, authentication is on, and
+  each operation consumes a fresh unlock ticket of the same session (header
+  `X-NanoKVM-Terminal-Ticket`), issued after the password, and the code when the
+  account has two-factor, was entered again. Listing and deleting need only the
+  session.
 - `server-rust/src/ws/hid.rs` invokes the fixed USB gadget init script for HID
   recovery.
 - `server-rust/src/api/system_update.rs` runs a staged, generated loader from
@@ -121,7 +126,20 @@ Known exceptions:
 - Script directory: `/etc/kvm/scripts`, with basename inventory and explicit
   execution only.
 - Autostart directory: `/etc/kvm/autostart`, with traversal rejection.
-- DNS/Wi-Fi files: strict value validation and atomic writes.
+- DNS/Wi-Fi files: strict value validation and atomic writes. A Wi-Fi SSID is 1-32
+  bytes and a passphrase 8-63 bytes, as the supplicant accepts, and both are refused
+  before anything is written.
+- Wi-Fi AP key: each AP session gets a fresh 10-character key from the kernel CSPRNG
+  (about 49 bits), stored in `ap.pass` with mode 0600; without a random source the AP
+  is not started. The unauthenticated provisioning endpoints allow 5 wrong keys per
+  source and 20 shared by all sources, each for 10 minutes. hostapd's cipher choice
+  and an AP timeout are not covered.
+- PicoClaw runs as root, so the backend enforces a local tool policy on its
+  configuration at every start and at backend start: workspace restriction on, every
+  workspace inside `<home>/workspace`, and the `exec`, serial, SPI and I2C tools,
+  cron commands, path allowlists and local-command MCP servers off. The `nanokvm`
+  MCP server, which controls the host, is untouched. `S96picoclaw` does not launch
+  the runtime until the backend has applied the policy.
 - WireGuard: `/etc/kvm/wireguard/kvm.conf` holds only validated values, one
   `Key=value` per line, because `S40firewall` and `S45wireguard` read it with
   `sed`; `private.key` is written `0600` and never returned by the API.

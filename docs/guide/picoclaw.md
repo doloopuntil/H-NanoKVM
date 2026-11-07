@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-18
+last-checked: 2026-11-07
 ---
 
 # PicoClaw assistant
@@ -53,5 +53,11 @@ In the sidebar's settings, give the provider and model (for example
   to the keyboard.
 - **History** lists earlier conversations, read from PicoClaw's own session
   files; you can reopen or delete them.
+
+PicoClaw runs as root on the NanoKVM, so it has no shell on the NanoKVM itself:
+the backend turns off its `exec`, serial, SPI and I2C tools, cron commands and local
+MCP servers, and keeps its file tools inside `~/.picoclaw/workspace`. Controlling
+the host (screen, keyboard, mouse) is unaffected. A configuration whose workspace
+lies outside that folder is refused, and PicoClaw does not start until it is fixed.
 
 **Uninstall** removes PicoClaw and its configuration, including the stored key.
