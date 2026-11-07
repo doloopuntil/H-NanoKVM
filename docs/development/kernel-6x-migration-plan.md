@@ -1098,9 +1098,15 @@ Exit: parity or better on the Phase 0 numbers; no crashes in the soak.
   the VI IRQ stops, the CPU goes 90% idle, and VPSS logs a `base_get_chn_buffer`
   timeout every 6 s. On replug `state` returns to 1 and MJPEG resumes at 11 fps with
   VI at 61 fps, without a server restart; the timeouts stop.
-- Resolution changes (WebUI stream size and host HDMI mode), the EDID flow, idle
-  timeout and HID-only mode: deferred to the first image built from source, which
-  also loads the modules through `S00kmod`.
+- First image built in CI (run 42375107010): `S00kmod` loads all 11 modules, the
+  server holds the ATX lines by name, system 1.0.0 and app 3.0.0.
+- Host HDMI mode changes (CI image, phone as host, 1080p -> 720p -> 1080p): VI
+  followed only after two fixes (fe24ae70): `lt-int-gpios` on PWR_GPIO1, and
+  `kvm_mmf` sending VI the bridge's current size. `LT-INT` fires on each change,
+  VI runs at 60 fps at each size with no lost frames. A Mac is no use for this
+  test: its scaled modes keep a 1080p signal. Open issue: the browser stream stays
+  black after the camera restarts until the page is reloaded.
+- WebUI stream size, the EDID flow, idle timeout and HID-only mode: still to test.
 
 ### Phase 4: platform integration
 
