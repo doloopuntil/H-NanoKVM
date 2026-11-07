@@ -1235,8 +1235,19 @@ single convention. Today the product appears as Hardened NanoKVM, H-NanoKVM,
 board as `sg2002`, `licheervnano`, `cv181x`/`cv18xx`, `soph_`/`cvi_`/`cvitek`; and
 the build as `hardened-sg2002-*` packages and images, `HARDENED_SG2002_`, `NANOKVM_`,
 `LATEST_BUILDROOT_` and `KERNEL_5_10_265_` variables and the `build/rc12-run` path.
-The update target `sg2002-hnanokvm-sd` sets the pattern (SoC, product, medium).
-Decide the convention first, then rename in one change per area (Buildroot packages
+The convention (decided 2026-11-07), capitalised as the context needs:
+
+| Thing | Name |
+| --- | --- |
+| Board, every variant (Lite, Full, PCIe) | `licheervnano` |
+| SoC, and only the SoC | `sg2002` |
+| Product in code (identifiers, files, packages, variables) | `hnanokvm` (`HNANOKVM_`, `HNanoKvm`) |
+| Product in text a user sees | H-NanoKVM |
+
+So `hardened-sg2002-*` packages and `HARDENED_SG2002_` variables become
+`hnanokvm-*`/`HNANOKVM_` (or `licheervnano` where they mean the board), and
+`sg2002` stays only where the SoC is meant (FSBL, clocks, the update target's SoC
+part). Rename in one change per area (Buildroot packages
 and externals, scripts and variables, CI, image and archive names, server constants,
 docs), keeping anything a deployed device reads (update target, `/kvmapp`, `/etc/kvm`
 files) stable or migrated on purpose.
