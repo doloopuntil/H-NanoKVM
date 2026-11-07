@@ -21,6 +21,9 @@
 #include <cctype>
 #include <cerrno>
 #include <cstdarg>
+#include <fcntl.h>
+#include <linux/gpio.h>
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 
 #define default_venc_chn        1
@@ -2267,8 +2270,54 @@ void kvmv_deinit()
     pthread_mutex_unlock(&lifecycle_mutex);
 }
 
+// Claims the GPIO line called `name` in the DT as an output at `value`; returns the line fd or -1.
+static int gpio_request_output(const char *name, int value)
+{
+    for (int n = 0; n < 16; n++) {
+        char path[32];
+        snprintf(path, sizeof(path), "/dev/gpiochip%d", n);
+        int chip = open(path, O_RDWR | O_CLOEXEC);
+        if (chip < 0)
+            continue;
+        struct gpiochip_info info = {};
+        if (ioctl(chip, GPIO_GET_CHIPINFO_IOCTL, &info) == 0) {
+            for (unsigned int off = 0; off < info.lines; off++) {
+                struct gpio_v2_line_info line = {};
+                line.offset = off;
+                if (ioctl(chip, GPIO_V2_GET_LINEINFO_IOCTL, &line) != 0 ||
+                    strncmp(line.name, name, sizeof(line.name)) != 0)
+                    continue;
+                struct gpio_v2_line_request req = {};
+                req.offsets[0] = off;
+                req.num_lines = 1;
+                snprintf(req.consumer, sizeof(req.consumer), "libkvm");
+                req.config.flags = GPIO_V2_LINE_FLAG_OUTPUT;
+                req.config.num_attrs = 1;
+                req.config.attrs[0].attr.id = GPIO_V2_LINE_ATTR_ID_OUTPUT_VALUES;
+                req.config.attrs[0].attr.values = value ? 1 : 0;
+                req.config.attrs[0].mask = 1;
+                int ret = ioctl(chip, GPIO_V2_GET_LINE_IOCTL, &req);
+                close(chip);
+                return ret == 0 ? req.fd : -1;
+            }
+        }
+        close(chip);
+    }
+    return -1;
+}
+
+static int gpio_set(int fd, int value)
+{
+    struct gpio_v2_line_values values = {};
+    values.bits = value ? 1 : 0;
+    values.mask = 1;
+    return ioctl(fd, GPIO_V2_LINE_SET_VALUES_IOCTL, &values);
+}
+
 uint8_t kvmv_hdmi_control(uint8_t _en)
 {
+    static int hdmi_reset_fd = -1;
+
     if(_en == 0){
         set_hdmi_capture_enabled(0);
     }
@@ -2303,18 +2352,19 @@ uint8_t kvmv_hdmi_control(uint8_t _en)
         }
         return -1;
     }
-    if(access("/sys/class/gpio/gpio451/value", F_OK) != 0){
-        system("echo 451 > /sys/class/gpio/export");
-        system("echo out > /sys/class/gpio/gpio451/direction");
+    // Held for the process lifetime and claimed out of reset, as kvmhwd used to leave it
+    if(hdmi_reset_fd < 0){
+        hdmi_reset_fd = gpio_request_output("hdmi-reset", 1);
+        if(hdmi_reset_fd < 0) debug("[kvmv]hdmi-reset GPIO unavailable\n");
     }
     if(_en == 0){
         kvmv_cfg.hdmi_stop_flag = 1;
         while(kvmv_cfg.hdmi_reading_flag == 1) time::sleep_ms(10);
-        system("echo 0 > /sys/class/gpio/gpio451/value");
+        if(hdmi_reset_fd >= 0) gpio_set(hdmi_reset_fd, 0);
         return 0;
     } else {
         kvmv_cfg.hdmi_stop_flag = 0;
-        system("echo 1 > /sys/class/gpio/gpio451/value");
+        if(hdmi_reset_fd >= 0) gpio_set(hdmi_reset_fd, 1);
         set_hdmi_capture_enabled(1);
 
         // Keep the existing VI channel and consume queued frames after idle.

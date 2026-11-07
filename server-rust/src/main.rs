@@ -196,6 +196,7 @@ fn temp_boot_script_path(dst: &Path) -> io::Result<PathBuf> {
 }
 
 fn initialize_kvm() {
+    vm::init_atx_lines();
     match kvm::init() {
         Ok(()) => info!("initialized NanoKVM video backend"),
         Err(err) => warn!(error = ?err, "NanoKVM video backend initialization failed"),

@@ -480,7 +480,7 @@ cores. Not in scope for this migration.
 
 | Interface | Used by | 5.10 | 6.18 action |
 | --- | --- | --- | --- |
-| `/sys/class/gpio/gpioNNN` (503-507, 451, 502, 506) | `S15kvmhwd` (35 refs), `vm.rs` (11), `kvm_vision.cpp` (HDMI reset 451); `kvm_system` only has comments | fixed bases (A 480, B 448, C 416, D 384, PWR 352 [V]) | bases are dynamic in 6.18 (start at 512, count down; `dwapb` passes base -1) and sysfs GPIO needs `EXPERT` + `GPIO_SYSFS`. Stopgap: enable it and check the numbers. Target: `gpio-line-names` in the DT, char-device access by name, `gpio-hog` for lines that must stay at a fixed level (OLED reset, HDMI reset, Wi-Fi enable). Test what a released output line does (keeps its level or not) [U]. Also drop the alpha entry in `vm.rs` |
+| `/sys/class/gpio/gpioNNN` (503-507, 451, 502, 506) | `S15kvmhwd` (35 refs), `vm.rs` (11), `kvm_vision.cpp` (HDMI reset 451); `kvm_system` only has comments | fixed bases (A 480, B 448, C 416, D 384, PWR 352 [V]) | bases are dynamic in 6.18 (start at 512, count down; `dwapb` passes base -1) and sysfs GPIO needs `EXPERT` + `GPIO_SYSFS`. Stopgap: enable it and check the numbers. Target: `gpio-line-names` in the DT, char-device access by name, `gpio-hog` for lines that must stay at a fixed level (OLED reset, HDMI reset, Wi-Fi enable). Test what a released output line does (keeps its level or not) [U]. Also drop the alpha entry in `vm.rs`. Done in Phase 4 (see its state) |
 | `/sys/class/cvi-base/base_uid` | `S03usbdev` MACs/serial | osdrv `soph_base` | unchanged (comes from the module) |
 | `/proc/cvitek/*` (`vb`, `sys_mem`, `vi_dbg`) | diagnostics | osdrv | unchanged |
 | `/dev/cvi-*` | middleware | osdrv | unchanged; the server opens `base sys vi vpss mipi-rx dwa vo rgn` and `cvi_vc_enc0/1` [V, Phase 0] |
@@ -1134,6 +1134,24 @@ Exit: a CI-built image flashes, boots and passes the Phase 1-3 checks unattended
 - On the Lite: boots, reboots through SBI, adopts the watchdog, Ethernet, USB
   gadget (HID, mass storage, RNDIS) and nftables work, the media modules load,
   VI captures 60 fps, and MJPEG and WebRTC stream.
+- GPIO: lines are claimed by DT name through the character device; `GPIO_SYSFS` is
+  off. The server (`system/gpio.rs`, GPIO v2 ioctls through `nix`) claims
+  `atx-power` and `atx-reset` as outputs driven low and `atx-power-led` as an input
+  at startup and holds them. libkvm claims `hdmi-reset` (PCIe) high on first use and
+  toggles it. `oled-reset` is a DT hog (output high). `S15kvmhwd` keeps only board
+  detection (`pcie` if an OLED answers at `0x3c` on i2c5, else `beta`), the HDMI
+  bridge probe and the SDIO pinmux; the DT muxes the GPIO and UART pins. Alpha is
+  gone from `S15kvmhwd` and `vm.rs`. `wifi-enable` is no longer driven: the old
+  script only pulsed it during first-boot detection, next to the alpha probe on the
+  SDIO pads, and left it undriven on every later boot. `device-files.md` and
+  `init-scripts.md` change with the Phase 4 docs.
+  On the Lite (test 21): `/sys/class/gpio` is gone, the hog holds `oled-reset` high,
+  the server holds the ATX lines (power and reset `out lo`), detection rewrites
+  `beta`/`ux`, and libkvm's helper (built standalone) claims `hdmi-reset` by name.
+  A released output line keeps its level and direction on dwapb [V] (data and
+  direction bits read back 1 after the claiming process exits). The WebUI power and
+  reset buttons pulse `atx-power` and `atx-reset` high for about a second each (no
+  ATX board attached; seen in `/sys/kernel/debug/gpio`).
 
 ### Phase 5: Cube (Full) and PCIe by review
 
