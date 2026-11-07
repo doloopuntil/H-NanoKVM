@@ -1,7 +1,6 @@
 use std::{
     fs::{self, File},
     io::{Read, Seek, SeekFrom},
-    os::unix::fs::PermissionsExt,
     path::Path,
     time::Duration,
 };
@@ -196,7 +195,7 @@ fn valid_remote_host(host: &str) -> bool {
 fn write_config(config: &SystemLogConfig) -> Result<()> {
     let content = serde_json::to_vec_pretty(config)
         .map_err(|err| AppError::Internal(format!("encode syslog config: {err}")))?;
-    write_file_atomic(Path::new(CONFIG_FILE), &content, 0o644)
+    crate::system::files::write_atomic(Path::new(CONFIG_FILE), &content, 0o644)
 }
 
 fn write_defaults(config: &SystemLogConfig) -> Result<()> {
@@ -204,7 +203,7 @@ fn write_defaults(config: &SystemLogConfig) -> Result<()> {
 
     let syslog_args = build_syslogd_args(config);
     let syslog_default = format!("SYSLOGD_ARGS={}\n", shell_quote(&syslog_args));
-    write_file_atomic(
+    crate::system::files::write_atomic(
         Path::new(SYSLOGD_DEFAULT_FILE),
         syslog_default.as_bytes(),
         0o644,
@@ -212,7 +211,7 @@ fn write_defaults(config: &SystemLogConfig) -> Result<()> {
 
     let klog_args = format!("-c {}", config.kernel_console_level);
     let klog_default = format!("KLOGD_ARGS={}\n", shell_quote(&klog_args));
-    write_file_atomic(
+    crate::system::files::write_atomic(
         Path::new(KLOGD_DEFAULT_FILE),
         klog_default.as_bytes(),
         0o644,
@@ -344,24 +343,6 @@ fn tail_lines(content: &str, lines: usize) -> String {
         out.push('\n');
     }
     out
-}
-
-fn write_file_atomic(path: &Path, content: &[u8], mode: u32) -> Result<()> {
-    let parent = path
-        .parent()
-        .ok_or_else(|| AppError::Internal("path has no parent".to_string()))?;
-    fs::create_dir_all(parent)?;
-
-    let tmp = parent.join(format!(
-        ".{}.tmp",
-        path.file_name()
-            .and_then(|name| name.to_str())
-            .ok_or_else(|| AppError::Internal("path has invalid filename".to_string()))?
-    ));
-    fs::write(&tmp, content)?;
-    fs::set_permissions(&tmp, fs::Permissions::from_mode(mode))?;
-    fs::rename(&tmp, path)?;
-    Ok(())
 }
 
 fn shell_quote(value: &str) -> String {
