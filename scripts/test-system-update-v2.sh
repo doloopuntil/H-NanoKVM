@@ -13,7 +13,7 @@ SYSTEM_UPDATE_REQUIRED_APP_VERSION=2.0.41 \
 BASE_VERSION=Buildroot-2026.05.1-security \
 KERNEL_VERSION=5.10.4-tag- \
   "$ROOT/scripts/create-system-update-bundle.sh" \
-  0.3.0-raw.11 sg2002-licheervnano-sd "$WORK/payload" "$WORK/out" >/dev/null
+  0.3.0-raw.11 hnanokvm-sg2002-sd "$WORK/payload" "$WORK/out" >/dev/null
 
 ARCHIVE="$WORK/out/hardened-nanokvm-system-0.3.0-raw.11.tar.gz"
 tar -xOf "$ARCHIVE" manifest.json > "$WORK/manifest.json"

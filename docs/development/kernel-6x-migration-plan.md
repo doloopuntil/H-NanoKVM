@@ -1181,6 +1181,19 @@ Exit: a CI-built image flashes, boots and passes the Phase 1-3 checks unattended
   shows the card on the host. A first try failed: `/init` was `#!/bin/sh` with no
   `/bin/sh` in the archive, and without `rootwait` the kernel's fallback root mount
   panicked; the archive now links `/bin/sh` and `boot.cmd` passes `rootwait`.
+- Updates: the device side needs no change. The raw updater writes `boot.vfat` and the
+  rootfs to partitions 1 and 2 whatever their contents, refuses an image larger than
+  its partition (a 16 MiB `/boot` rejects the 32 MiB `boot.vfat`), restores the flag
+  files and the chosen FIP, and disarms the watchdog by a clean close (6.18's node has
+  `RST_WDT`, so `dw_wdt` really stops). Nothing reads `boot.sd`. `post-image.sh` now
+  also writes `hardened-sg2002-6x.img` (`genimage.cfg`: the 5.10 partition layout,
+  32 MiB FAT32 boot at sector 1, 1536 MiB rootfs), which
+  `package-local-system-update.sh` splits as it does the 5.10 image; checked with a
+  stand-in rootfs. The update target is now `hnanokvm-sg2002-sd` (server fallback,
+  rootfs `system-version.json`, bundle scripts), so 5.10 devices refuse 6.x bundles.
+  The CI step passes `KERNEL_VERSION=6.18.29`. An OTA install is proven on the first
+  CI-built image. `scripts/test-system-update-v2.sh` was already broken by `facc301d`
+  (`create-system-update-bundle.sh` now wraps an archive into an upload bundle).
 
 ### Phase 5: Cube (Full) and PCIe by review
 

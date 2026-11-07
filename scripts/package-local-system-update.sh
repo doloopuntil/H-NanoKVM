@@ -13,7 +13,7 @@ fi
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 SD_IMAGE="$1"
 OUT_DIR="$2"
-TARGET="${TARGET:-sg2002-licheervnano-sd}"
+TARGET="${TARGET:-hnanokvm-sg2002-sd}"
 : "${SYSTEM_VERSION:?}" "${KERNEL_VERSION:?}" "${SECURITY_PATCH_LEVEL:?}"
 : "${BUILDROOT_VERSION:?}" "${REQUIRED_APP_VERSION:?}"
 
