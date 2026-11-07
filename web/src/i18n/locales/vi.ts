@@ -276,7 +276,11 @@ const vi = {
       runFailed: 'Chạy thất bại',
       delDesc: 'Bạn có chắc chắn muốn xóa tệp này không?',
       delete: 'Xóa',
-      close: 'Đóng'
+      close: 'Đóng',
+      unlockDesc:
+        'Các script chạy với quyền root trên NanoKVM. Nhập mật khẩu tài khoản web để tải lên hoặc chạy script.',
+      terminalRequired:
+        'Script cần quyền truy cập terminal web. Hãy bật terminal trong phần cài đặt trước.'
     },
     terminal: {
       title: 'Terminal',

@@ -280,7 +280,11 @@ const id = {
       runFailed: 'Gagal menjalankan',
       delDesc: 'Apakah Anda yakin ingin menghapus data ini?',
       delete: 'Hapus',
-      close: 'Tutup'
+      close: 'Tutup',
+      unlockDesc:
+        'Skrip berjalan sebagai root di NanoKVM. Masukkan kata sandi akun web untuk mengunggah atau menjalankan skrip.',
+      terminalRequired:
+        'Skrip memerlukan akses terminal web. Aktifkan terminal di pengaturan terlebih dahulu.'
     },
     terminal: {
       title: 'Terminal',

@@ -279,7 +279,11 @@ const ca = {
       runFailed: "Error en l'execució",
       delDesc: 'Estàs segur que vols eliminar aquest fitxer?',
       delete: 'Esborra',
-      close: 'Tanca'
+      close: 'Tanca',
+      unlockDesc:
+        "Els scripts s'executen com a root al NanoKVM. Introduïu la contrasenya del compte web per pujar-ne o executar-ne un.",
+      terminalRequired:
+        'Els scripts necessiten accés al terminal web. Activeu primer el terminal a la configuració.'
     },
     terminal: {
       title: 'Terminal',

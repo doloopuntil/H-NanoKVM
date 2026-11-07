@@ -281,7 +281,11 @@ const pl = {
       runFailed: 'Uruchomienie nie powiodło się',
       delDesc: 'Czy na pewno chcesz usunąć ten plik?',
       delete: 'Usuń',
-      close: 'Zamknij'
+      close: 'Zamknij',
+      unlockDesc:
+        'Skrypty działają na NanoKVM jako root. Wprowadź hasło konta webowego, aby przesłać lub uruchomić skrypt.',
+      terminalRequired:
+        'Skrypty wymagają dostępu do terminala webowego. Najpierw włącz terminal w ustawieniach.'
     },
     terminal: {
       title: 'Terminal',

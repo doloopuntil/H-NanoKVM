@@ -279,7 +279,11 @@ const se = {
       runFailed: 'Körning misslyckades',
       delDesc: 'Är du säker på att du vill ta bort denna fil?',
       delete: 'Ta bort',
-      close: 'Stäng'
+      close: 'Stäng',
+      unlockDesc:
+        'Skript körs som root på NanoKVM. Ange webbkontots lösenord för att ladda upp eller köra ett skript.',
+      terminalRequired:
+        'Skript kräver åtkomst till webbterminalen. Aktivera först terminalen i inställningarna.'
     },
     terminal: {
       title: 'Terminal',

@@ -280,7 +280,11 @@ const ja = {
       runFailed: '実行に失敗しました',
       delDesc: 'このファイルを削除してもよろしいですか？',
       delete: '削除',
-      close: '閉じる'
+      close: '閉じる',
+      unlockDesc:
+        'スクリプトは NanoKVM 上で root として実行されます。スクリプトをアップロードまたは実行するには、Web アカウントのパスワードを入力してください。',
+      terminalRequired:
+        'スクリプトには Web ターミナルへのアクセスが必要です。先に設定でターミナルを有効にしてください。'
     },
     terminal: {
       title: 'ターミナル',

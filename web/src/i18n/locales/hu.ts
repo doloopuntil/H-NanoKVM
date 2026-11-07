@@ -281,7 +281,11 @@ const hu = {
       runFailed: 'Futtatás sikertelen',
       delDesc: 'Biztosan törli ezt a fájlt?',
       delete: 'Törlés',
-      close: 'Bezárás'
+      close: 'Bezárás',
+      unlockDesc:
+        'A szkriptek rootként futnak a NanoKVM-en. Szkript feltöltéséhez vagy futtatásához adja meg a webes fiók jelszavát.',
+      terminalRequired:
+        'A szkriptekhez webes terminálhozzáférés szükséges. Először engedélyezze a terminált a beállításokban.'
     },
     terminal: {
       title: 'Terminál',

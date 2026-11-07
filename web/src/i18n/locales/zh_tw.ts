@@ -266,7 +266,11 @@ const zh_tw = {
       runFailed: '執行失敗',
       delDesc: '確定要刪除該檔案嗎？',
       delete: '刪除',
-      close: '關閉'
+      close: '關閉',
+      unlockDesc:
+        '腳本在 NanoKVM 上以 root 身分執行。請輸入 Web 帳戶密碼以上傳或執行腳本。',
+      terminalRequired:
+        '腳本需要 Web 終端機存取權限。請先在設定中啟用終端機。'
     },
     terminal: {
       title: '終端機',
