@@ -17,7 +17,7 @@ endif
 SUPPORT_BUILD_CMD := . ./home/build/MaixCDK/bin/activate && cd /home/build/NanoKVM/support/sg2002 && ./build kvm_system && ./build kvm_system add_to_kvmapp
 
 SYSTEM_UPDATE_VERSION ?= 0.0.0-dev
-SYSTEM_UPDATE_TARGET ?= hnanokvm-sg2002-sd
+SYSTEM_UPDATE_TARGET ?= sg2002-hnanokvm-sd
 SYSTEM_UPDATE_PAYLOAD ?= build/system-update-payload
 SYSTEM_UPDATE_OUT ?= build/system-updates
 SYSTEM_UPDATE_TAG ?= hardened-system-$(SYSTEM_UPDATE_VERSION)
