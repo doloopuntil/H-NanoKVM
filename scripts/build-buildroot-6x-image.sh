@@ -66,6 +66,12 @@ build_stage() {
 	for file in rootfs.ext4 Image sg2002-nanokvm-lite.dtb fip.bin fip.std.bin fip.od.bin; do
 		[ -f "$IMAGES/$file" ] || die "missing build output: $IMAGES/$file"
 	done
+	# post-image.sh runs these in the assemble stage
+	for tool in lz4 mkimage genimage mkdosfs mcopy; do
+		[ -x "$OUTPUT_DIR/host/bin/$tool" ] || [ -x "$OUTPUT_DIR/host/sbin/$tool" ] || \
+			die "Buildroot built no host $tool"
+	done
+	[ -x "$OUTPUT_DIR/build/linux-$EXPECTED_KERNEL_RELEASE/usr/gen_init_cpio" ] || die "missing gen_init_cpio"
 
 	# Kernel: release string and the three board patches
 	strings "$IMAGES/Image" | grep -q "^Linux version $EXPECTED_KERNEL_RELEASE " || \

@@ -14,5 +14,6 @@ source "$BR2_EXTERNAL_HARDENED_SG2002_PATH/package/hardened-nanokvm-kvmapp/Confi
 source "$BR2_EXTERNAL_HARDENED_SG2002_PATH/package/hardened-sg2002-vendor-runtime/Config.in"
 source "$BR2_EXTERNAL_HARDENED_SG2002_PATH/package/hardened-sg2002-fip/Config.in"
 source "$BR2_EXTERNAL_HARDENED_SG2002_PATH/package/hardened-soph-media/Config.in"
+source "$BR2_EXTERNAL_HARDENED_SG2002_PATH/package/hnanokvm-fit-tools/Config.in"
 
 endmenu
