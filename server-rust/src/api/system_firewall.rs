@@ -1,5 +1,6 @@
 use std::{
     fs,
+    future::Future,
     path::Path,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -16,7 +17,10 @@ use crate::{
 };
 
 const CONFIG_FILE: &str = "/etc/kvm/firewall.json";
-const PENDING_FILE: &str = "/tmp/hardened-firewall-pending.json";
+// On the root filesystem, not in /tmp: a crash or power loss inside the confirmation window must
+// still leave the record, so that the next start can undo the unconfirmed mode.
+const PENDING_FILE: &str = "/etc/kvm/firewall-pending.json";
+const MAX_PENDING_BYTES: u64 = 4096;
 const MODE_BASELINE: &str = "baseline";
 const MODE_MODERATE: &str = "moderate";
 const MODE_RESTRICTED: &str = "restricted";
@@ -283,15 +287,70 @@ fn read_config() -> Result<FirewallConfig> {
 }
 
 fn write_config(config: &FirewallConfig) -> Result<()> {
+    write_config_to(Path::new(CONFIG_FILE), config)
+}
+
+fn write_config_to(path: &Path, config: &FirewallConfig) -> Result<()> {
     let content = serde_json::to_vec_pretty(config)
         .map_err(|err| AppError::Internal(format!("encode firewall config: {err}")))?;
-    crate::system::files::write_atomic(Path::new(CONFIG_FILE), &content, 0o644)
+    crate::system::files::write_atomic(path, &content, 0o644)
 }
 
 fn write_pending(pending: &PendingRollback) -> Result<()> {
     let content = serde_json::to_vec_pretty(pending)
         .map_err(|err| AppError::Internal(format!("encode firewall pending state: {err}")))?;
     crate::system::files::write_atomic(Path::new(PENDING_FILE), &content, 0o600)
+}
+
+/// A record is a small regular file naming two known modes; anything else is left alone and
+/// keeps requiring a person's recovery.
+fn read_pending_at(path: &Path) -> Result<PendingRollback> {
+    let metadata = fs::symlink_metadata(path)?;
+    if !metadata.file_type().is_file() || metadata.len() > MAX_PENDING_BYTES {
+        return Err(AppError::Config(
+            "the firewall pending record is not a small regular file".to_string(),
+        ));
+    }
+    let record: PendingRollback = serde_json::from_slice(&fs::read(path)?)
+        .map_err(|err| AppError::Config(format!("invalid firewall pending record: {err}")))?;
+    normalize_mode(&record.previous_mode)?;
+    normalize_mode(&record.requested_mode)?;
+    Ok(record)
+}
+
+/// Undoes a mode change that was never confirmed: the backend stopped before its timer ran out,
+/// so only the durable record is left. False when there is no record.
+async fn roll_back_unconfirmed_in<F, Fut>(pending: &Path, config: &Path, apply: F) -> Result<bool>
+where
+    F: FnOnce() -> Fut,
+    Fut: Future<Output = Result<()>>,
+{
+    if !pending.try_exists()? {
+        return Ok(false);
+    }
+    let record = read_pending_at(pending)?;
+    write_config_to(config, &normalize_mode(&record.previous_mode)?)?;
+    apply().await?;
+    fs::remove_file(pending)?;
+    Ok(true)
+}
+
+/// Runs at start, before any request, as the confirmation timer would have.
+pub async fn roll_back_unconfirmed_at_start() {
+    match roll_back_unconfirmed_in(
+        Path::new(PENDING_FILE),
+        Path::new(CONFIG_FILE),
+        apply_firewall,
+    )
+    .await
+    {
+        Ok(true) => tracing::warn!("rolled back a firewall mode that was never confirmed"),
+        Ok(false) => {}
+        Err(err) => tracing::warn!(
+            error = %err,
+            "could not roll back an unconfirmed firewall mode; the record stays"
+        ),
+    }
 }
 
 fn spawn_pending_rollback(previous: FirewallConfig) {
@@ -440,6 +499,89 @@ fn command_error(message: &str, output: CommandOutput) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn record(previous: &str) -> String {
+        format!(r#"{{"previousMode":"{previous}","requestedMode":"restricted","createdAt":1}}"#)
+    }
+
+    #[tokio::test]
+    async fn an_unconfirmed_mode_is_rolled_back_at_start() {
+        let dir = tempfile::tempdir().unwrap();
+        let (pending, config) = (dir.path().join("pending"), dir.path().join("firewall.json"));
+        fs::write(&config, br#"{"mode":"restricted"}"#).unwrap();
+        fs::write(&pending, record("moderate")).unwrap();
+        let applied = std::sync::atomic::AtomicBool::new(false);
+
+        let rolled = roll_back_unconfirmed_in(&pending, &config, || async {
+            applied.store(true, std::sync::atomic::Ordering::SeqCst);
+            Ok(())
+        })
+        .await
+        .unwrap();
+
+        assert!(rolled && applied.load(std::sync::atomic::Ordering::SeqCst));
+        assert!(fs::read_to_string(&config).unwrap().contains("moderate"));
+        assert!(!pending.exists());
+    }
+
+    #[tokio::test]
+    async fn nothing_happens_without_a_record() {
+        let dir = tempfile::tempdir().unwrap();
+        let (pending, config) = (dir.path().join("pending"), dir.path().join("firewall.json"));
+        let rolled = roll_back_unconfirmed_in(&pending, &config, || async {
+            panic!("no record, nothing to apply")
+        })
+        .await
+        .unwrap();
+        assert!(!rolled);
+        assert!(!config.exists());
+    }
+
+    #[tokio::test]
+    async fn a_failed_apply_keeps_the_record() {
+        let dir = tempfile::tempdir().unwrap();
+        let (pending, config) = (dir.path().join("pending"), dir.path().join("firewall.json"));
+        fs::write(&pending, record("baseline")).unwrap();
+        let result = roll_back_unconfirmed_in(&pending, &config, || async {
+            Err(AppError::Internal("apply failed".to_string()))
+        })
+        .await;
+        assert!(result.is_err());
+        assert!(pending.exists());
+    }
+
+    #[tokio::test]
+    async fn an_unusable_record_stays_and_changes_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        let (pending, config) = (dir.path().join("pending"), dir.path().join("firewall.json"));
+        fs::write(&config, br#"{"mode":"restricted"}"#).unwrap();
+        let untouched = || async { panic!("an unusable record must not be applied") };
+
+        for content in [record("off"), "not json".to_string(), "x".repeat(5000)] {
+            fs::write(&pending, content).unwrap();
+            assert!(
+                roll_back_unconfirmed_in(&pending, &config, untouched)
+                    .await
+                    .is_err()
+            );
+            assert!(pending.exists());
+        }
+
+        // a link is not a record, even one that points at a good file
+        fs::remove_file(&pending).unwrap();
+        let target = dir.path().join("target");
+        fs::write(&target, record("moderate")).unwrap();
+        std::os::unix::fs::symlink(&target, &pending).unwrap();
+        assert!(
+            roll_back_unconfirmed_in(&pending, &config, untouched)
+                .await
+                .is_err()
+        );
+        assert_eq!(
+            fs::read_to_string(&config).unwrap(),
+            r#"{"mode":"restricted"}"#
+        );
+    }
 
     #[test]
     fn validates_firewall_modes() {

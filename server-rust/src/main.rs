@@ -4,7 +4,7 @@ use axum::{
     response::{IntoResponse, Redirect, Response},
 };
 use nanokvm_rust_server::{
-    api::{cpu_clock, monitor, picoclaw, tls_switch, vm},
+    api::{cpu_clock, monitor, picoclaw, system_firewall, tls_switch, vm},
     config::Config,
     ffi::kvm,
     hdmi_idle,
@@ -71,6 +71,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     install_shutdown_signal_handler();
 
     tls_switch::resume_at_startup();
+    system_firewall::roll_back_unconfirmed_at_start().await;
 
     if config.proto == "https" {
         run_https(config).await?;
