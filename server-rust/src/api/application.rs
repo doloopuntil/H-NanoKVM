@@ -126,6 +126,7 @@ pub async fn update(State(state): State<AppState>) -> Result<Json<ApiResponse<()
 
     prepare_cache_dir(&cache_dir)?;
     let latest = get_latest(&state.config).await?;
+    check_forward(&current_app_version(), &latest.version)?;
     let archive = cache_dir.join(&latest.name);
     download_release_asset(&latest, &archive).await?;
     verify_sha512(&archive, &latest.sha512)?;
@@ -145,6 +146,21 @@ pub(crate) fn compare_application_versions(left: &str, right: &str) -> Option<st
     let left = parse_application_version(left)?;
     let right = parse_application_version(right)?;
     Some(left.cmp(&right))
+}
+
+/// An online update only moves forward. Signed metadata for an older release, or for the
+/// installed version with another archive, is refused: it would roll the device back to known
+/// bugs. A manual import stays the explicit way to install an older release.
+fn check_forward(installed: &str, offered: &str) -> Result<()> {
+    match compare_application_versions(offered, installed) {
+        Some(std::cmp::Ordering::Greater) => Ok(()),
+        Some(_) => Err(AppError::Conflict(format!(
+            "the offered app {offered} is not newer than the installed app {installed}"
+        ))),
+        None => Err(AppError::BadRequest(
+            "the installed and offered app versions cannot be compared".to_string(),
+        )),
+    }
 }
 
 fn parse_application_version(version: &str) -> Option<[u64; 3]> {
@@ -806,6 +822,25 @@ fn now_unix_nanos() -> u128 {
 mod tests {
     use super::*;
     use std::os::unix::fs::symlink;
+
+    #[test]
+    fn an_online_update_only_moves_forward() {
+        check_forward("2.0.42", "2.0.43").unwrap();
+        check_forward("2.0.42", "2.1.0").unwrap();
+        check_forward("2.0.9", "2.0.10").unwrap();
+        for offered in ["2.0.42", "2.0.41", "1.9.99"] {
+            assert!(
+                matches!(check_forward("2.0.42", offered), Err(AppError::Conflict(_))),
+                "{offered}"
+            );
+        }
+        for (installed, offered) in [("2.0.42", "2.0.43-rc1"), ("unknown", "2.0.43")] {
+            assert!(matches!(
+                check_forward(installed, offered),
+                Err(AppError::BadRequest(_))
+            ));
+        }
+    }
 
     #[test]
     fn the_pending_record_names_both_versions() {
