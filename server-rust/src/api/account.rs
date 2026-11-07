@@ -141,7 +141,7 @@ pub async fn login(
     }
 
     let password = decode_frontend_password(&req.password)?;
-    if !state.accounts.verify(&req.username, &password)? {
+    if !verify_account(&state, &req.username, &password).await? {
         let mut limiter = state.login_limiter.write().await;
         let locked = limiter.record_failure(&source_ip, &req.username);
         if locked {
@@ -275,6 +275,40 @@ pub async fn login_totp(
     Ok((headers, body))
 }
 
+// Argon2 takes long enough on the single core to stall HID, video and the API, so it runs on a
+// blocking thread, one verification at a time. A second one waits briefly and is then refused.
+static VERIFY_SLOT: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(1);
+const VERIFY_WAIT: Duration = Duration::from_secs(2);
+
+async fn verify_account(state: &AppState, username: &str, password: &str) -> Result<bool> {
+    let accounts = state.accounts.clone();
+    let (username, password) = (username.to_string(), password.to_string());
+    in_slot(&VERIFY_SLOT, VERIFY_WAIT, move || {
+        accounts.verify(&username, &password)
+    })
+    .await
+}
+
+// The permit travels into the blocking thread, so a dropped request keeps the slot until its
+// hash has ended.
+async fn in_slot<T, F>(slot: &'static tokio::sync::Semaphore, wait: Duration, work: F) -> Result<T>
+where
+    T: Send + 'static,
+    F: FnOnce() -> Result<T> + Send + 'static,
+{
+    let busy = || AppError::RateLimited("too many password checks at once, try again".to_string());
+    let permit = tokio::time::timeout(wait, slot.acquire())
+        .await
+        .map_err(|_| busy())?
+        .map_err(|_| AppError::Internal("password check slot closed".to_string()))?;
+    tokio::task::spawn_blocking(move || {
+        let _permit = permit;
+        work()
+    })
+    .await
+    .map_err(|_| AppError::Internal("password check failed".to_string()))?
+}
+
 /// Check the account password before a sensitive action, with a lockout of its own.
 ///
 /// Every such check (password change, two-factor changes, the local update key, enabling or
@@ -299,7 +333,7 @@ pub(crate) async fn verify_password_limited(
     }
 
     let decoded = decode_frontend_password(password)?;
-    if !state.accounts.verify(username, &decoded)? {
+    if !verify_account(state, username, &decoded).await? {
         if state
             .login_limiter
             .write()
@@ -604,6 +638,67 @@ fn command_error(message: &str, output: CommandOutput) -> String {
 mod tests {
     use super::*;
     use crate::auth::password::generate_backup_codes;
+
+    #[tokio::test]
+    async fn other_tasks_run_while_a_hash_is_in_flight() {
+        static SLOT: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(1);
+        let ticks = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let counter = ticks.clone();
+        let ticker = tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(Duration::from_millis(5)).await;
+                counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            }
+        });
+        // current-thread runtime: an inline hash would starve the ticker for its whole length
+        let done = in_slot(&SLOT, Duration::from_secs(1), || {
+            std::thread::sleep(Duration::from_millis(200));
+            Ok(true)
+        })
+        .await
+        .unwrap();
+        ticker.abort();
+        assert!(done);
+        assert!(ticks.load(std::sync::atomic::Ordering::SeqCst) >= 10);
+    }
+
+    #[tokio::test]
+    async fn a_second_check_is_refused_while_the_slot_is_held() {
+        static SLOT: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(1);
+        let first = tokio::spawn(in_slot(&SLOT, Duration::from_secs(1), || {
+            std::thread::sleep(Duration::from_millis(300));
+            Ok(true)
+        }));
+        tokio::time::sleep(Duration::from_millis(30)).await;
+        let second = in_slot(&SLOT, Duration::from_millis(50), || Ok(true)).await;
+        assert!(matches!(second, Err(AppError::RateLimited(_))));
+        assert!(first.await.unwrap().unwrap());
+        // the slot is free again
+        assert!(
+            in_slot(&SLOT, Duration::from_millis(50), || Ok(true))
+                .await
+                .unwrap()
+        );
+    }
+
+    #[tokio::test]
+    async fn a_dropped_request_keeps_the_slot_until_its_hash_ends() {
+        static SLOT: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(1);
+        let request = tokio::spawn(in_slot(&SLOT, Duration::from_secs(1), || {
+            std::thread::sleep(Duration::from_millis(300));
+            Ok(true)
+        }));
+        tokio::time::sleep(Duration::from_millis(30)).await;
+        request.abort();
+        let refused = in_slot(&SLOT, Duration::from_millis(50), || Ok(true)).await;
+        assert!(matches!(refused, Err(AppError::RateLimited(_))));
+        tokio::time::sleep(Duration::from_millis(400)).await;
+        assert!(
+            in_slot(&SLOT, Duration::from_millis(50), || Ok(true))
+                .await
+                .unwrap()
+        );
+    }
 
     /// A clock reading well after the plausibility floor.
     const SYNCED_NOW: u64 = 1_800_000_000;

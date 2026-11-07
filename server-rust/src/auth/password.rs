@@ -165,10 +165,15 @@ impl AccountStore {
         let Some(account) = self.load()? else {
             return Ok(false);
         };
-        if account.username != username {
-            return Ok(false);
-        }
-        verify_password(&account.password, password)
+        // The hash is checked for every username, so a wrong username takes as long as a wrong
+        // password and does not reveal which names exist.
+        let password_ok = verify_password(&account.password, password)?;
+        let username_ok: bool = account
+            .username
+            .as_bytes()
+            .ct_eq(username.as_bytes())
+            .into();
+        Ok(username_ok && password_ok)
     }
 }
 
@@ -310,6 +315,24 @@ mod tests {
             .set_account("operator", "correct horse battery")
             .unwrap();
         (dir, store)
+    }
+
+    #[test]
+    fn a_wrong_username_fails_even_with_the_right_password() {
+        let (_dir, store) = store_with_account();
+        assert!(store.verify("operator", "correct horse battery").unwrap());
+        assert!(!store.verify("someone", "correct horse battery").unwrap());
+    }
+
+    #[test]
+    fn the_hash_is_checked_for_a_wrong_username_too() {
+        let (_dir, store) = store_with_account();
+        store
+            .write_account("operator", "not a password hash")
+            .unwrap();
+        // An unusable hash is an error for any username, which proves the hash is read first.
+        assert!(store.verify("someone", "anything at all").is_err());
+        assert!(store.verify("operator", "anything at all").is_err());
     }
 
     fn totp_with(hashes: Vec<String>) -> TotpConfig {

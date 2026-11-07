@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    net::IpAddr,
     time::{Duration, Instant},
 };
 
@@ -76,8 +77,24 @@ impl LoginRateLimiter {
     }
 }
 
+// The source a lockout applies to: an IPv4 address, or the /64 network of an IPv6 address,
+// through which one host can rotate freely. IPv4-mapped addresses count as their IPv4 address.
+fn source_key(source_ip: &str) -> String {
+    match source_ip.parse::<IpAddr>() {
+        Ok(IpAddr::V4(v4)) => v4.to_string(),
+        Ok(IpAddr::V6(v6)) => match v6.to_ipv4_mapped() {
+            Some(v4) => v4.to_string(),
+            None => {
+                let s = v6.segments();
+                format!("{:x}:{:x}:{:x}:{:x}::/64", s[0], s[1], s[2], s[3])
+            }
+        },
+        Err(_) => source_ip.to_string(),
+    }
+}
+
 fn key(source_ip: &str, username: &str) -> String {
-    format!("{source_ip}:{username}")
+    format!("{} {username}", source_key(source_ip))
 }
 
 #[cfg(test)]
@@ -91,5 +108,25 @@ mod tests {
         assert!(limiter.record_failure("1.2.3.4", "admin"));
         assert!(limiter.check("1.2.3.4", "admin"));
         assert!(!limiter.check("1.2.3.4", "other"));
+    }
+
+    #[test]
+    fn an_ipv6_network_shares_one_lockout() {
+        let mut limiter = LoginRateLimiter::new(2, 60);
+        assert!(!limiter.record_failure("2001:db8:1:2::1", "admin"));
+        // another address of the same /64 counts against the same budget
+        assert!(limiter.record_failure("2001:db8:1:2:aaaa:bbbb:cccc:dddd", "admin"));
+        assert!(limiter.check("2001:db8:1:2::99", "admin"));
+        // a different /64, and a different user, are separate
+        assert!(!limiter.check("2001:db8:1:3::1", "admin"));
+        assert!(!limiter.check("2001:db8:1:2::1", "other"));
+    }
+
+    #[test]
+    fn an_ipv4_mapped_address_counts_as_its_ipv4_address() {
+        let mut limiter = LoginRateLimiter::new(1, 60);
+        assert!(limiter.record_failure("::ffff:192.0.2.7", "admin"));
+        assert!(limiter.check("192.0.2.7", "admin"));
+        assert!(!limiter.check("192.0.2.8", "admin"));
     }
 }
