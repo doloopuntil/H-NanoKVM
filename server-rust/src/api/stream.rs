@@ -1043,11 +1043,14 @@ fn source_size() -> (u16, u16) {
     ((packed >> 16) as u16, packed as u16)
 }
 
-// Fits the input size to what VPSS and the encoders take; anything odd falls back to 1080p.
+// kvm_mmf rounds the VPSS output width up to 64 and crops to fill it, so Auto
+// picks a width that is a multiple of 64 and scales the height to keep the aspect.
 fn source_capture_size(width: Option<i32>, height: Option<i32>) -> (u16, u16) {
     match (width, height) {
         (Some(width @ 640..=1920), Some(height @ 480..=1080)) => {
-            ((width as u16) & !15, (height as u16) & !7)
+            let out_width = width & !63;
+            let out_height = (height * out_width + width / 2) / width;
+            (out_width as u16, (out_height as u16) & !7)
         }
         _ => (1920, 1080),
     }
@@ -1542,8 +1545,13 @@ mod tests {
     fn auto_resolution_follows_the_input_size() {
         assert_eq!(source_capture_size(Some(1024), Some(768)), (1024, 768));
         assert_eq!(source_capture_size(Some(1280), Some(720)), (1280, 720));
-        assert_eq!(source_capture_size(Some(1366), Some(768)), (1360, 768));
         assert_eq!(source_capture_size(Some(1920), Some(1080)), (1920, 1080));
+        assert_eq!(source_capture_size(Some(1280), Some(1024)), (1280, 1024));
+        // Widths off the 64 grid shrink with the aspect kept, never cropped
+        assert_eq!(source_capture_size(Some(800), Some(600)), (768, 576));
+        assert_eq!(source_capture_size(Some(1440), Some(900)), (1408, 880));
+        assert_eq!(source_capture_size(Some(1366), Some(768)), (1344, 752));
+        assert_eq!(source_capture_size(Some(1600), Some(900)), (1600, 896));
     }
 
     #[test]

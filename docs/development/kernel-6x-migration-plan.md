@@ -1106,7 +1106,13 @@ Exit: parity or better on the Phase 0 numbers; no crashes in the soak.
   VI runs at 60 fps at each size with no lost frames. A Mac is no use for this
   test: its scaled modes keep a 1080p signal. Open issue: the browser stream stays
   black after the camera restarts until the page is reloaded.
-- WebUI stream size, the EDID flow, idle timeout and HID-only mode: still to test.
+- Auto stream size follows the input (9d9b1322 and the next commit): a 4:3 host mode
+  is shown whole. `kvm_mmf` rounds the VPSS output width up to 64 and crops to
+  fill, so Auto picks a 64-aligned width and keeps the aspect (800x600 -> 768x576).
+  The fixed 800x600 menu size still rounds to 832 and crops. Phone as host: 800x600,
+  1024x768, 1280x720, 1280x1024 and 1920x1080 work; at 640x480 the LT6911 raises
+  its interrupt but sends nothing on MIPI (bridge limit, not the port).
+- The EDID flow, idle timeout and HID-only mode: still to test.
 
 ### Phase 4: platform integration
 
