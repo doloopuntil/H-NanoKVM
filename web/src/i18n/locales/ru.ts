@@ -90,6 +90,9 @@ const ru = {
     },
     screen: {
       scale: 'Масштаб',
+      size: 'Размер',
+      sizeFill: 'Заполнить окно',
+      sizeNative: 'Исходный размер',
       title: 'Экран',
       video: 'Видеорежим',
       videoDirectTips:

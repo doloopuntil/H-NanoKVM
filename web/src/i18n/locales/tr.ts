@@ -89,6 +89,9 @@ const tr = {
     },
     screen: {
       scale: 'Ölçek',
+      size: 'Boyut',
+      sizeFill: 'Pencereyi doldur',
+      sizeNative: 'Özgün boyut',
       title: 'Ekran',
       video: 'Görüntü modu',
       videoDirectTips:

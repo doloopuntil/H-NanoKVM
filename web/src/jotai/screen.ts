@@ -1,6 +1,7 @@
 import { atom } from 'jotai';
 
 import { Resolution } from '@/types';
+import { getScreenFill } from '@/lib/localstorage.ts';
 
 export const isHdmiEnabledAtom = atom(true);
 
@@ -11,6 +12,9 @@ export const isHdmiEnabledAtom = atom(true);
 export const videoModeAtom = atom('');
 
 export const videoScaleAtom = atom<number>(1.0);
+
+// fill: enlarge the screen to the window; native: never past its own size
+export const screenFillAtom = atom<boolean>(getScreenFill());
 
 // browser screen resolution
 export const resolutionAtom = atom<Resolution | null>(null);

@@ -89,6 +89,9 @@ const vi = {
     },
     screen: {
       scale: 'Tỷ lệ',
+      size: 'Kích thước',
+      sizeFill: 'Lấp đầy cửa sổ',
+      sizeNative: 'Kích thước gốc',
       title: 'Màn hình',
       video: 'Chế độ video',
       videoDirectTips: 'Bật HTTPS trong "Cài đặt > Mạng > Dịch vụ" để sử dụng chế độ này',

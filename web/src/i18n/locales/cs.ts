@@ -89,6 +89,9 @@ const cz = {
     },
     screen: {
       scale: 'Měřítko',
+      size: 'Velikost',
+      sizeFill: 'Vyplnit okno',
+      sizeNative: 'Nativní velikost',
       title: 'Obrazovka',
       video: 'Režim videa',
       videoDirectTips: 'Chcete-li používat tento režim, povolte HTTPS v "Nastavení > Síť > Služby"',

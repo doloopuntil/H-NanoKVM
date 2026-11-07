@@ -89,6 +89,9 @@ const se = {
     },
     screen: {
       scale: 'Skala',
+      size: 'Storlek',
+      sizeFill: 'Fyll fönstret',
+      sizeNative: 'Ursprunglig storlek',
       title: 'Skärm',
       video: 'Videoläge',
       videoDirectTips:

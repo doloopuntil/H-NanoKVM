@@ -91,6 +91,9 @@ const fr = {
     },
     screen: {
       scale: 'Échelle',
+      size: 'Taille',
+      sizeFill: 'Remplir la fenêtre',
+      sizeNative: 'Taille native',
       title: 'Écran',
       video: 'Mode vidéo',
       videoDirectTips:

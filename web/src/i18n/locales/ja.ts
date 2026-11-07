@@ -88,6 +88,9 @@ const ja = {
     },
     screen: {
       scale: '倍率',
+      size: 'サイズ',
+      sizeFill: 'ウィンドウに合わせる',
+      sizeNative: '元のサイズ',
       title: '画面',
       video: 'ビデオモード',
       videoDirectTips:

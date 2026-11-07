@@ -90,6 +90,9 @@ const pl = {
     },
     screen: {
       scale: 'Skala',
+      size: 'Rozmiar',
+      sizeFill: 'Wypełnij okno',
+      sizeNative: 'Rozmiar natywny',
       title: 'Ekran',
       video: 'Tryb wideo',
       videoDirectTips: 'Włącz HTTPS w „Ustawienia > Sieć > Usługi”, aby korzystać z tego trybu',

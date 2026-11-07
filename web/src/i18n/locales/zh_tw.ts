@@ -86,6 +86,9 @@ const zh_tw = {
     },
     screen: {
       scale: '縮放',
+      size: '尺寸',
+      sizeFill: '填滿視窗',
+      sizeNative: '原始尺寸',
       title: '螢幕',
       video: '影片模式',
       videoDirectTips: '本模式需先啟用 HTTPS，請前往「設定 > 網路 > 服務」中開啟',

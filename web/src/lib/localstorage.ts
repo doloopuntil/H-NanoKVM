@@ -3,6 +3,7 @@ import { Resolution } from '@/types';
 const LANGUAGE_KEY = 'nano-kvm-language';
 const VIDEO_MODE_KEY = 'nano-kvm-vide-mode';
 const VIDEO_SCALE_KEY = 'nano-kvm-video-scale';
+const SCREEN_FILL_KEY = 'nano-kvm-screen-fill';
 const WEB_RESOLUTION_KEY = 'nano-kvm-web-resolution';
 const FPS_KEY = 'nano-kvm-fps';
 const QUALITY_KEY = 'nano-kvm-quality';
@@ -97,6 +98,15 @@ export function getVideoScale(): number | null {
 
 export function setVideoScale(scale: number): void {
   localStorage.setItem(VIDEO_SCALE_KEY, String(scale));
+}
+
+// Whether the screen enlarges past its own size to fill the window (default: yes)
+export function getScreenFill(): boolean {
+  return localStorage.getItem(SCREEN_FILL_KEY) !== 'false';
+}
+
+export function setScreenFill(fill: boolean): void {
+  localStorage.setItem(SCREEN_FILL_KEY, String(fill));
 }
 
 export function getResolution(): Resolution | null {

@@ -88,6 +88,9 @@ const th = {
     },
     screen: {
       scale: 'สเกล',
+      size: 'ขนาด',
+      sizeFill: 'เต็มหน้าต่าง',
+      sizeNative: 'ขนาดดั้งเดิม',
       title: 'หน้าจอ',
       video: 'โหมดวีดีโอ',
       videoDirectTips: 'เปิดใช้งาน HTTPS ใน "การตั้งค่า > เครือข่าย > บริการ" เพื่อใช้โหมดนี้',

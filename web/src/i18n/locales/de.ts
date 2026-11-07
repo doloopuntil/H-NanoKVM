@@ -91,6 +91,9 @@ const de = {
     },
     screen: {
       scale: 'Skala',
+      size: 'Größe',
+      sizeFill: 'Fenster füllen',
+      sizeNative: 'Originalgröße',
       title: 'Bildschirm',
       video: 'Videomodus',
       videoDirectTips:

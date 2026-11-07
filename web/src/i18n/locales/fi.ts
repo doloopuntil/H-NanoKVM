@@ -89,6 +89,9 @@ const fi = {
     },
     screen: {
       scale: 'Skaalaus',
+      size: 'Koko',
+      sizeFill: 'Täytä ikkuna',
+      sizeNative: 'Alkuperäinen koko',
       title: 'Näyttö',
       video: 'Videotila',
       videoDirectTips:
