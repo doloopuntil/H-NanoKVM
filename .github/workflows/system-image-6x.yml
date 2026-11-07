@@ -409,7 +409,9 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
-  build-image:
+  # The long part: Buildroot without its post-image step. Its handoff artifact lets
+  # assemble-image be rerun on its own in minutes.
+  build-buildroot:
     needs: [vendor-sdk, build-native-libkvm]
     runs-on: ubuntu-24.04
     # 360 minutes is the hard cap on GitHub-hosted runners.
@@ -477,11 +479,23 @@ jobs:
           key: buildroot-${{ env.BUILDROOT_VERSION }}
 
       # Same standalone path as system-image.yml, so both workflows share the package downloads.
-      - name: Cache shared Buildroot package download directory
-        uses: actions/cache@v4
+      # Restored here and saved at the end even when the build fails, so a rerun downloads and
+      # compiles mostly from cache. The 5.10 workflow's download cache seeds the first run.
+      - name: Restore the Buildroot package downloads
+        uses: actions/cache/restore@v4
         with:
           path: build/buildroot-package-dl-cache
-          key: buildroot-dl-v2-${{ env.BUILDROOT_VERSION }}
+          key: buildroot-6x-dl-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            buildroot-6x-dl-
+            buildroot-dl-v2-${{ env.BUILDROOT_VERSION }}
+
+      - name: Restore the Buildroot compiler cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.buildroot-ccache
+          key: buildroot-6x-ccache-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: buildroot-6x-ccache-
 
       - name: Bootstrap Buildroot + security-patched source
         run: |
@@ -568,13 +582,22 @@ jobs:
           verify_and_replace libopencv_imgcodecs.so.409 "$NANOKVM_UPSTREAM_OPENCV_IMGCODECS_SHA256"
           verify_and_replace libopencv_imgproc.so.409 "$NANOKVM_UPSTREAM_OPENCV_IMGPROC_SHA256"
 
-      - name: Build the Linux 6.18 SD image
+      - name: Build the kernel, media modules, FIPs and rootfs with Buildroot
         run: |
           HARDENED_SG2002_6X_OUTPUT_DIR="$RUN_ROOT/buildroot" \
-          HARDENED_SG2002_6X_REPORT_DIR="$RUN_ROOT/_reports/image" \
+          HARDENED_SG2002_6X_REPORT_DIR="$RUN_ROOT/_reports/build" \
+          HNANOKVM_6X_HANDOFF="$RUN_ROOT/buildroot-6x-handoff.tar.zst" \
           NANOKVM_VENDOR_RUNTIME_SOURCE_DIR="$RUN_ROOT/runtime" \
-            scripts/build-buildroot-6x-image.sh
+            scripts/build-buildroot-6x-image.sh build
           df -h /
+
+      - name: Upload the Buildroot handoff for assemble-image
+        uses: actions/upload-artifact@v4
+        with:
+          name: buildroot-6x-handoff
+          path: build/rc12-run/buildroot-6x-handoff.tar.zst
+          retention-days: 7
+          if-no-files-found: error
 
       - name: Upload Buildroot logs on failure
         if: failure()
@@ -588,6 +611,59 @@ jobs:
             build/rc12-run/_reports/**
           retention-days: 7
           if-no-files-found: warn
+
+      - name: Save the Buildroot compiler cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.buildroot-ccache
+          key: buildroot-6x-ccache-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Save the Buildroot package downloads
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: build/buildroot-package-dl-cache
+          key: buildroot-6x-dl-${{ github.run_id }}-${{ github.run_attempt }}
+
+  # post-image.sh (boot.vfat with the FIT, the SD image), the boot checks and packaging, from
+  # the handoff alone.
+  assemble-image:
+    needs: [build-buildroot]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      RUN_ROOT: ${{ github.workspace }}/build/rc12-run
+      EXPECTED_SYSTEM_VERSION: 1.0.0
+      EXPECTED_KVMAPP_VERSION: 3.0.0
+      EXPECTED_KERNEL_RELEASE: 6.18.29
+      EXPECTED_SECURITY_PATCH_LEVEL: Buildroot 2026.05.1 security maintenance Linux 6.18.29
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install host tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mtools e2fsprogs util-linux xz-utils zstd openssl
+
+      - name: Download the Buildroot handoff
+        uses: actions/download-artifact@v4
+        with:
+          name: buildroot-6x-handoff
+          path: ${{ runner.temp }}/handoff
+
+      # Same absolute path as in build-buildroot: Buildroot's host tools carry it in their RPATH.
+      - name: Unpack the Buildroot handoff
+        run: |
+          mkdir -p "$RUN_ROOT/buildroot"
+          zstd -dc "$RUNNER_TEMP/handoff/buildroot-6x-handoff.tar.zst" | tar -xf - -C "$RUN_ROOT/buildroot"
+
+      - name: Assemble the boot partition and the SD image
+        run: |
+          HARDENED_SG2002_6X_OUTPUT_DIR="$RUN_ROOT/buildroot" \
+          HARDENED_SG2002_6X_REPORT_DIR="$RUN_ROOT/_reports/image" \
+            scripts/build-buildroot-6x-image.sh assemble
 
       # The unsigned raw update archive, plus the script that signs it with a local key.
       - name: Package the unsigned system-update archive
