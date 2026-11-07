@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-01
+last-checked: 2026-11-07
 ---
 
 # Testing
@@ -23,6 +23,21 @@ storage code returns the canonical path (`/private/var/...`) while the test
 expects the temporary directory's `/var/...` path. It passes on Linux.
 
 Clippy is clean; `-D warnings` makes any new warning an error locally (CI does not run clippy).
+
+## Standalone checks
+
+```sh
+node scripts/test-wifi-provisioning-result.cjs
+python3 scripts/test-kvm-system-ap-key.py
+```
+
+The first runs the real handler of the AP setup page against synthetic responses: only
+`code: 0` is success, every other code, a missing response or a failed request is a
+failure. It needs the web dependencies (or `--typescript-module`). The second compiles
+`ap_key.h` of `kvm_system` for the host and checks the key's alphabet, uniformity,
+failure handling and 0600 storage. It needs Linux (`getrandom`), so run it in a
+container on a Mac. Neither touches a device; the OLED layout and the C++ build are
+checked in CI only.
 
 ## Web UI
 
