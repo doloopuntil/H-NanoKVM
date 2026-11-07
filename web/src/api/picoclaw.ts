@@ -57,11 +57,11 @@ export function listPicoclawSessions(params?: { offset?: number; limit?: number 
 }
 
 export function getPicoclawSession(id: string) {
-  return http.get(`/api/picoclaw/sessions/${id}`);
+  return http.get(`/api/picoclaw/sessions/${encodeURIComponent(id)}`);
 }
 
 export function deletePicoclawSession(id: string) {
-  return http.delete(`/api/picoclaw/sessions/${id}`);
+  return http.delete(`/api/picoclaw/sessions/${encodeURIComponent(id)}`);
 }
 
 export function getRuntimeStatus() {
