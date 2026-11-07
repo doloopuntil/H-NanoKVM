@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-03
+last-checked: 2026-11-07
 source: server-rust/src/http/routes.rs
 ---
 
@@ -43,7 +43,7 @@ as authentication, CSRF, origin, malformed uploads, or internal errors.
 | POST     | `/api/auth/login`          | Implemented with opaque session token, CSRF token, login lockout, and configurable session duration. Returns `totpRequired` instead of a session when the account has a second factor enrolled. |
 | POST     | `/api/auth/login/totp`     | Implemented; second login step. Exchanges the pending-ticket cookie plus a TOTP or backup code for a session. Public because the caller holds a ticket, not a session. |
 | GET/POST | `/api/auth/setup`          | Implemented for first-account setup flow; GET reports whether setup is required, POST creates the first account only while `/etc/kvm/pwd` is missing. |
-| POST     | `/api/network/wifi`        | Implemented for AP-mode no-auth Wi-Fi flow with AP key verification.                                                                                  |
+| POST     | `/api/network/wifi`        | Implemented for AP-mode no-auth Wi-Fi flow with AP key verification. Wrong keys lock out: 5 per source and 20 in all, for 10 minutes (`-5`).         |
 | POST     | `/api/network/wifi/verify` | Implemented for AP-mode verification.                                                                                                                 |
 
 ## Authenticated REST Routes
@@ -130,7 +130,7 @@ as authentication, CSRF, origin, malformed uploads, or internal errors.
 | GET/POST        | `/api/vm/device/virtual`   | Implemented.                                                                                                       |
 | GET/POST        | `/api/vm/oled`             | Implemented.                                                                                                       |
 | GET             | `/api/vm/hdmi`             | Implemented; returns `enabled`, `signal` (input present) and `idleTimeout` (minutes).                              |
-| POST            | `/api/vm/hdmi/reset`       | Implemented. Off, 1 s, on, in a task of its own: a lost client cannot leave HDMI capture off. libkvm calls run on a blocking thread. |
+| POST            | `/api/vm/hdmi/reset`       | Implemented. Off, 1 s, on, in a task of its own: a lost client cannot leave HDMI capture off. Refused while capture is disabled. libkvm calls run on a blocking thread. |
 | POST            | `/api/vm/hdmi/enable`      | Implemented.                                                                                                       |
 | POST            | `/api/vm/hdmi/disable`     | Implemented.                                                                                                       |
 | POST            | `/api/vm/hdmi/timeout`     | Implemented; `{minutes}` 0-10080, 0 disables the idle stop.                                                        |
