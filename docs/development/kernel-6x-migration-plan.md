@@ -1189,7 +1189,7 @@ Exit: a CI-built image flashes, boots and passes the Phase 1-3 checks unattended
   also writes `hardened-sg2002-6x.img` (`genimage.cfg`: the 5.10 partition layout,
   32 MiB FAT32 boot at sector 1, 1536 MiB rootfs), which
   `package-local-system-update.sh` splits as it does the 5.10 image; checked with a
-  stand-in rootfs. The update target is now `hnanokvm-sg2002-sd` (server fallback,
+  stand-in rootfs. The update target is now `sg2002-hnanokvm-sd` (server fallback,
   rootfs `system-version.json`, bundle scripts), so 5.10 devices refuse 6.x bundles.
   The CI step passes `KERNEL_VERSION=6.18.29`. An OTA install is proven on the first
   CI-built image. `scripts/test-system-update-v2.sh` was already broken by `facc301d`
@@ -1226,6 +1226,20 @@ first PCIe detection as the riskiest paths.
 Confirm hardening parity in the final `.config`; remove the 5.10 kernel patches,
 configs and scripts only after the 6.18 channel is stable; update `CHANGELOG.md`,
 `docs/releases/`, and record the dropped hardware (alpha) in the install docs.
+
+### Phase 7: naming sweep
+
+Last, once 5.10 is gone: one sweep that renames symbols, files and identifiers to a
+single convention. Today the product appears as Hardened NanoKVM, H-NanoKVM,
+`hnanokvm`, `hardened-nanokvm`, `h-nanokvm` (host name) and `NanoKVM-Server`; the
+board as `sg2002`, `licheervnano`, `cv181x`/`cv18xx`, `soph_`/`cvi_`/`cvitek`; and
+the build as `hardened-sg2002-*` packages and images, `HARDENED_SG2002_`, `NANOKVM_`,
+`LATEST_BUILDROOT_` and `KERNEL_5_10_265_` variables and the `build/rc12-run` path.
+The update target `sg2002-hnanokvm-sd` sets the pattern (SoC, product, medium).
+Decide the convention first, then rename in one change per area (Buildroot packages
+and externals, scripts and variables, CI, image and archive names, server constants,
+docs), keeping anything a deployed device reads (update target, `/kvmapp`, `/etc/kvm`
+files) stable or migrated on purpose.
 
 ## 8. File-level work list
 

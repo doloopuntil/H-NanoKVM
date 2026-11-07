@@ -222,7 +222,7 @@ contains:
 
 - `format`: currently `hardened-nanokvm-system-update-v2` for raw.12.
 - `version`: system-update version.
-- `target`: hardware/build target, currently `hnanokvm-sg2002-sd`.
+- `target`: hardware/build target, currently `sg2002-hnanokvm-sd`.
 - `base_version`: base image marker expected before update.
 - `kernel_version`: kernel version expected after update.
 - `required_app_version`: minimum application version, currently `2.0.42`.

@@ -21,7 +21,7 @@ sha256_of() {
   fi
 }
 
-TARGET="${TARGET:-hnanokvm-sg2002-sd}"
+TARGET="${TARGET:-sg2002-hnanokvm-sd}"
 CHANNEL="${CHANNEL:-stable}"
 SIZE=$(wc -c < "$ARCHIVE" | tr -d ' ')
 SHA256=$(sha256_of "$ARCHIVE")
