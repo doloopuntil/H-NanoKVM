@@ -27,7 +27,7 @@ hmac = "0.12"
 getrandom = "0.4"
 futures-util = { version = "0.3.32", features = ["sink"] }
 md-5 = "0.10"
-nix = { version = "0.31.3", features = ["fs", "mount", "net", "process", "signal", "term"] }
+nix = { version = "0.31.3", features = ["fs", "ioctl", "mount", "net", "process", "signal", "term"] }
 rcgen = "0.14"
 # Types webrtc takes from its sans-I/O core; pinned with webrtc.
 rtc = { version = "=0.21.1", default-features = false }

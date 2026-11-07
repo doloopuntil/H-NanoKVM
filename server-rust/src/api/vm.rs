@@ -26,6 +26,7 @@ use std::{
     os::fd::AsRawFd,
     path::Path,
     ptr,
+    sync::OnceLock,
     time::{Duration, Instant as StdInstant},
 };
 use tokio::{sync::mpsc, task, time};
@@ -44,7 +45,10 @@ use crate::{
     hdmi_idle,
     http::{middleware::CurrentSession, proxy::ClientInfo},
     state::{AppState, is_allowed_session_lock_duration},
-    system::command::{AllowedCommand, run_allowed},
+    system::{
+        command::{AllowedCommand, run_allowed},
+        gpio::{Direction, Line},
+    },
     ws::{hid as hid_ws, origin::validate_ws_origin},
 };
 
@@ -436,23 +440,16 @@ pub async fn set_web_title(Json(req): Json<SetWebTitleReq>) -> Result<impl IntoR
 }
 
 pub async fn get_gpio() -> Result<impl IntoResponse> {
-    let gpio = hardware_gpio();
-    let pwr = read_gpio(&gpio.power_led)?;
-    let hdd = gpio
-        .hdd_led
-        .as_deref()
-        .map(read_gpio)
-        .transpose()?
-        .unwrap_or(false);
-
-    Ok(Json(ApiResponse::ok(GpioRsp { pwr, hdd })))
+    // The power LED input is active low; no supported board wires an HDD LED.
+    let pwr = !atx_lines()?.power_led.get()?;
+    Ok(Json(ApiResponse::ok(GpioRsp { pwr, hdd: false })))
 }
 
 pub async fn set_gpio(Json(req): Json<SetGpioReq>) -> Result<impl IntoResponse> {
-    let gpio = hardware_gpio();
-    let device = match req.kind.as_str() {
-        "power" => gpio.power,
-        "reset" => gpio.reset,
+    let lines = atx_lines()?;
+    let (name, line) = match req.kind.as_str() {
+        "power" => ("power", &lines.power),
+        "reset" => ("reset", &lines.reset),
         _ => return Err(AppError::BadRequest("invalid power event".to_string())),
     };
     let duration = if req.duration == 0 {
@@ -461,7 +458,7 @@ pub async fn set_gpio(Json(req): Json<SetGpioReq>) -> Result<impl IntoResponse> 
         Duration::from_millis(req.duration.clamp(50, 5_000))
     };
 
-    write_gpio_pulse(&device, duration).await?;
+    write_gpio_pulse(name, line, duration).await?;
     Ok(Json(ApiResponse::<()>::ok_empty()))
 }
 
@@ -1351,10 +1348,8 @@ fn looks_like_lite(hardware: Option<&str>, has_oled: bool, has_wifi: bool) -> bo
 
 fn get_hardware_version() -> String {
     match read_trimmed(HARDWARE_VERSION_FILE).as_deref() {
-        Some("beta") => "Beta",
         Some("pcie") => "PCIE",
-        Some("alpha") | None => "Alpha",
-        Some(_) => "Alpha",
+        _ => "Beta",
     }
     .to_string()
 }
@@ -1587,123 +1582,146 @@ fn write_inittab(content: &str) -> Result<()> {
     crate::system::files::write_atomic(Path::new(INITTAB_PATH), content.as_bytes(), 0o644)
 }
 
-#[derive(Debug, Clone)]
-struct HardwareGpio {
-    reset: String,
-    power: String,
-    power_led: String,
-    hdd_led: Option<String>,
+/// The ATX board's lines, named in the device tree, claimed for the server's lifetime.
+struct AtxLines {
+    power: Line,
+    reset: Line,
+    power_led: Line,
 }
 
-fn hardware_gpio() -> HardwareGpio {
-    match read_trimmed(HARDWARE_VERSION_FILE).as_deref() {
-        Some("beta") | Some("pcie") => HardwareGpio {
-            reset: "/sys/class/gpio/gpio505/value".to_string(),
-            power: "/sys/class/gpio/gpio503/value".to_string(),
-            power_led: "/sys/class/gpio/gpio504/value".to_string(),
-            hdd_led: None,
-        },
-        _ => HardwareGpio {
-            reset: "/sys/class/gpio/gpio507/value".to_string(),
-            power: "/sys/class/gpio/gpio503/value".to_string(),
-            power_led: "/sys/class/gpio/gpio504/value".to_string(),
-            hdd_led: Some("/sys/class/gpio/gpio505/value".to_string()),
-        },
+static ATX_LINES: OnceLock<Option<AtxLines>> = OnceLock::new();
+
+fn request_atx_lines() -> std::io::Result<AtxLines> {
+    const CONSUMER: &str = "nanokvm-server";
+    Ok(AtxLines {
+        power: Line::request("atx-power", CONSUMER, Direction::Output(false))?,
+        reset: Line::request("atx-reset", CONSUMER, Direction::Output(false))?,
+        power_led: Line::request("atx-power-led", CONSUMER, Direction::Input)?,
+    })
+}
+
+/// Claims the ATX lines at startup so the power and reset outputs are driven low from then on.
+pub fn init_atx_lines() {
+    let _ = atx_lines();
+}
+
+fn atx_lines() -> Result<&'static AtxLines> {
+    ATX_LINES
+        .get_or_init(|| {
+            request_atx_lines()
+                .inspect_err(|err| warn!(error = %err, "ATX GPIO lines unavailable"))
+                .ok()
+        })
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("ATX GPIO lines unavailable".to_string()))
+}
+
+/// An output a power or reset pulse drives; the tests stand in for the GPIO line.
+trait PulseOutput: Sync {
+    fn set(&self, high: bool) -> std::io::Result<()>;
+}
+
+impl PulseOutput for Line {
+    fn set(&self, high: bool) -> std::io::Result<()> {
+        Line::set(self, high)
     }
-}
-
-fn read_gpio(path: &str) -> Result<bool> {
-    let value = fs::read_to_string(path)?;
-    let value = value.trim().parse::<i32>().map_err(|_| {
-        AppError::Internal(format!(
-            "invalid gpio value in {}",
-            Path::new(path).display()
-        ))
-    })?;
-    Ok(value == 0)
 }
 
 /// Lines with a pulse in progress. A second pulse on the same line would cut
 /// the first one short, or turn one long press into two.
-static PULSING: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+static PULSING: std::sync::Mutex<Vec<&'static str>> = std::sync::Mutex::new(Vec::new());
 
 /// Press a power or reset line for `duration`, then release it. The pulse runs
 /// in its own task, so a lost client cannot leave the button pressed. If that
 /// task is dropped, as at backend shutdown, its guard still releases the line.
-async fn write_gpio_pulse(path: &str, duration: Duration) -> Result<()> {
-    let line = PulseLine::claim(path)?;
+async fn write_gpio_pulse<L: PulseOutput + 'static>(
+    name: &'static str,
+    line: &'static L,
+    duration: Duration,
+) -> Result<()> {
+    let claim = PulseClaim::claim(name)?;
     let (reply, done) = tokio::sync::oneshot::channel();
     tokio::spawn(async move {
-        drop(reply.send(pulse(line, duration).await));
+        drop(reply.send(pulse(claim, line, duration).await));
     });
     done.await
         .map_err(|_| AppError::Internal("gpio pulse ended without a result".to_string()))?
 }
 
-async fn pulse(line: PulseLine, duration: Duration) -> Result<()> {
-    let pressed = Pressed::press(line)?;
+async fn pulse<L: PulseOutput + 'static>(
+    claim: PulseClaim,
+    line: &'static L,
+    duration: Duration,
+) -> Result<()> {
+    let pressed = Pressed::press(claim, line)?;
     time::sleep(duration).await;
     pressed.release()
 }
 
-/// Exclusive use of one GPIO line until dropped.
-struct PulseLine(String);
+/// Exclusive use of one named line until dropped.
+struct PulseClaim(&'static str);
 
-impl PulseLine {
-    fn claim(path: &str) -> Result<Self> {
+impl PulseClaim {
+    fn claim(name: &'static str) -> Result<Self> {
         let mut pulsing = PULSING
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        if pulsing.iter().any(|line| line == path) {
+        if pulsing.contains(&name) {
             return Err(AppError::Conflict(
                 "a power or reset pulse is already in progress".to_string(),
             ));
         }
-        pulsing.push(path.to_string());
-        Ok(Self(path.to_string()))
+        pulsing.push(name);
+        Ok(Self(name))
     }
 }
 
-impl Drop for PulseLine {
+impl Drop for PulseClaim {
     fn drop(&mut self) {
         let mut pulsing = PULSING
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        pulsing.retain(|line| line != &self.0);
+        pulsing.retain(|name| *name != self.0);
     }
 }
 
-/// A pressed line. Dropped without `release`, it still writes 0.
-struct Pressed(Option<PulseLine>);
+/// A pressed line. Dropped without `release`, it still drives the line low.
+struct Pressed<L: PulseOutput + 'static> {
+    line: &'static L,
+    claim: Option<PulseClaim>,
+}
 
-impl Pressed {
-    fn press(line: PulseLine) -> Result<Self> {
-        if let Err(error) = fs::write(&line.0, b"1") {
+impl<L: PulseOutput + 'static> Pressed<L> {
+    fn press(claim: PulseClaim, line: &'static L) -> Result<Self> {
+        if let Err(error) = line.set(true) {
             // The line state is unknown after a failed write: release it.
-            let _ = fs::write(&line.0, b"0");
+            let _ = line.set(false);
             return Err(error.into());
         }
-        Ok(Self(Some(line)))
+        Ok(Self {
+            line,
+            claim: Some(claim),
+        })
     }
 
     fn release(mut self) -> Result<()> {
-        match self.0.take() {
-            Some(line) => release(&line.0),
+        match self.claim.take() {
+            Some(_claim) => release_line(self.line),
             None => Ok(()),
         }
     }
 }
 
-impl Drop for Pressed {
+impl<L: PulseOutput + 'static> Drop for Pressed<L> {
     fn drop(&mut self) {
-        if let Some(line) = self.0.take() {
-            let _ = release(&line.0);
+        if let Some(_claim) = self.claim.take() {
+            let _ = release_line(self.line);
         }
     }
 }
 
-fn release(path: &str) -> Result<()> {
-    fs::write(path, b"0").map_err(|error| {
+fn release_line<L: PulseOutput>(line: &L) -> Result<()> {
+    line.set(false).map_err(|error| {
         tracing::error!(%error, "gpio line release failed; the button may stay pressed");
         AppError::from(error)
     })
@@ -1784,17 +1802,32 @@ fn remove_dir_if_exists(path: &str) -> Result<()> {
 mod tests {
     use super::*;
 
-    fn gpio_line(dir: &tempfile::TempDir, name: &str) -> (std::path::PathBuf, String) {
-        let line = dir.path().join(name);
-        fs::write(&line, b"0").unwrap();
-        let path = line.to_str().unwrap().to_string();
-        (line, path)
+    struct FakeLine(std::sync::atomic::AtomicBool);
+
+    impl PulseOutput for FakeLine {
+        fn set(&self, high: bool) -> std::io::Result<()> {
+            self.0.store(high, std::sync::atomic::Ordering::SeqCst);
+            Ok(())
+        }
     }
 
-    async fn pressed_within(line: &Path, limit: Duration) -> bool {
+    impl FakeLine {
+        fn pressed(&self) -> bool {
+            self.0.load(std::sync::atomic::Ordering::SeqCst)
+        }
+    }
+
+    // Each test names its own lines: the in-progress list is shared by the whole process.
+    fn fake_line() -> &'static FakeLine {
+        Box::leak(Box::new(FakeLine(std::sync::atomic::AtomicBool::new(
+            false,
+        ))))
+    }
+
+    async fn pressed_within(line: &FakeLine, limit: Duration) -> bool {
         let started = StdInstant::now();
         while started.elapsed() < limit {
-            if fs::read(line).unwrap() == b"1" {
+            if line.pressed() {
                 return true;
             }
             time::sleep(Duration::from_millis(5)).await;
@@ -1804,70 +1837,69 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn a_pulse_is_released_even_when_its_client_goes_away() {
-        let dir = tempfile::tempdir().unwrap();
-        let (line, path) = gpio_line(&dir, "power");
-        let request = tokio::spawn({
-            let path = path.clone();
-            async move { write_gpio_pulse(&path, Duration::from_millis(300)).await }
-        });
-        assert!(pressed_within(&line, Duration::from_secs(1)).await);
+        let line = fake_line();
+        let request = tokio::spawn(write_gpio_pulse(
+            "lost-client",
+            line,
+            Duration::from_millis(300),
+        ));
+        assert!(pressed_within(line, Duration::from_secs(1)).await);
         // An overlapping pulse on the same line is refused, not queued.
         assert!(matches!(
-            write_gpio_pulse(&path, Duration::from_millis(50)).await,
+            write_gpio_pulse("lost-client", line, Duration::from_millis(50)).await,
             Err(AppError::Conflict(_))
         ));
         // The HTTP handler's future is dropped when its client goes away.
         request.abort();
         assert!(request.await.unwrap_err().is_cancelled());
         time::sleep(Duration::from_millis(500)).await;
-        assert_eq!(fs::read(&line).unwrap(), b"0");
+        assert!(!line.pressed());
         // The line is free again once the pulse has ended.
-        write_gpio_pulse(&path, Duration::from_millis(50))
+        write_gpio_pulse("lost-client", line, Duration::from_millis(50))
             .await
             .unwrap();
-        assert_eq!(fs::read(&line).unwrap(), b"0");
+        assert!(!line.pressed());
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn pulses_on_different_lines_overlap() {
-        let dir = tempfile::tempdir().unwrap();
-        let (power, power_path) = gpio_line(&dir, "power");
-        let (reset, reset_path) = gpio_line(&dir, "reset");
-        let first =
-            tokio::spawn(
-                async move { write_gpio_pulse(&power_path, Duration::from_millis(300)).await },
-            );
-        assert!(pressed_within(&power, Duration::from_secs(1)).await);
-        write_gpio_pulse(&reset_path, Duration::from_millis(50))
+        let (power, reset) = (fake_line(), fake_line());
+        let first = tokio::spawn(write_gpio_pulse(
+            "overlap-power",
+            power,
+            Duration::from_millis(300),
+        ));
+        assert!(pressed_within(power, Duration::from_secs(1)).await);
+        write_gpio_pulse("overlap-reset", reset, Duration::from_millis(50))
             .await
             .unwrap();
-        assert_eq!(fs::read(&reset).unwrap(), b"0");
+        assert!(!reset.pressed());
         first.await.unwrap().unwrap();
-        assert_eq!(fs::read(&power).unwrap(), b"0");
+        assert!(!power.pressed());
     }
 
     #[test]
     fn a_pulse_dropped_at_shutdown_still_releases_its_line() {
-        let dir = tempfile::tempdir().unwrap();
-        let (line, path) = gpio_line(&dir, "reset");
+        let line = fake_line();
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(1)
             .enable_time()
             .build()
             .unwrap();
-        runtime.spawn({
-            let path = path.clone();
-            async move { write_gpio_pulse(&path, Duration::from_secs(30)).await }
-        });
+        runtime.spawn(write_gpio_pulse(
+            "shutdown-reset",
+            line,
+            Duration::from_secs(30),
+        ));
         let started = StdInstant::now();
-        while fs::read(&line).unwrap() != b"1" {
+        while !line.pressed() {
             assert!(started.elapsed() < Duration::from_secs(1));
             std::thread::sleep(Duration::from_millis(5));
         }
         // Dropping the runtime drops the pulse task in the middle of its press.
         drop(runtime);
-        assert_eq!(fs::read(&line).unwrap(), b"0");
-        drop(PulseLine::claim(&path).unwrap());
+        assert!(!line.pressed());
+        drop(PulseClaim::claim("shutdown-reset").unwrap());
     }
 
     #[test]
@@ -1953,18 +1985,6 @@ mod tests {
         assert!(!looks_like_lite(Some("alpha"), false, false));
         assert!(!looks_like_lite(Some("pcie"), false, false));
         assert!(!looks_like_lite(None, false, false));
-    }
-
-    #[test]
-    fn beta_gpio_omits_hdd_led() {
-        let gpio = HardwareGpio {
-            reset: "/sys/class/gpio/gpio505/value".to_string(),
-            power: "/sys/class/gpio/gpio503/value".to_string(),
-            power_led: "/sys/class/gpio/gpio504/value".to_string(),
-            hdd_led: None,
-        };
-        assert_eq!(gpio.reset, "/sys/class/gpio/gpio505/value");
-        assert!(gpio.hdd_led.is_none());
     }
 
     #[test]

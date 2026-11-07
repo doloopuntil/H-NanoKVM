@@ -225,6 +225,14 @@
 		"", "", "uart1", "uart1", "", "", "oled-reset", "atx-power",
 		"atx-power-led", "atx-reset", "wifi-enable", "i2c5-sda",
 		"uart2", "uart2", "user-key", "";
+
+	/* The Full and PCIe boards' OLED stays out of reset */
+	oled-reset-hog {
+		gpio-hog;
+		gpios = <22 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "oled-reset";
+	};
 };
 
 &portb {
