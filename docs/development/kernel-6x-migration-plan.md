@@ -1205,7 +1205,15 @@ Exit: a CI-built image flashes, boots and passes the Phase 1-3 checks unattended
   modules, `libsns_lt6911.so`, `system-version.json`, `validate-nanokvm-rootfs.sh`).
   Artifacts: `hardened-sg2002-6x.img.xz` and the unsigned update archive. A clean
   Buildroot extract applies licheerv's patches and then 0001-0003 (24 in all) [V].
-  Not yet run.
+  The first run built everything and failed in `post-image.sh`: Buildroot has no
+  `BR2_PACKAGE_HOST_LZ4`, so `external.mk` now adds `host-lz4` to the kernel's
+  dependencies. To keep a late failure from costing the hour again, the job is split:
+  `build-buildroot` runs Buildroot with `BR2_ROOTFS_POST_IMAGE_SCRIPT=` and uploads a
+  handoff (images, host tools without the cross toolchain, `gen_init_cpio`, the
+  initramfs binaries, `SOURCE_DATE_EPOCH`); `assemble-image` runs `post-image.sh`,
+  the boot checks and packaging from it and can be rerun alone. ccache (2 GB) and the
+  download cache are saved even when the build fails. The assemble stage was checked
+  locally against a stand-in handoff.
 
 ### Phase 5: Cube (Full) and PCIe by review
 
