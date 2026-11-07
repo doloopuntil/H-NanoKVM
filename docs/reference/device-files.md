@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-28
+last-checked: 2026-11-07
 source: constants in server-rust/src and kvmapp/system/init.d
 ---
 
@@ -36,6 +36,8 @@ A system update rewrites the first two; `/data` and the saved `/etc/kvm` survive
 | `certs/account-production.json`, `certs/account-staging.json` | The Let's Encrypt account key, one per CA. 0600. |
 | `app-update-pending.json` | Written when an application update is installed: the new and the previous version. `S95nanokvm` removes it once the new server is healthy, or restores `/root/old` when it is not. |
 | `firewall.json` | Firewall mode. |
+| `firewall-pending.json` | A change to Restricted or Paranoid mode waiting for confirmation: the mode to put back. It is on the root filesystem so that a crash or power loss inside the confirmation window still leaves it; the next start puts the previous mode back and removes it. A record that is not a small regular file naming known modes stays. |
+| `usb_management` | An empty file the operator creates to let the computer under control open connections to the NanoKVM over `usb0`; without it the firewall drops them in every mode. |
 | `wireguard/kvm.conf`, `wireguard/private.key` | WireGuard settings and private key (0600). |
 | `network/dns.mode`, `network/dns.servers` | DNS mode (`dhcp`/`manual`) and fixed DNS servers. |
 | `time.json` | NTP servers and time zone. |
@@ -83,4 +85,3 @@ A system update rewrites the first two; `/data` and the saved `/etc/kvm` survive
 | `/root/.tailscale/` | Tailscale state. |
 | `/tmp/hardened-syslog/messages` | Local log buffer (tmpfs, lost on reboot). |
 | `/tmp/nanokvm-server.log`, `/tmp/picoclaw.log` | Server and PicoClaw logs. |
-| `/tmp/hardened-firewall-pending.json` | A firewall change waiting for confirmation. |
