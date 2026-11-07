@@ -66,6 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     initialize_kvm();
     hdmi_idle::start();
     hid_ws::start_keyboard_led_reader();
+    hid_ws::start_persisted_mouse_jiggler();
     install_shutdown_signal_handler();
 
     tls_switch::resume_at_startup();
