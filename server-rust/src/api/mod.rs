@@ -11,6 +11,7 @@ pub mod https_cert;
 pub mod monitor;
 pub mod network;
 pub mod picoclaw;
+mod picoclaw_policy;
 pub mod picoclaw_sessions;
 pub mod script;
 pub mod storage;

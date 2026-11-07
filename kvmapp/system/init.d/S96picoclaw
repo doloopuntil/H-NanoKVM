@@ -104,6 +104,22 @@ sync_agent_profile() {
   }
 }
 
+# The backend brings the configuration under the local tool policy first and then creates this
+# file. Without it the runtime is not started: it runs as root.
+POLICY_MARKER=/tmp/hardened-picoclaw-policy
+
+wait_for_policy() {
+  tries=0
+  while [ ! -f "$POLICY_MARKER" ]; do
+    tries=$((tries + 1))
+    if [ "$tries" -gt 60 ]; then
+      echo "picoclaw not started: its configuration was not checked against the local tool policy"
+      return 1
+    fi
+    sleep 1
+  done
+}
+
 start_service() {
   setup_runtime_env || return 1
 
@@ -116,6 +132,8 @@ start_service() {
     echo "picoclaw config not found: $PICOCLAW_HOME/config.json"
     return 1
   fi
+
+  wait_for_policy || return 1
 
   # The skill is a managed copy: bring it up to date with the one that came with this image.
   # (AGENT.md is not: it holds the profile the user chose.)
