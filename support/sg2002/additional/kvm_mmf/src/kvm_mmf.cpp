@@ -717,7 +717,7 @@ static CVI_S32 _mmf_vi_start_sensor_no_isp(SAMPLE_VI_CONFIG_S *cfg)
 extern "C" CVI_S32 get_vi_fd(void);
 
 // What libisp's isp_sns_info_init sends: without it the CSI bridge size stays 0.
-static CVI_S32 _mmf_vi_set_snr_info(SAMPLE_VI_CONFIG_S *cfg)
+static CVI_S32 _mmf_vi_set_snr_info(SAMPLE_VI_CONFIG_S *cfg, const SIZE_S *size)
 {
 	static ISP_SNS_SYNC_INFO_S sync;
 
@@ -757,6 +757,14 @@ static CVI_S32 _mmf_vi_set_snr_info(SAMPLE_VI_CONFIG_S *cfg)
 			d->active_h = s->stWndRect.u32Height;
 			d->max_width = s->stMaxSize.u32Width;
 			d->max_height = s->stMaxSize.u32Height;
+		}
+		// The LT6911 library keeps reporting its first mode; use the size just read from the bridge
+		if (sync.ispCfg.frm_num > 0) {
+			struct active_size_s *d = &snr.snr_fmt.img_size[0];
+
+			d->width = d->active_w = size->u32Width;
+			d->height = d->active_h = size->u32Height;
+			d->start_x = d->start_y = 0;
 		}
 
 		memset(&ec, 0, sizeof(ec));
@@ -844,7 +852,7 @@ static CVI_S32 _mmf_vi_init_no_isp(SAMPLE_VI_CONFIG_S *cfg)
 		}
 	}
 
-	s32Ret = _mmf_vi_set_snr_info(cfg);
+	s32Ret = _mmf_vi_set_snr_info(cfg, &stSize);
 	if (s32Ret != CVI_SUCCESS) {
 		SAMPLE_PRT("set sensor info failed with %#x\n", s32Ret);
 		return s32Ret;

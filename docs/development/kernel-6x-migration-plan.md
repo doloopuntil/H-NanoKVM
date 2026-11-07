@@ -966,8 +966,11 @@ frame reaches user space.
   sensor reset as a gpiod line from the DT (`snsr-reset-gpios`), refuses
   `CVI_MIPI_GPIO_INIT` (it took a global GPIO number from user space; nothing
   calls it), and uses the clk API path (`CONFIG_CLK_SOPHGO_CV1800`) instead of raw
-  PLL register writes. `lt_int` reads an optional `lt-int-gpios` line; the DT has
-  none, so `/proc/lt_int` stays 0, as on 5.10 where `cif` held the line. `base`
+  PLL register writes. `lt_int` reads an optional `lt-int-gpios` line. PWR_GPIO1,
+  which the vendor DT gave `cif` as the sensor reset, is the LT6911 interrupt (it
+  reaches the core board over the MIPI cable; no bridge reset is wired), so the
+  Lite DT gives it to `lt_int` and `cif` gets no reset. On 5.10 `cif` held the
+  line and `/proc/lt_int` stayed 0, so `libkvm` never saw a host mode change. `base`
   reads `base_uid` once at probe from the eFuse shadow registers (with the
   node's eFuse clocks), and the eFuse dump and programming attributes are gone.
   `vo` ignores display GPIO numbers. Unchecked `mutex_lock_interruptible` calls

@@ -180,14 +180,14 @@
 		};
 	};
 
-	/* RX0N as CAM_MCLK1 and PWR_GPIO1 as the bridge reset, as the vendor U-Boot sets them */
+	/* RX0N as CAM_MCLK1 and PWR_GPIO1 as the LT6911 INT input */
 	mipi_rx_cfg: mipi-rx-cfg {
 		cam-mclk1-pins {
 			pinmux = <PINMUX(PIN_MIPIRX0N, 5)>;
 			power-source = <1800>;
 		};
 
-		snsr-reset-pins {
+		lt-int-pins {
 			pinmux = <PINMUX(PIN_PWR_GPIO1, 0)>;
 			power-source = <1800>;
 		};
@@ -328,7 +328,7 @@
 			#interrupt-cells = <2>;
 			interrupts = <SOC_PERIPHERAL_IRQ(54) IRQ_TYPE_LEVEL_HIGH>;
 			gpio-line-names =
-				"", "hdmi-bridge-reset", "", "", "", "", "", "",
+				"", "hdmi-bridge-int", "", "", "", "", "", "",
 				"", "", "", "", "", "", "", "",
 				"", "", "", "", "", "", "", "",
 				"", "", "", "", "", "", "", "";
@@ -364,7 +364,8 @@
 		interrupts = <SOC_PERIPHERAL_IRQ(10) IRQ_TYPE_LEVEL_HIGH>,
 			     <SOC_PERIPHERAL_IRQ(11) IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "csi0", "csi1";
-		snsr-reset-gpios = <&porte 1 GPIO_ACTIVE_LOW>;
+		/* The LT6911 INT reaches PWR_GPIO1 over the MIPI cable; no bridge reset is wired */
+		lt-int-gpios = <&porte 1 GPIO_ACTIVE_HIGH>;
 		resets = <&rst RST_CSIPHY0>, <&rst RST_CSIPHY1>,
 			 <&rst RST_CSIPHY0RST_APB>, <&rst RST_CSIPHY1RST_APB>;
 		reset-names = "phy0", "phy1", "phy-apb0", "phy-apb1";
