@@ -6,12 +6,15 @@ use std::{
     fs,
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
     path::{Path, PathBuf},
+    sync::{LazyLock, Mutex},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use crate::{
     AppError, Result,
     error::ApiResponse,
+    http::proxy::ClientInfo,
+    security::rate_limit::LoginRateLimiter,
     system::command::{AllowedCommand, run_allowed},
 };
 
@@ -23,8 +26,11 @@ const WIFI_PASSWORD_FILE: &str = "/etc/kvm/wifi.pass";
 const WIFI_CONNECT_FILE: &str = "/kvmapp/kvm/wifi_try_connect";
 const WIFI_STATE_FILE: &str = "/kvmapp/kvm/wifi_state";
 const WIFI_AP_PASS_FILE: &str = "/kvmapp/kvm/ap.pass";
-const MAX_WIFI_SSID_BYTES: usize = 128;
-const MAX_WIFI_PASSWORD_BYTES: usize = 256;
+// 802.11 and wpa_passphrase: an SSID of 1-32 bytes and a passphrase of 8-63 characters. The
+// supplicant refuses anything else, so a longer value would replace working credentials.
+const MAX_WIFI_SSID_BYTES: usize = 32;
+const MIN_WIFI_PASSWORD_BYTES: usize = 8;
+const MAX_WIFI_PASSWORD_BYTES: usize = 63;
 
 const DNS_MODE_MANUAL: &str = "manual";
 const DNS_MODE_DHCP: &str = "dhcp";
@@ -488,9 +494,9 @@ pub async fn connect_wifi(Json(req): Json<ConnectWifiReq>) -> Result<impl IntoRe
     Ok(Json(ApiResponse::<()>::ok_empty()))
 }
 
-pub async fn verify_ap_login(headers: HeaderMap) -> Result<impl IntoResponse> {
+pub async fn verify_ap_login(client: ClientInfo, headers: HeaderMap) -> Result<impl IntoResponse> {
     ensure_wifi_ap_mode()?;
-    if !verify_ap_key(&headers) {
+    if !check_ap_key(&client.source_ip(), &headers)? {
         return Ok(Json(ApiResponse::<()>::err(-4, "unauthorized")));
     }
 
@@ -498,11 +504,12 @@ pub async fn verify_ap_login(headers: HeaderMap) -> Result<impl IntoResponse> {
 }
 
 pub async fn connect_wifi_no_auth(
+    client: ClientInfo,
     headers: HeaderMap,
     Json(req): Json<ConnectWifiReq>,
 ) -> Result<impl IntoResponse> {
     ensure_wifi_ap_mode()?;
-    if !verify_ap_key(&headers) {
+    if !check_ap_key(&client.source_ip(), &headers)? {
         return Ok(Json(ApiResponse::<()>::err(-4, "unauthorized")));
     }
 
@@ -541,6 +548,69 @@ fn ensure_wifi_ap_mode() -> Result<()> {
         return Err(AppError::BadRequest("invalid mode".to_string()));
     }
     Ok(())
+}
+
+// The AP key is a short secret on an endpoint without a session: 5 wrong keys lock one source
+// and 20 lock every source, each for 10 minutes. Every AP client gets its own address, so only
+// the shared budget stops guessing by rotating addresses.
+const AP_KEY_SOURCE_FAILURES: u32 = 5;
+const AP_KEY_TOTAL_FAILURES: u32 = 20;
+const AP_KEY_LOCKOUT_SECS: u64 = 600;
+const AP_KEY_LIMIT_USER: &str = "ap-key";
+const AP_KEY_ALL_SOURCES: &str = "all";
+
+struct ApKeyLimits {
+    per_source: LoginRateLimiter,
+    all: LoginRateLimiter,
+}
+
+impl ApKeyLimits {
+    fn new() -> Self {
+        Self {
+            per_source: LoginRateLimiter::new(AP_KEY_SOURCE_FAILURES, AP_KEY_LOCKOUT_SECS),
+            all: LoginRateLimiter::new(AP_KEY_TOTAL_FAILURES, AP_KEY_LOCKOUT_SECS),
+        }
+    }
+
+    fn locked(&mut self, source: &str) -> bool {
+        self.per_source.check(source, AP_KEY_LIMIT_USER)
+            || self.all.check(AP_KEY_ALL_SOURCES, AP_KEY_LIMIT_USER)
+    }
+
+    fn failed(&mut self, source: &str) {
+        self.per_source.record_failure(source, AP_KEY_LIMIT_USER);
+        self.all
+            .record_failure(AP_KEY_ALL_SOURCES, AP_KEY_LIMIT_USER);
+    }
+
+    // A right key clears its own source only: the shared budget is what stops rotation.
+    fn accepted(&mut self, source: &str) {
+        self.per_source.record_success(source, AP_KEY_LIMIT_USER);
+    }
+}
+
+static AP_KEY_LIMITS: LazyLock<Mutex<ApKeyLimits>> =
+    LazyLock::new(|| Mutex::new(ApKeyLimits::new()));
+
+fn ap_key_limits() -> std::sync::MutexGuard<'static, ApKeyLimits> {
+    AP_KEY_LIMITS.lock().unwrap_or_else(|err| err.into_inner())
+}
+
+/// Whether the key is right, or an error while the source is locked out.
+fn check_ap_key(source: &str, headers: &HeaderMap) -> Result<bool> {
+    if ap_key_limits().locked(source) {
+        return Err(AppError::RateLimited(
+            "too many wrong access point keys, try again later".to_string(),
+        ));
+    }
+    let accepted = verify_ap_key(headers);
+    let mut limits = ap_key_limits();
+    if accepted {
+        limits.accepted(source);
+    } else {
+        limits.failed(source);
+    }
+    Ok(accepted)
 }
 
 fn verify_ap_key(headers: &HeaderMap) -> bool {
@@ -606,7 +676,7 @@ fn validate_wifi_ssid(ssid: &str) -> Result<String> {
 }
 
 fn validate_wifi_password(password: &str) -> Result<String> {
-    if password.is_empty()
+    if password.len() < MIN_WIFI_PASSWORD_BYTES
         || password.len() > MAX_WIFI_PASSWORD_BYTES
         || password.chars().any(char::is_control)
     {
@@ -1790,6 +1860,50 @@ fn command_error(message: &str, output: crate::system::command::CommandOutput) -
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_source_is_locked_after_five_wrong_ap_keys_and_everyone_after_twenty() {
+        let mut limits = super::ApKeyLimits::new();
+        for _ in 0..4 {
+            limits.failed("192.168.4.2");
+        }
+        assert!(!limits.locked("192.168.4.2"));
+        limits.failed("192.168.4.2");
+        assert!(limits.locked("192.168.4.2"));
+        assert!(!limits.locked("192.168.4.3"));
+        // rotating through addresses is stopped by the shared budget
+        for host in 10..25 {
+            limits.failed(&format!("192.168.4.{host}"));
+        }
+        assert!(limits.locked("192.168.4.200"));
+    }
+
+    #[test]
+    fn a_right_ap_key_clears_its_source_but_not_the_shared_budget() {
+        let mut limits = super::ApKeyLimits::new();
+        for _ in 0..4 {
+            limits.failed("192.168.4.2");
+        }
+        limits.accepted("192.168.4.2");
+        limits.failed("192.168.4.2");
+        assert!(!limits.locked("192.168.4.2"));
+        for host in 10..25 {
+            limits.failed(&format!("192.168.4.{host}"));
+        }
+        limits.accepted("192.168.4.2");
+        assert!(limits.locked("192.168.4.2"));
+    }
+
+    #[test]
+    fn wifi_credentials_stay_within_what_the_supplicant_takes() {
+        use super::{validate_wifi_password as pass, validate_wifi_ssid as ssid};
+        assert!(ssid(&"s".repeat(32)).is_ok());
+        assert!(ssid(&"s".repeat(33)).is_err());
+        assert!(ssid("").is_err());
+        assert!(pass(&"p".repeat(8)).is_ok());
+        assert!(pass(&"p".repeat(63)).is_ok());
+        assert!(pass(&"p".repeat(7)).is_err());
+        assert!(pass(&"p".repeat(64)).is_err());
+    }
     #[test]
     fn dns_response_reports_ipv4_and_dns_modes_separately() {
         let rsp = DnsRsp {
