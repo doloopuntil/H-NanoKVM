@@ -1,6 +1,6 @@
 #!/bin/sh
-# Assembles the 6.18 boot partition (boot.vfat) in BINARIES_DIR: the FIPs, boot.scr and a
-# FIT (boot.itb) with kernel, DTB and the recovery initramfs.
+# Assembles the 6.18 SD image in BINARIES_DIR: boot.vfat (the FIPs, boot.scr and a FIT,
+# boot.itb, with kernel, DTB and the recovery initramfs) and rootfs.ext4.
 set -eu
 
 BINARIES_DIR=$1
@@ -57,6 +57,6 @@ fi
 genimage \
 	--rootpath "$INPUT" \
 	--tmppath "$GENIMAGE_TMP" \
-	--inputpath "$INPUT" \
+	--inputpath "$BINARIES_DIR" \
 	--outputpath "$BINARIES_DIR" \
-	--config "$BOARD_DIR/genimage-boot.cfg"
+	--config "$BOARD_DIR/genimage.cfg"

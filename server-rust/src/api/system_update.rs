@@ -39,7 +39,7 @@ const OS_RELEASE_FILE: &str = "/etc/os-release";
 const DEVICE_MODEL_FILE: &str = "/proc/device-tree/model";
 const HARDWARE_VERSION_FILE: &str = "/etc/kvm/hw";
 const DEFAULT_SYSTEM_VERSION: &str = "0.0.0-stock";
-const DEFAULT_SYSTEM_TARGET: &str = "sg2002-licheervnano-sd";
+const DEFAULT_SYSTEM_TARGET: &str = "hnanokvm-sg2002-sd";
 const GITHUB_SYSTEM_LATEST_JSON: &str = "https://github.com/woffko/Hardened_NanoKVM/releases/download/hardened-system-stable/system-latest.json";
 const GITHUB_SYSTEM_DOWNLOAD_PREFIX: &str =
     "https://github.com/woffko/Hardened_NanoKVM/releases/download/hardened-system-";
@@ -3753,7 +3753,7 @@ mod tests {
   "format": 1,
   "channel": "stable",
   "version": "0.1.0",
-  "target": "sg2002-licheervnano-sd",
+  "target": "hnanokvm-sg2002-sd",
   "name": "hardened-nanokvm-system-0.1.0.tar.gz",
   "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "sha512": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==",
@@ -3773,7 +3773,7 @@ mod tests {
         let snake: PersistedSystemVersion = serde_json::from_str(
             r#"{
   "version": "0.1.2-raw.1",
-  "target": "sg2002-licheervnano-sd",
+  "target": "hnanokvm-sg2002-sd",
   "base_version": "2026-01-05-1_4_1.img",
   "kernel_version": "5.10.4-tag-",
   "rootfs_version": "Buildroot 2023.11.2",
@@ -3793,7 +3793,7 @@ mod tests {
         let camel: PersistedSystemVersion = serde_json::from_str(
             r#"{
   "version": "0.1.2-raw.1",
-  "target": "sg2002-licheervnano-sd",
+  "target": "hnanokvm-sg2002-sd",
   "baseVersion": "2026-01-05-1_4_1.img",
   "kernelVersion": "5.10.4-tag-",
   "rootfsVersion": "Buildroot 2023.11.2",
