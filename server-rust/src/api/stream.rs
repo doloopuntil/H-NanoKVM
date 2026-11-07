@@ -4,7 +4,7 @@ use axum::{
     Json,
     body::Body,
     extract::{
-        Query, State,
+        Extension, Query, State,
         ws::{Message, WebSocket, WebSocketUpgrade},
     },
     http::{Response, header},
@@ -32,7 +32,10 @@ use crate::{
     error::ApiResponse,
     ffi::kvm,
     hdmi_idle,
-    http::proxy::ClientInfo,
+    http::{
+        middleware::{CurrentSession, TransportSession},
+        proxy::ClientInfo,
+    },
     state::AppState,
     ws::{hid as hid_ws, origin::validate_ws_origin},
 };
@@ -476,17 +479,26 @@ pub struct StopFrameDetectReq {
     pub duration: Option<u64>,
 }
 
-pub async fn mjpeg_stream() -> impl IntoResponse {
+pub async fn mjpeg_stream(
+    State(state): State<AppState>,
+    current: Option<Extension<CurrentSession>>,
+) -> Result<impl IntoResponse> {
+    // The stream lives as long as the login that opened it.
+    let session = TransportSession::capture(&state.config, current)?;
     let stream = stream! {
         let _guard = MJPEG_FANOUT.add_client();
         let mut rx = MJPEG_FANOUT.subscribe();
         start_mjpeg_producer();
 
         loop {
-            let frame = match rx.recv().await {
-                Ok(frame) => frame,
-                Err(broadcast::error::RecvError::Lagged(_)) => continue,
-                Err(broadcast::error::RecvError::Closed) => break,
+            let frame = tokio::select! {
+                biased;
+                _ = session.ended() => break,
+                frame = rx.recv() => match frame {
+                    Ok(frame) => frame,
+                    Err(broadcast::error::RecvError::Lagged(_)) => continue,
+                    Err(broadcast::error::RecvError::Closed) => break,
+                },
             };
             yield Ok::<Bytes, io::Error>(frame.header);
             yield Ok::<Bytes, io::Error>(frame.data);
@@ -494,7 +506,7 @@ pub async fn mjpeg_stream() -> impl IntoResponse {
         }
     };
 
-    Response::builder()
+    Ok(Response::builder()
         .header(
             header::CONTENT_TYPE,
             "multipart/x-mixed-replace; boundary=frame",
@@ -503,16 +515,18 @@ pub async fn mjpeg_stream() -> impl IntoResponse {
         .header(header::CONNECTION, "keep-alive")
         .header(header::PRAGMA, "no-cache")
         .body(Body::from_stream(stream))
-        .expect("mjpeg response builder")
+        .expect("mjpeg response builder"))
 }
 
 pub async fn h264_direct_stream(
     State(state): State<AppState>,
     client: ClientInfo,
+    current: Option<Extension<CurrentSession>>,
     headers: axum::http::HeaderMap,
     Query(query): Query<HashMap<String, String>>,
     ws: WebSocketUpgrade,
 ) -> Result<impl IntoResponse> {
+    let session = TransportSession::capture(&state.config, current)?;
     if !validate_ws_origin(&headers, &state.config, &client) {
         return Err(AppError::Forbidden("invalid websocket origin".to_string()));
     }
@@ -525,11 +539,23 @@ pub async fn h264_direct_stream(
 
     Ok(ws
         .max_message_size(MAX_CONTROL_BYTES)
-        .on_upgrade(move |socket| handle_h264_direct_socket(socket, window)))
+        .on_upgrade(move |socket| handle_h264_direct_socket(socket, window, session)))
 }
 
-async fn handle_h264_direct_socket(socket: WebSocket, window: Option<usize>) {
-    serve_h264_direct(socket, window, subscribe_h264(H264ConsumerKind::Direct)).await;
+async fn handle_h264_direct_socket(
+    socket: WebSocket,
+    window: Option<usize>,
+    session: TransportSession,
+) {
+    if !session.is_active() {
+        return;
+    }
+    // Dropping the serving future when the login ends closes the socket and the subscription.
+    tokio::select! {
+        biased;
+        _ = session.ended() => {}
+        _ = serve_h264_direct(socket, window, subscribe_h264(H264ConsumerKind::Direct)) => {}
+    }
 }
 
 async fn serve_h264_direct(
