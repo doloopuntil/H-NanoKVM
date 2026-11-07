@@ -25,9 +25,11 @@ async fn the_gateway_socket_refuses_a_missing_or_foreign_origin_before_any_effec
         .with_state(state.clone())
         // The handler reads the client address from the connection, as in the real server.
         .layer(from_fn(|mut request: Request, next: Next| async move {
-            request.extensions_mut().insert(ConnectInfo(
-                crate::http::tls::ClientAddr("127.0.0.1:9".parse().unwrap()),
-            ));
+            request
+                .extensions_mut()
+                .insert(ConnectInfo(crate::http::tls::ClientAddr(
+                    "127.0.0.1:9".parse().unwrap(),
+                )));
             next.run(request).await
         }));
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();

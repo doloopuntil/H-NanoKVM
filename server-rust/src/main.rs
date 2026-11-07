@@ -4,7 +4,7 @@ use axum::{
     response::Redirect,
 };
 use nanokvm_rust_server::{
-    api::{cpu_clock, monitor, tls_switch, vm},
+    api::{cpu_clock, monitor, picoclaw, tls_switch, vm},
     config::Config,
     ffi::kvm,
     hdmi_idle,
@@ -59,6 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     config.log_runtime_warnings();
     install_runtime_boot_scripts();
     install_runtime_update_trust(&config);
+    picoclaw::enforce_policy_at_start();
     cpu_clock::reconcile_at_startup();
     vm::record_swap_at_startup();
     monitor::start_sampler();
