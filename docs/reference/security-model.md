@@ -141,8 +141,8 @@ Known exceptions:
   failed or unknown-user connections, counted per /64 for IPv6; `sshd -t` checks them first and
   an sshd that refuses them still starts without them.
 - ntpd is a client only: the default restriction adds `noserve`, each configured server gets its
-  own `restrict source` entry, and a rootfs patch stops ntpd dereferencing a NULL interface when
-  a local address cannot be bound.
+  own `restrict source` entry. The NULL-interface crash fix woffko added as a rootfs patch is not
+  needed: Buildroot 2026.05.1 already carries it.
 - The DHCPv6 hook lets only an address literal reach `ip` or a `nameserver` line and only domain
   names reach `search`, and it removes the `/128` it added when the lease ends or changes.
 - The root hwmon helper writes its snapshot through a random exclusive temporary file in `/tmp`.
