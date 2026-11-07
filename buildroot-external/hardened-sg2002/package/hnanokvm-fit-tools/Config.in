@@ -1,0 +1,8 @@
+config BR2_PACKAGE_HOST_HNANOKVM_FIT_TOOLS
+	bool "host tools for the H-NanoKVM boot FIT"
+	select BR2_PACKAGE_HOST_UBOOT_TOOLS
+	select BR2_PACKAGE_HOST_UBOOT_TOOLS_FIT_SUPPORT
+	help
+	  Builds what linux-6.18/post-image.sh needs to pack boot.itb:
+	  host lz4 for the kernel and mkimage. Buildroot has no option
+	  for host lz4 of its own.
