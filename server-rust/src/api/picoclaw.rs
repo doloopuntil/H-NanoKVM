@@ -39,7 +39,7 @@ use url::Url;
 
 use crate::{
     AppError, Result,
-    api::{hid, picoclaw_sessions, stream},
+    api::{hid, picoclaw_policy, picoclaw_sessions, stream},
     auth::token::random_token,
     error::ApiResponse,
     http::proxy::ClientInfo,
@@ -3369,12 +3369,6 @@ fn ensure_startup_defaults() -> Result<()> {
         .raw
         .as_object_mut()
         .ok_or_else(|| AppError::Internal("picoclaw config root is not an object".to_string()))?;
-    ensure_object_path(raw, &["agents", "defaults"])
-        .insert("restrict_to_workspace".to_string(), JsonValue::Bool(false));
-    ensure_object_path(raw, &["agents", "defaults"]).insert(
-        "allow_read_outside_workspace".to_string(),
-        JsonValue::Bool(true),
-    );
     ensure_object_path(raw, &["gateway"]).insert(
         "host".to_string(),
         JsonValue::String(DEFAULT_GATEWAY_HOST.to_string()),
@@ -3412,8 +3406,51 @@ fn ensure_startup_defaults() -> Result<()> {
     );
     let headers = ensure_object_path(raw, &["tools", "mcp", "servers", "nanokvm", "headers"]);
     headers.insert(INTERNAL_TOKEN_HEADER.to_string(), JsonValue::String(token));
+    // The runtime is root: it keeps no shell, no hardware buses and no file outside its workspace.
+    picoclaw_policy::enforce(&mut doc.raw, &picoclaw_home(&doc.config_path))?;
     save_json(&doc.config_path, &doc.raw)?;
-    save_yaml(&doc.security_path, &doc.security)
+    save_yaml(&doc.security_path, &doc.security)?;
+    mark_policy_applied();
+    Ok(())
+}
+
+fn picoclaw_home(config_path: &Path) -> PathBuf {
+    config_path
+        .parent()
+        .unwrap_or_else(|| Path::new("/root/.picoclaw"))
+        .to_path_buf()
+}
+
+// S96picoclaw does not launch the runtime until this file exists, so a boot cannot start it on a
+// configuration from before the policy.
+const POLICY_MARKER: &str = "/tmp/hardened-picoclaw-policy";
+
+fn mark_policy_applied() {
+    let _ = fs::write(POLICY_MARKER, b"ok\n");
+}
+
+/// Brings an existing configuration under the local tool policy at backend start.
+pub fn enforce_policy_at_start() {
+    let _ = fs::remove_file(POLICY_MARKER);
+    let applied = (|| -> Result<()> {
+        if !resolve_config_path()?.exists() {
+            return Ok(());
+        }
+        let mut doc = load_config_document()?;
+        let before = doc.raw.clone();
+        picoclaw_policy::enforce(&mut doc.raw, &picoclaw_home(&doc.config_path))?;
+        if doc.raw != before {
+            save_json(&doc.config_path, &doc.raw)?;
+        }
+        Ok(())
+    })();
+    match applied {
+        Ok(()) => mark_policy_applied(),
+        Err(err) => tracing::warn!(
+            error = %err,
+            "picoclaw is not started: its configuration lacks the local tool policy"
+        ),
+    }
 }
 
 // PicoClaw logs a security warning on every start while the channel's allow_from is empty. The
