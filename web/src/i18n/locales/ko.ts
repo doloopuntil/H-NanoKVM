@@ -276,7 +276,11 @@ const ko = {
       runFailed: '실행 실패',
       delDesc: '이 파일을 정말로 삭제합니까?',
       delete: '삭제',
-      close: '닫기'
+      close: '닫기',
+      unlockDesc:
+        '스크립트는 NanoKVM에서 root로 실행됩니다. 스크립트를 업로드하거나 실행하려면 웹 계정 비밀번호를 입력하세요.',
+      terminalRequired:
+        '스크립트에는 웹 터미널 접근이 필요합니다. 먼저 설정에서 터미널을 활성화하세요.'
     },
     terminal: {
       title: '터미널',

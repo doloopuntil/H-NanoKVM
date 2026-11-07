@@ -283,7 +283,11 @@ const it = {
       runFailed: 'Esecuzione non riuscita',
       delDesc: 'Sei sicuro di voler eliminare questo file?',
       delete: 'Elimina',
-      close: 'Chiudi'
+      close: 'Chiudi',
+      unlockDesc:
+        "Gli script vengono eseguiti come root sul NanoKVM. Inserisci la password dell'account web per caricarne o eseguirne uno.",
+      terminalRequired:
+        "Gli script richiedono l'accesso al terminale web. Attiva prima il terminale nelle impostazioni."
     },
     terminal: {
       title: 'Terminale',

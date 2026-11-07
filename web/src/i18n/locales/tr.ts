@@ -278,7 +278,11 @@ const tr = {
       runFailed: 'Çalıştırma başarısız oldu',
       delDesc: 'Bu dosyayı silmek istediğinizden emin misiniz?',
       delete: 'Sil',
-      close: 'Kapat'
+      close: 'Kapat',
+      unlockDesc:
+        'Betikler NanoKVM üzerinde root olarak çalışır. Bir betik yüklemek veya çalıştırmak için web hesabı parolasını girin.',
+      terminalRequired:
+        'Betikler web terminali erişimi gerektirir. Önce ayarlardan terminali etkinleştirin.'
     },
     terminal: {
       title: 'Uçbirim',

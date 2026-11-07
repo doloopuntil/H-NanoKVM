@@ -275,7 +275,11 @@ const et = {
       runFailed: 'Käivitamine nurjus',
       delDesc: 'Kas oled kindel, et soovid selle faili kustutada?',
       delete: 'Kustuta',
-      close: 'Sulge'
+      close: 'Sulge',
+      unlockDesc:
+        'Skriptid töötavad NanoKVM-is root-õigustes. Skripti üleslaadimiseks või käivitamiseks sisestage veebikonto parool.',
+      terminalRequired:
+        'Skriptid vajavad juurdepääsu veebiterminalile. Lubage esmalt terminal seadetes.'
     },
     terminal: {
       title: 'Terminal',

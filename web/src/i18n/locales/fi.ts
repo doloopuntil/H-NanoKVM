@@ -282,7 +282,11 @@ const fi = {
       runFailed: 'Suoritus epäonnistui',
       delDesc: 'Haluatko varmasti poistaa tämän tiedoston?',
       delete: 'Poista',
-      close: 'Sulje'
+      close: 'Sulje',
+      unlockDesc:
+        'Skriptit suoritetaan NanoKVM:ssä root-oikeuksin. Anna verkkotilin salasana ladataksesi tai suorittaaksesi skriptin.',
+      terminalRequired:
+        'Skriptit tarvitsevat pääsyn verkkopäätteeseen. Ota pääte ensin käyttöön asetuksista.'
     },
     terminal: {
       title: 'Pääte',

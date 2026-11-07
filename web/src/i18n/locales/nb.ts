@@ -282,7 +282,11 @@ const nb = {
       runFailed: 'Kjøring feilet',
       delDesc: 'Er du sikker på at du vil slette denne filen?',
       delete: 'Slett',
-      close: 'Lukk'
+      close: 'Lukk',
+      unlockDesc:
+        'Skript kjøres som root på NanoKVM. Skriv inn passordet til nettkontoen for å laste opp eller kjøre et skript.',
+      terminalRequired:
+        'Skript krever tilgang til nettterminalen. Aktiver terminalen i innstillingene først.'
     },
     terminal: {
       title: 'Terminal',

@@ -283,7 +283,11 @@ const de = {
       runFailed: 'Ausführung fehlgeschlagen',
       delDesc: 'Möchten Sie diese Datei wirklich löschen?',
       delete: 'Löschen',
-      close: 'Schliessen'
+      close: 'Schliessen',
+      unlockDesc:
+        'Skripte laufen auf dem NanoKVM als root. Geben Sie das Passwort des Webkontos ein, um ein Skript hochzuladen oder auszuführen.',
+      terminalRequired:
+        'Skripte benötigen Zugriff auf das Web-Terminal. Aktivieren Sie zuerst das Terminal in den Einstellungen.'
     },
     terminal: {
       title: 'Terminal',

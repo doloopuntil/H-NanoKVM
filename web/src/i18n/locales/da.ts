@@ -279,7 +279,11 @@ const da = {
       runFailed: 'Kørsel mislykkedes',
       delDesc: 'Er du sikker på at du vil slette denne fil?',
       delete: 'Slet',
-      close: 'Luk'
+      close: 'Luk',
+      unlockDesc:
+        'Scripts kører som root på NanoKVM. Indtast adgangskoden til webkontoen for at uploade eller køre et script.',
+      terminalRequired:
+        'Scripts kræver adgang til webterminalen. Aktivér først terminalen i indstillingerne.'
     },
     terminal: {
       title: 'Terminal',

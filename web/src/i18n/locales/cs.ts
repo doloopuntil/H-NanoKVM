@@ -279,7 +279,11 @@ const cz = {
       runFailed: 'Spuštění se nezdařilo',
       delDesc: 'Opravdu chcete tento soubor smazat?',
       delete: 'Smazat',
-      close: 'Zavřít'
+      close: 'Zavřít',
+      unlockDesc:
+        'Skripty běží na NanoKVM jako root. Zadejte heslo webového účtu, abyste mohli skript nahrát nebo spustit.',
+      terminalRequired:
+        'Skripty vyžadují přístup k webovému terminálu. Nejprve terminál zapněte v nastavení.'
     },
     terminal: {
       title: 'Terminál',

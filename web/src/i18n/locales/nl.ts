@@ -283,7 +283,11 @@ const nl = {
       runFailed: 'Uitvoeren mislukt',
       delDesc: 'Weet u zeker dat u dit bestand wilt verwijderen?',
       delete: 'Verwijderen',
-      close: 'Sluiten'
+      close: 'Sluiten',
+      unlockDesc:
+        'Scripts draaien als root op de NanoKVM. Voer het wachtwoord van het webaccount in om een script te uploaden of uit te voeren.',
+      terminalRequired:
+        'Scripts hebben toegang tot de webterminal nodig. Schakel eerst de terminal in bij de instellingen.'
     },
     terminal: {
       title: 'Terminal',

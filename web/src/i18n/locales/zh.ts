@@ -265,7 +265,11 @@ const zh = {
       runFailed: '运行失败',
       delDesc: '确定要删除该文件吗？',
       delete: '删除',
-      close: '关闭'
+      close: '关闭',
+      unlockDesc:
+        '脚本在 NanoKVM 上以 root 身份运行。请输入 Web 账户密码以上传或运行脚本。',
+      terminalRequired:
+        '脚本需要 Web 终端访问权限。请先在设置中启用终端。'
     },
     terminal: {
       title: '终端',
