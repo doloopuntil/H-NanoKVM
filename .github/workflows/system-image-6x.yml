@@ -416,8 +416,8 @@ jobs:
     timeout-minutes: 360
     env:
       RUN_ROOT: ${{ github.workspace }}/build/rc12-run
-      EXPECTED_SYSTEM_VERSION: 0.5.0
-      EXPECTED_KVMAPP_VERSION: 2.1.0
+      EXPECTED_SYSTEM_VERSION: 1.0.0
+      EXPECTED_KVMAPP_VERSION: 3.0.0
       EXPECTED_KERNEL_RELEASE: 6.18.29
       EXPECTED_SECURITY_PATCH_LEVEL: Buildroot 2026.05.1 security maintenance Linux 6.18.29
       NANOKVM_KVMAPP_SOURCE_DIR: ${{ github.workspace }}/build/kvmapp-rust/kvmapp

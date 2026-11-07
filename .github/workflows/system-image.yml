@@ -772,7 +772,7 @@ jobs:
     env:
       RUN_ROOT: ${{ github.workspace }}/build/rc12-run
       EXPECTED_SYSTEM_VERSION: 0.4.0
-      EXPECTED_KVMAPP_VERSION: 2.1.0
+      EXPECTED_KVMAPP_VERSION: 3.0.0
       EXPECTED_KERNEL_RELEASE: 5.10.265-tag-
       EXPECTED_SECURITY_PATCH_LEVEL: Buildroot 2026.05.1 security maintenance Linux 5.10.265 SG2002 vendor port
       NANOKVM_KVMAPP_SOURCE_DIR: ${{ github.workspace }}/build/kvmapp-rust/kvmapp
