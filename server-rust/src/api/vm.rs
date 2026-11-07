@@ -496,6 +496,10 @@ pub async fn disable_hdmi() -> Result<impl IntoResponse> {
 }
 
 pub async fn reset_hdmi() -> Result<impl IntoResponse> {
+    // A capture the user turned off stays off: a reset must not persist "enabled" over it.
+    if Path::new(HDMI_DISABLE_FILE).exists() {
+        return Err(AppError::BadRequest("HDMI capture is disabled".to_string()));
+    }
     // A lost client must not leave HDMI capture switched off.
     stream::owned_interval(
         || kvm::set_hdmi(false).map(drop),
