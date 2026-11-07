@@ -10,6 +10,26 @@ type ScreenFit = {
 
 const FALLBACK_SCREEN_WIDTH = 1920;
 const FALLBACK_SCREEN_HEIGHT = 1080;
+const SOURCE_SIZE_POLL_MS = 1000;
+
+// The frame size the player shows: Auto follows the HDMI input, so its aspect can change.
+function readSourceSize(container: HTMLElement): Resolution | null {
+  const media = container.querySelector('#screen');
+  if (media instanceof HTMLVideoElement && media.videoWidth > 0 && media.videoHeight > 0) {
+    return { width: media.videoWidth, height: media.videoHeight };
+  }
+  if (media instanceof HTMLImageElement && media.naturalWidth > 0 && media.naturalHeight > 0) {
+    return { width: media.naturalWidth, height: media.naturalHeight };
+  }
+  if (media instanceof HTMLCanvasElement) {
+    const width = Number(media.dataset.mediaWidth);
+    const height = Number(media.dataset.mediaHeight);
+    if (width > 0 && height > 0) {
+      return { width, height };
+    }
+  }
+  return null;
+}
 
 export function useScreenFit(
   resolution: Resolution | null,
@@ -18,6 +38,23 @@ export function useScreenFit(
 ): ScreenFit {
   const containerRef = useRef<HTMLDivElement>(null);
   const [fitScale, setFitScale] = useState(1);
+  const [sourceSize, setSourceSize] = useState<Resolution | null>(null);
+  const isAuto = !resolution?.width || !resolution?.height;
+  const size = isAuto ? sourceSize : resolution;
+
+  useEffect(() => {
+    if (!isAuto) return;
+
+    const timer = window.setInterval(() => {
+      const container = containerRef.current;
+      const next = container ? readSourceSize(container) : null;
+      if (!next) return;
+      setSourceSize((current) =>
+        current?.width === next.width && current?.height === next.height ? current : next
+      );
+    }, SOURCE_SIZE_POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [isAuto]);
 
   useEffect(() => {
     function updateFitScale() {
@@ -25,9 +62,8 @@ export function useScreenFit(
         return;
       }
 
-      const width = resolution?.width && resolution.width > 0 ? resolution.width : FALLBACK_SCREEN_WIDTH;
-      const height =
-        resolution?.height && resolution.height > 0 ? resolution.height : FALLBACK_SCREEN_HEIGHT;
+      const width = size?.width && size.width > 0 ? size.width : FALLBACK_SCREEN_WIDTH;
+      const height = size?.height && size.height > 0 ? size.height : FALLBACK_SCREEN_HEIGHT;
       const rect = containerRef.current.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) {
         return;
@@ -57,7 +93,7 @@ export function useScreenFit(
       observer.disconnect();
       window.removeEventListener('orientationchange', updateFitScale);
     };
-  }, [resolution?.height, resolution?.width]);
+  }, [size?.height, size?.width]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -71,15 +107,14 @@ export function useScreenFit(
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [fitScale, resolution?.height, resolution?.width, videoScale]);
+  }, [fitScale, size?.height, size?.width, videoScale]);
 
   const mediaStyle = useMemo<CSSProperties>(() => {
     const scale = fitScale * videoScale;
-    const width = resolution?.width && resolution.width > 0 ? resolution.width : FALLBACK_SCREEN_WIDTH;
-    const height =
-      resolution?.height && resolution.height > 0 ? resolution.height : FALLBACK_SCREEN_HEIGHT;
+    const width = size?.width && size.width > 0 ? size.width : FALLBACK_SCREEN_WIDTH;
+    const height = size?.height && size.height > 0 ? size.height : FALLBACK_SCREEN_HEIGHT;
 
-    if (!resolution?.width || !resolution?.height) {
+    if (!size?.width || !size?.height) {
       return {
         ...fallbackStyle,
         width: Math.max(1, Math.round(width * scale)),
@@ -91,11 +126,11 @@ export function useScreenFit(
     }
 
     return {
-      width: Math.max(1, Math.round(resolution.width * scale)),
-      height: Math.max(1, Math.round(resolution.height * scale)),
+      width: Math.max(1, Math.round(size.width * scale)),
+      height: Math.max(1, Math.round(size.height * scale)),
       objectFit: 'cover'
     };
-  }, [fallbackStyle, fitScale, resolution, videoScale]);
+  }, [fallbackStyle, fitScale, size, videoScale]);
 
   return { containerRef, mediaStyle };
 }

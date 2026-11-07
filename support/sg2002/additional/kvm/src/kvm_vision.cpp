@@ -266,6 +266,9 @@ static bool restart_camera_from_worker()
     bool restarted = false;
     if (cam != NULL && !stop_threads.load(std::memory_order_acquire)) {
         cam->restart(default_vpss_width, default_vpss_height, image::FMT_YVU420SP);
+        // The restart resets the output size; the next read applies the requested one
+        kvmv_cfg.vpss_width = default_vpss_width;
+        kvmv_cfg.vpss_height = default_vpss_height;
         restarted = true;
     }
 
@@ -1948,6 +1951,8 @@ uint8_t check_kvmv(uint8_t _try_num)
         kvmv_cfg.reopen_cam_flag = 0;
         // cam->open(kvmv_cfg.vpss_width, kvmv_cfg.vpss_height, image::FMT_YVU420SP, 3);
         cam->restart(default_vpss_width, default_vpss_height, image::FMT_YVU420SP);
+        kvmv_cfg.vpss_width = default_vpss_width;
+        kvmv_cfg.vpss_height = default_vpss_height;
         debug("[kvmv]vi size changed, try again\n");
         return 1;
     }
