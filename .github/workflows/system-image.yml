@@ -884,7 +884,7 @@ jobs:
 
       - name: Build Hardened kvmapp bridge
         run: |
-          cargo test --manifest-path server-rust/Cargo.toml
+          cargo test --locked --manifest-path server-rust/Cargo.toml
           corepack pnpm --dir web install --frozen-lockfile
           corepack pnpm --dir web build
           server-rust/scripts/build-linked-libkvm.sh
