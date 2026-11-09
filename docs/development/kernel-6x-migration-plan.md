@@ -567,7 +567,9 @@ apart (licheerv's overlap bug). Pick the compression by measuring boot time.
   `switch_root`. For 6.18, either rebuild it as a small source-built initramfs in
   the FIT (`USB_CONFIGFS_MASS_STORAGE` built in, no `otg_role`), or do it in U-Boot
   with `ums` and a GPIO check in the boot script, and boot without an initramfs.
-  Also keep the password-reset BOOT-button hold (handled in `kvm_system`).
+  There is no password-reset BOOT-button hold: upstream of woffko's tree has one, and
+  woffko's removed it on purpose. We follow that; lost credentials mean reflashing
+  (`docs/guide/install.md`).
 - **FSBL.** Port `fsbl-boot-guard.patch` and `fsbl-overdrive-clocks.patch` to the
   licheerv FSBL commit. licheerv hard-codes `OD_CLK_SEL=y`; keep the standard and
   overdrive FIP pair and the existing `cpu.overdrive` flow. The boot guard uses
@@ -1127,6 +1129,35 @@ for `/dev/mem` and the 6.18 hardening settings).
 
 Exit: a CI-built image flashes, boots and passes the Phase 1-3 checks unattended.
 
+**Added step: first setup approved by the user key** (decided 2026-11-08; not started).
+Until the first account exists, anyone who can reach the device can create it, and the
+account is root-equivalent. woffko's claim token (`b50fefe5`) was not taken because it is
+readable only on the serial console, so a unit without a UART could not finish setup;
+HTTP stays the first-boot protocol. Physical presence can come from the user key instead,
+which every unit has (the Lite has Reset and a user button):
+
+- While no account exists, the first-setup form says to press the user button briefly.
+  The backend opens `/dev/input` read-only (an input device allows several readers, so
+  `kvm_system` is untouched), and a short press opens a five-minute approval window that
+  the next account creation consumes. Without it the request is refused.
+- A press of 1.5 s or longer starts the Wi-Fi setup page in `kvm_system`
+  (`thread_key_handle`, `KEY_LONG_PRESS`). Raise that to 3 s (3000 ms) so that any press
+  under 3 s is the first-setup approval and the prompt needs no "press briefly" caveat.
+  Update the Wi-Fi page text and guide wherever the hold time is stated.
+- Find the device by name (section 6.4 already says to look it up, not to assume
+  `event0`) and share that lookup with `kvm_system`. If the unit has no such device,
+  skip the requirement: hardware decides that, so a remote caller cannot trigger it.
+- Needs an API route and status, a first-setup form change, strings in all 26 locales,
+  and tests. Check on the Lite that the key thread runs without an OLED, whether the
+  PCIe board has a user key, and that `gpio-keys` stays in the 6.18 DTS.
+- The Reset button was considered and rejected: on the LicheeRV Nano core it is the SoC reset
+  line [U, no schematic in hand], so software sees no key event, only a reboot. The user key
+  (A30, the BOOT button) is the one `gpio-keys` reports. Holding it at power-on already
+  exports the whole SD card in `initramfs-init`, so anyone who can press it holds more
+  access than first setup grants.
+- Own design, not a port. Land it after the name-based GPIO and input work in this
+  phase, with its own CI image and a device check.
+
 **State 2026-11-07** (test 20 on the Lite):
 
 - Kernel config: `board/sg2002/linux-6.18/nanokvm_defconfig` (a `savedefconfig`)
@@ -1330,6 +1361,7 @@ consider upstreaming it.
 | R8 | A statically linked Rust musl binary carries musl 1.2.5 (stack-alignment bug) | The server build now links dynamically (`--dynamic-linker=/lib/ld-musl-riscv64.so.1` in `build-linked-libkvm.sh`). Keep it so; check new binaries with the byte pattern in the stack-alignment page. |
 | Q10 | Which Buildroot packages get T-Head builds, and globally or per package | Phase T measurements (section 6.7). |
 | Q9 | T-Head-flagged musl 1.2.6 | **Built on `main`** (GCC 14 accepts the string; QEMU `thead-c906` runs it). Still to do: device gates in 6.6, then keep or revert on the measurements. |
+| Q11 | User-key approval for first setup (Phase 4) | Does the Lite's key thread run without an OLED; does PCIe have a user key; is the input device found by name on 6.18; the Wi-Fi hold moves from 1.5 s to 3 s. |
 
 ## Appendix A: trial-build recipe
 
