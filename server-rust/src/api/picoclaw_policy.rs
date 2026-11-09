@@ -97,7 +97,11 @@ pub(crate) fn validate(config: &JsonValue, home: &Path) -> Result<()> {
         }
     }
     for key in NO_PATHS {
-        if !matches!(tools.get(key), None | Some(JsonValue::Array(_))) {
+        // Upstream writes a path list it has no entries for as null.
+        if !matches!(
+            tools.get(key),
+            None | Some(JsonValue::Null | JsonValue::Array(_))
+        ) {
             return Err(malformed());
         }
     }

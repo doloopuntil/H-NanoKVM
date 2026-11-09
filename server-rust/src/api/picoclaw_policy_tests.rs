@@ -187,6 +187,26 @@ fn malformed_policy_shapes_refuse_before_any_change() {
 }
 
 #[test]
+fn upstream_null_path_lists_are_accepted_and_stay_empty() {
+    // PicoClaw's own default config, as `picoclaw onboard` writes it.
+    let mut config = json!({
+        "agents": {"defaults": {"restrict_to_workspace": true, "allow_read_outside_workspace": false}},
+        "tools": {
+            "exec": {"enabled": true},
+            "cron": {"enabled": true, "allow_command": true, "command_allowed_remotes": null},
+            "allow_read_paths": null,
+            "allow_write_paths": null
+        }
+    });
+    enforce(&mut config, home()).unwrap();
+    assert_eq!(config["tools"]["allow_read_paths"], JsonValue::Null);
+    assert_eq!(config["tools"]["allow_write_paths"], JsonValue::Null);
+    assert_eq!(config["tools"]["exec"]["enabled"], false);
+    assert_eq!(config["tools"]["cron"]["allow_command"], false);
+    check(&config, home()).unwrap();
+}
+
+#[test]
 fn only_the_nanokvm_server_is_exempt_by_name() {
     let mut config = json!({
         "tools": {"mcp": {"servers": {
