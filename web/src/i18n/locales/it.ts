@@ -3,6 +3,7 @@ const it = {
     common: {
       confirm: 'Conferma',
       cancel: 'Annulla',
+      close: 'Chiudi',
       save: 'Salva',
       discard: 'Scarta',
       delete: 'Elimina',
@@ -229,6 +230,10 @@ const it = {
       loading: 'Caricamento...',
       empty: 'Nessun risultato',
       mountMode: 'Monta come',
+      mount: 'Monta',
+      orDownload: 'Oppure scarica da un link',
+      keepRunning:
+        "Puoi chiudere questa finestra. Il trasferimento continua e i suoi progressi compaiono nell'elenco delle immagini.",
       massStorage: 'Archiviazione di massa',
       cdRom: 'CD-ROM',
       mountFailed: 'Montaggio immagine non riuscito',
@@ -253,6 +258,7 @@ const it = {
       fromUrl: 'Da URL',
       fromFile: 'Da file',
       turnOff: 'Disattiva',
+      deleteDiskShared: 'Non è possibile eliminare immagini finché il disco virtuale è attivo.',
       eject: 'Espelli',
       download: 'Scarica',
       upload: 'Carica',

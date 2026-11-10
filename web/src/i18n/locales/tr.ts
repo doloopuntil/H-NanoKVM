@@ -3,6 +3,7 @@ const tr = {
     common: {
       confirm: 'Onayla',
       cancel: 'İptal',
+      close: 'Kapat',
       save: 'Kaydet',
       discard: 'Vazgeç',
       delete: 'Sil',
@@ -224,6 +225,10 @@ const tr = {
       loading: 'Yükleniyor...',
       empty: 'Hiçbir şey bulunamadı',
       mountMode: 'Şu olarak bağla',
+      mount: 'Bağla',
+      orDownload: 'Veya bir bağlantıdan indir',
+      keepRunning:
+        'Bu pencereyi kapatabilirsiniz. Aktarım devam eder ve ilerlemesi imaj listesinde görünür.',
       massStorage: 'Yığın depolama',
       cdRom: 'CD-ROM',
       mountFailed: 'Bağlama başarısız oldu',
@@ -248,6 +253,7 @@ const tr = {
       fromUrl: "URL'den",
       fromFile: 'Dosyadan',
       turnOff: 'Kapat',
+      deleteDiskShared: 'Sanal disk açıkken imajlar silinemez.',
       eject: 'Çıkar',
       download: 'İndir',
       upload: 'Yükle',

@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-18
+last-checked: 2026-11-10
 ---
 
 # Virtual media
@@ -12,7 +12,8 @@ Images live in `/data` on the SD card.
 
 ## Mount an image
 
-Open **Images** in the menu bar, pick an image and a mount mode:
+Open **Images** in the menu bar and choose a mount mode above the list. Click an
+image to show **Mount** and **Delete**, then click **Mount**. The mount mode:
 
 - **CD-ROM** for `.iso` installers. This is what BIOS and UEFI boot menus expect.
 - **Mass storage** for `.img` disk images, and for hybrid ISOs that boot better
@@ -39,16 +40,16 @@ host as a USB drive. Only one side writes `/data` at a time:
 
 ## Add images
 
-- **Upload** from the browser in **Images**. An optional SHA-256 checks the
-  file once it has arrived.
-- **Download from a URL**: turn on remote download in **Settings > User > Preferences**
+- **Upload** from the browser: **Add image** in **Images** opens a dialog where you
+  drop a file or choose one. An optional SHA-256 checks the file once it has arrived.
+- **Download from a link**, in the same dialog: turn on remote download in **Settings > User > Preferences**
   first; it is off by default, and turning it on asks for your password and, with
   two-factor, a code. The device accepts only `http`/`https` URLs to a host on the
   public internet (not an address on your own network, `localhost` or a `.local`
   name, also after a redirect), a plain image file name, a size that fits, and a file
-  that really is an ISO 9660 image. Enter the optional SHA-256 to have the download checked. The menu bar
-  shows the progress, and **Cancel** stops the download and removes the partial
-  file.
+  that really is an ISO 9660 image. Enter the optional SHA-256 to have the download checked. The progress shows
+  in the dialog and above the image list, and a dot on the menu bar icon. You can close the dialog and the
+  transfer goes on; **Cancel** stops it and removes the partial file.
 - **Over the network**: `scp your-image root@<nanokvm>:/data` (needs SSH).
 - **Through the virtual disk**: turn it on, copy the image to the drive that
   appears on the host, then turn it off.

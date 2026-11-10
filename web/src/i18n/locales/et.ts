@@ -3,6 +3,7 @@ const et = {
     common: {
       confirm: 'Kinnita',
       cancel: 'Tühista',
+      close: 'Sulge',
       save: 'Salvesta',
       discard: 'Loobu',
       delete: 'Kustuta',
@@ -222,6 +223,10 @@ const et = {
       loading: 'Laadimine...',
       empty: 'Midagi ei leitud',
       mountMode: 'Ühenda kui',
+      mount: 'Ühenda',
+      orDownload: 'Või laadi alla lingilt',
+      keepRunning:
+        'Selle akna võib sulgeda. Ülekanne jätkub ja selle edenemine kuvatakse image-failide loendis.',
       massStorage: 'Massmälu',
       cdRom: 'CD-ROM',
       mountFailed: 'Ühendamine nurjus',
@@ -245,6 +250,7 @@ const et = {
       fromUrl: 'URL-ist',
       fromFile: 'Failist',
       turnOff: 'Lülita välja',
+      deleteDiskShared: 'Imaget ei saa kustutada, kui virtuaalne ketas on sisse lülitatud.',
       eject: 'Väljuta',
       download: 'Laadi alla',
       upload: 'Laadi üles',

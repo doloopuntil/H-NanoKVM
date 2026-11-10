@@ -3,6 +3,7 @@ const pl = {
     common: {
       confirm: 'Potwierdź',
       cancel: 'Anuluj',
+      close: 'Zamknij',
       save: 'Zapisz',
       discard: 'Odrzuć',
       delete: 'Usuń',
@@ -227,6 +228,10 @@ const pl = {
       loading: 'Ładowanie...',
       empty: 'Nic nie znaleziono',
       mountMode: 'Zamontuj jako',
+      mount: 'Zamontuj',
+      orDownload: 'Lub pobierz z linku',
+      keepRunning:
+        'Możesz zamknąć to okno. Transfer trwa dalej, a jego postęp widać na liście obrazów.',
       massStorage: 'Pamięć masowa',
       cdRom: 'CD-ROM',
       mountFailed: 'Nie udało się zamontować obrazu',
@@ -251,6 +256,7 @@ const pl = {
       fromUrl: 'Z adresu URL',
       fromFile: 'Z pliku',
       turnOff: 'Wyłącz',
+      deleteDiskShared: 'Nie można usuwać obrazów, gdy dysk wirtualny jest włączony.',
       eject: 'Wysuń',
       download: 'Pobierz',
       upload: 'Prześlij',

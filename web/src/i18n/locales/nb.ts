@@ -3,6 +3,7 @@ const nb = {
     common: {
       confirm: 'Bekreft',
       cancel: 'Avbryt',
+      close: 'Lukk',
       save: 'Lagre',
       discard: 'Forkast',
       delete: 'Slett',
@@ -228,6 +229,10 @@ const nb = {
       loading: 'Laster...',
       empty: 'Ingen funnet',
       mountMode: 'Monter som',
+      mount: 'Monter',
+      orDownload: 'Eller last ned fra en lenke',
+      keepRunning:
+        'Du kan lukke dette vinduet. Overføringen fortsetter, og fremdriften vises i bildelisten.',
       massStorage: 'Masselagring',
       cdRom: 'CD-ROM',
       mountFailed: 'Montering feilet',
@@ -252,6 +257,7 @@ const nb = {
       fromUrl: 'Fra URL',
       fromFile: 'Fra fil',
       turnOff: 'Slå av',
+      deleteDiskShared: 'Bilder kan ikke slettes mens den virtuelle disken er på.',
       eject: 'Løs ut',
       download: 'Last ned',
       upload: 'Last opp',

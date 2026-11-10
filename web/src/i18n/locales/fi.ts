@@ -3,6 +3,7 @@ const fi = {
     common: {
       confirm: 'Vahvista',
       cancel: 'Peruuta',
+      close: 'Sulje',
       save: 'Tallenna',
       discard: 'Hylkää',
       delete: 'Poista',
@@ -228,6 +229,10 @@ const fi = {
       loading: 'Ladataan...',
       empty: 'Mitään ei löytynyt',
       mountMode: 'Liitä tyyppinä',
+      mount: 'Liitä',
+      orDownload: 'Tai lataa linkistä',
+      keepRunning:
+        'Voit sulkea tämän ikkunan. Siirto jatkuu, ja sen eteneminen näkyy levykuvaluettelossa.',
       massStorage: 'Massamuisti',
       cdRom: 'CD-ROM',
       mountFailed: 'Liittäminen epäonnistui',
@@ -252,6 +257,7 @@ const fi = {
       fromUrl: 'URL-osoitteesta',
       fromFile: 'Tiedostosta',
       turnOff: 'Sammuta',
+      deleteDiskShared: 'Levykuvia ei voi poistaa, kun virtuaalilevy on päällä.',
       eject: 'Poista',
       download: 'Lataa',
       upload: 'Lataa',

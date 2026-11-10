@@ -3,6 +3,7 @@ const zh_tw = {
     common: {
       confirm: '確認',
       cancel: '取消',
+      close: '關閉',
       save: '儲存',
       discard: '捨棄',
       delete: '刪除',
@@ -215,6 +216,9 @@ const zh_tw = {
       loading: '載入中...',
       empty: '未找到任何內容',
       mountMode: '掛載為',
+      mount: '掛載',
+      orDownload: '或從連結下載',
+      keepRunning: '可以關閉此視窗。傳輸會繼續進行，進度會顯示在映像檔清單中。',
       massStorage: '大量儲存裝置',
       cdRom: 'CD-ROM',
       mountFailed: '掛載失敗',
@@ -236,6 +240,7 @@ const zh_tw = {
       fromUrl: '從網址',
       fromFile: '從檔案',
       turnOff: '關閉',
+      deleteDiskShared: '虛擬磁碟開啟時無法刪除映像檔。',
       eject: '彈出',
       download: '下載',
       upload: '上傳',
@@ -267,10 +272,8 @@ const zh_tw = {
       delDesc: '確定要刪除該檔案嗎？',
       delete: '刪除',
       close: '關閉',
-      unlockDesc:
-        '腳本在 NanoKVM 上以 root 身分執行。請輸入 Web 帳戶密碼以上傳或執行腳本。',
-      terminalRequired:
-        '腳本需要 Web 終端機存取權限。請先在設定中啟用終端機。'
+      unlockDesc: '腳本在 NanoKVM 上以 root 身分執行。請輸入 Web 帳戶密碼以上傳或執行腳本。',
+      terminalRequired: '腳本需要 Web 終端機存取權限。請先在設定中啟用終端機。'
     },
     terminal: {
       title: '終端機',

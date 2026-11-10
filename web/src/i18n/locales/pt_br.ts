@@ -3,6 +3,7 @@ const pt_br = {
     common: {
       confirm: 'Confirmar',
       cancel: 'Cancelar',
+      close: 'Fechar',
       save: 'Salvar',
       discard: 'Descartar',
       delete: 'Excluir',
@@ -226,6 +227,10 @@ const pt_br = {
       loading: 'Carregando...',
       empty: 'Nada encontrado',
       mountMode: 'Montar como',
+      mount: 'Montar',
+      orDownload: 'Ou baixe de um link',
+      keepRunning:
+        'Você pode fechar esta janela. A transferência continua e o progresso aparece na lista de imagens.',
       massStorage: 'Armazenamento em massa',
       cdRom: 'CD-ROM',
       mountFailed: 'Falha na montagem',
@@ -250,6 +255,7 @@ const pt_br = {
       fromUrl: 'Por URL',
       fromFile: 'Por arquivo',
       turnOff: 'Desligar',
+      deleteDiskShared: 'Não é possível excluir imagens enquanto o disco virtual estiver ligado.',
       eject: 'Ejetar',
       download: 'Baixar',
       upload: 'Upload',

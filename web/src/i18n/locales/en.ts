@@ -3,6 +3,7 @@ const en = {
     common: {
       confirm: 'Confirm',
       cancel: 'Cancel',
+      close: 'Close',
       save: 'Save',
       discard: 'Discard',
       delete: 'Delete',
@@ -225,6 +226,10 @@ const en = {
       loading: 'Loading...',
       empty: 'Nothing found',
       mountMode: 'Mount as',
+      mount: 'Mount',
+      orDownload: 'Or download from a link',
+      keepRunning:
+        'You can close this window. The transfer keeps running and its progress shows in the image list.',
       massStorage: 'Mass storage',
       cdRom: 'CD-ROM',
       mountFailed: 'Mount failed',
@@ -249,6 +254,7 @@ const en = {
       fromUrl: 'From URL',
       fromFile: 'From file',
       turnOff: 'Turn off',
+      deleteDiskShared: "Images can't be deleted while the virtual disk is on.",
       eject: 'Eject',
       download: 'Download',
       upload: 'Upload',

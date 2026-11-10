@@ -3,6 +3,7 @@ const id = {
     common: {
       confirm: 'Konfirmasi',
       cancel: 'Batalkan',
+      close: 'Tutup',
       save: 'Simpan',
       discard: 'Buang',
       delete: 'Hapus',
@@ -226,6 +227,10 @@ const id = {
       loading: 'Memuat...',
       empty: 'Tidak ada yang ditemukan',
       mountMode: 'Pasang sebagai',
+      mount: 'Pasang',
+      orDownload: 'Atau unduh dari tautan',
+      keepRunning:
+        'Anda dapat menutup jendela ini. Transfer tetap berjalan dan progresnya tampil di daftar gambar.',
       massStorage: 'Penyimpanan massal',
       cdRom: 'CD-ROM',
       mountFailed: 'Pemasangan gagal',
@@ -250,6 +255,7 @@ const id = {
       fromUrl: 'Dari URL',
       fromFile: 'Dari berkas',
       turnOff: 'Matikan',
+      deleteDiskShared: 'Image tidak dapat dihapus selama disk virtual menyala.',
       eject: 'Keluarkan',
       download: 'Unduh',
       upload: 'Mengunggah',

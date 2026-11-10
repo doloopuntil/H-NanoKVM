@@ -3,6 +3,7 @@ const de = {
     common: {
       confirm: 'Bestätigen',
       cancel: 'Abbrechen',
+      close: 'Schließen',
       save: 'Speichern',
       discard: 'Verwerfen',
       delete: 'Löschen',
@@ -229,6 +230,10 @@ const de = {
       loading: 'Lädt...',
       empty: 'Nichts gefunden',
       mountMode: 'Einbinden als',
+      mount: 'Einbinden',
+      orDownload: 'Oder von einem Link herunterladen',
+      keepRunning:
+        'Sie können dieses Fenster schließen. Die Übertragung läuft weiter, und der Fortschritt erscheint in der Bilderliste.',
       massStorage: 'Massenspeicher',
       cdRom: 'CD-ROM',
       mountFailed: 'Einbinden fehlgeschlagen',
@@ -253,6 +258,8 @@ const de = {
       fromUrl: 'Von URL',
       fromFile: 'Aus Datei',
       turnOff: 'Ausschalten',
+      deleteDiskShared:
+        'Abbilder können nicht gelöscht werden, solange das virtuelle Laufwerk eingeschaltet ist.',
       eject: 'Auswerfen',
       download: 'Herunterladen',
       upload: 'Hochladen',

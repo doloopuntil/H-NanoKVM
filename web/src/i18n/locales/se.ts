@@ -3,6 +3,7 @@ const se = {
     common: {
       confirm: 'Bekräfta',
       cancel: 'Avbryt',
+      close: 'Stäng',
       save: 'Spara',
       discard: 'Förkasta',
       delete: 'Ta bort',
@@ -225,6 +226,10 @@ const se = {
       loading: 'Laddar...',
       empty: 'Inget hittades',
       mountMode: 'Montera som',
+      mount: 'Montera',
+      orDownload: 'Eller ladda ned från en länk',
+      keepRunning:
+        'Du kan stänga det här fönstret. Överföringen fortsätter och förloppet visas i listan över avbildningar.',
       massStorage: 'Masslagring',
       cdRom: 'CD-ROM',
       mountFailed: 'Montering misslyckades',
@@ -249,6 +254,7 @@ const se = {
       fromUrl: 'Från URL',
       fromFile: 'Från fil',
       turnOff: 'Stäng av',
+      deleteDiskShared: 'Avbildningar kan inte tas bort medan den virtuella disken är på.',
       eject: 'Mata ut',
       download: 'Ladda ned',
       upload: 'Ladda upp',

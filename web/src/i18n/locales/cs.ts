@@ -3,6 +3,7 @@ const cz = {
     common: {
       confirm: 'Potvrdit',
       cancel: 'Zrušit',
+      close: 'Zavřít',
       save: 'Uložit',
       discard: 'Zahodit',
       delete: 'Smazat',
@@ -225,6 +226,10 @@ const cz = {
       loading: 'Načítání...',
       empty: 'Nic nenalezeno',
       mountMode: 'Připojit jako',
+      mount: 'Připojit',
+      orDownload: 'Nebo stáhnout z odkazu',
+      keepRunning:
+        'Toto okno můžete zavřít. Přenos pokračuje a jeho průběh se zobrazuje v seznamu obrazů.',
       massStorage: 'Velkokapacitní úložiště',
       cdRom: 'CD-ROM',
       mountFailed: 'Připojení se nezdařilo',
@@ -249,6 +254,7 @@ const cz = {
       fromUrl: 'Z adresy URL',
       fromFile: 'Ze souboru',
       turnOff: 'Vypnout',
+      deleteDiskShared: 'Obrazy nelze mazat, dokud je virtuální disk zapnutý.',
       eject: 'Vysunout',
       download: 'Stáhnout',
       upload: 'Nahrát',

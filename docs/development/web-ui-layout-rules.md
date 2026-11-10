@@ -91,8 +91,8 @@ and the dialog and toast helpers in `web/src/lib/feedback.ts`.
     a translation leaves no room beside the label (`flex-wrap` with `ml-auto` on
     the control). The layout is not tuned language by language, and a label that
     wraps or touches its control is a defect. Check every language at 375px
-    after a change to a label or to the text of a control, as the Images dialog
-    does for its two button rows.
+    after a change to a label or to the text of a control, as the Images menu
+    does for its mount mode row.
 15. Long values wrap at spaces and hyphens (`break-words`); `break-all` is only
     for a single token with no spaces, such as a key or a URL.
 
@@ -283,6 +283,11 @@ surface from the Settings pages and are built from `components/menu-rows.tsx`:
   one, nothing else marks the choice. An option may carry a small icon.
 - Rows pass their props on, so a row can sit inside a `Popconfirm` or a `Tooltip`.
 - No popover writes its own row classes, header or divider margin.
+- Buttons in a popover or a dialog: an action is solid, blue (`type="primary"`) for the positive one
+  and red (`danger type="primary"`) for one that deletes or cancels something, as Run and Delete
+  in Scripts. The action in the popover header is a ghost primary (Upload, Add image). A
+  button that only closes or backs out, or a utility such as USB reconnect, is the plain default.
+  The red outline of rule 17 is for the bar at the end of a page, not for popovers or dialogs.
 
 The dialogs that the entries open follow the same idea (`components/dialog-parts.tsx`):
 
@@ -299,25 +304,30 @@ The dialogs that the entries open follow the same idea (`components/dialog-parts
 - A form in a dialog uses the `SettingRow` rows of the Settings pages.
 - A confirmation names its action in the title (rule 18), never "Attention".
 
-The Images dialog (`menu/image/`) is the one dialog that departs from the rules above, on purpose:
+The Images menu (`menu/image/`) is a popover like Scripts, with one dialog, and departs from the
+rules above on purpose:
 
-- It has no `DialogAction` and no `DialogHint`. Its actions sit on the rows they act on: a
-  mount or eject arrow and a delete button per image, and a 32px icon-only button (Download,
-  Upload, Cancel) beside the field it belongs to, each with a tooltip and an `aria-label`.
-  USB reconnect is a small button at the right end.
-- Its add form puts the label of each field above the box, not in a `SettingRow`, because the
-  dialog is narrow.
-- The help icon in its title opens a modal with the upload steps, so it is not a `LabelTip`.
-- A running transfer is a text line, the progress bar and the Cancel icon right of it, with no
-  box around them (rule 3). A transfer that cannot start because the storage is read-only is
-  an `Alert` (rule 24), and a failure is a `toast` (rule 26).
-- The image list shows three rows (`max-h-[120px]`) and scrolls beyond that, with a thin scrollbar on a
-  transparent track. Each row ends with a mount icon (`HardDriveDownloadIcon`, blue) or an eject
-  icon (`HardDriveUploadIcon`, red) and a delete icon, 16px in 24px hit areas. The type chip has a 2px right margin,
-  so the drawn distance from the chip to the mount icon equals the one from that icon to the delete icon. The delete icon is wrapped in a
-  `flex` span: antd gives an `svg` inside a button a `vertical-align` of -0.125em, which
-  pushed it 0.63px off centre and out of line with the mount icon.
-- On a phone the dialog is not centred, so that the keyboard does not cover the URL box.
+- The popover has the header (title, help icon, Add image), the running transfer, the mount mode
+  switch and the list. Its buttons and the switch are `size="small"` (24px), like the Scripts menu's,
+  with their icons. USB reconnect is at the right end.
+- A row opens at a click and shows Mount (or Eject, red) and Delete; nothing mounts at the first
+  click. The mount mode is above the list and off while an image is mounted. The list shows
+  `max-h-56` and scrolls beyond that, with a thin scrollbar on a transparent track.
+- A running transfer is a row above the mount mode (spinner, name, percent, a Cancel icon button
+  with a tooltip and an `aria-label`, the progress bar) and a blue dot on the menu bar icon. Its
+  state lives in `Image`, not in the dialog, so closing the dialog does not stop it.
+- Add image opens a dialog and closes the popover, through the `close` that `MenuItem` hands to a
+  content function. The dialog has no `DialogAction` and no `DialogHint`: a drop zone, "or download
+  from a link", the link field, an optional SHA-256 behind a disclosure, and Cancel and
+  Download or Upload at the right, at the default 32px of a dialog. The label of each field is above the box, not in a `SettingRow`,
+  because the dialog is narrow.
+- While a transfer runs the dialog shows its progress with Cancel and Close; Close keeps the
+  transfer going. A storage that is read-only is an `Alert` (rule 24) with Turn off in its action
+  slot, at the same height as the other buttons, and a failure is an `Alert` in the dialog and a
+  `toast` (rule 26).
+- The help icon opens a modal with the upload steps, so it is not a `LabelTip`.
+- On a phone the dialog is not centred, so that the keyboard does not cover the link box, and the
+  popover never closes at a tap on a row (`data-menu-keep-open`).
 
 The PicoClaw sidebar is part of the menu bar and follows the same rules where it can:
 

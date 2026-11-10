@@ -25,6 +25,8 @@ type Options = {
 // The state of one image transfer: a browser upload or a remote download. The
 // server reports a single transfer at a time through the download status
 // endpoint, so both kinds share one status, one progress bar and one cancel.
+export type ImageTransfer = ReturnType<typeof useImageTransfer>;
+
 export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
   const { t } = useTranslation();
 
@@ -278,6 +280,12 @@ export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
     stopStallWatchdog();
   }
 
+  // drops the chosen file without the "no image" error that selectLocalFile(null) reports
+  function clearSelectedFile() {
+    setSelectedFile(null);
+    clearFileInput();
+  }
+
   async function mountedImageName() {
     try {
       const rsp = await getMountedImage();
@@ -488,6 +496,7 @@ export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
     changeInput,
     changeSha256,
     selectLocalFile,
+    clearSelectedFile,
     download,
     upload,
     cancel,

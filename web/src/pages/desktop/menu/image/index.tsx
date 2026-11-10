@@ -1,32 +1,37 @@
 import { useEffect, useState } from 'react';
-import { Modal, Segmented, Tooltip } from 'antd';
+import { Button, Segmented } from 'antd';
 import clsx from 'clsx';
-import { useSetAtom } from 'jotai';
-import { DiscIcon, HardDriveIcon } from 'lucide-react';
+import { DiscIcon, HardDriveIcon, PlusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/storage.ts';
-import { attempt } from '@/lib/feedback.ts';
+import { attempt, toast } from '@/lib/feedback.ts';
 import { IMAGE_LIST_CHANGED_EVENT } from '@/lib/image-events.ts';
-import { isKeyboardEnableAtom } from '@/jotai/keyboard.ts';
-import { submenuOpenCountAtom } from '@/jotai/settings.ts';
 import { useImageStorage } from '@/hooks/useImageStorage.ts';
-import { useIsTouchLayout } from '@/hooks/useResponsiveLayout.ts';
+import { useImageTransfer } from '@/hooks/useImageTransfer.ts';
+import { MenuItem } from '@/components/menu-item.tsx';
+import { MenuHeader } from '@/components/menu-rows.tsx';
 
-import { AddImage } from './add-image.tsx';
+import { AddImageDialog } from './add-image-dialog.tsx';
 import { Images } from './images.tsx';
 import { Tips } from './tips.tsx';
+import { TransferRow } from './transfer-row.tsx';
 
 export const Image = () => {
   const { t } = useTranslation();
-  const setSubmenuOpenCount = useSetAtom(submenuOpenCountAtom);
-  const setIsKeyboardEnable = useSetAtom(isKeyboardEnableAtom);
   const storage = useImageStorage();
-  const isTouchLayout = useIsTouchLayout();
+  // lives here, not in the add dialog, so that a transfer goes on when the dialog is closed
+  const transfer = useImageTransfer({
+    remoteEnabled: storage.isRemoteEnabled,
+    onFailed: (message) => toast.error(t('download.failed'), { description: message })
+  });
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [mode, setMode] = useState('mass-storage');
+
+  const isTransferring = transfer.status === 'in_progress';
 
   const modes = [
     {
@@ -63,6 +68,9 @@ export const Image = () => {
 
   useEffect(() => {
     getImageState();
+    storage.refresh();
+    // picks up a transfer that is running, also after the page was reloaded
+    transfer.resume();
 
     const handleImageUpdated = () => {
       getImageState();
@@ -72,79 +80,97 @@ export const Image = () => {
     return () => {
       window.removeEventListener(IMAGE_LIST_CHANGED_EVENT, handleImageUpdated);
     };
+    // runs once, when the menu bar is shown
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function toggleModal(open: boolean) {
-    setIsModalOpen(open);
-    // typing in the add form must not reach the host
-    setIsKeyboardEnable(!open);
+  function handleOpenChange(open: boolean) {
+    setIsOpen(open);
     if (open) storage.refresh();
-    setSubmenuOpenCount((count) => (open ? count + 1 : Math.max(0, count - 1)));
   }
+
+  function openDialog() {
+    transfer.resume();
+    setIsDialogOpen(true);
+  }
+
+  function closeDialog() {
+    // forgets a finished transfer, keeps a running one
+    transfer.reset();
+    setIsDialogOpen(false);
+  }
+
+  const content = (close: () => void) => (
+    // on a phone the popover would close at a tap on a row; only `close` closes it
+    <div data-menu-keep-open className="w-[min(400px,calc(100vw-48px))]">
+      <MenuHeader title={t('image.title')}>
+        <div className="flex items-center gap-2">
+          <Tips />
+          <Button
+            size="small"
+            icon={<PlusIcon size={16} />}
+            onClick={() => {
+              openDialog();
+              close();
+            }}
+          >
+            {t('image.addImage')}
+          </Button>
+        </div>
+      </MenuHeader>
+
+      {isTransferring && <TransferRow transfer={transfer} />}
+
+      {/* the buttons drop under the label when a translation leaves no room beside it */}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-1 pb-2">
+        <span className="font-semibold">{t('image.mountMode')}</span>
+        <Segmented
+          className="ml-auto"
+          size="small"
+          value={mode}
+          options={modes}
+          disabled={isMounted}
+          onChange={setMode}
+        />
+      </div>
+
+      <Images
+        isOpen={isOpen}
+        cdrom={mode === 'cd-rom'}
+        setCdrom={(nextCdrom) => setMode(nextCdrom ? 'cd-rom' : 'mass-storage')}
+        setIsMounted={setIsMounted}
+        isDiskShared={storage.isDiskShared}
+        isDiskStateKnown={storage.isDiskStateKnown}
+        refreshDiskState={storage.refresh}
+        disableDisk={storage.disableDisk}
+        isDisablingDisk={storage.isDisablingDisk}
+      />
+    </div>
+  );
 
   return (
     <>
-      <Tooltip title={t('image.title')} placement="bottom" mouseEnterDelay={0.6}>
-        <div
-          className={clsx(
-            'flex size-7.5 cursor-pointer items-center justify-center rounded-sm hover:bg-neutral-700',
-            isMounted ? 'text-blue-500' : 'text-neutral-300 hover:text-white'
-          )}
-          onClick={() => toggleModal(true)}
-        >
-          <DiscIcon size={18} />
-        </div>
-      </Tooltip>
-
-      <Modal
-        title={
-          <div className="flex items-center gap-1">
-            <span>{t('image.title')}</span>
-            <Tips />
-          </div>
+      <MenuItem
+        title={t('image.title')}
+        icon={
+          <span className="relative flex">
+            <DiscIcon size={18} />
+            {isTransferring && (
+              <span className="absolute -top-1 -right-1 size-2 animate-pulse rounded-full bg-blue-500" />
+            )}
+          </span>
         }
-        open={isModalOpen}
-        // not centred on a phone, so that the phone's keyboard does not cover the text boxes
-        centered={!isTouchLayout}
-        footer={null}
-        onCancel={() => toggleModal(false)}
-      >
-        <div className="flex flex-col pt-3">
-          {/* the buttons drop under the label when a translation leaves no room beside it */}
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-            <span className="font-semibold">{t('image.mountMode')}</span>
-            <Segmented
-              className="ml-auto"
-              size="small"
-              value={mode}
-              options={modes}
-              disabled={isMounted}
-              onChange={setMode}
-            />
-          </div>
+        className={clsx(
+          'flex size-7.5 cursor-pointer items-center justify-center rounded-sm hover:bg-neutral-700/80',
+          isMounted ? 'text-blue-500' : 'text-neutral-300 hover:text-white'
+        )}
+        content={content}
+        onOpenChange={handleOpenChange}
+      />
 
-          <div className="mt-3">
-            <Images
-              isOpen={isModalOpen}
-              cdrom={mode === 'cd-rom'}
-              setCdrom={(nextCdrom) => setMode(nextCdrom ? 'cd-rom' : 'mass-storage')}
-              setIsMounted={setIsMounted}
-              isDiskShared={storage.isDiskShared}
-              isDiskStateKnown={storage.isDiskStateKnown}
-              refreshDiskState={storage.refresh}
-            >
-              <AddImage
-                isOpen={isModalOpen}
-                isWritable={storage.isWritable}
-                isRemoteEnabled={storage.isRemoteEnabled}
-                isDiskShared={storage.isDiskShared}
-                isDisablingDisk={storage.isDisablingDisk}
-                onDisableDisk={storage.disableDisk}
-              />
-            </Images>
-          </div>
-        </div>
-      </Modal>
+      {isDialogOpen && (
+        <AddImageDialog transfer={transfer} storage={storage} onClose={closeDialog} />
+      )}
     </>
   );
 };

@@ -3,6 +3,7 @@ const hu = {
     common: {
       confirm: 'Megerősítés',
       cancel: 'Mégse',
+      close: 'Bezárás',
       save: 'Mentés',
       discard: 'Elvetés',
       delete: 'Törlés',
@@ -227,6 +228,10 @@ const hu = {
       loading: 'Betöltés...',
       empty: 'Nem található semmi',
       mountMode: 'Csatolás mint',
+      mount: 'Csatlakoztatás',
+      orDownload: 'Vagy letöltés hivatkozásról',
+      keepRunning:
+        'Bezárhatja ezt az ablakot. Az átvitel folytatódik, és az előrehaladása a képek listájában látható.',
       massStorage: 'Háttértár',
       cdRom: 'CD-ROM',
       mountFailed: 'Csatlakoztatás sikertelen',
@@ -251,6 +256,7 @@ const hu = {
       fromUrl: 'URL-ről',
       fromFile: 'Fájlból',
       turnOff: 'Kikapcsolás',
+      deleteDiskShared: 'A képek nem törölhetők, amíg a virtuális lemez be van kapcsolva.',
       eject: 'Kiadás',
       download: 'Letöltés',
       upload: 'Feltöltés',

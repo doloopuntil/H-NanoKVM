@@ -3,6 +3,7 @@ const th = {
     common: {
       confirm: 'ยืนยัน',
       cancel: 'ยกเลิก',
+      close: 'ปิด',
       save: 'บันทึก',
       discard: 'ละทิ้ง',
       delete: 'ลบ',
@@ -221,6 +222,10 @@ const th = {
       loading: 'กำลังโหลด...',
       empty: 'ไม่พบดิสก์',
       mountMode: 'ติดตั้งเป็น',
+      mount: 'ติดตั้ง',
+      orDownload: 'หรือดาวน์โหลดจากลิงก์',
+      keepRunning:
+        'คุณปิดหน้าต่างนี้ได้ การถ่ายโอนจะดำเนินต่อไป และความคืบหน้าจะแสดงในรายการอิมเมจ',
       massStorage: 'อุปกรณ์จัดเก็บข้อมูล',
       cdRom: 'CD-ROM',
       mountFailed: 'การติดตั้งล้มเหลว',
@@ -244,6 +249,7 @@ const th = {
       fromUrl: 'จาก URL',
       fromFile: 'จากไฟล์',
       turnOff: 'ปิด',
+      deleteDiskShared: 'ไม่สามารถลบอิมเมจได้ขณะที่ดิสก์เสมือนเปิดอยู่',
       eject: 'ดีดออก',
       download: 'ดาวน์โหลด',
       upload: 'อัปโหลด',

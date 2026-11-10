@@ -8,7 +8,7 @@ import { attempt } from '@/lib/feedback.ts';
 import { usePopconfirmColor } from '@/hooks/usePopconfirmColor.ts';
 import { MenuRow } from '@/components/menu-rows.tsx';
 
-import { confirmOkProps } from './confirm.ts';
+import { confirmOkProps } from '@/components/popconfirm-ok.ts';
 
 const DEFAULT_POWER_LONG_DURATION_SECONDS = 12;
 

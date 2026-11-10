@@ -1,8 +1,9 @@
-import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Divider, Tooltip, Typography } from 'antd';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Button, Divider, Typography } from 'antd';
 import clsx from 'clsx';
 import {
   CableIcon,
+  ChevronRightIcon,
   HardDriveDownloadIcon,
   HardDriveUploadIcon,
   LoaderCircleIcon,
@@ -28,8 +29,8 @@ type ImagesProps = {
   isDiskShared: boolean;
   isDiskStateKnown: boolean;
   refreshDiskState: () => void;
-  // shown between the list and the USB reconnect button
-  children?: ReactNode;
+  disableDisk: () => void;
+  isDisablingDisk: boolean;
 };
 
 export const Images = ({
@@ -40,7 +41,8 @@ export const Images = ({
   isDiskShared,
   isDiskStateKnown,
   refreshDiskState,
-  children
+  disableDisk,
+  isDisablingDisk
 }: ImagesProps) => {
   const { t } = useTranslation();
 
@@ -50,6 +52,8 @@ export const Images = ({
   const [mountingImage, setMountingImage] = useState('');
   const [mountedImage, setMountedImage] = useState('');
   const [deletingImage, setDeletingImage] = useState('');
+  // the row that shows its buttons
+  const [expandedImage, setExpandedImage] = useState('');
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [isListFailed, setIsListFailed] = useState(false);
   const isLoadingRef = useRef(false);
@@ -204,10 +208,8 @@ export const Images = ({
       });
   }
 
-  // show delete image modal
-  function showDeleteModal(e: any, image: string) {
-    e.stopPropagation();
-
+  // ask before deleting an image
+  function showDeleteModal(image: string) {
     const isMounted = mountedImage === image;
     const isDeleting = deletingImage !== '';
 
@@ -289,13 +291,24 @@ export const Images = ({
 
   return (
     <div>
+      {/* why Delete is off after an unmount: the virtual disk serves /data, which is then read-only */}
+      {isDiskStateKnown && isDiskShared && !isLoading && images.length > 0 && (
+        <Alert
+          className="mb-2"
+          type="warning"
+          showIcon
+          title={t('image.deleteDiskShared')}
+          action={
+            <Button type="primary" size="small" loading={isDisablingDisk} onClick={disableDisk}>
+              {t('image.turnOff')}
+            </Button>
+          }
+        />
+      )}
+
       {renderList()}
 
-      <Divider style={{ margin: '12px 0 20px' }} />
-
-      {children}
-
-      <Divider style={{ margin: '16px 0' }} />
+      <Divider style={{ margin: '12px 0' }} />
 
       <div className="flex justify-end">
         <Button
@@ -338,80 +351,103 @@ export const Images = ({
     }
 
     return (
-      // three images show, the rest scroll; a thin scrollbar on a transparent track
-      <ScrollArea className="flex max-h-30 flex-col pr-1">
-        {images.map((image) => (
-          <div
-            key={image}
-            className={clsx(
-              'group flex cursor-pointer items-center gap-1 rounded-sm px-1 py-2 select-none hover:bg-neutral-700/70',
-              mountedImage === image && 'text-blue-500'
-            )}
-            onClick={() => mountImage(image)}
-          >
-            <div className="flex size-6 items-center justify-center">
-              {mountingImage === image ? (
-                <LoaderCircleIcon className="animate-spin" size={16} />
-              ) : (
-                <PackageIcon size={16} />
-              )}
-            </div>
+      // the rest scroll; a thin scrollbar on a transparent track
+      <ScrollArea className="flex max-h-56 flex-col pr-1">
+        {images.map((image) => {
+          const isMountedImage = mountedImage === image;
+          const isExpanded = expandedImage === image;
 
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-              <span className="truncate">{image.replace(/^.*[\\/]/, '')}</span>
-            </div>
-            {sizes[image] !== undefined && (
-              <div className="shrink-0 text-xs text-neutral-500">{formatBytes(sizes[image])}</div>
-            )}
+          return (
             <div
+              key={image}
               className={clsx(
-                'mr-0.5 rounded-sm border px-1.5 py-0.5 text-xs leading-none font-semibold uppercase',
-                isImageCdrom(image)
-                  ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
-                  : 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
+                'my-1 rounded-sm',
+                isExpanded ? 'bg-neutral-700/50' : 'hover:bg-neutral-700/70'
               )}
             >
-              {isImageCdrom(image) ? 'ISO' : 'IMG'}
-            </div>
-
-            {/* no gap between the two, so the drawn icons are 8px apart */}
-            <div className="flex shrink-0 items-center">
-              <Tooltip
-                title={mountedImage === image ? t('image.eject') : t('image.mountTitle')}
-                mouseEnterDelay={0.6}
+              <div
+                className={clsx(
+                  'flex cursor-pointer items-center gap-1 rounded-sm px-2 py-1.5 select-none',
+                  isMountedImage && 'text-blue-500'
+                )}
+                onClick={() => setExpandedImage(isExpanded ? '' : image)}
               >
-                <div className="flex size-6 items-center justify-center rounded-sm">
-                  {mountedImage === image ? (
-                    <HardDriveUploadIcon
-                      size={16}
-                      className="text-red-500 opacity-60 group-hover:opacity-100"
-                    />
+                <div className="flex size-5 items-center justify-center">
+                  {mountingImage === image ? (
+                    <LoaderCircleIcon className="animate-spin" size={16} />
                   ) : (
-                    <HardDriveDownloadIcon
-                      size={16}
-                      className="text-blue-500 opacity-60 group-hover:opacity-100"
-                    />
+                    <PackageIcon size={16} />
                   )}
                 </div>
-              </Tooltip>
 
-              <Button
-                type="text"
-                size="small"
-                danger
-                className="size-6 p-0"
-                icon={
-                  <span className="flex">
-                    <Trash2Icon size={16} />
-                  </span>
-                }
-                disabled={mountedImage === image || isDiskShared || !isDiskStateKnown}
-                loading={deletingImage === image}
-                onClick={(e) => showDeleteModal(e, image)}
-              />
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <span className="truncate">{fileName(image)}</span>
+                </div>
+                {sizes[image] !== undefined && (
+                  <div className="shrink-0 text-xs text-neutral-500">
+                    {formatBytes(sizes[image])}
+                  </div>
+                )}
+                <div
+                  className={clsx(
+                    'mr-0.5 rounded-sm border px-1.5 py-0.5 text-xs leading-none font-semibold uppercase',
+                    isImageCdrom(image)
+                      ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
+                      : 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
+                  )}
+                >
+                  {isImageCdrom(image) ? 'ISO' : 'IMG'}
+                </div>
+                <ChevronRightIcon
+                  size={16}
+                  className={clsx(
+                    'shrink-0 text-neutral-500 transition-transform',
+                    isExpanded && 'rotate-90'
+                  )}
+                />
+              </div>
+
+              {isExpanded && (
+                <div className="flex items-center justify-end gap-2 p-3">
+                  {isMountedImage ? (
+                    <Button
+                      danger
+                      size="small"
+                      icon={<HardDriveUploadIcon size={16} />}
+                      loading={mountingImage === image}
+                      disabled={!!mountingImage}
+                      onClick={() => mountImage(image)}
+                    >
+                      {t('image.eject')}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="primary"
+                      size="small"
+                      icon={<HardDriveDownloadIcon size={16} />}
+                      loading={mountingImage === image}
+                      disabled={!!mountingImage}
+                      onClick={() => mountImage(image)}
+                    >
+                      {t('image.mount')}
+                    </Button>
+                  )}
+
+                  <Button
+                    danger
+                    size="small"
+                    icon={<Trash2Icon size={16} />}
+                    disabled={isMountedImage || isDiskShared || !isDiskStateKnown}
+                    loading={deletingImage === image}
+                    onClick={() => showDeleteModal(image)}
+                  >
+                    {t('common.delete')}
+                  </Button>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </ScrollArea>
     );
   }

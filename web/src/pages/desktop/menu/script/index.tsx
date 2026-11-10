@@ -1,7 +1,14 @@
 import { ChangeEvent, useRef, useState } from 'react';
 import { Button } from 'antd';
 import clsx from 'clsx';
-import { ChevronRightIcon, FileJsonIcon, UploadIcon } from 'lucide-react';
+import {
+  ChevronRightIcon,
+  FastForwardIcon,
+  FileJsonIcon,
+  PlayIcon,
+  Trash2Icon,
+  UploadIcon
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/script.ts';
@@ -140,8 +147,6 @@ export const Script = () => {
           }}
         />
         <Button
-          ghost
-          type="primary"
           size="small"
           icon={<UploadIcon size={16} />}
           loading={isUploading}
@@ -174,6 +179,7 @@ export const Script = () => {
               <Button
                 type="primary"
                 size="small"
+                icon={<PlayIcon size={16} />}
                 onClick={() => {
                   runScript('foreground');
                   close();
@@ -184,6 +190,7 @@ export const Script = () => {
               <Button
                 type="primary"
                 size="small"
+                icon={<FastForwardIcon size={16} />}
                 onClick={() => {
                   runScript('background');
                   close();
@@ -194,8 +201,8 @@ export const Script = () => {
 
               <Button
                 danger
-                type="primary"
                 size="small"
+                icon={<Trash2Icon size={16} />}
                 onClick={() => {
                   confirmDelete();
                   close();

@@ -3,6 +3,7 @@ const ru = {
     common: {
       confirm: 'Подтвердить',
       cancel: 'Отмена',
+      close: 'Закрыть',
       save: 'Сохранить',
       discard: 'Отменить',
       delete: 'Удалить',
@@ -228,6 +229,10 @@ const ru = {
       loading: 'Загрузка...',
       empty: 'Пусто',
       mountMode: 'Смонтировать как',
+      mount: 'Смонтировать',
+      orDownload: 'Или скачайте по ссылке',
+      keepRunning:
+        'Это окно можно закрыть. Передача продолжится, а её ход отображается в списке образов.',
       massStorage: 'Накопитель',
       cdRom: 'CD-ROM',
       mountFailed: 'Монтирование образа не удалось',
@@ -252,6 +257,7 @@ const ru = {
       fromUrl: 'По URL',
       fromFile: 'Из файла',
       turnOff: 'Отключить',
+      deleteDiskShared: 'Нельзя удалять образы, пока виртуальный диск включён.',
       eject: 'Извлечь',
       download: 'Скачать',
       upload: 'Загрузить',

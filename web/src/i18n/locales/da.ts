@@ -3,6 +3,7 @@ const da = {
     common: {
       confirm: 'Bekræft',
       cancel: 'Annuller',
+      close: 'Luk',
       save: 'Gem',
       discard: 'Kassér',
       delete: 'Slet',
@@ -225,6 +226,10 @@ const da = {
       loading: 'Indlæser...',
       empty: 'Ingen fundet',
       mountMode: 'Monter som',
+      mount: 'Monter',
+      orDownload: 'Eller download fra et link',
+      keepRunning:
+        'Du kan lukke dette vindue. Overførslen fortsætter, og forløbet vises på listen over diskbilleder.',
       massStorage: 'Masselager',
       cdRom: 'CD-ROM',
       mountFailed: 'Montering af diskbillede mislykkedes',
@@ -249,6 +254,7 @@ const da = {
       fromUrl: 'Fra URL',
       fromFile: 'Fra fil',
       turnOff: 'Sluk',
+      deleteDiskShared: 'Billeder kan ikke slettes, mens den virtuelle disk er tændt.',
       eject: 'Skub ud',
       download: 'Download',
       upload: 'Upload',

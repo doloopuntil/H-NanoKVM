@@ -3,6 +3,7 @@ const ja = {
     common: {
       confirm: '確認',
       cancel: 'キャンセル',
+      close: '閉じる',
       save: '保存',
       discard: '破棄',
       delete: '削除',
@@ -226,6 +227,10 @@ const ja = {
       loading: '読み込み中...',
       empty: 'イメージファイルがありません',
       mountMode: 'マウント形式',
+      mount: 'マウント',
+      orDownload: 'またはリンクからダウンロード',
+      keepRunning:
+        'このウィンドウは閉じても構いません。転送は続行され、進行状況はイメージの一覧に表示されます。',
       massStorage: 'マスストレージ',
       cdRom: 'CD-ROM',
       mountFailed: 'マウントに失敗しました',
@@ -250,6 +255,7 @@ const ja = {
       fromUrl: 'URLから',
       fromFile: 'ファイルから',
       turnOff: 'オフにする',
+      deleteDiskShared: '仮想ディスクがオンの間は、イメージを削除できません。',
       eject: '取り出す',
       download: 'ダウンロード',
       upload: 'アップロード',

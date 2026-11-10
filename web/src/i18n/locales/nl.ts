@@ -3,6 +3,7 @@ const nl = {
     common: {
       confirm: 'Bevestigen',
       cancel: 'Annuleren',
+      close: 'Sluiten',
       save: 'Opslaan',
       discard: 'Negeren',
       delete: 'Verwijderen',
@@ -229,6 +230,10 @@ const nl = {
       loading: 'Laden...',
       empty: 'Niets gevonden',
       mountMode: 'Koppelen als',
+      mount: 'Koppelen',
+      orDownload: 'Of download via een link',
+      keepRunning:
+        'U kunt dit venster sluiten. De overdracht gaat door en de voortgang staat in de lijst met afbeeldingen.',
       massStorage: 'Massaopslag',
       cdRom: 'CD-ROM',
       mountFailed: 'Koppelen mislukt',
@@ -253,6 +258,8 @@ const nl = {
       fromUrl: 'Via URL',
       fromFile: 'Uit bestand',
       turnOff: 'Uitschakelen',
+      deleteDiskShared:
+        'Afbeeldingen kunnen niet worden verwijderd zolang de virtuele schijf aan staat.',
       eject: 'Uitwerpen',
       download: 'Downloaden',
       upload: 'Uploaden',

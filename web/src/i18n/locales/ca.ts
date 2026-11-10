@@ -3,6 +3,7 @@ const ca = {
     common: {
       confirm: 'Confirma',
       cancel: 'Cancel·la',
+      close: 'Tanca',
       save: 'Desa',
       discard: 'Descarta',
       delete: 'Esborra',
@@ -226,6 +227,10 @@ const ca = {
       loading: 'Carregant...',
       empty: "No s'ha trobat res",
       mountMode: 'Munta com a',
+      mount: 'Munta',
+      orDownload: "O baixa des d'un enllaç",
+      keepRunning:
+        "Pots tancar aquesta finestra. La transferència continua i el progrés es mostra a la llista d'imatges.",
       massStorage: 'Emmagatzematge massiu',
       cdRom: 'CD-ROM',
       mountFailed: 'Error en muntar',
@@ -249,6 +254,7 @@ const ca = {
       fromUrl: "Des d'una URL",
       fromFile: "Des d'un fitxer",
       turnOff: 'Apaga',
+      deleteDiskShared: 'No es poden suprimir imatges mentre el disc virtual està activat.',
       eject: 'Expulsa',
       download: 'Baixa',
       upload: 'Puja',

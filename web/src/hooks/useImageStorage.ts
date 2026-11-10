@@ -6,6 +6,8 @@ import { attempt } from '@/lib/feedback.ts';
 
 // Whether images can be added or deleted: /data is read-only while the virtual disk serves it
 // to the host, and the remote download can be switched off in the settings.
+export type ImageStorage = ReturnType<typeof useImageStorage>;
+
 export function useImageStorage() {
   const [isWritable, setIsWritable] = useState(false);
   const [isRemoteEnabled, setIsRemoteEnabled] = useState(false);

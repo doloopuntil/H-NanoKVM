@@ -3,6 +3,7 @@ const zh = {
     common: {
       confirm: '确认',
       cancel: '取消',
+      close: '关闭',
       save: '保存',
       discard: '放弃',
       delete: '删除',
@@ -214,6 +215,9 @@ const zh = {
       loading: '加载中...',
       empty: '无镜像文件',
       mountMode: '挂载为',
+      mount: '挂载',
+      orDownload: '或从链接下载',
+      keepRunning: '可以关闭此窗口。传输会继续进行，进度会显示在镜像列表中。',
       massStorage: '大容量存储',
       cdRom: 'CD-ROM',
       mountFailed: '挂载失败',
@@ -235,6 +239,7 @@ const zh = {
       fromUrl: '从链接',
       fromFile: '从文件',
       turnOff: '关闭',
+      deleteDiskShared: '虚拟磁盘开启时无法删除镜像。',
       eject: '弹出',
       download: '下载',
       upload: '上传',
@@ -266,10 +271,8 @@ const zh = {
       delDesc: '确定要删除该文件吗？',
       delete: '删除',
       close: '关闭',
-      unlockDesc:
-        '脚本在 NanoKVM 上以 root 身份运行。请输入 Web 账户密码以上传或运行脚本。',
-      terminalRequired:
-        '脚本需要 Web 终端访问权限。请先在设置中启用终端。'
+      unlockDesc: '脚本在 NanoKVM 上以 root 身份运行。请输入 Web 账户密码以上传或运行脚本。',
+      terminalRequired: '脚本需要 Web 终端访问权限。请先在设置中启用终端。'
     },
     terminal: {
       title: '终端',

@@ -3,6 +3,7 @@ const vi = {
     common: {
       confirm: 'Xác nhận',
       cancel: 'Hủy',
+      close: 'Đóng',
       save: 'Lưu',
       discard: 'Hủy bỏ',
       delete: 'Xóa',
@@ -224,6 +225,10 @@ const vi = {
       loading: 'Đang tải...',
       empty: 'Không tìm thấy',
       mountMode: 'Mount dưới dạng',
+      mount: 'Mount',
+      orDownload: 'Hoặc tải xuống từ liên kết',
+      keepRunning:
+        'Bạn có thể đóng cửa sổ này. Quá trình truyền vẫn tiếp tục và tiến độ hiển thị trong danh sách hình ảnh.',
       massStorage: 'Lưu trữ dung lượng lớn',
       cdRom: 'CD-ROM',
       mountFailed: 'Mount thất bại',
@@ -246,6 +251,7 @@ const vi = {
       fromUrl: 'Từ URL',
       fromFile: 'Từ tệp',
       turnOff: 'Tắt',
+      deleteDiskShared: 'Không thể xóa image khi đĩa ảo đang bật.',
       eject: 'Đẩy ra',
       download: 'Tải xuống',
       upload: 'Tải lên',
