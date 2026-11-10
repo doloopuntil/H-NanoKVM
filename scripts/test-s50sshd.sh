@@ -104,7 +104,7 @@ for expected in "MaxAuthTries 3" "LoginGraceTime 60" "PerSourceNetBlockSize 32:6
 done
 penalties="$(printf '%s\n' "$effective" | grep -i -e '^persourcepenalties ')"
 echo "effective: $penalties"
-for expected in authfail:60.000000 invaliduser:60.000000 max:600.000000; do
+for expected in authfail:10.000000 invaliduser:10.000000 max:600.000000; do
     case " $penalties " in
         *" $expected "*) ;;
         *) fail "effective penalties lack $expected" ;;

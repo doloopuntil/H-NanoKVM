@@ -10,11 +10,12 @@
 PIDFILE="/var/run/sshd.pid"
 # Password guessing limits. Command-line options take precedence over
 # sshd_config, which a raw restore keeps as the device had it: three tries
-# per connection, a minute to log in, and after each connection that fails
-# to authenticate its source (an IPv6 /64) is refused for a minute, up to
-# ten minutes.
+# per connection and a minute to log in. A source (an IPv6 /64) is refused
+# once its failed connections add up to more than 15 s, 10 s each, so one
+# failed probe, as ssh-copy-id makes before it installs a key, is not enough
+# but a second one is; the refusal grows to ten minutes.
 SSHD_LIMITS="-o MaxAuthTries=3 -o LoginGraceTime=60 -o PerSourceNetBlockSize=32:64 \
--o PerSourcePenalties=authfail:60s -o PerSourcePenalties=invaliduser:60s"
+-o PerSourcePenalties=authfail:10s -o PerSourcePenalties=invaliduser:10s"
 
 umask 077
 
