@@ -8,7 +8,8 @@ import { useIsDesktopLayout } from '@/hooks/useResponsiveLayout.ts';
 type MenuItemProps = {
   title: string;
   icon: ReactNode;
-  content: ReactNode;
+  // A function gets `close`, for a menu that opens a dialog and should leave the screen.
+  content: ReactNode | ((close: () => void) => ReactNode);
   className?: string;
   fresh?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -27,14 +28,15 @@ export const MenuItem = ({
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const body = typeof content === 'function' ? content(() => togglePopover(false)) : content;
   const popoverContent = isDesktopLayout ? (
-    content
+    body
   ) : (
     <div
       className="max-h-[calc(100dvh-72px)] w-[min(360px,calc(100vw-16px))] overflow-y-auto"
       onClickCapture={closeMobilePopoverAfterSelection}
     >
-      {content}
+      {body}
     </div>
   );
 
