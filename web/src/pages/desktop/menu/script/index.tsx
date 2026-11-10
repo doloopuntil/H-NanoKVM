@@ -14,7 +14,7 @@ import { Unlock } from './unlock';
 
 // What the unlock dialog is for. The file is chosen first, inside the click, and the password
 // asked after.
-type Pending = { kind: 'upload'; file: File } | { kind: 'run'; type: string };
+type Pending = { kind: 'upload'; file: File } | { kind: 'run'; type: string; script: string };
 
 export const Script = () => {
   const { t } = useTranslation();
@@ -23,6 +23,7 @@ export const Script = () => {
   const [currentScript, setCurrentScript] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [runTicket, setRunTicket] = useState('');
+  const [runName, setRunName] = useState('');
   const [pending, setPending] = useState<Pending | null>(null);
 
   const [isUploading, setIsUploading] = useState(false);
@@ -70,7 +71,7 @@ export const Script = () => {
 
   function runScript(type: string) {
     if (!currentScript) return;
-    setPending({ kind: 'run', type });
+    setPending({ kind: 'run', type, script: currentScript });
   }
 
   function unlocked(ticket: string) {
@@ -81,10 +82,11 @@ export const Script = () => {
     if (action.kind === 'upload') {
       upload(action.file, ticket);
     } else if (action.type === 'foreground') {
+      setRunName(action.script);
       setRunTicket(ticket);
       setIsRunning(true);
     } else {
-      attempt(() => api.runScript(currentScript, action.type, ticket));
+      attempt(() => api.runScript(action.script, action.type, ticket));
     }
   }
 
@@ -98,23 +100,24 @@ export const Script = () => {
     });
   }
 
-  function deleteScript() {
-    if (!currentScript) return;
-
-    attempt(() => api.deleteScript(currentScript)).then((rsp) => {
+  function deleteScript(name: string) {
+    attempt(() => api.deleteScript(name)).then((rsp) => {
       if (!rsp) return;
 
-      setScripts(scripts.filter((script) => script !== currentScript));
+      setScripts((list) => list.filter((script) => script !== name));
     });
   }
 
   function confirmDelete() {
+    const name = currentScript;
+    if (!name) return;
+
     confirm({
       danger: true,
       title: t('script.delete'),
       content: t('script.delDesc'),
       okText: t('script.delete'),
-      onOk: deleteScript
+      onOk: () => deleteScript(name)
     });
   }
 
@@ -122,7 +125,8 @@ export const Script = () => {
     setCurrentScript(script === currentScript ? '' : script);
   }
 
-  const content = (
+  // `close` takes the menu away before a dialog opens over it.
+  const content = (close: () => void) => (
     <div className="min-w-62.5">
       <MenuHeader title={t('script.title')}>
         <input
@@ -130,7 +134,10 @@ export const Script = () => {
           type="file"
           accept=".sh,.py"
           className="hidden"
-          onChange={uploadFile}
+          onChange={(e) => {
+            uploadFile(e);
+            close();
+          }}
         />
         <Button
           ghost
@@ -164,14 +171,36 @@ export const Script = () => {
 
           {script === currentScript && (
             <div className="flex items-center justify-end gap-2 p-3">
-              <Button type="primary" size="small" onClick={() => runScript('foreground')}>
+              <Button
+                type="primary"
+                size="small"
+                onClick={() => {
+                  runScript('foreground');
+                  close();
+                }}
+              >
                 {t('script.run')}
               </Button>
-              <Button type="primary" size="small" onClick={() => runScript('background')}>
+              <Button
+                type="primary"
+                size="small"
+                onClick={() => {
+                  runScript('background');
+                  close();
+                }}
+              >
                 {t('script.runBackground')}
               </Button>
 
-              <Button danger type="primary" size="small" onClick={confirmDelete}>
+              <Button
+                danger
+                type="primary"
+                size="small"
+                onClick={() => {
+                  confirmDelete();
+                  close();
+                }}
+              >
                 {t('script.delete')}
               </Button>
             </div>
@@ -191,7 +220,7 @@ export const Script = () => {
       />
 
       {pending && <Unlock onUnlock={unlocked} onCancel={() => setPending(null)} />}
-      {isRunning && <Run script={currentScript} ticket={runTicket} setIsRunning={setIsRunning} />}
+      {isRunning && <Run script={runName} ticket={runTicket} setIsRunning={setIsRunning} />}
     </>
   );
 };
