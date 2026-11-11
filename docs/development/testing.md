@@ -41,11 +41,12 @@ container on a Mac. The second runs the real keymap, wheel, IME-gate and HID-soc
 ([web input hygiene](web-input-hygiene.md)). None touches a device; the OLED layout and the C++ build are
 checked in CI only.
 
-The init-script tests `scripts/test-s50sshd.sh`, `test-udhcpc6-script.sh` and
-`test-s49ntp.sh` run BusyBox in private user, network and mount namespaces, so they need a
+The init-script tests `scripts/test-s50sshd.sh`, `test-udhcpc6-script.sh`,
+`test-s49ntp.sh` and `test-s30wifi.sh` run BusyBox in private user, network and mount namespaces, so they need a
 Linux host that allows unprivileged overlayfs. The sshd and ntp ones also need host builds
 of OpenSSH and of ntpd with the rootfs patch (`SSHD_BIN`, `SSH_KEYGEN_BIN`, `NTPD_BIN`,
-`NTPQ_BIN`). They have not been run on this tree.
+`NTPQ_BIN`). They have not been run on this tree, except `test-s30wifi.sh`, which passes in a
+privileged Debian container with `busybox-static` and fails against the earlier `S30wifi`.
 
 ## Web UI
 

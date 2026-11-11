@@ -20,7 +20,9 @@ use crate::{
 
 const WOL_MAC_FILE: &str = "/etc/kvm/cache/wol";
 pub(crate) const WIFI_EXIST_FILE: &str = "/etc/kvm/wifi_exist";
-const WIFI_AP_MODE_FILE: &str = "/tmp/wifiap";
+/// Present while the setup access point runs. It opens the Wi-Fi routes that need no login, so
+/// it lives where only root can create it: in `/tmp`, any local account could.
+const WIFI_AP_MODE_FILE: &str = "/run/nanokvm-wifiap";
 const WIFI_SSID_FILE: &str = "/etc/kvm/wifi.ssid";
 const WIFI_PASSWORD_FILE: &str = "/etc/kvm/wifi.pass";
 const WIFI_CONNECT_FILE: &str = "/kvmapp/kvm/wifi_try_connect";
@@ -1830,12 +1832,26 @@ fn write_file(path: &Path, content: &[u8], mode: u32) -> Result<()> {
         fs::create_dir_all(parent)?;
     }
 
+    // The file is created with its final mode, so a secret is never readable by
+    // others, not even between the write and a later chmod.
     let tmp = tmp_path_for(path);
-    fs::write(&tmp, content)?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&tmp, fs::Permissions::from_mode(mode))?;
+    let written = (|| -> std::io::Result<()> {
+        use std::{
+            io::Write,
+            os::unix::fs::{OpenOptionsExt, PermissionsExt},
+        };
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .mode(mode)
+            .custom_flags(nix::libc::O_NOFOLLOW | nix::libc::O_CLOEXEC)
+            .open(&tmp)?;
+        file.write_all(content)?;
+        file.set_permissions(fs::Permissions::from_mode(mode))
+    })();
+    if let Err(err) = written {
+        let _ = fs::remove_file(&tmp);
+        return Err(err.into());
     }
     if let Err(err) = fs::rename(&tmp, path) {
         let _ = fs::remove_file(&tmp);
@@ -2085,5 +2101,34 @@ mod tests {
             Some("10.87.0.1")
         );
         assert_eq!(parse_route_gateway("00000000"), None);
+    }
+
+    #[test]
+    fn a_secret_is_written_with_its_final_mode_over_a_readable_file() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("wifi.pass");
+        fs::write(&target, "old").unwrap();
+        fs::set_permissions(&target, fs::Permissions::from_mode(0o644)).unwrap();
+        write_file(&target, b"new secret", 0o600).unwrap();
+        assert_eq!(fs::read(&target).unwrap(), b"new secret");
+        assert_eq!(
+            fs::metadata(&target).unwrap().permissions().mode() & 0o7777,
+            0o600
+        );
+        let names: Vec<_> = fs::read_dir(dir.path())
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect();
+        assert_eq!(
+            names,
+            [target.file_name().unwrap()],
+            "a temporary file stayed"
+        );
+    }
+
+    #[test]
+    fn the_setup_access_point_flag_is_only_where_root_writes() {
+        assert!(WIFI_AP_MODE_FILE.starts_with("/run/"));
     }
 }
