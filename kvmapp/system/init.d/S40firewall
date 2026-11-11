@@ -149,7 +149,6 @@ apply_baseline_ipv4() {
     iptables -A OUTPUT -o eth0 -p tcp --sport 443 -m state --state ESTABLISHED -j ACCEPT 2>/dev/null || true
     iptables -A INPUT -i eth0 -p tcp --dport 22 -m state --state NEW,ESTABLISHED -j ACCEPT 2>/dev/null || true
     iptables -A OUTPUT -o eth0 -p tcp --dport 22 -m state --state ESTABLISHED -j ACCEPT 2>/dev/null || true
-    iptables -A OUTPUT -o eth0 -p tcp --sport 8000 -m state --state ESTABLISHED -j DROP 2>/dev/null || true
 }
 
 apply_baseline_ipv6() {
@@ -179,7 +178,6 @@ apply_moderate_ipv4() {
     allow_local_ipv4_new
     wg_enabled && allow_wg_ipv4_new
     iptables -A INPUT -p udp --sport 67 --dport 68 -j ACCEPT 2>/dev/null || true
-    iptables -A OUTPUT -o eth0 -p tcp --sport 8000 -m state --state ESTABLISHED -j DROP 2>/dev/null || true
     iptables -P INPUT DROP
     iptables -P FORWARD DROP
     iptables -P OUTPUT ACCEPT
