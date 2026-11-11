@@ -1,7 +1,26 @@
 #!/bin/sh
 
+SYSCTL_FS=${SYSCTL_FS:-/proc/sys/fs}
+
+# Root writes and reads files in /tmp, where every account can write. The
+# kernel then refuses to follow another account's link there, to hard-link a
+# file one cannot write, and to open another account's file or FIFO there for
+# writing. The image sets the same in /etc/sysctl.d; this also covers older ones.
+protect_shared_directories() {
+        for knob in protected_symlinks protected_hardlinks
+        do
+                { echo 1 > "$SYSCTL_FS/$knob"; } 2>/dev/null || true
+        done
+        for knob in protected_regular protected_fifos
+        do
+                { echo 2 > "$SYSCTL_FS/$knob"; } 2>/dev/null || true
+        done
+}
+
 if [ "$1" = "start" ]
 then
+        protect_shared_directories
+
         DATA_DEVICE=/dev/mmcblk0p3
         DATA_MOUNT=/data
         DATA_LOG=/tmp/data-mount.log
