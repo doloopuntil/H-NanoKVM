@@ -1,7 +1,7 @@
 ---
 status: current
-applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-28
+applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
+last-checked: 2026-11-11
 source: kvmapp/system/init.d/
 ---
 
@@ -11,15 +11,24 @@ The scripts live in `kvmapp/system/init.d/` and are installed to `/etc/init.d/`.
 BusyBox init runs them in name order at boot. The server controls services only
 through these scripts, never by starting daemons itself.
 
+Before init, the kernel runs the initramfs from `boot.itb`. Its `/init` waits for the SD
+card, checks for USB recovery (`/boot/rec`, the User Key held at power-on, or a root
+filesystem that does not mount after `e2fsck -fp`; see
+[Files on the device](device-files.md)), and otherwise switches to the root filesystem.
+The kernel keeps feeding the watchdog the FSBL armed until `S02watchdog` takes it over.
+
+Buildroot adds its own scripts between these (`S01seedrng`, `S02sysctl`, `S10udevd`,
+`S11modules`, `S35nftables`, `S40network`, `S50crond`); the table lists ours.
+
 | Script | Does |
 | --- | --- |
-| `S00kmod` | Loads the SG2002 kernel modules (video, encoder, I2C, …). |
+| `S00kmod` | Loads the 11 Sophgo media modules from `/lib/modules/<release>/extra` in dependency order (`soph_sys` first, `soph_vc_driver` last with 9 encoder and 9 decoder channels). Everything else the system needs is built into the kernel. |
 | `S01fs` | Mounts and prepares the data partition, creating it from the space after the root partition on a new card; keeps `/data` read-only while the virtual disk shares it. Grows the root filesystem into its partition at every boot. A root filesystem flagged with errors, which blocks that growth, is checked with `e2fsck` first; the RTC register `RTC_INFO2` limits this to one attempt per power cycle. |
 | `S01syslogd`, `S02klogd` | System and kernel logging, to the tmpfs buffer and optionally to remote syslog. |
 | `S02watchdog` | Arms the SoC hardware watchdog (60 s timeout, fed every 10 s) and sets `kernel.panic=10`, so a hung or panicked system restarts by itself. Records why the chip last restarted in `/tmp/boot-reason`. `/boot/disable_watchdog` turns it off and disarms the timer the FSBL started. The raw system update stops it before writing the partitions. |
 | `S03usbdev` | Builds the USB gadget: keyboard, mice, mass storage, network. Hands over to `S03usbhid` when `/boot/usb.hidonly` exists. |
 | `S03usbhid` | The HID-only gadget: keyboard and mice only. |
-| `S15kvmhwd` | Board GPIO and hardware setup (OLED reset, ATX pins). |
+| `S15kvmhwd` | Detects the board and the HDMI bridge once and writes `/etc/kvm/hw` (`beta` or `pcie`, rebooting after the first `pcie` detection) and `/etc/kvm/hdmi_version`; `re-detect` repeats it. Sets the SDIO pins for the PCIe board's Wi-Fi. The device tree muxes the other pins and names the GPIO lines, which the server and libkvm claim by name. |
 | `S30eth` | Wired network: DHCP or static IPv4, fixed DNS servers, IPv6 modes, MAC derived from the chip ID. |
 | `S30wifi` | Wi-Fi client or access-point mode. |
 | `S40firewall` | Applies the firewall mode from `/etc/kvm/firewall.json`, including the WireGuard rules. `acme-open` and `acme-close` add and remove one rule that lets any source reach the HTTPS port while a certificate authority validates an order. See [Firewall modes](../guide/firewall.md). |
