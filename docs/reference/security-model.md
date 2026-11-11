@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-07
+last-checked: 2026-11-11
 ---
 
 # Security model
@@ -52,6 +52,9 @@ behaviour is in the guides ([sign-in](../guide/sign-in.md),
 - The server runs as root. Splitting privileged operations into a smaller
   helper is future work.
 - The login lockout is per address and user, plus a budget per address across all names; there is no counter across addresses.
+- `/tmp` and `/dev/shm` are mounted with the tmpfs defaults. Mounting them `noexec` (woffko's
+  4f541063) would stop the server: S95nanokvm runs `NanoKVM-Server` and `kvm_system` from copies in
+  `/tmp`. Moving those copies is the prerequisite.
 - Remote ISO download has no allowlist of sources, only the public-host check; it stays off by default.
 - Retained vendor components with `NOASSERTION` licence metadata remain a
   documented limitation.
