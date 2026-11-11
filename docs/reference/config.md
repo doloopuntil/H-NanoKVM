@@ -38,7 +38,7 @@ are still accepted.
 | `jwt.secret_key` | empty | Upstream field; the session secret lives in `/etc/kvm/session_secret`, generated on first start. |
 | `jwt.refresh_token_duration` | `2678400` | Seconds. |
 | `jwt.revoke_tokens_on_logout` | `true` | |
-| `security.login_max_failures` | `5` | Failed sign-ins per address and user before a lockout. |
+| `security.login_max_failures` | `5` | Failed sign-ins per address and user before a lockout; an address is also locked after four times as many failures across all users. |
 | `security.login_lockout_duration` | `600` | Lockout in seconds. |
 | `security.require_csrf` | `true` | CSRF token on state-changing requests. |
 | `security.websocket_origin_check` | `true` | Reject WebSockets from another origin. |

@@ -32,7 +32,7 @@ behaviour is in the guides ([sign-in](../guide/sign-in.md),
 | Sessions | Opaque in-memory sessions, per-device secret, revoked on logout and password change. Optional idle lock. At most 32 live sessions: a login drops the expired ones and, at the cap, revokes the one closest to expiry. The terminal, HID, MJPEG and H.264 direct sockets and the PicoClaw chat end with the login that opened them (logout, a password change or expiry). WebRTC peers are not tied to it. |
 | Two-factor | Optional TOTP with backup codes; every change needs the password and, once enrolled, a fresh code; `security.require_totp` confines an unenrolled session to enrolment. |
 | CSRF and origin | CSRF token plus `Origin`/`Referer` check on every state-changing request; WebSockets check `Origin`. |
-| Brute force | Lockout after 5 failures per source and user, for 10 minutes; the source is an IPv4 address or the /64 of an IPv6 address, so one host cannot rotate through its network. One password check runs at a time on a blocking thread, and a wrong username takes as long as a wrong password. TOTP failures count too. The address is the TCP peer's, or, from a peer in `security.trusted_proxies` only, the rightmost `X-Forwarded-For` hop that is not itself trusted. |
+| Brute force | Lockout after 5 failures per source and user, for 10 minutes; the source is an IPv4 address or the /64 of an IPv6 address, so one host cannot rotate through its network. A source also has one budget of four times that across all names, so rotating names does not get around the lockout, and each table keeps at most 1024 entries. A login name over 256 bytes or empty, and a password over 4 KiB as sent, are refused before the lockout or the hash. One password check runs at a time on a blocking thread, and a wrong username takes as long as a wrong password. TOTP failures count too. The address is the TCP peer's, or, from a peer in `security.trusted_proxies` only, the rightmost `X-Forwarded-For` hop that is not itself trusted. |
 | Reverse proxy | `X-Forwarded-For` and `X-Forwarded-Proto` are ignored unless the peer is in `security.trusted_proxies` (empty by default). A trusted peer sets the client address of the lockout and the log, the `Secure` flag of the cookies, and pins the scheme of the `Origin` checks. The raw peer still decides loopback-only routes. [Guide](../guide/reverse-proxy.md). |
 | Step-up | Changing the password, disabling two-factor, reissuing backup codes, unlocking the terminal, uploading or running a script, setting or removing the local update key, changing the HTTPS certificate source, changing the trusted proxies and turning remote image download on need the password and, when the account has two-factor, a fresh code. |
 | Password re-checks | Password change, two-factor changes, the local update key and the terminal share one lockout per address and user, apart from the login's. Wrong codes lock out separately. |
@@ -51,7 +51,7 @@ behaviour is in the guides ([sign-in](../guide/sign-in.md),
 
 - The server runs as root. Splitting privileged operations into a smaller
   helper is future work.
-- The login lockout is per address and user, with no global counter.
+- The login lockout is per address and user, plus a budget per address across all names; there is no counter across addresses.
 - Remote ISO download has no allowlist of sources, only the public-host check; it stays off by default.
 - Retained vendor components with `NOASSERTION` licence metadata remain a
   documented limitation.
