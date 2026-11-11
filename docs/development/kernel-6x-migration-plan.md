@@ -1175,6 +1175,14 @@ GPIO lines; `init-scripts.md` has the initramfs, `S00kmod`'s 11 modules and the 
 `S15kvmhwd`; `security-model.md` has the 6.18 kernel settings (read from `/proc/config.gz`
 on the Lite) and `/dev/mem` without `STRICT_DEVMEM`.
 
+Vendor SDK jobs (dropped 2026-11-11, not yet through CI): the 6.18 image took only five
+files from the stock vendor image. The four GCC runtime libraries are the MaixCDK musl
+toolchain's plain `lib64/lp64d` build, stripped with `.comment` removed: byte-identical to
+the copies on the Lite. `scripts/stage-maixcdk-runtime.sh` stages them and the link-time
+`libc.so` in `build-native-libkvm`, pinned by hash. `libsns_lt6911.so` is dropped: no process
+on the Lite maps it (`libkvm_mmf.so` compiles in its own LT6911 driver). `vendor-sdk-source`
+and `vendor-sdk` are gone from `system-image-6x.yml`; `system-image.yml` keeps them.
+
 Exit: a CI-built image flashes, boots and passes the Phase 1-3 checks unattended.
 
 **Added step: first setup approved by the user key** (decided 2026-11-08; not started;
@@ -1290,15 +1298,16 @@ which every unit has (the Lite has Reset and a user button):
   The CI step passes `KERNEL_VERSION=6.18.29`. An OTA install is proven on the first
   CI-built image. `scripts/test-system-update-v2.sh` was already broken by `facc301d`
   (`create-system-update-bundle.sh` now wraps an archive into an upload bundle).
-- CI: `.github/workflows/system-image-6x.yml` reuses `vendor-sdk-source`, `vendor-sdk`
-  (stock image, for the GCC runtime libraries and `libsns_lt6911.so`) and
+- CI: `.github/workflows/system-image-6x.yml` reused `vendor-sdk-source`, `vendor-sdk`
+  (stock image, for the GCC runtime libraries and `libsns_lt6911.so`; both dropped since) and
   `build-native-libkvm` from `system-image.yml`, then one `build-image` job:
   `scripts/fetch-licheerv-external.sh` (pinned `019ffc86`) and
   `fetch-sg2002-boot-source.sh`, the kvmapp bridge, and
   `scripts/build-buildroot-6x-image.sh`, which configures Buildroot with both external
   trees, builds kernel, media modules, FIPs, U-Boot and rootfs, and checks the result
   (kernel release and patches 0001-0003, boot partition files, the FIT parts, the 11
-  modules, `libsns_lt6911.so`, `system-version.json`, `validate-nanokvm-rootfs.sh`).
+  modules, `libsns_lt6911.so` (now the GCC runtime), `system-version.json`,
+  `validate-nanokvm-rootfs.sh`).
   Artifacts: `hardened-sg2002-6x.img.xz` and the unsigned update archive. A clean
   Buildroot extract applies licheerv's patches and then 0001-0003 (24 in all) [V].
   The first run built everything and failed in `post-image.sh`: Buildroot has no

@@ -58,25 +58,22 @@ as the 5.10 image, so the raw updater can write both).
 
 ## Pipeline shape
 
-Five jobs. Jobs hand each other files as workflow artifacts (tarred, since artifacts drop
+Three jobs. Jobs hand each other files as workflow artifacts (tarred, since artifacts drop
 permissions and symlinks), so "re-run failed jobs" reuses everything that already
-succeeded.
+succeeded. The vendor SDK is not built: nothing in the 6.18 image comes from its stock
+image.
 
-- **`vendor-sdk-source`**: the pinned `sipeed/LicheeRV-Nano-Build` SDK checkout and its
-  tracked patches. Takes minutes.
-- **`vendor-sdk`** (`needs: vendor-sdk-source`): builds the SDK's stock image
-  (`make vendor-sdk-stock`, about 95 minutes, cached by input hash). The 6.18 image takes
-  only the four GCC runtime libraries, the `libc.so`/`libgcc_s.so.1` link sysroot and
-  `libsns_lt6911.so` from it. Whether a smaller build can supply those is open (plan,
-  Phase 4).
-- **`build-native-libkvm`**: independent of the vendor SDK. Builds the Sophgo middleware,
-  `libkvm.so`, `libkvm_mmf.so` and `kvm_system` with the toolchain MaixCDK pins (Xuantie
-  GCC 10.2, musl), as described under [`kvm_system`](#kvm_system-built-from-source-too).
-- **`build-buildroot`** (`needs: vendor-sdk, build-native-libkvm`): builds the Rust server
+- **`build-native-libkvm`**: builds the Sophgo middleware, `libkvm.so`, `libkvm_mmf.so`
+  and `kvm_system` with the toolchain MaixCDK pins (Xuantie GCC 10.2, musl), as described
+  under [`kvm_system`](#kvm_system-built-from-source-too). `scripts/stage-maixcdk-runtime.sh`
+  then takes the four GCC runtime libraries and the link-time `libc.so` from the same
+  toolchain (plain `rv64gc` `lp64d`, stripped). The runtime libraries are pinned by hash to
+  the stock vendor image's copies, which they match byte for byte.
+- **`build-buildroot`** (`needs: build-native-libkvm`): builds the Rust server
   against the fresh `libkvm`, then runs `scripts/build-buildroot-6x-image.sh build`:
   Buildroot without the post-image step, followed by checks on the result (the kernel
   release string and patches 0001-0003, the 11 modules in
-  `/lib/modules/6.18.29/extra`, `libsns_lt6911.so`, the `sg2002-hnanokvm-sd` target and
+  `/lib/modules/6.18.29/extra`, the GCC runtime in `dl_lib`, the `sg2002-hnanokvm-sd` target and
   kernel version in `system-version.json`, and `scripts/validate-nanokvm-rootfs.sh`). It
   uploads a handoff for the next job: the images, the host tools without the cross
   toolchain, `gen_init_cpio`, the initramfs binaries and `SOURCE_DATE_EPOCH`. The compiler
@@ -100,7 +97,8 @@ All jobs run in the `sg2002-image-build-6x` concurrency group
 | FSBL, OpenSBI, U-Boot | vendor SDK stock build (U-Boot 2021.10) | FSBL from the SDK source, OpenSBI 1.8.1 and U-Boot 2025.10 from Buildroot |
 | Boot payload | `boot.sd` | `boot.scr` and the verified FIT `boot.itb` |
 | Media middleware and `libkvm` | `build-native-libkvm` | same job |
-| GCC runtime, `libsns_lt6911.so` | `vendor-sdk-stock` | same |
+| GCC runtime | `vendor-sdk-stock` | the MaixCDK toolchain (same bytes) |
+| `libsns_lt6911.so` | `vendor-sdk-stock` | not shipped: nothing loads it |
 
 `ddr_param.bin` is the one vendor blob inside the FIPs: no source exists for it anywhere,
 and the SDK, licheerv and varyhin carry the same file.

@@ -82,15 +82,17 @@ build_stage() {
 		grep -q "/$patch\$" "$applied" || die "kernel patch not applied: $patch"
 	done
 
-	# Rootfs: the media modules, the sensor library and the update metadata
+	# Rootfs: the media modules, libkvm's GCC runtime and the update metadata
 	ROOTFS="$IMAGES/rootfs.ext4"
 	debugfs -R "ls -l /lib/modules/$EXPECTED_KERNEL_RELEASE/extra" "$ROOTFS" \
 		> "$REPORT_DIR/media-modules.txt" 2>/dev/null
 	for module in $MEDIA_MODULES; do
 		grep -q " $module.ko\$" "$REPORT_DIR/media-modules.txt" || die "rootfs lacks $module.ko"
 	done
-	debugfs -R "stat /mnt/system/usr/lib/libsns_lt6911.so" "$ROOTFS" 2>/dev/null | \
-		grep -q "Type: regular" || die "rootfs lacks libsns_lt6911.so"
+	for lib in libstdc++.so.6.0.28 libgcc_s.so.1 libgomp.so.1.0.0 libatomic.so.1.2.0; do
+		debugfs -R "stat /kvmapp/server/dl_lib/$lib" "$ROOTFS" 2>/dev/null | \
+			grep -q "Type: regular" || die "rootfs lacks $lib"
+	done
 	debugfs -R "dump /etc/kvm/system-version.json $REPORT_DIR/system-version.json" "$ROOTFS" \
 		>/dev/null 2>&1
 	grep -q "\"target\": \"$EXPECTED_TARGET\"" "$REPORT_DIR/system-version.json" || \
