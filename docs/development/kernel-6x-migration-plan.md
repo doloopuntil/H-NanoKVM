@@ -1106,15 +1106,41 @@ Exit: parity or better on the Phase 0 numbers; no crashes in the soak.
   followed only after two fixes (fe24ae70): `lt-int-gpios` on PWR_GPIO1, and
   `kvm_mmf` sending VI the bridge's current size. `LT-INT` fires on each change,
   VI runs at 60 fps at each size with no lost frames. A Mac is no use for this
-  test: its scaled modes keep a 1080p signal. Open issue: the browser stream stays
-  black after the camera restarts until the page is reloaded.
+  test: its scaled modes keep a 1080p signal. A black stream seen after a change
+  was the phone putting its external display to sleep, not a capture fault.
 - Auto stream size follows the input (9d9b1322 and the next commit): a 4:3 host mode
   is shown whole. `kvm_mmf` rounds the VPSS output width up to 64 and crops to
   fill, so Auto picks a 64-aligned width and keeps the aspect (800x600 -> 768x576).
-  The fixed 800x600 menu size still rounds to 832 and crops. Phone as host: 800x600,
+  The fixed 800x600 menu size cropped (top, bottom and right): the 832-wide channel
+  scaled the input and the camera kept 800 columns. Fix, not yet built: `kvm_mmf`
+  keeps the exact channel width (VPSS pads only the stride to 64), the camera copies
+  rows by the padded pitch, and `mmf_vi_frame_pop` refuses any other layout. Once
+  built, Auto could use the input size directly. Phone as host: 800x600,
   1024x768, 1280x720, 1280x1024 and 1920x1080 work; at 640x480 the LT6911 raises
   its interrupt but sends nothing on MIPI (bridge limit, not the port).
-- The EDID flow, idle timeout and HID-only mode: still to test.
+- Slow mode changes (about 20 s, "no HDMI signal" and "adjusting resolution"
+  alternating): `/etc/kvm/hdmi_mode` was 1. libkvm drops from bridge mode (0: read
+  the size over I2C on `LT-INT`) to scan mode (1: restart the camera at each size in
+  a list, about 1.25 s each) when the bridge reports a size in neither list, and it
+  left scan mode only if the scan failed; the file kept it there across reboots.
+  Writing 0 restored fast changes. Fix, not yet built: retry the size read five
+  times over 1 s before falling back, return to bridge mode after a successful scan,
+  reset the file at start on every bridge but `ue`, and name the modes
+  (`HDMI_MODE_BRIDGE`, `HDMI_MODE_SCAN`, `HDMI_MODE_MANUAL`). The server logs an `h264 capture failure` per
+  frame while libkvm reports a change (about 60 lines a second); to throttle.
+- EDID flow: nothing to test. libkvm has `lt6911_read_edid`/`lt6911_write_edid`,
+  but nothing calls them and neither the server nor the UI exposes EDID.
+- Idle timeout: PCIe only. The setting is hidden on other boards, and without a
+  bridge reset libkvm only clears a flag. The Lite's 22-pin CSI connector has no
+  free line for one (LicheeRV Nano schematics 70405/70415/70418): CAM_IO0 is
+  PWR_GPIO1 (`LT-INT`), and CAM_IO1 joins `MIPIRX0N` through R72 (0 R), a live data
+  lane (`/proc/mipi-rx` link IDs `2, 4, 3, 1, 0`). PCIe's reset (XGPIOB3) is not on
+  the connector. To do: find the LT6911UXC datasheet and check for a soft reset or
+  power-down over I2C, which would let the Lite stop the bridge without a pin.
+- HID-only mode (Lite, phone as host): switching it on writes `/boot/usb.hidonly`
+  and reboots; the gadget then binds only `hid.GS0`-`GS2` (no mass storage, no
+  `usb0`), the host configures it, and keyboard and mouse work. Switching it off
+  restores HID, mass storage and RNDIS.
 
 ### Phase 4: platform integration
 

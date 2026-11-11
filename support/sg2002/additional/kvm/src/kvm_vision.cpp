@@ -57,6 +57,11 @@
 #define vi_width_path           "/kvmapp/kvm/width"
 #define vi_height_path          "/kvmapp/kvm/height"
 #define hdmi_mode_path          "/etc/kvm/hdmi_mode"
+// /etc/kvm/hdmi_mode: how libkvm finds the HDMI input size
+#define HDMI_MODE_BRIDGE        0   // read it from the bridge over I2C on LT-INT
+#define HDMI_MODE_SCAN          1   // restart the camera at each size in hdmi_res_list
+#define HDMI_MODE_MANUAL        2   // use /kvmapp/kvm/width and height
+#define HDMI_MODE_MAX           HDMI_MODE_MANUAL
 #define hdmi_state_path         "/proc/lt_int"
 #define hdmi_signal_file_path   "/kvmapp/kvm/state"
 #define watchdog_mode_path      "/etc/kvm/watchdog"
@@ -130,7 +135,7 @@ typedef struct {
     uint8_t hw_version = 0;
     std::atomic<uint8_t> hdmi_stop_flag{0};
     std::atomic<uint8_t> hdmi_reading_flag{0};
-    uint8_t hdmi_mode = 0;
+    uint8_t hdmi_mode = HDMI_MODE_BRIDGE;
     std::atomic<uint8_t> hdmi_res_type{0};
     std::atomic<uint8_t> hdmi_res_err{0};
     uint8_t hdmi_try_rounds = 0;
@@ -434,7 +439,7 @@ void write_res_to_file(uint16_t _width, uint16_t _height)
 
 int set_hdmi_mode(uint8_t _hdmi_mode)
 {
-    if(_hdmi_mode <= 2){
+    if(_hdmi_mode <= HDMI_MODE_MAX){
         char Cmd[100]={0};
         sprintf(Cmd, "echo %d > %s", _hdmi_mode, hdmi_mode_path);
         system(Cmd);
@@ -450,15 +455,15 @@ int get_hdmi_mode(void)
     if(access(hdmi_mode_path, F_OK) == 0){
         uint16_t parsed_mode = 0;
         uint8_t tmp8 = 0;
-        if (read_uint16_file(hdmi_mode_path, &parsed_mode) && parsed_mode <= 2) {
+        if (read_uint16_file(hdmi_mode_path, &parsed_mode) && parsed_mode <= HDMI_MODE_MAX) {
             tmp8 = static_cast<uint8_t>(parsed_mode);
 		} else {
 			tmp8 = 3;
         }
-        if(tmp8 > 2) {
-            tmp8 = 0;
+        if(tmp8 > HDMI_MODE_MAX) {
+            tmp8 = HDMI_MODE_BRIDGE;
 	        char Cmd[100]={0};
-            sprintf(Cmd, "echo 0 > %s", hdmi_mode_path);
+            sprintf(Cmd, "echo %d > %s", HDMI_MODE_BRIDGE, hdmi_mode_path);
             system(Cmd);
         }
         if(tmp8 != kvmv_cfg.hdmi_mode){
@@ -469,7 +474,7 @@ int get_hdmi_mode(void)
             return 0;
         }
     }
-    kvmv_cfg.hdmi_mode = 0;
+    kvmv_cfg.hdmi_mode = HDMI_MODE_BRIDGE;
     return 0;
 }
 
@@ -988,6 +993,11 @@ static uint8_t refresh_csi_resolution()
 	uint16_t width = kvmv_cfg.vi_width.load(std::memory_order_relaxed);
 	uint16_t height = kvmv_cfg.vi_height.load(std::memory_order_relaxed);
 	uint8_t result = lt6911_get_csi_res(&width, &height);
+	// Mid-switch reads can be odd; retry before the caller falls back to the scan
+	for (int i = 0; i < 5 && result == UNKNOWN_RES; i++) {
+		time::sleep_ms(200);
+		result = lt6911_get_csi_res(&width, &height);
+	}
 	kvmv_cfg.vi_width.store(width, std::memory_order_release);
 	kvmv_cfg.vi_height.store(height, std::memory_order_release);
 	return result;
@@ -1260,7 +1270,7 @@ void get_hdmi_version()
             if(RW_Data[1] == 'e'){
                 kvmv_cfg.hdmi_version = 2;
                 debug("[hdmi]HDMI-UE exist!\n");
-                set_hdmi_mode(1);
+                set_hdmi_mode(HDMI_MODE_SCAN);
             } else if(RW_Data[1] == 'x') {
                 kvmv_cfg.hdmi_version = 1;
                 debug("[hdmi]HDMI-UX exist!\n");
@@ -1277,6 +1287,8 @@ void get_hdmi_version()
             kvmv_cfg.hdmi_version = 0;
             debug("[hdmi]HDMI-C exist!\n");
         }
+        // Only libkvm writes hdmi_mode; clear a scan mode left by an earlier run
+        if(kvmv_cfg.hdmi_version != 2) set_hdmi_mode(HDMI_MODE_BRIDGE);
         RW_Data[0] = 0;
     } else {
         kvmv_cfg.hdmi_version = 0;
@@ -1304,18 +1316,18 @@ void* vi_subsystem_detection(void * arg)
     last_vi_state_refresh_ms = vi_state_shared::monotonic_ms() - vi_state_publish_interval_ms;
     while(!stop_threads.load(std::memory_order_acquire))
     {
-        uint8_t get_new_hdmi_mode = get_hdmi_mode();
+        uint8_t hdmi_mode_changed = get_hdmi_mode();
         uint8_t try_res;
         uint8_t err_code;
         uint8_t vi_state_refreshed = 0;
         uint8_t vi_state_due = vi_state_shared::monotonic_ms() - last_vi_state_refresh_ms >= vi_state_publish_interval_ms;
         uint8_t manual_vi_init_now =
-            (kvmv_cfg.hdmi_mode == 2 &&
-             (get_new_hdmi_mode == 1 || kvmv_cfg.vi_detect_state == 0));
+            (kvmv_cfg.hdmi_mode == HDMI_MODE_MANUAL &&
+             (hdmi_mode_changed == 1 || kvmv_cfg.vi_detect_state == 0));
         uint8_t defer_vi_state_refresh =
-            (kvmv_cfg.hdmi_mode == 1 &&
-             (kvmv_cfg.vi_detect_state == 1 || get_new_hdmi_mode == 1)) ||
-            (kvmv_cfg.hdmi_mode == 2 &&
+            (kvmv_cfg.hdmi_mode == HDMI_MODE_SCAN &&
+             (kvmv_cfg.vi_detect_state == 1 || hdmi_mode_changed == 1)) ||
+            (kvmv_cfg.hdmi_mode == HDMI_MODE_MANUAL &&
              (manual_vi_init_now || kvmv_cfg.vi_detect_state == 1));
 
         if (vi_state_due && !defer_vi_state_refresh) {
@@ -1324,10 +1336,10 @@ void* vi_subsystem_detection(void * arg)
         }
 
         switch (kvmv_cfg.hdmi_mode){
-        case 0:
-            // Switching to Mode 0 requires restarting HDMI (effective only for PCIe version)
+        case HDMI_MODE_BRIDGE:
+            // Switching to bridge mode requires restarting HDMI (effective only for PCIe version)
             // Handling of automatic detection situations
-            if(get_new_hdmi_mode == 1){
+            if(hdmi_mode_changed == 1){
                 kvmv_cfg.vi_detect_state = 0;
                 // reset hdmi_state
                 char Cmd[100]={0};
@@ -1371,7 +1383,7 @@ void* vi_subsystem_detection(void * arg)
                                         /* Move HDMI resolution modification directly
                                             to mode1 to solve deadlock problem */
                                         auto_change_mode = 1;
-                                        set_hdmi_mode(1);
+                                        set_hdmi_mode(HDMI_MODE_SCAN);
                                     }
                                 } else {
                                     // HDMI res = 0*0/x*0
@@ -1396,7 +1408,7 @@ void* vi_subsystem_detection(void * arg)
                                         /* Move HDMI resolution modification directly
                                             to mode1 to solve deadlock problem */
                                         auto_change_mode = 1;
-                                        set_hdmi_mode(1);
+                                        set_hdmi_mode(HDMI_MODE_SCAN);
                                     }
                                 } else {
                                     // HDMI res = 0*0/x*0
@@ -1421,7 +1433,7 @@ void* vi_subsystem_detection(void * arg)
                                         /* Move HDMI resolution modification directly
                                             to mode1 to solve deadlock problem */
                                         auto_change_mode = 1;
-                                        set_hdmi_mode(1);
+                                        set_hdmi_mode(HDMI_MODE_SCAN);
                                     }
                                 } else {
                                     // HDMI res = 0*0/x*0
@@ -1441,14 +1453,14 @@ void* vi_subsystem_detection(void * arg)
             break;
         /* Mode 1 & 2 will disable API access to the image during detection,
            and will output -4: Modifying image resolution, please wait.*/
-        case 1: // Automatically trying common resolutions
+        case HDMI_MODE_SCAN: // Automatically trying common resolutions
             /* kvmv_cfg.vi_detect_state :
              * 0: HDMI standard mode, detection program does not interfere with the camera
              * 1: Preparing / Testing in progress
              * 2: Test completed: Suitable resolution found,
              */
 
-            if(get_new_hdmi_mode == 1){
+            if(hdmi_mode_changed == 1){
                 kvmv_cfg.vi_detect_state = 1;
             }
             if(kvmv_cfg.vi_detect_state == 1){
@@ -1457,6 +1469,11 @@ void* vi_subsystem_detection(void * arg)
                     kvmv_cfg.hdmi_res_err = NORMAL_RES;
                     kvmv_cfg.hdmi_try_rounds = 0;
                     kvmv_cfg.vi_detect_state = 2;
+                    // A fallback from bridge mode must not stick
+                    if(auto_change_mode == 1){
+                        auto_change_mode = 0;
+                        set_hdmi_mode(HDMI_MODE_BRIDGE);
+                    }
                 } else if (try_res == 0) {
                     /*  There may be a situation where the correct resolution cannot be recognized
                         after one round of detection. By default, Try_rounds_HDMI_err_res rounds will be detected,
@@ -1469,9 +1486,9 @@ void* vi_subsystem_detection(void * arg)
                         // printf("[kvmv] Suitable resolution not found, switching to manual input mode automatically\n");
                         if(auto_change_mode == 1){
                             auto_change_mode = 0;
-                            set_hdmi_mode(0);
+                            set_hdmi_mode(HDMI_MODE_BRIDGE);
                         } else {
-                            set_hdmi_mode(2);
+                            set_hdmi_mode(HDMI_MODE_MANUAL);
                         }
                     }
                 } else if (try_res == 2) {
@@ -1487,7 +1504,7 @@ void* vi_subsystem_detection(void * arg)
                 kvmv_cfg.vi_detect_state = 1;
             }
             break;
-        case 2:
+        case HDMI_MODE_MANUAL:
             // Manually initialize VI.
             if (manual_vi_init_now) {
                 // Initialize immediately when entering manual mode instead of

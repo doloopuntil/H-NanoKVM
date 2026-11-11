@@ -182,11 +182,14 @@ namespace maix::camera
                     img = new image::Image(this->width, this->height, this->format);
                 }
                 void *image_data = img->data();
+                // VPSS rows are padded to align_width bytes
+                int pitch = (width + this->align_width - 1) / this->align_width * this->align_width;
+                int rgb_pitch = (width * 3 + this->align_width - 1) / this->align_width * this->align_width;
                 switch (img->format()) {
                     case image::Format::FMT_GRAYSCALE:
                         if (this->align_need) {
                             for (int h = 0; h < this->height; h ++) {
-                                memcpy((uint8_t *)image_data + h * this->width, (uint8_t *)buffer + h * width, this->width);
+                                memcpy((uint8_t *)image_data + h * this->width, (uint8_t *)buffer + h * pitch, this->width);
                             }
                         } else {
                             memcpy(image_data, buffer, this->width * this->height);
@@ -196,7 +199,7 @@ namespace maix::camera
                     case image::Format::FMT_RGB888:
                         if (this->align_need) {
                             for (int h = 0; h < this->height; h++) {
-                                memcpy((uint8_t *)image_data + h * this->width * 3, (uint8_t *)buffer + h * width * 3, this->width * 3);
+                                memcpy((uint8_t *)image_data + h * this->width * 3, (uint8_t *)buffer + h * rgb_pitch, this->width * 3);
                             }
                         } else {
                             memcpy(image_data, buffer, this->width * this->height * 3);
@@ -205,7 +208,7 @@ namespace maix::camera
                     case image::Format::FMT_YVU420SP:
                         if (this->align_need) {
                             for (int h = 0; h < this->height * 3 / 2; h ++) {
-                                memcpy((uint8_t *)image_data + h * this->width, (uint8_t *)buffer + h * width, this->width);
+                                memcpy((uint8_t *)image_data + h * this->width, (uint8_t *)buffer + h * pitch, this->width);
                             }
                         } else {
                             memcpy(image_data, buffer, this->width * this->height * 3 / 2);
