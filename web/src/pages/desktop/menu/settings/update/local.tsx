@@ -7,6 +7,7 @@ import * as totpApi from '@/api/auth-totp.ts';
 import { getVirtualDevice, updateVirtualDevice } from '@/api/virtual-device.ts';
 import { encrypt } from '@/lib/encrypt.ts';
 import { attempt, confirm, toast } from '@/lib/feedback.ts';
+import type { UploadResponse } from '@/lib/upload.ts';
 import { SettingRow } from '@/components/setting-rows.tsx';
 
 function megabytes(bytes: number) {
@@ -26,8 +27,12 @@ type UploadProps = {
 type BundleUploadProps = UploadProps & {
   label: string;
   description: string;
-  check: (size: number) => Promise<any>;
-  send: (data: FormData, onProgress: (loaded: number, total: number) => void) => Promise<any>;
+  // why the server will not take a file of this size, or null
+  check: (size: number) => Promise<string | null>;
+  send: (
+    data: FormData,
+    onProgress: (loaded: number, total: number) => void
+  ) => Promise<UploadResponse>;
 };
 
 export const SystemUpload = (props: UploadProps) => {
@@ -120,15 +125,11 @@ const BundleUpload = ({
 
     // Ask first: the server refuses an upload before reading it (read-only /data, no space, an
     // update running), and the browser would only see a connection reset instead of the reason.
-    try {
-      const verdict = await check(file.size);
-      if (verdict.code !== 0) {
-        showFailure(verdict.msg);
-        setBusy(false);
-        return;
-      }
-    } catch (err) {
-      console.log(err);
+    const refusal = await check(file.size);
+    if (refusal) {
+      showFailure(refusal);
+      setBusy(false);
+      return;
     }
 
     // Not `attempt`: a network failure or a raw server error must stay readable here, since the
@@ -145,14 +146,8 @@ const BundleUpload = ({
       }
     } catch (err) {
       console.log(err);
-      const failure = err as {
-        response?: { data?: { msg?: string }; status?: number };
-        message?: string;
-      };
-      showFailure(
-        failure.response?.data?.msg ??
-          (failure.response?.status ? `HTTP ${failure.response.status}` : failure.message)
-      );
+      // an UploadError says what the server said, or the status, or that the link failed
+      showFailure(err instanceof Error ? err.message : undefined);
     } finally {
       setSent(undefined);
       setBusy(false);

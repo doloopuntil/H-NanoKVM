@@ -88,3 +88,7 @@ signature checks ([Build and deploy the server](cross-build.md)).
   copy-rule violations.
 - Tailwind 4 runs with its preflight, and antd sits in a cascade layer below the
   utilities: see rule 32 of the layout rules.
+- A file upload to the device goes through `lib/upload.ts` (`startUpload`: CSRF token, progress,
+  abort, a stall watchdog instead of a fixed timeout) and asks first with `checkUpload` in
+  `api/upload.ts`, because a refusal after the body has started reaches the browser as a
+  connection reset. Do not post a large file with axios.

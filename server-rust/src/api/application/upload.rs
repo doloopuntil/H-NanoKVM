@@ -10,8 +10,9 @@ use axum::{
 
 use super::*;
 use crate::{
-    api::system_update::local::{
-        LOCAL_KEY_ID, ensure_free_space, ensure_local_key, local_public_key_path,
+    api::{
+        system_update::local::{LOCAL_KEY_ID, ensure_local_key, local_public_key_path},
+        upload::{self, UploadLimits},
     },
     http::middleware::CurrentSession,
     system::audit,
@@ -25,7 +26,11 @@ const MAX_UPLOAD_METADATA_BYTES: usize = 64 * 1024;
 const STAGED_NAME: &str = "staged.json";
 const MAX_UPLOAD_SIGNATURE_BYTES: usize = 16 * 1024;
 const BUNDLE_OVERHEAD_BYTES: u64 = 1024 * 1024;
-const FREE_SPACE_MARGIN: u64 = 64 * 1024 * 1024;
+// The bundle, the archive unpacked from it and the extracted tree exist together.
+const UPLOAD_LIMITS: UploadLimits = UploadLimits {
+    max_bytes: MAX_UPDATE_BYTES + BUNDLE_OVERHEAD_BYTES,
+    space_factor: 3,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct UploadCheckQuery {
@@ -44,15 +49,8 @@ pub async fn upload_check(
     if UPDATE_LOCK.lock().map(|busy| *busy).unwrap_or(false) {
         return Err(AppError::Conflict("update already in progress".to_string()));
     }
-    if let Some(len) = query.size {
-        ensure_free_space(&cache_dir, upload_space_needed(len))?;
-    }
+    upload::check_size_and_space(&cache_dir, query.size, &UPLOAD_LIMITS)?;
     Ok(Json(ApiResponse::<()>::ok_empty()))
-}
-
-// The bundle, the archive unpacked from it and the extracted tree exist together.
-fn upload_space_needed(len: u64) -> u64 {
-    len.saturating_mul(3).saturating_add(FREE_SPACE_MARGIN)
 }
 
 /// The verified bundle waiting in the cache for an install.
@@ -184,9 +182,7 @@ async fn stage_upload(
     upload_len: Option<u64>,
     username: &str,
 ) -> Result<StagedApplication> {
-    if let Some(len) = upload_len {
-        ensure_free_space(cache_dir, upload_space_needed(len))?;
-    }
+    upload::check_size_and_space(cache_dir, upload_len, &UPLOAD_LIMITS)?;
     let parts = receive_upload(cache_dir, multipart).await?;
 
     let latest: LatestRelease = serde_json::from_slice(&parts.metadata)
@@ -246,23 +242,11 @@ async fn receive_upload(cache_dir: &Path, multipart: &mut Multipart) -> Result<U
             continue;
         }
         let target = cache_dir.join(UPLOAD_PART_NAME);
-        let mut file = tokio_fs::File::create(&target).await?;
-        let mut written = 0_u64;
-        while let Some(chunk) = field
-            .chunk()
-            .await
-            .map_err(|err| AppError::BadRequest(format!("invalid multipart data: {err}")))?
-        {
-            written = written.saturating_add(chunk.len() as u64);
-            if written > MAX_UPDATE_BYTES + BUNDLE_OVERHEAD_BYTES {
-                return Err(AppError::BadRequest(
-                    "application update bundle is too large".to_string(),
-                ));
-            }
-            file.write_all(&chunk).await?;
-        }
-        file.sync_all().await?;
-        if written == 0 {
+        let file = tokio_fs::File::create(&target).await?;
+        let received =
+            upload::receive_field(&mut field, file, UPLOAD_LIMITS.max_bytes, false, |_| Ok(()))
+                .await?;
+        if received.bytes == 0 {
             return Err(AppError::BadRequest(
                 "empty application update bundle".to_string(),
             ));
@@ -498,10 +482,5 @@ mod tests {
         assert!(ensure_upgrade(LOCAL_KEY_ID, "0.0.1").is_ok());
         assert!(ensure_upgrade(APP_UPDATE_UNSIGNED_ALGORITHM, "0.0.1").is_ok());
         assert!(ensure_upgrade("release", "0.0.1").is_err());
-    }
-
-    #[test]
-    fn plans_space_for_three_copies() {
-        assert_eq!(upload_space_needed(10), 30 + FREE_SPACE_MARGIN);
     }
 }

@@ -17,11 +17,12 @@ use std::{
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
 };
-use tokio::{fs as tokio_fs, io::AsyncWriteExt};
+use tokio::fs as tokio_fs;
 
 use super::*;
 use crate::{
     api::account::{require_second_factor, verify_password_limited},
+    api::upload::{self, UploadLimits},
     fsutil::write_0600_atomic,
     http::{middleware::CurrentSession, proxy::ClientInfo},
     system::audit,
@@ -33,10 +34,14 @@ const PEM_END: &str = "-----END PUBLIC KEY-----";
 const MAX_LOCAL_KEY_BYTES: usize = 8 * 1024;
 const MAX_UPLOAD_METADATA_BYTES: usize = 64 * 1024;
 const MAX_UPLOAD_SIGNATURE_BYTES: usize = 16 * 1024;
-const FREE_SPACE_MARGIN: u64 = 64 * 1024 * 1024;
 const UPLOAD_PART_NAME: &str = "upload.part";
 const UPLOAD_ARCHIVE_NAME: &str = "upload-archive.part";
 const BUNDLE_OVERHEAD_BYTES: u64 = 1024 * 1024;
+// The bundle and the archive unpacked from it exist together for a moment.
+const UPLOAD_LIMITS: UploadLimits = UploadLimits {
+    max_bytes: MAX_SYSTEM_UPDATE_BYTES + BUNDLE_OVERHEAD_BYTES,
+    space_factor: 2,
+};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -159,15 +164,7 @@ fn upload_preflight(cache_dir: &Path, upload_len: Option<u64>) -> Result<()> {
             "system update already in progress".to_string(),
         ));
     }
-    if let Some(len) = upload_len {
-        ensure_free_space(cache_dir, upload_space_needed(len))?;
-    }
-    Ok(())
-}
-
-// The bundle and the archive unpacked from it exist together for a moment.
-fn upload_space_needed(len: u64) -> u64 {
-    len.saturating_mul(2).saturating_add(FREE_SPACE_MARGIN)
+    upload::check_size_and_space(cache_dir, upload_len, &UPLOAD_LIMITS)
 }
 
 /// Stage a system bundle uploaded from the browser.
@@ -232,9 +229,7 @@ async fn stage_upload(
     guard: UpdateGuard,
     username: &str,
 ) -> Result<SystemDownloadRsp> {
-    if let Some(len) = upload_len {
-        ensure_free_space(stage_dir, upload_space_needed(len))?;
-    }
+    upload::check_size_and_space(stage_dir, upload_len, &UPLOAD_LIMITS)?;
     let parts = receive_upload(stage_dir, multipart).await?;
 
     let latest: SystemLatest = serde_json::from_slice(&parts.metadata)
@@ -313,23 +308,11 @@ async fn receive_upload(stage_dir: &Path, multipart: &mut Multipart) -> Result<U
             continue;
         }
         let target = stage_dir.join(UPLOAD_PART_NAME);
-        let mut file = tokio_fs::File::create(&target).await?;
-        let mut written = 0_u64;
-        while let Some(chunk) = field
-            .chunk()
-            .await
-            .map_err(|err| AppError::BadRequest(format!("invalid multipart data: {err}")))?
-        {
-            written = written.saturating_add(chunk.len() as u64);
-            if written > MAX_SYSTEM_UPDATE_BYTES + BUNDLE_OVERHEAD_BYTES {
-                return Err(AppError::BadRequest(
-                    "system update bundle is too large".to_string(),
-                ));
-            }
-            file.write_all(&chunk).await?;
-        }
-        file.sync_all().await?;
-        if written == 0 {
+        let file = tokio_fs::File::create(&target).await?;
+        let received =
+            upload::receive_field(&mut field, file, UPLOAD_LIMITS.max_bytes, false, |_| Ok(()))
+                .await?;
+        if received.bytes == 0 {
             return Err(AppError::BadRequest(
                 "empty system update bundle".to_string(),
             ));
@@ -471,28 +454,6 @@ async fn authorize_upload(
     Ok(key_id.to_string())
 }
 
-pub(crate) fn ensure_free_space(dir: &Path, needed: u64) -> Result<()> {
-    // the staging folder may not exist yet; the filesystem under it is what counts
-    let mut probe = dir;
-    while !probe.exists() {
-        match probe.parent() {
-            Some(parent) => probe = parent,
-            None => break,
-        }
-    }
-    let stat = nix::sys::statvfs::statvfs(probe)
-        .map_err(|err| AppError::Internal(format!("failed to read free space: {err}")))?;
-    let available = (stat.blocks_available() as u64).saturating_mul(stat.fragment_size() as u64);
-    if available < needed {
-        return Err(AppError::BadRequest(format!(
-            "not enough free space for the upload: {} MiB needed, {} MiB free",
-            needed.div_ceil(1024 * 1024),
-            available / (1024 * 1024)
-        )));
-    }
-    Ok(())
-}
-
 pub(crate) fn local_public_key_path(path: &Path) -> Result<PathBuf> {
     let metadata = fs::symlink_metadata(path).map_err(|_| {
         AppError::BadRequest("no local update key is registered on this device".to_string())
@@ -615,21 +576,6 @@ mod tests {
         assert!(super::ensure_local_key(&key).is_ok());
     }
 
-    #[test]
-    fn upload_needs_twice_the_bundle_plus_a_margin() {
-        assert_eq!(upload_space_needed(0), FREE_SPACE_MARGIN);
-        assert_eq!(upload_space_needed(100), 200 + FREE_SPACE_MARGIN);
-        assert_eq!(upload_space_needed(u64::MAX), u64::MAX);
-    }
-
-    #[test]
-    fn free_space_is_read_from_the_nearest_existing_folder() {
-        let missing = std::env::temp_dir().join("hardened-no-such-dir/a/b");
-        assert!(ensure_free_space(&missing, 1).is_ok());
-        let err = ensure_free_space(&missing, u64::MAX).unwrap_err();
-        assert!(err.to_string().contains("not enough free space"));
-    }
-
     use super::*;
 
     const KEY: &str = "-----BEGIN PUBLIC KEY-----\n\
@@ -714,13 +660,6 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEq7aF5pQ3Z0m1b0v2eB9mYk4Qw3xV\n\
         assert!(unwrap_bundle(&bundle, dir.path()).is_err());
         write_bundle(&bundle, &[(ARCHIVE, b"x")]);
         assert!(unwrap_bundle(&bundle, dir.path()).is_err());
-    }
-
-    #[test]
-    fn free_space_check_refuses_more_than_the_disk_holds() {
-        let dir = tempfile::tempdir().unwrap();
-        assert!(ensure_free_space(dir.path(), 1).is_ok());
-        assert!(ensure_free_space(dir.path(), u64::MAX).is_err());
     }
 
     #[test]

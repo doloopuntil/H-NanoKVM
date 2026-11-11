@@ -1,11 +1,10 @@
 use axum::{
     Extension, Json,
-    extract::{Multipart, State},
+    extract::{Multipart, Query, State},
     http::{HeaderMap, header},
     response::IntoResponse,
 };
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
@@ -16,18 +15,17 @@ use std::{
     os::unix::fs::{OpenOptionsExt, PermissionsExt},
     path::{Path, PathBuf},
     sync::{LazyLock, Mutex},
-    time::{Duration, Instant},
+    time::Duration,
 };
-use tokio::{
-    io::{AsyncWriteExt, BufWriter},
-    sync::watch,
-    time,
-};
+use tokio::{sync::watch, time};
 use url::{Host, Url};
 
 use crate::{
     AppError, Result,
-    api::account::{require_second_factor, verify_password_limited},
+    api::{
+        account::{require_second_factor, verify_password_limited},
+        upload::{self, UploadLimits},
+    },
     auth::token::fill_random,
     config::Config,
     error::ApiResponse,
@@ -40,6 +38,11 @@ use crate::{
 };
 
 pub const MAX_UPLOAD_BYTES: usize = 8 * 1024 * 1024 * 1024;
+// The image is written next to where it ends up, so it needs its own size and a margin.
+const UPLOAD_LIMITS: UploadLimits = UploadLimits {
+    max_bytes: MAX_UPLOAD_BYTES as u64,
+    space_factor: 1,
+};
 
 const SENTINEL_PATH: &str = "/tmp/.download_in_progress";
 const ISO9660_MAGIC_OFFSET: u64 = 0x8001;
@@ -55,12 +58,8 @@ const REMOTE_DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(2 * 60 * 60);
 const UPLOAD_STATUS_STALE_TIMEOUT: Duration = Duration::from_secs(2 * 60);
 const REMOTE_STATUS_STALE_TIMEOUT: Duration = Duration::from_secs((2 * 60 * 60) + (5 * 60));
 const SHA256_HEADER: &str = "x-sha256-sum";
-const CHECKSUM_QUEUE_CHUNKS: usize = 8;
 const SHA256_MISMATCH: &str = "sha256 mismatch";
 const REMOTE_PROGRESS_INTERVAL: Duration = Duration::from_secs(1);
-const UPLOAD_PROGRESS_INTERVAL: Duration = Duration::from_secs(1);
-// Batches the ~16 KiB request chunks into fewer blocking-pool writes.
-const UPLOAD_WRITE_BUFFER: usize = 256 * 1024;
 const CANCELED_CODE: i32 = -499;
 const MAX_REDIRECTS: usize = 5;
 const HOST_LOOKUP_TIMEOUT: Duration = Duration::from_secs(10);
@@ -223,6 +222,33 @@ pub async fn cancel_download() -> Result<impl IntoResponse> {
     Ok(Json(ApiResponse::<()>::ok_empty()))
 }
 
+#[derive(Debug, Deserialize)]
+pub struct UploadCheckQuery {
+    size: Option<u64>,
+    name: Option<String>,
+}
+
+/// Runs the checks the upload makes before it reads any data, so the browser can refuse a
+/// file with a readable message.
+pub async fn upload_check(
+    State(state): State<AppState>,
+    Query(query): Query<UploadCheckQuery>,
+) -> Result<impl IntoResponse> {
+    let root = &state.config.paths.image_directory;
+    crate::api::storage::ensure_writable(root)?;
+    if read_status_image(Path::new(SENTINEL_PATH))?.status != "idle" {
+        return Err(AppError::Conflict(
+            "another image transfer is running".to_string(),
+        ));
+    }
+    if let Some(name) = query.name {
+        let filename = valid_upload_filename(&name)?;
+        ensure_not_mounted(&safe_upload_target(root, &filename)?)?;
+    }
+    upload::check_size_and_space(root, query.size, &UPLOAD_LIMITS)?;
+    Ok(Json(ApiResponse::<()>::ok_empty()))
+}
+
 pub async fn upload_image_file(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -249,7 +275,7 @@ pub async fn upload_image_file(
     let guard = DownloadGuard::acquire("upload")?;
     let mut uploaded = false;
 
-    while let Some(field) = multipart
+    while let Some(mut field) = multipart
         .next_field()
         .await
         .map_err(|err| AppError::BadRequest(format!("invalid multipart data: {err}")))?
@@ -269,35 +295,16 @@ pub async fn upload_image_file(
         let target = safe_upload_target(&state.config.paths.image_directory, &filename)?;
         ensure_not_mounted(&target)?;
         let mut temp = TempUpload::create(&state.config.paths.image_directory, &filename)?;
-        let mut file = BufWriter::with_capacity(UPLOAD_WRITE_BUFFER, temp.open()?);
-        let mut total = 0_usize;
-        let mut reported = Instant::now();
-        let checksum = expected_sha256.map(|_| ChecksumWorker::spawn());
-        let mut field = field;
-
-        while let Some(chunk) = field
-            .chunk()
-            .await
-            .map_err(|err| AppError::BadRequest(format!("invalid multipart chunk: {err}")))?
-        {
-            total = total.saturating_add(chunk.len());
-            if total > MAX_UPLOAD_BYTES {
-                return Err(AppError::BadRequest("upload is too large".to_string()));
-            }
-            if let Some(worker) = &checksum {
-                worker.feed(chunk.clone()).await?;
-            }
-            file.write_all(&chunk).await?;
-            if reported.elapsed() >= UPLOAD_PROGRESS_INTERVAL {
-                guard.update(&filename, total as u64, content_length)?;
-                reported = Instant::now();
-            }
-        }
-        file.flush().await?;
-        drop(file);
-
-        if let (Some(expected), Some(worker)) = (expected_sha256, checksum)
-            && worker.finish().await? != expected
+        let received = upload::receive_field(
+            &mut field,
+            temp.open()?,
+            UPLOAD_LIMITS.max_bytes,
+            expected_sha256.is_some(),
+            |total| guard.update(&filename, total, content_length),
+        )
+        .await?;
+        if let Some(expected) = expected_sha256
+            && received.sha256 != Some(expected)
         {
             return Err(AppError::BadRequest(SHA256_MISMATCH.to_string()));
         }
@@ -643,40 +650,6 @@ fn is_public_ip(ip: IpAddr) -> bool {
 /// Parses an optional SHA-256 checksum given as 64 hexadecimal characters.
 /// Hashes an upload as it streams in, on its own thread, so the async worker
 /// stays free and no read-back is needed once the last byte has arrived.
-struct ChecksumWorker {
-    tx: tokio::sync::mpsc::Sender<Bytes>,
-    task: tokio::task::JoinHandle<[u8; 32]>,
-}
-
-impl ChecksumWorker {
-    fn spawn() -> Self {
-        let (tx, mut rx) = tokio::sync::mpsc::channel::<Bytes>(CHECKSUM_QUEUE_CHUNKS);
-        let task = tokio::task::spawn_blocking(move || {
-            let mut hasher = Sha256::new();
-            while let Some(chunk) = rx.blocking_recv() {
-                hasher.update(&chunk);
-            }
-            hasher.finalize().into()
-        });
-        Self { tx, task }
-    }
-
-    /// Waits when the hasher is behind, which slows the upload to its pace.
-    async fn feed(&self, chunk: Bytes) -> Result<()> {
-        self.tx
-            .send(chunk)
-            .await
-            .map_err(|_| AppError::Internal("checksum task stopped".to_string()))
-    }
-
-    async fn finish(self) -> Result<[u8; 32]> {
-        drop(self.tx);
-        self.task
-            .await
-            .map_err(|err| AppError::Internal(format!("checksum task failed: {err}")))
-    }
-}
-
 fn parse_sha256(value: &str) -> Result<Option<[u8; 32]>> {
     let value = value.trim();
     if value.is_empty() {
@@ -1520,19 +1493,6 @@ mod tests {
         assert_eq!(take_checksum_failure().as_deref(), Some("broken.iso"));
         assert_eq!(take_checksum_failure(), None);
     }
-    #[tokio::test]
-    async fn checksum_worker_hashes_streamed_chunks() {
-        let worker = ChecksumWorker::spawn();
-        for part in [&b"a"[..], &b"b"[..], &b"c"[..]] {
-            worker.feed(Bytes::copy_from_slice(part)).await.unwrap();
-        }
-        let expected =
-            parse_sha256("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
-                .unwrap()
-                .unwrap();
-        assert_eq!(worker.finish().await.unwrap(), expected);
-    }
-
     fn ip(text: &str) -> IpAddr {
         text.parse().unwrap()
     }

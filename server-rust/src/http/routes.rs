@@ -254,6 +254,10 @@ pub fn build(state: AppState) -> Router {
         .route("/api/download/image", post(download::download_image))
         .route("/api/download/image/status", get(download::status_image))
         .route(
+            "/api/download/image/upload-check",
+            get(download::upload_check),
+        )
+        .route(
             "/api/download/image/cancel",
             post(download::cancel_download),
         )

@@ -3,15 +3,14 @@ import { useTranslation } from 'react-i18next';
 
 import { cancelDownloadImage, downloadImage, statusImage } from '@/api/download.ts';
 import { getMountedImage } from '@/api/storage.ts';
-import { getCsrfToken } from '@/lib/cookie.ts';
+import { checkUpload } from '@/api/upload.ts';
 import { attempt } from '@/lib/feedback.ts';
 import { notifyImageListChanged } from '@/lib/image-events.ts';
-import { fileLabel, isAllowedImageName, isValidSha256, parseJson } from '@/lib/image-transfer.ts';
-import { capitalizeFirst } from '@/lib/text.ts';
+import { fileLabel, isAllowedImageName, isValidSha256 } from '@/lib/image-transfer.ts';
+import { startUpload, UploadError, type Upload } from '@/lib/upload.ts';
 
 type TransferKind = 'local' | 'remote';
 export type TransferStatus = '' | 'idle' | 'in_progress' | 'complete' | 'failed' | 'canceled';
-type AbortReason = 'cancel' | 'stall';
 
 const STATUS_POLL_MS = 2500;
 const TRANSFER_STALL_TIMEOUT_MS = 90_000;
@@ -43,8 +42,11 @@ export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const statusRef = useRef<TransferStatus>('');
   const activeTransferRef = useRef<TransferKind | null>(null);
-  const uploadXhrRef = useRef<XMLHttpRequest | null>(null);
-  const abortReasonRef = useRef<AbortReason | null>(null);
+  const uploadRef = useRef<Upload | null>(null);
+  // Counts the changes of the status. A status answer that was asked for before a change is about
+  // a transfer that has since ended or not yet begun, and is dropped: taken in, it would bring a
+  // canceled or finished upload back as a running remote download.
+  const statusEpochRef = useRef(0);
   const remoteCancelRef = useRef(false);
   const lastProgressMarkerRef = useRef('');
   const onFailedRef = useRef(onFailed);
@@ -61,6 +63,7 @@ export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
   }, []);
 
   function setDownloadStatus(nextStatus: TransferStatus) {
+    if (nextStatus !== statusRef.current) statusEpochRef.current += 1;
     statusRef.current = nextStatus;
     setStatus(nextStatus);
     if (nextStatus !== 'in_progress') setIsCanceling(false);
@@ -104,8 +107,6 @@ export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
     stallTimeoutId.current = setTimeout(() => {
       if (statusRef.current !== 'in_progress') return;
 
-      abortReasonRef.current = 'stall';
-      uploadXhrRef.current?.abort();
       failTransfer(t('download.stalled'));
     }, TRANSFER_STALL_TIMEOUT_MS);
   }
@@ -157,7 +158,9 @@ export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
   }
 
   function getDownloadStatus() {
+    const epoch = statusEpochRef.current;
     statusImage().then((rsp) => {
+      if (epoch !== statusEpochRef.current) return;
       if (rsp.code !== 0 || !rsp.data?.status) {
         return;
       }
@@ -165,16 +168,24 @@ export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
       const nextStatus = rsp.data.status;
       if (nextStatus === 'in_progress') {
         setDownloadStatus(nextStatus);
+        // a transfer that this browser did not start: a link is a remote download, a file name an
+        // upload
+        if (activeTransferRef.current === null) {
+          setActiveTransferKind(/^https?:\/\//i.test(rsp.data.file) ? 'remote' : 'local');
+        }
         const transfer = activeTransferRef.current ?? 'remote';
-        // an upload reports its own progress; the server's count would only fight it
-        if (transfer === 'remote') {
+        // an upload of this browser reports its own progress, and watches for its own stall; the
+        // server's count would only fight it
+        if (transfer !== 'local' || uploadRef.current === null) {
           const percent = Number.parseFloat(rsp.data.percentage);
           reportProgress(Number.isFinite(percent) ? percent : null);
           setBytesDone(Number(rsp.data.written) || 0);
           setLog(formatTransferLog(transfer, rsp.data.file));
-          setInput(rsp.data.file);
         }
-        noteProgress(`${rsp.data.file};${rsp.data.percentage};${rsp.data.written ?? ''}`);
+        if (transfer === 'remote') {
+          setInput(rsp.data.file);
+          noteProgress(`${rsp.data.file};${rsp.data.percentage};${rsp.data.written ?? ''}`);
+        }
         return;
       }
 
@@ -295,6 +306,11 @@ export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
     }
   }
 
+  function uploadFailureText(message?: string) {
+    if (message?.toLowerCase() === 'sha256 mismatch') return t('download.checksumFailed');
+    return message || t('download.uploadFailed');
+  }
+
   async function upload(file: File | null) {
     if (!file) return;
 
@@ -315,23 +331,46 @@ export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
       return;
     }
 
+    // The same for a full card or a transfer that is running: ask before sending a byte.
+    const refusal = await checkUpload('/api/download/image/upload-check', {
+      size: file.size,
+      name: file.name
+    });
+    if (refusal) {
+      setDownloadStatus('failed');
+      setLog(refusal);
+      return;
+    }
+
     setActiveTransferKind('local');
-    lastProgressMarkerRef.current = '';
     startProgress(true);
     setDownloadStatus('in_progress');
     setLog(formatTransferLog('local', file.name));
-    noteProgress(file.name);
 
     const formData = new FormData();
     formData.append('file', file);
     startStatusPolling();
-    resetStallWatchdog();
+
+    const sending = startUpload({
+      url: '/api/download/file',
+      data: formData,
+      headers: checksum ? { 'X-SHA256-Sum': checksum } : undefined,
+      onProgress: (loaded, total) => {
+        reportProgress(total ? (loaded / total) * 100 : null);
+        setBytesDone(loaded);
+      }
+    });
+    uploadRef.current = sending;
 
     try {
-      await uploadFileWithProgress(formData, checksum);
+      const rsp = await sending.promise;
+      if (rsp.code !== 0) {
+        failTransfer(uploadFailureText(rsp.msg));
+        return;
+      }
 
+      uploadRef.current = null;
       stopStatusPolling();
-      stopStallWatchdog();
       setActiveTransferKind(null);
       setDownloadStatus('complete');
       setLog(t('download.uploadComplete'));
@@ -340,13 +379,18 @@ export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
       clearFileInput();
       notifyImageListChanged();
     } catch (error) {
-      if (isAbortError(error)) {
-        if (abortReasonRef.current === 'stall') {
-          abortReasonRef.current = null;
-          return;
+      if (error instanceof UploadError) {
+        if (error.kind === 'aborted') {
+          finishCanceled('local');
+        } else if (error.kind === 'stalled') {
+          failTransfer(t('download.stalled'));
+        } else {
+          failTransfer(
+            error.kind === 'http'
+              ? uploadFailureText(error.serverMessage)
+              : t('download.uploadFailed')
+          );
         }
-        abortReasonRef.current = null;
-        finishCanceled('local');
         return;
       }
 
@@ -354,69 +398,11 @@ export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
     }
   }
 
-  function uploadFileWithProgress(formData: FormData, checksum: string) {
-    const csrfToken = getCsrfToken();
-
-    return new Promise<void>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      uploadXhrRef.current = xhr;
-      xhr.open('POST', '/api/download/file');
-      xhr.withCredentials = true;
-      if (csrfToken) {
-        xhr.setRequestHeader('x-csrf-token', csrfToken);
-      }
-      if (checksum) {
-        xhr.setRequestHeader('X-SHA256-Sum', checksum);
-      }
-
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable && event.total > 0) {
-          reportProgress((event.loaded / event.total) * 100);
-          noteProgress(`${event.loaded}/${event.total}`);
-        } else {
-          reportProgress(null);
-          noteProgress(`${event.loaded}`);
-        }
-        setBytesDone(event.loaded);
-      };
-
-      xhr.onload = () => {
-        uploadXhrRef.current = null;
-        const body = parseJson(xhr.responseText);
-        if (xhr.status >= 200 && xhr.status < 300 && body?.code === 0) {
-          resolve();
-          return;
-        }
-        const message =
-          body?.msg === 'sha256 mismatch'
-            ? t('download.checksumFailed')
-            : body?.msg && capitalizeFirst(body.msg);
-        reject(new Error(message || t('download.uploadFailed')));
-      };
-
-      xhr.onerror = () => {
-        uploadXhrRef.current = null;
-        reject(new Error(t('download.uploadFailed')));
-      };
-      xhr.ontimeout = () => {
-        uploadXhrRef.current = null;
-        reject(new Error(t('download.stalled')));
-      };
-      xhr.onabort = () => {
-        uploadXhrRef.current = null;
-        reject(new DOMException('upload canceled', 'AbortError'));
-      };
-
-      xhr.send(formData);
-    });
-  }
-
   function cancel() {
     if (statusRef.current !== 'in_progress' || isCanceling) return;
 
     if (activeTransferRef.current === 'local') {
-      abortReasonRef.current = 'cancel';
-      uploadXhrRef.current?.abort();
+      uploadRef.current?.abort();
       return;
     }
 
@@ -438,7 +424,7 @@ export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
     stopStatusPolling();
     stopStallWatchdog();
     setActiveTransferKind(null);
-    uploadXhrRef.current = null;
+    uploadRef.current = null;
     setDownloadStatus('failed');
     setLog(message);
     onFailedRef.current(message);
@@ -455,10 +441,6 @@ export function useImageTransfer({ remoteEnabled, onFailed }: Options) {
   function formatTransferLog(transfer: TransferKind, file: string) {
     const label = transfer === 'local' ? t('download.uploading') : t('download.downloading');
     return `${label}: ${fileLabel(file)}`;
-  }
-
-  function isAbortError(error: unknown) {
-    return error instanceof DOMException && error.name === 'AbortError';
   }
 
   // the panel opened: pick up a transfer that is already running

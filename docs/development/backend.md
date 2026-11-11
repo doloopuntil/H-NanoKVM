@@ -123,6 +123,14 @@ The full SD image is built from source in CI; see
   ISO9660 signature, and writes only under the configured image directory.
   Completed browser uploads and remote downloads refresh the virtual-media image
   list without requiring logout.
+- One transfer stage for the three browser uploads (image, system bundle, application
+  bundle), in `api/upload.rs`: `receive_field` streams a multipart file field to disk in
+  chunks with a size cap, an optional SHA-256 on its own thread behind a bounded queue, and
+  an fsync before it returns; `check_size_and_space` and the per-kind `upload-check` routes let
+  the browser ask first, because a refusal after the body has started reaches it as a
+  connection reset. A handler keeps what is its own around the transfer: locks and names
+  before, validation, unpacking and the rename after. A new upload takes an `UploadLimits`
+  (largest file, free-space factor) and these two functions rather than its own loop.
 - WOL, DNS, Wi-Fi status/connect/AP verification, and Tailscale lifecycle
   routes.
 - Terminal websocket, disabled by default and controlled by the existing

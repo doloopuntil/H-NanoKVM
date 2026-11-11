@@ -11,7 +11,7 @@ use std::{
     sync::{LazyLock, Mutex},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use tokio::{fs as tokio_fs, io::AsyncWriteExt, time};
+use tokio::{fs as tokio_fs, time};
 
 use crate::{
     AppError, Result,

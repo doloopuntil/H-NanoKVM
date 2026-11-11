@@ -1,4 +1,6 @@
+import { checkUpload } from '@/api/upload.ts';
 import { http } from '@/lib/http.ts';
+import { startUpload } from '@/lib/upload.ts';
 
 export type SystemVersion = {
   version: string;
@@ -134,7 +136,7 @@ export function installSystemUpdate() {
 // ask whether a system bundle of this size can be uploaded, before sending it; a refusal after
 // the browser starts sending reaches it only as a connection reset
 export function checkSystemUpload(size: number) {
-  return http.get('/api/system-update/upload-check', { size });
+  return checkUpload('/api/system-update/upload-check', { size });
 }
 
 // stage a system bundle uploaded from this computer
@@ -142,18 +144,16 @@ export function uploadSystemUpdate(
   data: FormData,
   onProgress?: (loaded: number, total: number) => void
 ) {
-  return http.request({
-    method: 'post',
+  return startUpload({
     url: '/api/system-update/upload',
     data,
-    timeout: 45 * 60 * 1000,
-    onUploadProgress: (event) => onProgress?.(event.loaded, event.total ?? 0)
-  });
+    onProgress: (loaded, total) => onProgress?.(loaded, total ?? 0)
+  }).promise;
 }
 
 // ask whether an application bundle of this size can be uploaded, before sending it
 export function checkApplicationUpload(size: number) {
-  return http.get('/api/application/upload-check', { size });
+  return checkUpload('/api/application/upload-check', { size });
 }
 
 export type ApplicationStagedUpdate = {
@@ -168,13 +168,11 @@ export function uploadApplicationUpdate(
   data: FormData,
   onProgress?: (loaded: number, total: number) => void
 ) {
-  return http.request({
-    method: 'post',
+  return startUpload({
     url: '/api/application/upload',
     data,
-    timeout: 45 * 60 * 1000,
-    onUploadProgress: (event) => onProgress?.(event.loaded, event.total ?? 0)
-  });
+    onProgress: (loaded, total) => onProgress?.(loaded, total ?? 0)
+  }).promise;
 }
 
 // get the staged application bundle, or null
