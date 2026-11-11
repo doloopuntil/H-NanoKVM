@@ -1275,7 +1275,8 @@ which every unit has (the Lite has Reset and a user button):
   | FIT, uncompressed | 20.2 MB | 6.90 s | 8.34 s |
 
   The kernel reaches the root mount at 1.44 s in every case; the initramfs adds about
-  0.3 s of that. `CONFIG_BOOTDELAY=0` in U-Boot would save 2 s more (needs a FIP rebuild).
+  0.3 s of that. `CONFIG_BOOTDELAY=0` in U-Boot saves 2 s more: set 2026-11-11 in
+  `linux-6.18/uboot.fragment`, and the build checks U-Boot's `.config` (not yet on the device).
 - USB reflash: `initramfs-init` exports `/dev/mmcblk0` as USB mass storage
   (configfs, `0x3346:0x1009`, product "NanoKVM recovery") when `/boot/rec` exists,
   the User Key is held at power-on (read from `/sys/kernel/debug/gpio`, as the vendor
@@ -1296,8 +1297,11 @@ which every unit has (the Lite has Reset and a user button):
   stand-in rootfs. The update target is now `sg2002-hnanokvm-sd` (server fallback,
   rootfs `system-version.json`, bundle scripts), so 5.10 devices refuse 6.x bundles.
   The CI step passes `KERNEL_VERSION=6.18.29`. An OTA install is proven on the first
-  CI-built image. `scripts/test-system-update-v2.sh` was already broken by `facc301d`
-  (`create-system-update-bundle.sh` now wraps an archive into an upload bundle).
+  CI-built image. `scripts/test-system-update-v2.sh` was broken by `facc301d`
+  (`create-system-update-bundle.sh` now wraps an archive into an upload bundle); rewritten
+  2026-11-11 around a stand-in archive: format 2 metadata, signature, tampering, the v1/v2
+  rejections and the upload bundle's entries. The raw archive builder needs a real rootfs, so
+  the image build is its test.
 - CI: `.github/workflows/system-image-6x.yml` reused `vendor-sdk-source`, `vendor-sdk`
   (stock image, for the GCC runtime libraries and `libsns_lt6911.so`; both dropped since) and
   `build-native-libkvm` from `system-image.yml`, then one `build-image` job:
