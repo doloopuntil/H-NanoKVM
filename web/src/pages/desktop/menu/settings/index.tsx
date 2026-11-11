@@ -315,6 +315,10 @@ export const Settings = () => {
         footer={null}
         destroyOnHidden={true}
         onCancel={closeModal}
+        // a running bundle upload locks the window until it ends or fails
+        closable={!isLocked}
+        maskClosable={!isLocked}
+        keyboard={!isLocked}
         className={isTouchLayout ? 'settings-modal-mobile' : undefined}
         style={
           isTouchLayout

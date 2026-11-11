@@ -159,6 +159,7 @@ pub async fn upload_check(
 
 fn upload_preflight(cache_dir: &Path, upload_len: Option<u64>) -> Result<()> {
     crate::api::storage::ensure_writable(cache_dir)?;
+    crate::api::download::ensure_no_image_transfer()?;
     if SYSTEM_UPDATE_LOCK.lock().map(|busy| *busy).unwrap_or(false) {
         return Err(AppError::Conflict(
             "system update already in progress".to_string(),
@@ -180,6 +181,7 @@ pub async fn upload(
 ) -> Result<impl IntoResponse> {
     ensure_local_key(&state.config.paths.system_update_local_public_key)?;
     crate::api::storage::ensure_writable(&state.config.paths.update_cache_dir)?;
+    crate::api::download::ensure_no_image_transfer()?;
     let guard = acquire_update_lock()?;
     let config = Config::read().unwrap_or_else(|err| {
         tracing::warn!(error = %err, "failed to refresh config before system update upload");

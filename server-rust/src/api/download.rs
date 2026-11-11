@@ -767,6 +767,21 @@ impl StatusImageRsp {
     }
 }
 
+/// A bundle upload waits for an image transfer to end: both load the single core, and the
+/// watchdog only makes allowance for a slow server during an image transfer.
+pub(crate) fn ensure_no_image_transfer() -> Result<()> {
+    ensure_no_transfer_at(Path::new(SENTINEL_PATH))
+}
+
+fn ensure_no_transfer_at(marker: &Path) -> Result<()> {
+    if read_status_image(marker)?.status != "idle" {
+        return Err(AppError::Conflict(
+            "an image transfer is running; wait until it is done".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 fn read_status_image(path: &Path) -> Result<StatusImageRsp> {
     let content = match fs::read_to_string(path) {
         Ok(content) => content,
@@ -1485,6 +1500,20 @@ mod tests {
                 .unwrap()
                 .unwrap()
         );
+    }
+
+    #[test]
+    fn a_bundle_upload_waits_for_an_image_transfer() {
+        let dir = tempdir().unwrap();
+        let marker = dir.path().join("marker");
+        assert!(ensure_no_transfer_at(&marker).is_ok());
+        fs::write(&marker, "debian.iso;10.00%;100").unwrap();
+        assert!(matches!(
+            ensure_no_transfer_at(&marker),
+            Err(AppError::Conflict(_))
+        ));
+        fs::remove_file(&marker).unwrap();
+        assert!(ensure_no_transfer_at(&marker).is_ok());
     }
 
     #[test]

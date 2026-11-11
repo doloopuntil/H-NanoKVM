@@ -130,7 +130,9 @@ The full SD image is built from source in CI; see
   the browser ask first, because a refusal after the body has started reaches it as a
   connection reset. A handler keeps what is its own around the transfer: locks and names
   before, validation, unpacking and the rename after. A new upload takes an `UploadLimits`
-  (largest file, free-space factor) and these two functions rather than its own loop.
+  (largest file, free-space factor) and these two functions rather than its own loop. The
+  bundle uploads call `download::ensure_no_image_transfer()` first: both load the single core,
+  and only an image transfer makes the watchdog patient.
 - WOL, DNS, Wi-Fi status/connect/AP verification, and Tailscale lifecycle
   routes.
 - Terminal websocket, disabled by default and controlled by the existing

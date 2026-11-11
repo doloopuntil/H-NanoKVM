@@ -46,6 +46,7 @@ pub async fn upload_check(
     let cache_dir = application_update_cache_dir(&state.config.paths.update_cache_dir);
     ensure_local_key(&state.config.paths.system_update_local_public_key)?;
     crate::api::storage::ensure_writable(&state.config.paths.update_cache_dir)?;
+    crate::api::download::ensure_no_image_transfer()?;
     if UPDATE_LOCK.lock().map(|busy| *busy).unwrap_or(false) {
         return Err(AppError::Conflict("update already in progress".to_string()));
     }
@@ -73,6 +74,7 @@ pub async fn upload(
 ) -> Result<Json<ApiResponse<StagedApplication>>> {
     ensure_local_key(&state.config.paths.system_update_local_public_key)?;
     crate::api::storage::ensure_writable(&state.config.paths.update_cache_dir)?;
+    crate::api::download::ensure_no_image_transfer()?;
     let _guard = acquire_update_lock()?;
     let config = crate::config::Config::read().unwrap_or_else(|err| {
         tracing::warn!(error = %err, "failed to refresh config before application update upload");
