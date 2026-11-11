@@ -8,8 +8,15 @@ use crate::{AppError, Result};
 
 const LEGACY_SECRET_KEY: &[u8] = b"nanokvm-sipeed-2024";
 const OPENSSL_SALTED_PREFIX: &[u8] = b"Salted__";
+/// The longest password the web client can send: 256 bytes, URI-encoded and
+/// then encrypted, stays well below this.
+pub(crate) const MAX_ENCODED_PASSWORD_BYTES: usize = 4096;
 
 pub fn decode_frontend_password(input: &str) -> Result<String> {
+    // Refused before any decoding, hashing or lockout bookkeeping.
+    if input.len() > MAX_ENCODED_PASSWORD_BYTES {
+        return Err(AppError::BadRequest("password is too long".to_string()));
+    }
     let decoded = urlencoding::decode(input)
         .map_err(|err| AppError::BadRequest(format!("invalid password encoding: {err}")))?;
     let decoded = decoded.into_owned();
@@ -77,5 +84,16 @@ mod tests {
     #[test]
     fn url_decoding_is_applied() {
         assert_eq!(decode_frontend_password("a%20b").unwrap(), "a b");
+    }
+
+    #[test]
+    fn an_oversized_password_is_refused_before_any_work() {
+        let at_limit = "p".repeat(MAX_ENCODED_PASSWORD_BYTES);
+        assert_eq!(decode_frontend_password(&at_limit).unwrap(), at_limit);
+        let over = "p".repeat(MAX_ENCODED_PASSWORD_BYTES + 1);
+        assert!(matches!(
+            decode_frontend_password(&over),
+            Err(AppError::BadRequest(_))
+        ));
     }
 }

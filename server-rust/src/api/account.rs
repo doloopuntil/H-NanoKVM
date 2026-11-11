@@ -118,6 +118,19 @@ pub struct SetupStateRsp {
     pub required: bool,
 }
 
+/// Above any name an account can have.
+const MAX_LOGIN_USERNAME_BYTES: usize = 256;
+
+// An oversized name costs neither a hash nor a lockout entry, which keeps its name for the
+// lockout period. Only the size is checked: an account that an older version created may have a
+// name today's rules refuse.
+fn check_login_username(username: &str) -> Result<()> {
+    if username.is_empty() || username.len() > MAX_LOGIN_USERNAME_BYTES {
+        return Err(AppError::BadRequest("invalid username".to_string()));
+    }
+    Ok(())
+}
+
 pub async fn login(
     State(state): State<AppState>,
     client: ClientInfo,
@@ -128,6 +141,7 @@ pub async fn login(
             "password setup required; default admin/admin is disabled by config".to_string(),
         ));
     }
+    check_login_username(&req.username)?;
 
     let source_ip = client.source_ip();
     {
@@ -638,6 +652,22 @@ fn command_error(message: &str, output: CommandOutput) -> String {
 mod tests {
     use super::*;
     use crate::auth::password::generate_backup_codes;
+
+    #[test]
+    fn an_empty_or_oversized_login_name_is_refused() {
+        assert!(check_login_username("operator").is_ok());
+        assert!(check_login_username(&"x".repeat(MAX_LOGIN_USERNAME_BYTES)).is_ok());
+        for name in [
+            String::new(),
+            "x".repeat(MAX_LOGIN_USERNAME_BYTES + 1),
+            "x".repeat(2 << 20),
+        ] {
+            assert!(matches!(
+                check_login_username(&name),
+                Err(AppError::BadRequest(_))
+            ));
+        }
+    }
 
     #[tokio::test]
     async fn other_tasks_run_while_a_hash_is_in_flight() {
