@@ -1419,9 +1419,13 @@ hand). Tester checklist: [board-test-checklist.md](board-test-checklist.md).
     the modprobe file and `regulatory.db`.
   - Only the AIC8800 is supported. NanoKVM-OS also builds the Realtek RTL8733BS driver
     (`024C:B733/B73A`), but there is no evidence Sipeed fits that chip, so it is left out.
-  - Open: which AIC8800 the PCIe board carries (the driver and firmware cover the
-    8800/D80, D80X2 and DC); NanoKVM-OS's SDIO high-speed (50 MHz) and hardening patches
-    (bounded frame and message lengths, no private ioctls), once a Wi-Fi board is at hand.
+  - Chip: a photo of a board shows "Wifi6-8800D" (and lot code C43CB0667D2C), so an AIC8800D
+    (Wi-Fi 6); whether it reports itself as the original AIC8800 (`5449:0145`, "AIC8801" in
+    the driver) or the D80 (`C8A1:0082`) only a running board can say (`dmesg` prints
+    "USE AIC8801" or "USE AIC8800D80"). Both load from our `aic8800_and_aic8800D80`
+    firmware directory, so the image covers either.
+  - Open: NanoKVM-OS's SDIO high-speed (50 MHz) and hardening patches (bounded frame and
+    message lengths, no private ioctls), once a Wi-Fi board is at hand.
 - SD clocks: `cv180x.dtsi` names the clocks the wrong way round, so `sdhci-of-dwcmshc`
   takes the 300 MHz AXI clock as its base while the divider runs from `CLK_SD0/1`. On the
   Lite `clk_sd0` runs at 375 MHz, so the "50 MHz" SD card clock is 62.5 MHz: a raw read
@@ -1436,6 +1440,25 @@ hand). Tester checklist: [board-test-checklist.md](board-test-checklist.md).
 Confirm hardening parity in the final `.config`; remove the 5.10 kernel patches,
 configs and scripts only after the 6.18 channel is stable; update `CHANGELOG.md`,
 `docs/releases/`, and record the dropped hardware (alpha) in the install docs.
+
+**Remove `/dev/mem`** (added 2026-11-12). Root can read and write all physical memory,
+kernel included, through `/dev/mem`. That matters once root can no longer load unsigned
+modules, so measure module signing and lockdown alongside. Remaining users, in order:
+
+1. `libkvm_mmf.so`: the LT6911 sensor code runs `devmem 0x0300116C 32 0x3` and
+   `devmem 0x03001190 32 0x3` (pinmux). Check whether the DTS already muxes those pads; if
+   so, drop the calls in `lt6911-sensor-id-probe-removed.patch`, else add them to the DTS.
+2. RTC registers: `S01fs` (rootfs-check flag, `0x05026024`) and `S95nanokvm` (boot confirmation,
+   `RTC_INFO1` `0x05026020`) write them, `S02watchdog` reads the power-on reason
+   (`RTC_ST_ON_REASON` `0x050260F8`). Expose them through a small kernel patch (nvmem cells
+   for the info registers, a read-only reason) and switch the scripts.
+3. libsys: maps every media buffer by physical address through `/dev/mem` (`O_SYNC` for
+   uncached). Give the osdrv `sys` driver an `mmap` on `/dev/cvi-sys` that accepts only
+   buffers it allocated, cached or uncached, and point libsys (built from `cvi_mpi`) at it.
+   Rerun the Phase 1-3 checks on the Lite.
+4. Turn `DEVMEM` off (`STRICT_DEVMEM` alone would not do: the carveout is reserved RAM,
+   section 6.1 option a), drop `devmem` from BusyBox, update `security-model.md` and
+   close Q8.
 
 ### Phase 7: naming sweep
 

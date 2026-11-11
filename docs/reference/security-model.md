@@ -64,8 +64,9 @@ media drivers and the Wi-Fi/BT stack are modules.
 `/dev/mem` stays open to root, without `STRICT_DEVMEM`. The media middleware (`libsys`)
 maps its buffers through `/dev/mem`: the 75 MiB media carveout is reserved, mapped RAM, as
 on 5.10, and `STRICT_DEVMEM` refuses all System RAM. The init scripts also use `devmem` for
-three SoC registers (the boot guard in `S01fs`, the restart reason in `S02watchdog`) and the
-SDIO pin mux (`S15kvmhwd`). Root can therefore read and write all physical memory, the kernel
+three SoC registers (the rootfs-check flag in `S01fs`, the boot confirmation in `S95nanokvm`,
+the restart reason in `S02watchdog`), and the LT6911 sensor code in `libkvm_mmf.so` sets two
+pads with it. Root can therefore read and write all physical memory, the kernel
 included. Every process that touches it already runs as root, so this adds no path for an
 unprivileged user, but it removes a barrier for code that gains root.
 
@@ -81,7 +82,8 @@ unprivileged user, but it removes a barrier for code that gains root.
 - Retained vendor components with `NOASSERTION` licence metadata remain a
   documented limitation.
 - Kernel: `/dev/mem` without `STRICT_DEVMEM` (closing it needs the media driver to map its
-  buffers itself, through `/dev/cvi-sys`, instead of `libsys` mapping `/dev/mem`), and the
+  buffers itself, through `/dev/cvi-sys`, instead of `libsys` mapping `/dev/mem`; the steps
+  are in the [migration plan](../development/kernel-6x-migration-plan.md), Phase 6), and the
   settings under "Not enabled" above, each to be measured on the device before it is turned
   on.
 
