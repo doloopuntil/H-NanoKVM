@@ -6,8 +6,8 @@ last-checked: 2026-11-11
 
 # Board test checklist (Linux 6.18)
 
-The 6.18 image is tested on a Lite. The Full (Cube) and PCIe boards use paths the Lite
-never runs, so a preview image needs a tester with each board. Work down the list on a
+The 6.18 image is tested on a Lite only. The Full (Cube) and PCIe boards use paths the
+Lite never runs and nobody here can test them; this list is for anyone who has one. Work down the list on a
 freshly flashed card and report each item as passed, failed (with what you saw), or not
 applicable. Collect logs over SSH with `dmesg` and `logread` (or the console) when
 something fails.
