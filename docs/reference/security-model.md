@@ -1,6 +1,6 @@
 ---
 status: current
-applies-to: system 0.4.0 / app 2.1.0
+applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
 last-checked: 2026-11-11
 ---
 
@@ -47,6 +47,28 @@ behaviour is in the guides ([sign-in](../guide/sign-in.md),
 | Audit | Sign-ins, two-factor changes, WireGuard changes and trusted-proxy changes are logged to syslog with the source address. |
 | PicoClaw | Gateway on `127.0.0.1` with a token; internal routes accept only loopback requests with the internal token; installer pinned to a SHA-256; a stored model key is reused only for the same API origin. |
 
+## Kernel (Linux 6.18)
+
+The kernel config is `board/sg2002/linux-6.18/nanokvm_defconfig` plus `nanokvm.fragment`
+in `buildroot-external/hardened-sg2002`. Everything the system needs is built in; only the
+media drivers and the Wi-Fi/BT stack are modules.
+
+| | Settings |
+| --- | --- |
+| On | Strong stack protector, virtually mapped stacks, read-only kernel and module text (`STRICT_KERNEL_RWX`, `STRICT_MODULE_RWX`), zeroed stack variables and allocations (`INIT_STACK_ALL_ZERO`, `INIT_ON_ALLOC_DEFAULT_ON`), randomised slab freelists, `dmesg` for root only (`SECURITY_DMESG_RESTRICT`), seccomp. Zeroed allocations, randomised freelists and root-only `dmesg` carry over the 5.10 hardening, as does the missing user namespace support. |
+| Not built | Namespaces (user namespaces included), the `bpf()` syscall, io_uring, userfaultfd, kexec, `/proc/kcore`, 32-bit compat, SELinux, AppArmor, audit, ftrace and kprobes. |
+| Built but off | Kernel stack offset randomisation (`RANDOMIZE_KSTACK_OFFSET`, not on by default). |
+| Not enabled | KASLR, hardened usercopy, `FORTIFY_SOURCE`, slab freelist hardening, zeroing on free, list hardening, module signing. `kernel.kptr_restrict` is 0 and `kernel.sysrq` is 1. |
+| Needed by the system | `DEBUG_FS` (the server reads `clk_summary`, the initramfs reads the User Key from `/sys/kernel/debug/gpio`), `DEVMEM` (next paragraph). |
+
+`/dev/mem` stays open to root, without `STRICT_DEVMEM`. The media middleware (`libsys`)
+maps its buffers through `/dev/mem`: the 75 MiB media carveout is reserved, mapped RAM, as
+on 5.10, and `STRICT_DEVMEM` refuses all System RAM. The init scripts also use `devmem` for
+three SoC registers (the boot guard in `S01fs`, the restart reason in `S02watchdog`) and the
+SDIO pin mux (`S15kvmhwd`). Root can therefore read and write all physical memory, the kernel
+included. Every process that touches it already runs as root, so this adds no path for an
+unprivileged user, but it removes a barrier for code that gains root.
+
 ## Open items
 
 - The server runs as root. Splitting privileged operations into a smaller
@@ -58,6 +80,10 @@ behaviour is in the guides ([sign-in](../guide/sign-in.md),
 - Remote ISO download has no allowlist of sources, only the public-host check; it stays off by default.
 - Retained vendor components with `NOASSERTION` licence metadata remain a
   documented limitation.
+- Kernel: `/dev/mem` without `STRICT_DEVMEM` (closing it needs the media driver to map its
+  buffers itself, through `/dev/cvi-sys`, instead of `libsys` mapping `/dev/mem`), and the
+  settings under "Not enabled" above, each to be measured on the device before it is turned
+  on.
 
 ## Root-Required Operations
 

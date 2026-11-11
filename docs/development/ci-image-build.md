@@ -1,8 +1,8 @@
 ---
 status: current
-applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-24
-source: .github/workflows/system-image.yml
+applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
+last-checked: 2026-11-11
+source: .github/workflows/system-image-6x.yml
 ---
 
 # CI image build
@@ -10,27 +10,110 @@ source: .github/workflows/system-image.yml
 ## Run it
 
 ```sh
-gh workflow run system-image.yml --ref <branch>
+gh workflow run system-image-6x.yml --ref <branch>
 ```
 
-The run takes several hours. When it finishes, the `sg2002-recovery-sd-image`
-artifact (kept 14 days) holds `recovery/` with `hardened-sg2002-port.img` and
-`hardened-sg2002-port.img.xz`, and `_reports/` with `SHA256SUMS` and a summary.
+The run takes a few hours. When it finishes:
+
+- `sg2002-6x-sd-image` (kept 14 days) holds `sd-image/hardened-sg2002-6x.img.xz` with its
+  `SHA256SUMS`, and `_reports/` with the boot-partition listing, the FIT summary, the module
+  list, the hashes and `summary.md`.
+- `system-update-archive-6x` (14 days) holds the unsigned system-update archive made from the
+  same image.
+
 Flash the `.img.xz` as described in [Install](../guide/install.md).
 
 Three places must carry the same version or the build fails: `kvmapp/version`,
 `HARDENED_NANOKVM_KVMAPP_VERSION` in
 `buildroot-external/hardened-sg2002/package/hardened-nanokvm-kvmapp/hardened-nanokvm-kvmapp.mk`,
-and `EXPECTED_SYSTEM_VERSION` / `EXPECTED_KVMAPP_VERSION` in the workflow.
+and `EXPECTED_SYSTEM_VERSION` / `EXPECTED_KVMAPP_VERSION` in the workflow (both jobs that
+set them).
+
+`system-image.yml` still builds the vendor 5.10 image. It is kept only until the 6.18
+channel is stable ([migration plan](kernel-6x-migration-plan.md), Phase 6) and is described
+under [The 5.10 pipeline](#the-510-pipeline).
 
 ## What it builds
 
-`.github/workflows/system-image.yml` rebuilds the SG2002 recovery-SD
-image from scratch on `ubuntu-latest`: the vendor SDK, a from-scratch
-Buildroot toolchain, the hardened Linux 5.10.265 kernel and every kernel
-module, the `kvmapp` application bridge, and the final rootfs/boot/recovery
-images. `workflow_dispatch` only -- it is multi-hour and disk-heavy, not run
-on every push.
+`.github/workflows/system-image-6x.yml` builds the SD image from source on
+`ubuntu-latest`, `workflow_dispatch` only. One Buildroot tree, configured from
+`hardened_sg2002_nanokvm_6x_defconfig` with two external trees (this repository's
+`buildroot-external/hardened-sg2002` and the pinned licheerv tree fetched by
+`scripts/fetch-licheerv-external.sh`), builds:
+
+- the musl toolchain and the userland;
+- Linux 6.18.29 with licheerv's patch series and our board patches 0001-0003, configured from
+  `board/sg2002/linux-6.18/nanokvm_defconfig` plus `nanokvm.fragment`, and the
+  `sg2002-nanokvm-lite.dts` device tree;
+- the 11 Sophgo media modules (`hardened-soph-media`, `sophgo/osdrv` at `SOPHGO_OSDRV_SHA`);
+- OpenSBI 1.8.1, U-Boot 2025.10, and the FSBL from the pinned LicheeRV Nano SDK, packed into
+  `fip.std.bin` and `fip.od.bin` (`hardened-sg2002-fip`; `fip.bin` is a copy of the standard
+  one);
+- the root filesystem with the `kvmapp` package.
+
+`board/sg2002/linux-6.18/post-image.sh` then packs the boot FIT (`boot.itb`: LZ4 kernel,
+DTB and the recovery initramfs, each with a SHA-256 hash U-Boot checks), `boot.scr`, the
+32 MiB boot partition and `hardened-sg2002-6x.img` (`genimage.cfg`: the same two partitions
+as the 5.10 image, so the raw updater can write both).
+
+## Pipeline shape
+
+Five jobs. Jobs hand each other files as workflow artifacts (tarred, since artifacts drop
+permissions and symlinks), so "re-run failed jobs" reuses everything that already
+succeeded.
+
+- **`vendor-sdk-source`**: the pinned `sipeed/LicheeRV-Nano-Build` SDK checkout and its
+  tracked patches. Takes minutes.
+- **`vendor-sdk`** (`needs: vendor-sdk-source`): builds the SDK's stock image
+  (`make vendor-sdk-stock`, about 95 minutes, cached by input hash). The 6.18 image takes
+  only the four GCC runtime libraries, the `libc.so`/`libgcc_s.so.1` link sysroot and
+  `libsns_lt6911.so` from it. Whether a smaller build can supply those is open (plan,
+  Phase 4).
+- **`build-native-libkvm`**: independent of the vendor SDK. Builds the Sophgo middleware,
+  `libkvm.so`, `libkvm_mmf.so` and `kvm_system` with the toolchain MaixCDK pins (Xuantie
+  GCC 10.2, musl), as described under [`kvm_system`](#kvm_system-built-from-source-too).
+- **`build-buildroot`** (`needs: vendor-sdk, build-native-libkvm`): builds the Rust server
+  against the fresh `libkvm`, then runs `scripts/build-buildroot-6x-image.sh build`:
+  Buildroot without the post-image step, followed by checks on the result (the kernel
+  release string and patches 0001-0003, the 11 modules in
+  `/lib/modules/6.18.29/extra`, `libsns_lt6911.so`, the `sg2002-hnanokvm-sd` target and
+  kernel version in `system-version.json`, and `scripts/validate-nanokvm-rootfs.sh`). It
+  uploads a handoff for the next job: the images, the host tools without the cross
+  toolchain, `gen_init_cpio`, the initramfs binaries and `SOURCE_DATE_EPOCH`. The compiler
+  cache (2 GB) and the download cache are saved even when the build fails.
+- **`assemble-image`** (`needs: build-buildroot`): runs `post-image.sh` from the handoff
+  (`build-buildroot-6x-image.sh assemble`), checks the boot partition (three FIPs,
+  `boot.scr`, `boot.itb`, `ver`) and the FIT (LZ4 kernel, DTB, initramfs), packages the
+  system-update archive with `scripts/package-local-system-update.sh`, and compresses the
+  image. It can be rerun alone, so a late failure does not cost the Buildroot hour.
+
+All jobs run in the `sg2002-image-build-6x` concurrency group
+(`cancel-in-progress: false`): dispatches queue rather than race.
+
+### What the 6.18 build sources differently
+
+| Content | 5.10 pipeline | 6.18 pipeline |
+| --- | --- | --- |
+| Toolchain for kernel and modules | `sophgo/host-tools` GCC | Buildroot's own musl GCC |
+| Kernel | vendor 5.10 rehydrated to 5.10.265 from `git.kernel.org` stable | Linux 6.18.29 from kernel.org through Buildroot, licheerv patches plus 0001-0003 |
+| Kernel modules | 57 in-tree, external and media modules into the `/mnt/system/ko` skeleton | built in except the 11 media modules (`hardened-soph-media`) and the Wi-Fi/BT modules |
+| FSBL, OpenSBI, U-Boot | vendor SDK stock build (U-Boot 2021.10) | FSBL from the SDK source, OpenSBI 1.8.1 and U-Boot 2025.10 from Buildroot |
+| Boot payload | `boot.sd` | `boot.scr` and the verified FIT `boot.itb` |
+| Media middleware and `libkvm` | `build-native-libkvm` | same job |
+| GCC runtime, `libsns_lt6911.so` | `vendor-sdk-stock` | same |
+
+`ddr_param.bin` is the one vendor blob inside the FIPs: no source exists for it anywhere,
+and the SDK, licheerv and varyhin carry the same file.
+
+## The 5.10 pipeline
+
+`.github/workflows/system-image.yml` has six jobs: `vendor-sdk-source`, `vendor-sdk`,
+`build-native-libkvm`, `build-kernel` (the rehydrated 5.10.265 kernel), `build-modules`
+(57 modules checked against the kernel's vermagic and `System.map` with `depmod -e`) and
+`build-image` (Buildroot, the `kvmapp` bridge, rootfs, boot FIT and recovery-SD image).
+Its artifact is `sg2002-recovery-sd-image` with `hardened-sg2002-port.img.xz`. The rest of
+this page records how that pipeline stopped depending on published artifacts; the 6.18
+pipeline inherits the result.
 
 ## Why this exists
 
@@ -46,50 +129,9 @@ ever proposes an upstream PR, a maintainer should be able to see the
 rebuild run clean rather than trust it blindly.
 
 That goal only has teeth if the CI rebuild doesn't quietly lean on the
-thing it's supposed to replace. This document tracks how much of the
-pipeline still depends on the published raw.12 archive, and what closed
+thing it's supposed to replace. The sections below track how the 5.10
+pipeline stopped depending on the published raw.12 archive, and what closed
 each dependency.
-
-## Pipeline shape
-
-Six jobs. Jobs hand each other files as workflow artifacts (tarred, since
-artifacts drop permissions and symlinks), so "re-run failed jobs" reuses
-everything that already succeeded.
-
-- **`vendor-sdk-source`** -- the pinned `sipeed/LicheeRV-Nano-Build` SDK and
-  `sophgo/host-tools` checkouts (`make vendor-sdk`) plus the tracked
-  middleware patch. Takes minutes. The kernel and module jobs need nothing
-  the stock build produces, so they start from this artifact and run
-  alongside the stock build.
-- **`vendor-sdk`** (`needs: vendor-sdk-source`) -- builds the SDK's stock
-  image (`make vendor-sdk-stock`). Isolated because it's the single most
-  expensive, most fragile stage (~14 GiB, ~95 minutes). Its output
-  (`build/vendor`) is uploaded as the `vendor-sdk` artifact, which only
-  `build-image` consumes.
-- **`build-native-libkvm`** -- independent of the vendor SDK. Builds
-  the SDK middleware, `libkvm.so`, `libkvm_mmf.so` and `kvm_system` with one
-  toolchain: the one MaixCDK pins (Xuantie GCC 10.2, musl), fetched by
-  `scripts/fetch-maixcdk-toolchain.sh`. Uploads `native-libkvm-build`.
-- **`build-kernel`** (`needs: vendor-sdk-source`) -- rehydrates the 5.10.265
-  kernel source and builds it. Uploads `kernel-build` (source plus build
-  tree, for the module builds) and `kernel-boot` (the `Image`, the DTB and
-  `utsrelease.h`, for the boot FIT).
-- **`build-modules`** (`needs: vendor-sdk-source, build-kernel`) -- builds the
-  external and media kernel modules against that tree, substitutes them
-  and the in-tree modules into the `/mnt/system/ko` skeleton, and writes
-  the provenance records, then checks all 57 against the kernel's vermagic and
-  `System.map` with `depmod -e`. Uploads `kernel-modules`. The kernel tree must be
-  unpacked at the same absolute path it was built at, which holds because
-  every job uses the same workspace directory.
-- **`build-image`** (`needs: vendor-sdk, build-native-libkvm, build-kernel,
-  build-modules`) -- Buildroot bootstrap, the `kvmapp` Rust bridge, the
-  remaining runtime files, rootfs assembly, boot FIT image, and the final
-  recovery-SD image.
-
-All jobs run in a `sg2002-image-build` concurrency group
-(`cancel-in-progress: false`): dispatches queue rather than race, and a
-new dispatch only ever cancels a run still waiting in that queue, never one
-already executing.
 
 ## raw.12 dependency status
 

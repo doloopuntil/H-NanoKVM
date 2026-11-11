@@ -1,7 +1,7 @@
 ---
 status: current
-applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-07
+applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
+last-checked: 2026-11-11
 source: constants in server-rust/src and kvmapp/system/init.d
 ---
 
@@ -15,11 +15,20 @@ files with `sed`.
 
 | Partition | Mounted at | Holds |
 | --- | --- | --- |
-| `/dev/mmcblk0p1` (VFAT) | `/boot` | Boot files (`fip.bin`, `fip.std.bin`, `fip.od.bin`, `boot.sd`) and boot-time flags. |
+| `/dev/mmcblk0p1` (VFAT, 32 MiB) | `/boot` | Boot files and boot-time flags. |
 | `/dev/mmcblk0p2` (ext4) | `/` | Buildroot root filesystem, `/etc/kvm`, `/kvmapp`. |
 | data partition | `/data` | Disk images, the update cache, logs of system updates. |
 
 A system update rewrites the first two; `/data` and the saved `/etc/kvm` survive.
+
+The boot files:
+
+| Path | Holds |
+| --- | --- |
+| `fip.bin` | What the boot ROM loads: FSBL, DDR parameters, OpenSBI and U-Boot. A copy of `fip.std.bin` or `fip.od.bin`. |
+| `fip.std.bin`, `fip.od.bin` | The same with the standard and the overdrive clock tables. |
+| `boot.scr` | U-Boot script: sets the kernel command line, loads `boot.itb` and boots it. |
+| `boot.itb` | FIT image with the LZ4 kernel, the device tree and the recovery initramfs. U-Boot checks each part's SHA-256 hash before booting. |
 
 ## `/etc/kvm`: configuration
 
@@ -55,7 +64,10 @@ A system update rewrites the first two; `/data` and the saved `/etc/kvm` survive
 | `cache/wol` | Saved Wake-on-LAN MAC addresses. |
 | `GOMEMLIMIT` | Tailscale memory limit. |
 | `wifi.ssid`, `wifi.pass` | Wi-Fi credentials. |
-| `hw`, `oled_exist`, `wifi_exist` | Board detection written at boot (`alpha`, `beta`, `pcie`; OLED and Wi-Fi present). |
+| `hw` | Board, written by `S15kvmhwd` at first boot: `pcie` when an OLED answers at `0x3c` on I2C bus 5, otherwise `beta`. |
+| `hdmi_version` | HDMI bridge, written by `S15kvmhwd` from I2C bus 4: `c` (LT6911C), `ux` (LT6911UXC), `d` (LT6911D) or `ue` (no answer). |
+| `hdmi_mode` | How libkvm finds the input size: `0` reads it from the bridge on its interrupt, `1` tries a list of common sizes, `2` uses `/kvmapp/kvm/width` and `height`. libkvm writes it; it falls back to `1` when the bridge reports a size it does not know. |
+| `oled_exist`, `wifi_exist` | OLED and Wi-Fi present, written by `kvm_system`. |
 | `.picoclaw_internal_token` | Token PicoClaw uses to call the server's internal routes. |
 
 ## `/boot`: flags read before the root filesystem is up
@@ -74,13 +86,30 @@ A system update rewrites the first two; `/data` and the saved `/etc/kvm` survive
 | `swap.size` | Swap file size in MB, set by the Swap switch. A system update replaces the swap file, so `S01fs` makes it again from this size once the root filesystem has grown. |
 | `disable_watchdog` | Leave the hardware watchdog off (`S02watchdog`). A system update keeps it. |
 | `cpu.overdrive.keep` | Keep the overdrive choice across system updates. Without it the update script drops `cpu.overdrive`, so the device returns to the standard clocks. |
+| `rec` | Read by the initramfs: export the whole SD card to the computer under control as USB mass storage (product "NanoKVM recovery") instead of booting. Holding the User Key at power-on, or a root filesystem that `e2fsck -fp` cannot make mountable, does the same. |
+
+## GPIO lines
+
+The kernel has no GPIO sysfs (`/sys/class/gpio` is gone). Programs claim lines by the name
+the device tree gives them, through the GPIO character devices, and hold them while they
+run. `/sys/kernel/debug/gpio` lists every line with its name, owner and level.
+
+| Line | Owner | Use |
+| --- | --- | --- |
+| `atx-power`, `atx-reset` | server, output driven low | ATX power and reset buttons; a press drives the line high for about a second. |
+| `atx-power-led` | server, input | ATX power LED. |
+| `hdmi-reset` | libkvm, output high | HDMI bridge reset (PCIe board only). |
+| `oled-reset` | device tree hog, output high | Keeps the OLED out of reset. |
+| `hdmi-bridge-int` | kernel (`cif`), interrupt | LT6911 interrupt on a mode change; edges are counted in `/proc/lt_int`. |
+| `user-key` | `gpio-keys` | The User Key, reported as an input device. |
+| `user-led` | `gpio-leds` | The user LED. |
 
 ## Elsewhere
 
 | Path | Holds |
 | --- | --- |
 | `/kvmapp/` | The application: `server/NanoKVM-Server`, `server/web/`, `server/dl_lib/` (native libraries), `system/init.d/`, `system/keys/`, `version`. Replaced by an application update. |
-| `/kvmapp/kvm/` | Runtime state shared with the native video code (resolution, frame rate, quality, Wi-Fi state). |
+| `/kvmapp/kvm/` | Runtime state shared with the native video code: the HDMI input size (`width`, `height`), whether a signal is captured (`state`), frame rate, quality, Wi-Fi state. |
 | `/data/.hardened-kvmcache/` | Downloaded and staged updates. |
 | `/root/.picoclaw/` | PicoClaw configuration, `.security.yml` with the model API key, and `workspace/sessions/`. |
 | `/root/.tailscale/` | Tailscale state. |

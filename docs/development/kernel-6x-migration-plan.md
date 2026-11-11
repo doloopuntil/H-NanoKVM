@@ -1130,6 +1130,13 @@ Exit: parity or better on the Phase 0 numbers; no crashes in the soak.
   frame while libkvm reports a change (about 60 lines a second); to throttle.
 - EDID flow: nothing to test. libkvm has `lt6911_read_edid`/`lt6911_write_edid`,
   but nothing calls them and neither the server nor the UI exposes EDID.
+  To do: publish our own EDID to the LT6911, so the host offers the modes we
+  capture well. dormancygrace/NanoKVM-OS (GPL-3.0, like this repo) does it in
+  `support/nanokvm_update_edid` (flash write for C, UXC and D, header and checksum
+  checks, a receiver lock against the capture code) with profile generators in
+  `scripts/build-*-edid.py`. It notes that a Cube or Lite applies a new EDID only
+  after a power cycle (except with an LT6911D), which fits the missing reset line
+  above; the UI must say so.
 - Idle timeout: PCIe only. The setting is hidden on other boards, and without a
   bridge reset libkvm only clears a flag. The Lite's 22-pin CSI connector has no
   free line for one (LicheeRV Nano schematics 70405/70415/70418): CAM_IO0 is
@@ -1152,6 +1159,13 @@ slim for the LT6911 sensor source, the RTOS source and the FSBL patch base; drop
 the 95-minute `vendor-sdk-stock` build if the FIP no longer needs it), update docs
 (`ci-image-build.md`, `device-files.md`, `init-scripts.md`, `security-model.md`
 for `/dev/mem` and the 6.18 hardening settings).
+
+Docs (done 2026-11-11): `ci-image-build.md` describes `system-image-6x.yml` (five jobs,
+artifacts, checks) and keeps the 5.10 pipeline and the raw.12 history apart;
+`device-files.md` has the FIT boot files, `rec`, `hdmi_version`/`hdmi_mode` and the named
+GPIO lines; `init-scripts.md` has the initramfs, `S00kmod`'s 11 modules and the reduced
+`S15kvmhwd`; `security-model.md` has the 6.18 kernel settings (read from `/proc/config.gz`
+on the Lite) and `/dev/mem` without `STRICT_DEVMEM`.
 
 Exit: a CI-built image flashes, boots and passes the Phase 1-3 checks unattended.
 
