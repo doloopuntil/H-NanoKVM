@@ -1613,7 +1613,8 @@ static int _mmf_add_vi_channel(int ch, int width, int height, int format) {
 	CVI_S32 s32Ret = CVI_SUCCESS;
 	int fps = 60;
 	int depth = 2;
-	int width_out = ALIGN(width, DEFAULT_ALIGN);
+	// Exact width: VPSS pads only the stride to DEFAULT_ALIGN; a wider channel scales and crops
+	int width_out = width;
 	int height_out = height;
 	PIXEL_FORMAT_E format_out = (PIXEL_FORMAT_E)format;
 	bool mirror = !g_priv.vi_hmirror[ch];
@@ -1758,6 +1759,18 @@ int mmf_vi_frame_pop(int ch, void **data, int *len, int *width, int *height, int
 			CVI_VPSS_ReleaseChnFrame(0, ch, frame);
 			memset(frame, 0, sizeof(*frame));
 			return -1;
+		}
+		// Readers step rows by ALIGN(width, DEFAULT_ALIGN) and expect the NV21 VU plane right after Y
+		if (frame->stVFrame.enPixelFormat == PIXEL_FORMAT_NV21) {
+			CVI_U32 pitch = ALIGN(frame->stVFrame.u32Width, DEFAULT_ALIGN);
+			if (frame->stVFrame.u32Stride[0] != pitch || frame->stVFrame.u32Stride[1] != pitch
+				|| frame->stVFrame.u64PhyAddr[1] != frame->stVFrame.u64PhyAddr[0] + (CVI_U64)pitch * frame->stVFrame.u32Height) {
+				SAMPLE_PRT("unexpected VI frame layout: %ux%u stride %u/%u\n", frame->stVFrame.u32Width,
+					frame->stVFrame.u32Height, frame->stVFrame.u32Stride[0], frame->stVFrame.u32Stride[1]);
+				CVI_VPSS_ReleaseChnFrame(0, ch, frame);
+				memset(frame, 0, sizeof(*frame));
+				return -1;
+			}
 		}
 
         CVI_VOID *vir_addr;
