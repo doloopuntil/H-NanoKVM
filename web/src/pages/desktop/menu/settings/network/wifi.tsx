@@ -1,15 +1,18 @@
 import { useState } from 'react';
-import { Button, Input, Modal } from 'antd';
+import { Button, Input, Modal, Popconfirm } from 'antd';
 import { LockIcon, WifiIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/network.ts';
-import { attempt, confirm } from '@/lib/feedback.ts';
+import { attempt } from '@/lib/feedback.ts';
+import { usePopconfirmColor } from '@/hooks/usePopconfirmColor.ts';
 import { useSettingsLoad } from '@/hooks/useSettingsLoad.ts';
+import { confirmOkProps } from '@/components/popconfirm-ok.ts';
 import { SettingRow } from '@/components/setting-rows.tsx';
 
 export const Wifi = () => {
   const { t } = useTranslation();
+  const popconfirmColor = usePopconfirmColor();
 
   const [isSupported, setIsSupported] = useState(false);
   const [isAPMode, setIsAPMode] = useState(false);
@@ -70,17 +73,6 @@ export const Wifi = () => {
     setStatus('');
   }
 
-  // the link may be the one this page is loaded over
-  function confirmDisconnect() {
-    confirm({
-      danger: true,
-      title: t('settings.network.wifi.disconnect'),
-      okText: t('settings.network.wifi.disconnectBtn'),
-      cancelText: t('settings.network.wifi.cancelBtn'),
-      onOk: disconnect
-    });
-  }
-
   function openModal() {
     setSsid('');
     setPassword('');
@@ -138,9 +130,21 @@ export const Wifi = () => {
               description={t('settings.network.wifi.connected')}
               inline
             >
-              <Button danger loading={status === 'disconnecting'} onClick={confirmDisconnect}>
-                {t('settings.network.wifi.disconnectBtn')}
-              </Button>
+              {/* the link may be the one this page is loaded over */}
+              <Popconfirm
+                color={popconfirmColor}
+                placement="topRight"
+                title={t('settings.network.wifi.disconnect')}
+                okText={t('settings.network.wifi.disconnectBtn')}
+                cancelText={t('settings.network.wifi.cancelBtn')}
+                okButtonProps={confirmOkProps}
+                styles={{ root: { maxWidth: 360 } }}
+                onConfirm={disconnect}
+              >
+                <Button danger loading={status === 'disconnecting'}>
+                  {t('settings.network.wifi.disconnectBtn')}
+                </Button>
+              </Popconfirm>
             </SettingRow>
           )}
 

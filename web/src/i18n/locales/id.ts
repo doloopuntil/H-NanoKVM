@@ -510,8 +510,7 @@ const id = {
         reboot: 'Mulai ulang',
         rebootDesc: 'Apakah Anda yakin ingin me-reboot NanoKVM?',
         poweroff: 'Matikan',
-        poweroffDesc:
-          'Yakin ingin mematikan NanoKVM? Perangkat tidak dapat dijangkau sampai dinyalakan kembali.'
+        poweroffDesc: 'Yakin ingin mematikan NanoKVM?'
       },
       network: {
         title: 'IP & DNS',

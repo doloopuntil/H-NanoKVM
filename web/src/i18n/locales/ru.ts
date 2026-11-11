@@ -510,7 +510,7 @@ const ru = {
         reboot: 'Перезагрузка',
         rebootDesc: 'Вы уверены, что хотите перезагрузить NanoKVM?',
         poweroff: 'Выключить',
-        poweroffDesc: 'Выключить NanoKVM? Он будет недоступен, пока его снова не включат.'
+        poweroffDesc: 'Выключить NanoKVM?'
       },
       network: {
         title: 'IP & DNS',

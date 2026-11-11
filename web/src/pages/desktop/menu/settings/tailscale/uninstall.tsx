@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Button } from 'antd';
+import { Button, Popconfirm } from 'antd';
 import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/extensions/tailscale.ts';
-import { attempt, confirm } from '@/lib/feedback.ts';
+import { attempt } from '@/lib/feedback.ts';
+import { usePopconfirmColor } from '@/hooks/usePopconfirmColor.ts';
+import { confirmOkProps } from '@/components/popconfirm-ok.ts';
 
 type UninstallProps = {
   onSuccess: () => void;
@@ -11,6 +13,7 @@ type UninstallProps = {
 
 export const Uninstall = ({ onSuccess }: UninstallProps) => {
   const { t } = useTranslation();
+  const popconfirmColor = usePopconfirmColor();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,19 +27,20 @@ export const Uninstall = ({ onSuccess }: UninstallProps) => {
     });
   }
 
-  function confirmUninstall() {
-    confirm({
-      danger: true,
-      title: t('settings.tailscale.uninstall'),
-      content: t('settings.tailscale.uninstallDesc'),
-      okText: t('settings.tailscale.uninstall'),
-      onOk: uninstall
-    });
-  }
-
   return (
-    <Button danger loading={isLoading} onClick={confirmUninstall}>
-      {t('settings.tailscale.uninstall')}
-    </Button>
+    <Popconfirm
+      color={popconfirmColor}
+      placement="topRight"
+      title={t('settings.tailscale.uninstallDesc')}
+      okText={t('settings.tailscale.uninstall')}
+      cancelText={t('common.cancel')}
+      okButtonProps={confirmOkProps}
+      styles={{ root: { maxWidth: 360 } }}
+      onConfirm={uninstall}
+    >
+      <Button danger loading={isLoading}>
+        {t('settings.tailscale.uninstall')}
+      </Button>
+    </Popconfirm>
   );
 };

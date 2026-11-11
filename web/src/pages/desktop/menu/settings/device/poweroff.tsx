@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { Button } from 'antd';
+import { Button, Popconfirm } from 'antd';
 import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/vm.ts';
-import { attempt, confirm } from '@/lib/feedback.ts';
+import { attempt } from '@/lib/feedback.ts';
+import { usePopconfirmColor } from '@/hooks/usePopconfirmColor.ts';
+import { confirmOkProps } from '@/components/popconfirm-ok.ts';
 
 export const Poweroff = () => {
   const { t } = useTranslation();
+  const popconfirmColor = usePopconfirmColor();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -20,19 +23,20 @@ export const Poweroff = () => {
     });
   }
 
-  function confirmPoweroff() {
-    confirm({
-      danger: true,
-      title: t('settings.device.poweroff'),
-      content: t('settings.device.poweroffDesc'),
-      okText: t('settings.device.poweroff'),
-      onOk: poweroff
-    });
-  }
-
   return (
-    <Button danger loading={isLoading} onClick={confirmPoweroff}>
-      {t('settings.device.poweroff')}
-    </Button>
+    <Popconfirm
+      color={popconfirmColor}
+      placement="topRight"
+      title={t('settings.device.poweroffDesc')}
+      okText={t('settings.device.poweroff')}
+      cancelText={t('common.cancel')}
+      okButtonProps={confirmOkProps}
+      styles={{ root: { maxWidth: 360 } }}
+      onConfirm={poweroff}
+    >
+      <Button danger loading={isLoading}>
+        {t('settings.device.poweroff')}
+      </Button>
+    </Popconfirm>
   );
 };

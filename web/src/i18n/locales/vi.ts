@@ -504,8 +504,7 @@ const vi = {
         reboot: 'Khởi động lại',
         rebootDesc: 'Bạn có chắc chắn muốn khởi động lại NanoKVM không?',
         poweroff: 'Tắt nguồn',
-        poweroffDesc:
-          'Bạn có chắc muốn tắt NanoKVM? Thiết bị sẽ không truy cập được cho đến khi được bật lại.'
+        poweroffDesc: 'Bạn có chắc muốn tắt NanoKVM?'
       },
       network: {
         title: 'IP & DNS',

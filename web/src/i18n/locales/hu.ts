@@ -513,8 +513,7 @@ const hu = {
         reboot: 'Újraindítás',
         rebootDesc: 'Biztos, hogy újra akarja indítani a NanoKVM-t?',
         poweroff: 'Kikapcsolás',
-        poweroffDesc:
-          'Biztosan kikapcsolja a NanoKVM-et? Nem lesz elérhető, amíg újra be nem kapcsolják.'
+        poweroffDesc: 'Biztosan kikapcsolja a NanoKVM-et?'
       },
       network: {
         title: 'IP & DNS',

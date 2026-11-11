@@ -515,8 +515,7 @@ const nl = {
         reboot: 'Opnieuw opstarten',
         rebootDesc: 'Weet u zeker dat u NanoKVM opnieuw wilt opstarten?',
         poweroff: 'Uitschakelen',
-        poweroffDesc:
-          'Weet je zeker dat je NanoKVM wilt uitschakelen? Het is niet bereikbaar totdat het weer wordt ingeschakeld.'
+        poweroffDesc: 'Weet je zeker dat je NanoKVM wilt uitschakelen?'
       },
       network: {
         title: 'IP & DNS',

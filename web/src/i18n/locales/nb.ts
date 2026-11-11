@@ -511,8 +511,7 @@ const nb = {
         reboot: 'Start på nytt',
         rebootDesc: 'Er du sikker på at du vil starte NanoKVM på nytt?',
         poweroff: 'Slå av',
-        poweroffDesc:
-          'Er du sikker på at du vil slå av NanoKVM? Den kan ikke nås før den slås på igjen.'
+        poweroffDesc: 'Er du sikker på at du vil slå av NanoKVM?'
       },
       network: {
         title: 'IP & DNS',

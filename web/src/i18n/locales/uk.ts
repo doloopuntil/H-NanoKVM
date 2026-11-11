@@ -513,7 +513,7 @@ const uk = {
         reboot: 'Перезавантажити',
         rebootDesc: 'Ви впевнені, що хочете перезавантажити NanoKVM?',
         poweroff: 'Вимкнути',
-        poweroffDesc: 'Вимкнути NanoKVM? Він буде недоступний, доки його знову не ввімкнуть.'
+        poweroffDesc: 'Вимкнути NanoKVM?'
       },
       network: {
         title: 'IP & DNS',

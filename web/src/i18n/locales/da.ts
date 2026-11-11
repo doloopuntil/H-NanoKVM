@@ -508,8 +508,7 @@ const da = {
         reboot: 'Genstart',
         rebootDesc: 'Er du sikker på, at du vil genstarte NanoKVM?',
         poweroff: 'Sluk',
-        poweroffDesc:
-          'Er du sikker på, at du vil slukke NanoKVM? Den kan ikke nås, før den tændes igen.'
+        poweroffDesc: 'Er du sikker på, at du vil slukke NanoKVM?'
       },
       network: {
         title: 'IP & DNS',

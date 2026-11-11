@@ -510,8 +510,7 @@ const se = {
         reboot: 'Starta om',
         rebootDesc: 'Är du säker på att du vill starta om NanoKVM?',
         poweroff: 'Stäng av',
-        poweroffDesc:
-          'Vill du verkligen stänga av NanoKVM? Den går inte att nå förrän den slås på igen.'
+        poweroffDesc: 'Vill du verkligen stänga av NanoKVM?'
       },
       network: {
         title: 'IP & DNS',

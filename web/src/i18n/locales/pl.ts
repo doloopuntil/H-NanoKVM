@@ -510,8 +510,7 @@ const pl = {
         reboot: 'Uruchom ponownie',
         rebootDesc: 'Czy na pewno chcesz ponownie uruchomić NanoKVM?',
         poweroff: 'Wyłącz',
-        poweroffDesc:
-          'Czy na pewno wyłączyć NanoKVM? Będzie niedostępny, dopóki nie zostanie ponownie włączony.'
+        poweroffDesc: 'Czy na pewno wyłączyć NanoKVM?'
       },
       network: {
         title: 'IP & DNS',

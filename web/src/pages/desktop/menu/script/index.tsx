@@ -1,5 +1,5 @@
 import { ChangeEvent, useRef, useState } from 'react';
-import { Button } from 'antd';
+import { Button, Popconfirm } from 'antd';
 import clsx from 'clsx';
 import {
   ChevronRightIcon,
@@ -12,9 +12,11 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/script.ts';
-import { attempt, confirm } from '@/lib/feedback.ts';
+import { attempt } from '@/lib/feedback.ts';
+import { usePopconfirmColor } from '@/hooks/usePopconfirmColor.ts';
 import { MenuItem } from '@/components/menu-item.tsx';
 import { MenuHeader } from '@/components/menu-rows.tsx';
+import { confirmOkProps } from '@/components/popconfirm-ok.ts';
 
 import { Run } from './run';
 import { Unlock } from './unlock';
@@ -25,6 +27,7 @@ type Pending = { kind: 'upload'; file: File } | { kind: 'run'; type: string; scr
 
 export const Script = () => {
   const { t } = useTranslation();
+  const popconfirmColor = usePopconfirmColor();
 
   const [scripts, setScripts] = useState<string[]>([]);
   const [currentScript, setCurrentScript] = useState('');
@@ -115,19 +118,6 @@ export const Script = () => {
     });
   }
 
-  function confirmDelete() {
-    const name = currentScript;
-    if (!name) return;
-
-    confirm({
-      danger: true,
-      title: t('script.delete'),
-      content: t('script.delDesc'),
-      okText: t('script.delete'),
-      onOk: () => deleteScript(name)
-    });
-  }
-
   function activate(script: string) {
     setCurrentScript(script === currentScript ? '' : script);
   }
@@ -199,17 +189,19 @@ export const Script = () => {
                 {t('script.runBackground')}
               </Button>
 
-              <Button
-                danger
-                size="small"
-                icon={<Trash2Icon size={16} />}
-                onClick={() => {
-                  confirmDelete();
-                  close();
-                }}
+              <Popconfirm
+                color={popconfirmColor}
+                placement="bottomRight"
+                title={t('script.delDesc')}
+                okText={t('script.delete')}
+                cancelText={t('common.cancel')}
+                okButtonProps={confirmOkProps}
+                onConfirm={() => deleteScript(script)}
               >
-                {t('script.delete')}
-              </Button>
+                <Button danger size="small" icon={<Trash2Icon size={16} />}>
+                  {t('script.delete')}
+                </Button>
+              </Popconfirm>
             </div>
           )}
         </div>

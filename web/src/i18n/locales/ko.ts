@@ -500,7 +500,7 @@ const ko = {
         reboot: '재부팅',
         rebootDesc: 'NanoKVM을 재부팅하시겠습니까?',
         poweroff: '전원 끄기',
-        poweroffDesc: 'NanoKVM의 전원을 끄시겠습니까? 다시 켜기 전까지는 접속할 수 없습니다.'
+        poweroffDesc: 'NanoKVM의 전원을 끄시겠습니까?'
       },
       network: {
         title: 'IP & DNS',

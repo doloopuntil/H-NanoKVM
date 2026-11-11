@@ -516,8 +516,7 @@ const de = {
         reboot: 'Neustarten',
         rebootDesc: 'Sind Sie sicher dass Sie NanoKVM neustarten möchten?',
         poweroff: 'Ausschalten',
-        poweroffDesc:
-          'Möchten Sie NanoKVM wirklich ausschalten? Es ist erst wieder erreichbar, wenn es erneut eingeschaltet wird.'
+        poweroffDesc: 'Möchten Sie NanoKVM wirklich ausschalten?'
       },
       network: {
         title: 'IP & DNS',

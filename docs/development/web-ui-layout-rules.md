@@ -105,22 +105,20 @@ and the dialog and toast helpers in `web/src/lib/feedback.ts`.
     Reboot, Uninstall) go in a bar at the end of the page, under a hairline, as
     red outline buttons (`danger`, not `type="primary"`).
 18. A primary (blue) button is the one main positive action of a page or state.
-    An action that needs a confirmation uses one of two forms, by what it costs:
-    - `Popconfirm`, with a one-line question and Yes / No, for a quick action
-      that is easy to undo (Restart Tailscale, Stop Tailscale, Account logout).
-    - `confirm()` from `lib/feedback.ts`, a dialog, for anything destructive,
-      irreversible or consequential (deleting, rebooting the KVM, leaving
-      Tailscale, uninstalling, applying a change that reboots the device or
-      drops the connection in use), and for any confirmation that needs more
-      than one line (an explanation, a file name, an alert).
-    A dialog names the action in its title and its OK button (Reboot, Delete,
-    Uninstall; the common Confirm only when no single word fits), asks the
-    question as its content, and has the common Cancel. `danger: true` is only
-    for destructive or irreversible actions, so the OK button is red; a
-    consequential action that can be undone stays plain. No confirmation is a
-    hand-built `Modal`. Exception: the confirmations of the Power menu are
-    Popconfirms with a red OK button, because a dialog is too heavy for a menu
-    item and they act on the host.
+    An action that needs a confirmation uses one of two forms, by how much there is to say:
+    - `Popconfirm`, a popover on the button, when the question fits on one line (Restart
+      Tailscale, Account logout, Reboot, Power off, Tailscale logout and uninstall, Wi-Fi
+      disconnect, deleting a script or an image, the Power menu). The title is the question. An action that is easy to undo has
+      Yes / No. One that destroys something or takes the device away has a red OK button named
+      after the action (`confirmOkProps`, `components/popconfirm-ok.ts`) and the common Cancel.
+    - `confirm()` from `lib/feedback.ts`, a dialog, when there is more to say than one line: an
+      explanation of what changes, a file name, an alert or a consequence (changing the
+      firewall mode, applying a change that reboots the device or drops the
+      connection in use, installing an update).
+    A dialog names the action in its title and its OK button (Delete, Apply; the common Confirm
+    only when no single word fits), asks the question as its content, and has the common Cancel.
+    `danger: true` is only for destructive or irreversible actions, so the OK button is red; a
+    consequential action that can be undone stays plain. No confirmation is a hand-built `Modal`.
 19. A dialog with a form is a `Modal`, not a `confirm()`: it is not a
     confirmation. Its OK button names what it does: Save for a key or a setting
     (the common Save), Join for the Wi-Fi password. Its title names the task,
@@ -283,11 +281,10 @@ surface from the Settings pages and are built from `components/menu-rows.tsx`:
   one, nothing else marks the choice. An option may carry a small icon.
 - Rows pass their props on, so a row can sit inside a `Popconfirm` or a `Tooltip`.
 - No popover writes its own row classes, header or divider margin.
-- Buttons in a popover or a dialog: an action is solid, blue (`type="primary"`) for the positive one
-  and red (`danger type="primary"`) for one that deletes or cancels something, as Run and Delete
-  in Scripts. The action in the popover header is a ghost primary (Upload, Add image). A
-  button that only closes or backs out, or a utility such as USB reconnect, is the plain default.
-  The red outline of rule 17 is for the bar at the end of a page, not for popovers or dialogs.
+- Buttons in a popover or a dialog: the one main positive action is solid blue (`type="primary"`).
+  A button that deletes, ejects or cancels something is a red outline (`danger`), as in rule 17.
+  Everything else is the plain default button, the header action of a popover included (Upload,
+  Add image): there is no ghost blue button.
 
 The dialogs that the entries open follow the same idea (`components/dialog-parts.tsx`):
 

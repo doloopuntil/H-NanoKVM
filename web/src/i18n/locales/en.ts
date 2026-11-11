@@ -503,8 +503,7 @@ const en = {
         reboot: 'Reboot',
         rebootDesc: 'Are you sure you want to reboot NanoKVM?',
         poweroff: 'Power off',
-        poweroffDesc:
-          'Are you sure you want to power off NanoKVM? It cannot be reached until it is powered on again.'
+        poweroffDesc: 'Are you sure you want to power off NanoKVM?'
       },
       network: {
         title: 'IP & DNS',

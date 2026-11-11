@@ -506,7 +506,7 @@ const cz = {
         reboot: 'Restartujte',
         rebootDesc: 'Opravdu chcete restartovat NanoKVM?',
         poweroff: 'Vypnout',
-        poweroffDesc: 'Opravdu chcete vypnout NanoKVM? Nebude dostupné, dokud ho znovu nezapnete.'
+        poweroffDesc: 'Opravdu chcete vypnout NanoKVM?'
       },
       network: {
         title: 'IP & DNS',

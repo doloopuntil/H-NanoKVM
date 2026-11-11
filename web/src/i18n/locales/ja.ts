@@ -512,7 +512,7 @@ const ja = {
         reboot: '再起動',
         rebootDesc: 'NanoKVM を再起動してもよろしいですか?',
         poweroff: '電源オフ',
-        poweroffDesc: 'NanoKVM の電源を切りますか？再び電源を入れるまで接続できません。'
+        poweroffDesc: 'NanoKVM の電源を切りますか？'
       },
       network: {
         title: 'IP & DNS',

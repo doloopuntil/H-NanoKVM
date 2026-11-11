@@ -500,8 +500,7 @@ const et = {
         reboot: 'Taaskäivita',
         rebootDesc: 'Kas oled kindel, et soovid NanoKVM-i taaskäivitada?',
         poweroff: 'Lülita välja',
-        poweroffDesc:
-          'Kas oled kindel, et soovid NanoKVM-i välja lülitada? See pole kättesaadav enne, kui see uuesti sisse lülitatakse.'
+        poweroffDesc: 'Kas oled kindel, et soovid NanoKVM-i välja lülitada?'
       },
       network: {
         title: 'IP & DNS',

@@ -512,7 +512,7 @@ const it = {
         reboot: 'Riavvia',
         rebootDesc: 'Sei sicuro di voler riavviare NanoKVM?',
         poweroff: 'Spegni',
-        poweroffDesc: 'Spegnere NanoKVM? Non sarà raggiungibile finché non verrà riacceso.'
+        poweroffDesc: 'Spegnere NanoKVM?'
       },
       network: {
         title: 'IP & DNS',

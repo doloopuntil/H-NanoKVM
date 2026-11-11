@@ -506,8 +506,7 @@ const tr = {
         reboot: 'Yeniden başlat',
         rebootDesc: "NanoKVM'i yeniden başlatmak istediğinizden emin misiniz?",
         poweroff: 'Kapat',
-        poweroffDesc:
-          "NanoKVM'i kapatmak istediğinize emin misiniz? Yeniden açılana kadar erişilemez."
+        poweroffDesc: "NanoKVM'i kapatmak istediğinize emin misiniz?"
       },
       network: {
         title: 'IP & DNS',

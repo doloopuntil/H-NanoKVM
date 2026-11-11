@@ -486,7 +486,7 @@ const zh_tw = {
         reboot: '重新啟動',
         rebootDesc: '您確定要重新啟動 NanoKVM?',
         poweroff: '關機',
-        poweroffDesc: '確定要關閉 NanoKVM 嗎？關閉後將無法存取，直到重新開機。'
+        poweroffDesc: '確定要關閉 NanoKVM 嗎？'
       },
       network: {
         title: 'IP & DNS',

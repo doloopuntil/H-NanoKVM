@@ -498,7 +498,7 @@ const th = {
         reboot: 'รีบูต',
         rebootDesc: 'คุณแน่ใจหรือไม่ว่าต้องการรีบูต NanoKVM',
         poweroff: 'ปิดเครื่อง',
-        poweroffDesc: 'ต้องการปิด NanoKVM หรือไม่ จะไม่สามารถเข้าถึงได้จนกว่าจะเปิดเครื่องอีกครั้ง'
+        poweroffDesc: 'ต้องการปิด NanoKVM หรือไม่'
       },
       network: {
         title: 'IP & DNS',

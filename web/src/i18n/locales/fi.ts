@@ -510,8 +510,7 @@ const fi = {
         reboot: 'Käynnistä uudelleen',
         rebootDesc: 'Haluatko varmasti käynnistää NanoKVM:n uudelleen?',
         poweroff: 'Sammuta',
-        poweroffDesc:
-          'Haluatko varmasti sammuttaa NanoKVM:n? Siihen ei saa yhteyttä, ennen kuin se käynnistetään uudelleen.'
+        poweroffDesc: 'Haluatko varmasti sammuttaa NanoKVM:n?'
       },
       network: {
         title: 'IP & DNS',

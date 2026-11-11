@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, Divider, Typography } from 'antd';
+import { Alert, Button, Divider, Popconfirm, Typography } from 'antd';
 import clsx from 'clsx';
 import {
   CableIcon,
@@ -19,6 +19,8 @@ import { attempt, confirm, toast } from '@/lib/feedback.ts';
 import { IMAGE_LIST_CHANGED_EVENT } from '@/lib/image-events.ts';
 import { formatBytes } from '@/lib/image-transfer.ts';
 import { client } from '@/lib/websocket.ts';
+import { usePopconfirmColor } from '@/hooks/usePopconfirmColor.ts';
+import { confirmOkProps } from '@/components/popconfirm-ok.ts';
 import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 
 type ImagesProps = {
@@ -45,6 +47,7 @@ export const Images = ({
   isDisablingDisk
 }: ImagesProps) => {
   const { t } = useTranslation();
+  const popconfirmColor = usePopconfirmColor();
 
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
@@ -206,29 +209,6 @@ export const Images = ({
         client.connect();
         refreshDiskState();
       });
-  }
-
-  // ask before deleting an image
-  function showDeleteModal(image: string) {
-    const isMounted = mountedImage === image;
-    const isDeleting = deletingImage !== '';
-
-    if (isMounted || isDeleting || isDiskShared || !isDiskStateKnown) {
-      return;
-    }
-
-    confirm({
-      danger: true,
-      title: t('image.deleteTitle'),
-      content: (
-        <div className="space-y-1">
-          <p>{t('image.deleteConfirm')}</p>
-          <Typography.Text code>{image}</Typography.Text>
-        </div>
-      ),
-      okText: t('common.delete'),
-      onOk: () => deleteImage(image)
-    });
   }
 
   // delete image
@@ -433,16 +413,25 @@ export const Images = ({
                     </Button>
                   )}
 
-                  <Button
-                    danger
-                    size="small"
-                    icon={<Trash2Icon size={16} />}
-                    disabled={isMountedImage || isDiskShared || !isDiskStateKnown}
-                    loading={deletingImage === image}
-                    onClick={() => showDeleteModal(image)}
+                  <Popconfirm
+                    color={popconfirmColor}
+                    placement="bottomRight"
+                    title={t('image.deleteConfirm')}
+                    okText={t('common.delete')}
+                    cancelText={t('common.cancel')}
+                    okButtonProps={confirmOkProps}
+                    onConfirm={() => deleteImage(image)}
                   >
-                    {t('common.delete')}
-                  </Button>
+                    <Button
+                      danger
+                      size="small"
+                      icon={<Trash2Icon size={16} />}
+                      disabled={isMountedImage || isDiskShared || !isDiskStateKnown}
+                      loading={deletingImage === image}
+                    >
+                      {t('common.delete')}
+                    </Button>
+                  </Popconfirm>
                 </div>
               )}
             </div>

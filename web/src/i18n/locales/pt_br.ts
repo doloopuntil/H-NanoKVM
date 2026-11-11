@@ -509,8 +509,7 @@ const pt_br = {
         reboot: 'Reiniciar',
         rebootDesc: 'Tem certeza de que deseja reiniciar o NanoKVM?',
         poweroff: 'Desligar',
-        poweroffDesc:
-          'Tem certeza de que deseja desligar o NanoKVM? Ele ficará inacessível até ser ligado novamente.'
+        poweroffDesc: 'Tem certeza de que deseja desligar o NanoKVM?'
       },
       network: {
         title: 'IP & DNS',
