@@ -887,7 +887,7 @@ pub async fn update_frame_detect(
 }
 
 pub async fn stop_frame_detect(Json(req): Json<StopFrameDetectReq>) -> Result<impl IntoResponse> {
-    let duration = Duration::from_secs(req.duration.unwrap_or(10).max(1));
+    let duration = Duration::from_secs(req.duration.unwrap_or(10).clamp(1, 300));
     owned_interval(
         || apply_frame_detect(0),
         duration,

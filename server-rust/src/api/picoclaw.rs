@@ -976,6 +976,16 @@ pub fn has_valid_loopback_internal_token(
 #[path = "picoclaw_gateway_origin_tests.rs"]
 mod gateway_origin_tests;
 
+const MAX_SESSION_ID_BYTES: usize = 128;
+
+fn valid_session_id(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= MAX_SESSION_ID_BYTES
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b':'))
+}
+
 fn require_session_id(headers: &HeaderMap) -> std::result::Result<String, PicoclawErrorData> {
     let session_id = headers
         .get(SESSION_ID_HEADER)
@@ -988,11 +998,17 @@ fn require_session_id(headers: &HeaderMap) -> std::result::Result<String, Picocl
             "missing X-PicoClaw-Session-ID",
         ));
     }
+    if !valid_session_id(session_id) {
+        return Err(PicoclawErrorData::new(
+            CODE_SESSION_ID_INVALID,
+            "invalid PicoClaw session",
+        ));
+    }
     Ok(session_id.to_string())
 }
 
 fn acquire_session_lock(session_id: &str) -> std::result::Result<bool, PicoclawErrorData> {
-    if session_id.trim().is_empty() {
+    if !valid_session_id(session_id.trim()) {
         return Err(PicoclawErrorData::new(
             CODE_SESSION_ID_INVALID,
             "invalid PicoClaw session",
@@ -1053,10 +1069,10 @@ fn session_lock_owner() -> String {
 
 fn gateway_session_id(query: &GatewayQuery) -> String {
     let session_id = query.session_id.trim();
-    if session_id.is_empty() {
-        format!("rust-{}", random_token(16))
-    } else {
+    if valid_session_id(session_id) {
         session_id.to_string()
+    } else {
+        format!("rust-{}", random_token(16))
     }
 }
 
@@ -3639,6 +3655,34 @@ fn command_output_text(output: &crate::system::command::CommandOutput) -> String
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_session_id_is_short_and_made_of_plain_characters() {
+        for id in [
+            "rust-AbC123",
+            "a",
+            "s_1.2:3-x",
+            &"x".repeat(MAX_SESSION_ID_BYTES),
+        ] {
+            assert!(valid_session_id(id), "{id}");
+        }
+        for id in [
+            "",
+            "a b",
+            "a/b",
+            "a\nb",
+            "caf\u{e9}",
+            "x;y",
+            &"x".repeat(MAX_SESSION_ID_BYTES + 1),
+        ] {
+            assert!(!valid_session_id(id), "{id:?}");
+        }
+        // a gateway client that sends no usable id gets a fresh one
+        let query = GatewayQuery {
+            session_id: "a b".to_string(),
+        };
+        assert!(gateway_session_id(&query).starts_with("rust-"));
+    }
 
     #[test]
     fn anthropic_models_get_a_null_temperature_in_extra_body() {
