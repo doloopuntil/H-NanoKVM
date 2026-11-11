@@ -25,10 +25,13 @@ define HARDENED_SG2002_VENDOR_RUNTIME_INSTALL_TARGET_CMDS
 	# plugins, raw/sample/replay test libs). The one exception is
 	# libsns_lt6911.so: the LT6911 HDMI bridge is this device's one real
 	# sensor, and unlike everything else here it has no copy in dl_lib --
-	# so it's the only file /mnt/system/usr/lib keeps.
+	# so it's the only file /mnt/system/usr/lib keeps. The 6.18 image ships
+	# no usr/lib at all: nothing loads that file.
 	rm -rf $(TARGET_DIR)/mnt/system/usr/bin
-	find $(TARGET_DIR)/mnt/system/usr/lib -type f ! -name libsns_lt6911.so -delete
-	find $(TARGET_DIR)/mnt/system/usr/lib -type d -empty -delete
+	if [ -d $(TARGET_DIR)/mnt/system/usr/lib ]; then \
+		find $(TARGET_DIR)/mnt/system/usr/lib -type f ! -name libsns_lt6911.so -delete; \
+		find $(TARGET_DIR)/mnt/system/usr/lib -type d -empty -delete; \
+	fi
 	cp -a $(@D)/kvmapp-dl-lib/. $(TARGET_DIR)/kvmapp/server/dl_lib/
 	$(INSTALL) -m 0755 $(NANOKVM_KVMAPP_SOURCE_DIR)/server/dl_lib/libkvm.so \
 		$(TARGET_DIR)/kvmapp/server/dl_lib/libkvm.so

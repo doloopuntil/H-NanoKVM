@@ -227,6 +227,13 @@ loaders (`ld-musl-riscv64xthead.so.1`, `ld-musl-riscv64v0p7_xthead.so.1`).
 `rootfs.sd` instead of raw.12, hard-failing if any isn't found (unlike the
 diagnostic that discovered these paths, this is production extraction).
 
+Update 2026-11-11 (Linux 6.18 image): the four GCC runtime libraries come from the
+MaixCDK musl toolchain that builds libkvm, its plain `lib64/lp64d` build stripped with
+`--strip-all -R .comment`. That output is byte-identical to the stock image's copies (checked
+against a running Lite), and `scripts/stage-maixcdk-runtime.sh` pins the hashes. The 6.18
+image no longer ships `libsns_lt6911.so`: no process on the Lite maps it. The 5.10 pipeline
+still takes all of these from `vendor-sdk-stock`.
+
 Update 2026-11: `libc.so` and the T-Head loader are no longer extracted or shipped.
 The loader's riscv64 `__clone` misaligns thread stacks, so the server, `nanokvm-hwmon`
 and `kvm_system` run on Buildroot's musl 1.2.6 loader; see
