@@ -82,6 +82,11 @@ build_stage() {
 		grep -q "/$patch\$" "$applied" || die "kernel patch not applied: $patch"
 	done
 
+	# U-Boot: no autoboot delay
+	uboot_config="$(find "$OUTPUT_DIR/build" -maxdepth 2 -path '*/uboot-*/.config' | head -n 1)"
+	[ -n "$uboot_config" ] || die "missing U-Boot .config"
+	grep -qx 'CONFIG_BOOTDELAY=0' "$uboot_config" || die "U-Boot BOOTDELAY is not 0"
+
 	# Rootfs: the media modules, libkvm's GCC runtime and the update metadata
 	ROOTFS="$IMAGES/rootfs.ext4"
 	debugfs -R "ls -l /lib/modules/$EXPECTED_KERNEL_RELEASE/extra" "$ROOTFS" \

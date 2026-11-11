@@ -1,0 +1,4 @@
+# On top of U-Boot's sipeed_licheerv_nano_defconfig.
+
+# Boot at once (saves 2 s); a key already waiting on the serial console still stops autoboot.
+CONFIG_BOOTDELAY=0
