@@ -80,6 +80,16 @@ static pthread_t watchdog_thread;
 static bool vi_detection_thread_started = false;
 static bool watchdog_thread_started = false;
 static bool vi_mutex_initialized = false;
+
+// Holds vi_mutex until the end of the scope; unlocks only what lock() took.
+struct ViLock {
+    bool held = false;
+    ViLock() = default;
+    ViLock(const ViLock &) = delete;
+    ViLock &operator=(const ViLock &) = delete;
+    void lock() { pthread_mutex_lock(&vi_mutex); held = true; }
+    ~ViLock() { if (held) pthread_mutex_unlock(&vi_mutex); }
+};
 static std::atomic<bool> stop_threads{false};
 static kvmv_lifecycle_state_t lifecycle_state = kvmv_lifecycle_state_t::stopped;
 
@@ -316,23 +326,34 @@ static bool read_uint16_file(const char *path, uint16_t *value)
         return false;
     }
 
-    char buffer[35] = {0};
-    bool ok = fgets(buffer, sizeof(buffer), fp) != NULL;
-    if (ok && strchr(buffer, '\n') == NULL && !feof(fp)) {
-        ok = false;
-    }
+    // Accept only the whole input: decimal digits with at most one trailing
+    // newline. Reject whitespace, signs, extra lines and oversized input
+    // instead of silently parsing a prefix.
+    char buffer[36] = {0};
+    size_t len = fread(buffer, 1, sizeof(buffer) - 1, fp);
+    const bool read_error = ferror(fp) != 0;
+    const bool extra = fgetc(fp) != EOF;
     fclose(fp);
-    if (!ok) {
+    if (read_error || extra || len == 0) {
         return false;
+    }
+    size_t digits = len;
+    if (buffer[digits - 1] == '\n') {
+        digits--;
+    }
+    if (digits == 0) {
+        return false;
+    }
+    for (size_t i = 0; i < digits; i++) {
+        if (buffer[i] < '0' || buffer[i] > '9') {
+            return false;
+        }
     }
 
     errno = 0;
     char *end = NULL;
     unsigned long parsed = strtoul(buffer, &end, 10);
-    while (end && std::isspace(static_cast<unsigned char>(*end))) {
-        ++end;
-    }
-    if (errno != 0 || end == buffer || !end || *end != '\0' || parsed > UINT16_MAX) {
+    if (errno != 0 || end != buffer + digits || parsed > UINT16_MAX) {
         return false;
     }
 
@@ -2123,6 +2144,11 @@ int kvmv_read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _ql
 
 int free_kvmv_data(uint8_t ** _pp_kvm_data)
 {
+    // Serialize with read_img, which writes the same rotating buffer slots.
+    // deinit calls free_all_kvmv_data() while already holding ViLock, so only
+    // this externally invoked free takes the lock.
+    ViLock vi_lock;
+    if (vi_mutex_initialized) vi_lock.lock();
         // debug("[kvmv]free_kvmv_data - 1\r\n");
     for(int i = 0; i < kvmv_data_buffer_size; i++){
         if(*_pp_kvm_data == kvmv_data_buffer[i].p_img_data){
