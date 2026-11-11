@@ -1124,7 +1124,10 @@ Phase 3 checks are done on the Lite.
   built, Auto could use the input size directly. Phone as host: 800x600,
   1024x768, 1280x720, 1280x1024 and 1920x1080 work; at 640x480 the LT6911 raises
   its interrupt but sends nothing on MIPI. A 5.10 Lite fails the same way at 640x480
-  60 Hz, so it is the bridge (or its firmware), not the port.
+  60 Hz, so it is the bridge (or its firmware), not the port. Its 25.175 MHz pixel clock
+  sits just above the 25 MHz minimum both open LT6911 drivers accept (below), so the
+  bridge's clock detection at the bottom of its range is the first suspect. To do: read the
+  frequency meter (UXC `0x8540`, `0x8548`-`0x854A`) at 640x480 to see what it measures.
 - Slow mode changes (about 20 s, "no HDMI signal" and "adjusting resolution"
   alternating): `/etc/kvm/hdmi_mode` was 1. libkvm drops from bridge mode (0: read
   the size over I2C on `LT-INT`) to scan mode (1: restart the camera at each size in
@@ -1152,6 +1155,32 @@ Phase 3 checks are done on the Lite.
   lane (`/proc/mipi-rx` link IDs `2, 4, 3, 1, 0`). PCIe's reset (XGPIOB3) is not on
   the connector. To do: find the LT6911UXC datasheet and check for a soft reset or
   power-down over I2C, which would let the Lite stop the bridge without a pin.
+- LT6911 control without a reset pin (research 2026-11-11, not tried on the device).
+  Sources: InES-HPMM/Lontium_lt6911uxc (GPL-2.0, the UXC, our chip), MediaTek's
+  lontium-lt6911-driver on GitLab (GPL-2.0, derived from it, for the UXE) and
+  dormancygrace/NanoKVM-OS (GPL-3.0). The GPL-2.0-only drivers give register facts; no code
+  from them goes into this tree.
+  - Neither driver resets the bridge over I2C: the UXE driver drives a reset GPIO, and the
+    InES driver reads one but never uses it. Lontium's register-level documentation is not
+    public.
+  - UXC registers (InES): writing `0x80EE` enables external I2C control and `0x8010`
+    disables the bridge's watchdog; `0x811D` switches the MIPI output (`0xFB` on, `0x00`
+    off); `0x86A3` reports the HDMI state (`0x55` stable, `0x88` disconnected); timing in
+    bank `0x86` (`0x8670`-`0x8680`). The UXE uses another bank (`0xE0EE`, MIPI on/off at
+    `0xE0B0`, status at `0xE084`), so its addresses do not apply here.
+  - Idle on the Lite, first step: park capture instead of stopping the bridge. NanoKVM-OS
+    disables the VPSS outputs 20 s after the last viewer leaves
+    (`server/service/vm/hdmi.go` `hdmiCaptureParkDelay`,
+    `support/additional/kvm/include/capture_park.hpp`, `kvmv_set_capture_parked`); its idle
+    timeout is PCIe-only as well. Portable (GPL-3.0).
+  - Second step, to try on the Lite: `0x811D` = `0x00` under external I2C control stops the
+    MIPI output without a pin; check that `0xFB` brings it back at the same size and that
+    `LT-INT` still fires.
+  - `0x86A3` would let libkvm tell a mode change from a disconnect, instead of inferring it
+    from a failed size read.
+  - NanoKVM-OS replugs an LT6911D in software (HPD at `0xE808` bit 6, termination at
+    `0xE29D`: `0xA4` off, `0x04` on); the UXC and C need a power cycle for a new EDID (EDID
+    item above).
 - HID-only mode (Lite, phone as host): switching it on writes `/boot/usb.hidonly`
   and reboots; the gadget then binds only `hid.GS0`-`GS2` (no mass storage, no
   `usb0`), the host configures it, and keyboard and mouse work. Switching it off
@@ -1337,6 +1366,70 @@ states selected at runtime or as overlays, write a short tester checklist (boot,
 OLED text, power/reset buttons, Wi-Fi association, HDMI capture, USB gadget), and
 publish a preview image for testers. Treat PCIe `wifi`, `poe` and the `reboot` after
 first PCIe detection as the riskiest paths.
+
+**Review 2026-11-11** (code and DTS read against the 5.10 scripts; no Full or PCIe board in
+hand). Tester checklist: [board-test-checklist.md](board-test-checklist.md).
+
+- Detection: unchanged from 5.10 minus alpha. `S15kvmhwd` writes `pcie` if `0x3c` answers
+  on i2c5 (then reboots once, as before), else `beta`. `kvm_system` reads `/etc/kvm/hw`
+  and drives the OLED on i2c5 at `0x3D` (Full) or `0x3C` (PCIe); the bit-bang `i2c5` node
+  (A15/A27) and the `oled-reset` hog (A22 high) are in the DTS.
+- ATX: the server claims `atx-power`, `atx-reset` (outputs) and `atx-power-led` (input)
+  by name on every board; the PCIe 9-pin header uses the same lines. Verified as pulses
+  on the Lite without an ATX board.
+- `hdmi-reset` (PCIe, port B pin 3): 5.10 drove it high at boot. On 6.18 libkvm claims it
+  when the server starts (`initialize_hdmi` calls `kvmv_hdmi_control(0)` then `(1)`), so
+  the bridge leaves reset before capture starts; the idle timeout toggles it after that.
+  The bridge sits in reset from power-on until the server starts, as it did before
+  `S15kvmhwd` ran on 5.10.
+- UART1 and UART2 are muxed by the DTS, as `S15kvmhwd` did by `devmem`.
+- PoE needs no software.
+- **Gap: Wi-Fi cannot work on 6.18.** Three pieces are missing. (1) The SDIO host:
+  Linux 6.18 defines `sdhci1` (`mmc@4320000`) disabled, and our DTS never enables it;
+  `S15kvmhwd` still muxes the SD1 pads by `devmem`, which only sets pins. (2) The driver:
+  the image ships the AIC8800 firmware but not `aic8800_bsp`/`aic8800_fdrv`, and `S00kmod`
+  loads only the 11 media modules. (3) Power and reset: licheerv's W board drives the
+  AIC8800 reset from A26 (our `wifi-enable`) through `mmc-pwrseq-simple`; 6.18 leaves A26
+  undriven. Fix, from licheerv's W DTS and package (pinned `019ffc86`): enable `sdhci1`
+  with an SD1 pinctrl group (4-bit, 25 MHz, non-removable, `no-1-8-v`, `no-mmc`,
+  `no-sd`), add a `mmc-pwrseq-simple` on A26 (active low, 50 ms), drop the SDIO `devmem`
+  lines from `S15kvmhwd`, select licheerv's `aic8800-modules` (already patched for 6.18;
+  its firmware path must point at our `/usr/lib/firmware/aic8800_sdio`), and load the
+  modules before `kvm_system` checks for `wlan0` (it looks once at start, then writes
+  `/etc/kvm/wifi_exist`), with `options aic8800_fdrv aicwf_dbg_level=1 ps_on=0`. This
+  affects the PCIe board and any Full with Wi-Fi. Check on the Lite that an enabled
+  `sdhci1` with no card stays quiet.
+  Fixed 2026-11-11, not yet built, revised with what dormancygrace/NanoKVM-OS learned:
+  - DTS: `sdhci1` with an SD1 pinctrl group and a `wifi-pwrseq` on A26 with NanoKVM-OS's
+    200 ms post-power-on delay (checked with `dtc` against 6.18 plus licheerv's DT patches).
+  - Driver: licheerv's `aic8800-modules`; its `/lib/firmware/aic8800_sdio/...` path reaches
+    our firmware through the merged `/usr`. Both modules carry SDIO ID tables, so
+    `S10udevd`'s coldplug loads them when the card appears, with no race against the SDIO
+    scan; options in `/etc/modprobe.d/aic8800.conf`. NanoKVM-OS later moved the load out
+    of boot, since the firmware upload takes about 1.5 s of the core; worth doing once
+    measured here.
+  - Regulatory: the vendor driver defaults to `custregd=true`, a self-managed permissive
+    table (2.4 GHz 1-14, 5 GHz 36-165 at 20 dBm, no NO_IR or DFS) that ignores the country.
+    `board/sg2002/patches/aic8800-modules/0001-regulatory-from-cfg80211.patch` (NanoKVM-OS's
+    0017, ported onto licheerv's source) defaults it to false and removes a NULL
+    `wiphy->regd` dereference; `wireless-regdb` ships the signed `regulatory.db`. A private
+    ioctl path (`aic_priv_cmd.c`) still dereferences `wiphy->regd`; NanoKVM-OS removes the
+    private ioctls (its 0008).
+  - `S15kvmhwd` writes no registers; the image build checks the modules, the pwrseq node,
+    the modprobe file and `regulatory.db`.
+  - Only the AIC8800 is supported. NanoKVM-OS also builds the Realtek RTL8733BS driver
+    (`024C:B733/B73A`), but there is no evidence Sipeed fits that chip, so it is left out.
+  - Open: which AIC8800 the PCIe board carries (the driver and firmware cover the
+    8800/D80, D80X2 and DC); NanoKVM-OS's SDIO high-speed (50 MHz) and hardening patches
+    (bounded frame and message lengths, no private ioctls), once a Wi-Fi board is at hand.
+- SD clocks: `cv180x.dtsi` names the clocks the wrong way round, so `sdhci-of-dwcmshc`
+  takes the 300 MHz AXI clock as its base while the divider runs from `CLK_SD0/1`. On the
+  Lite `clk_sd0` runs at 375 MHz, so the "50 MHz" SD card clock is 62.5 MHz: a raw read
+  gives 28 MB/s, above the 25 MB/s a 50 MHz 4-bit bus can carry. NanoKVM-OS saw the
+  opposite (16.7 MHz, its issue #247) with `CLK_SD0` at 100 MHz. The DTS now names the
+  clocks correctly on both hosts: the SD card should drop to 375/8 = 46.9 MHz (in spec,
+  about 23 MB/s at most) and the Wi-Fi bus rise from 16.7 to 50 MHz. To check on the Lite
+  (`/sys/kernel/debug/mmc0/ios`, the same `dd`).
 
 ### Phase 6: hardening and cleanup
 

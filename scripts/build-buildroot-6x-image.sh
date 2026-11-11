@@ -87,12 +87,21 @@ build_stage() {
 	[ -n "$uboot_config" ] || die "missing U-Boot .config"
 	grep -qx 'CONFIG_BOOTDELAY=0' "$uboot_config" || die "U-Boot BOOTDELAY is not 0"
 
-	# Rootfs: the media modules, libkvm's GCC runtime and the update metadata
+	# Rootfs: the media and Wi-Fi modules, libkvm's GCC runtime and the update metadata
 	ROOTFS="$IMAGES/rootfs.ext4"
 	debugfs -R "ls -l /lib/modules/$EXPECTED_KERNEL_RELEASE/extra" "$ROOTFS" \
 		> "$REPORT_DIR/media-modules.txt" 2>/dev/null
 	for module in $MEDIA_MODULES; do
 		grep -q " $module.ko\$" "$REPORT_DIR/media-modules.txt" || die "rootfs lacks $module.ko"
+	done
+	debugfs -R "ls -l /lib/modules/$EXPECTED_KERNEL_RELEASE/extra/aic8800" "$ROOTFS" \
+		> "$REPORT_DIR/wifi-modules.txt" 2>/dev/null
+	for module in aic8800_bsp aic8800_fdrv; do
+		grep -q " $module.ko\$" "$REPORT_DIR/wifi-modules.txt" || die "rootfs lacks $module.ko"
+	done
+	grep -aq 'mmc-pwrseq-simple' "$IMAGES/sg2002-nanokvm-lite.dtb" || die "DTB lacks the Wi-Fi pwrseq"
+	for file in /etc/modprobe.d/aic8800.conf /lib/firmware/regulatory.db /lib/firmware/regulatory.db.p7s; do
+		debugfs -R "stat $file" "$ROOTFS" 2>/dev/null | grep -q "Type: regular" || die "rootfs lacks $file"
 	done
 	for lib in libstdc++.so.6.0.28 libgcc_s.so.1 libgomp.so.1.0.0 libatomic.so.1.2.0; do
 		debugfs -R "stat /kvmapp/server/dl_lib/$lib" "$ROOTFS" 2>/dev/null | \

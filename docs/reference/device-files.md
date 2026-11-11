@@ -100,6 +100,7 @@ run. `/sys/kernel/debug/gpio` lists every line with its name, owner and level.
 | `atx-power-led` | server, input | ATX power LED. |
 | `hdmi-reset` | libkvm, output high | HDMI bridge reset (PCIe board only). |
 | `oled-reset` | device tree hog, output high | Keeps the OLED out of reset. |
+| `wifi-enable` | `mmc-pwrseq-simple` (`sdhci1`), active low | AIC8800 Wi-Fi reset; the MMC core releases it before scanning for the card. |
 | `hdmi-bridge-int` | kernel (`cif`), interrupt | LT6911 interrupt on a mode change; edges are counted in `/proc/lt_int`. |
 | `user-key` | `gpio-keys` | The User Key, reported as an input device. |
 | `user-led` | `gpio-leds` | The user LED. |

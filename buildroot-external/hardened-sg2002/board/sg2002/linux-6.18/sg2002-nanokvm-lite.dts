@@ -95,6 +95,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
+
+	/* AIC8800 Wi-Fi (PCIe, Full with Wi-Fi): reset on A26; 200 ms as in NanoKVM-OS */
+	wifi_pwrseq: wifi-pwrseq {
+		compatible = "mmc-pwrseq-simple";
+		reset-gpios = <&porta 26 GPIO_ACTIVE_LOW>;
+		post-power-on-delay-ms = <200>;
+	};
 };
 
 &osc {
@@ -139,6 +146,32 @@
 
 		sdhci0-cd-pins {
 			pinmux = <PINMUX(PIN_SD0_CD, 0)>;
+			bias-pull-up;
+			drive-strength-microamp = <10800>;
+			power-source = <3300>;
+		};
+	};
+
+	sdhci1_cfg: sdhci1-cfg {
+		sdhci1-clk-pins {
+			pinmux = <PINMUX(PIN_SD1_CLK, 0)>;
+			bias-pull-up;
+			drive-strength-microamp = <16100>;
+			power-source = <3300>;
+		};
+
+		sdhci1-cmd-pins {
+			pinmux = <PINMUX(PIN_SD1_CMD, 0)>;
+			bias-pull-up;
+			drive-strength-microamp = <10800>;
+			power-source = <3300>;
+		};
+
+		sdhci1-data-pins {
+			pinmux = <PINMUX(PIN_SD1_D0, 0)>,
+				 <PINMUX(PIN_SD1_D1, 0)>,
+				 <PINMUX(PIN_SD1_D2, 0)>,
+				 <PINMUX(PIN_SD1_D3, 0)>;
 			bias-pull-up;
 			drive-strength-microamp = <10800>;
 			power-source = <3300>;
@@ -243,7 +276,13 @@
 		"", "", "", "", "", "", "", "";
 };
 
+/*
+ * cv180x.dtsi swaps the clock names: the SDHCI base clock ("core") is CLK_SD0/1 at
+ * 100 MHz, not the 300 MHz AXI clock, so a 50 MHz request ran the bus at 16.7 MHz.
+ */
 &sdhci0 {
+	clocks = <&clk CLK_SD0>, <&clk CLK_AXI4_SD0>;
+	clock-names = "core", "bus";
 	pinctrl-0 = <&sdhci0_cfg>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -252,6 +291,22 @@
 	no-mmc;
 	no-sdio;
 	disable-wp;
+};
+
+/* SDIO for the AIC8800; with no module fitted the host finds no card */
+&sdhci1 {
+	clocks = <&clk CLK_SD1>, <&clk CLK_AXI4_SD1>;
+	clock-names = "core", "bus";
+	pinctrl-0 = <&sdhci1_cfg>;
+	pinctrl-names = "default";
+	status = "okay";
+	bus-width = <4>;
+	max-frequency = <25000000>;
+	no-1-8-v;
+	non-removable;
+	no-mmc;
+	no-sd;
+	mmc-pwrseq = <&wifi_pwrseq>;
 };
 
 &uart0 {
