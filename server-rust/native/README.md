@@ -75,6 +75,12 @@ timing, while HDMI capture works without it.
 `lt6911_probe()` entirely (PinMux only); verified on hardware: no LT6911
 errors in syslog and no boot delay.
 
+Since 2026-11-12 the patch also drops the probe's ten `system("devmem …")` pinmux writes,
+which set the MIPI RX pads (`0x0300116C`-`0x03001190`, MIPIRX4N-MIPIRX0P) to GPIO. The
+Linux 6.18 DTS (`mipi-rx-pins`) sets them instead; before, it put `CAM_MCLK1` on MIPIRX0N,
+a live data lane, which only these writes undid when the server started. The 5.10 image,
+whose device tree does not set these pads, no longer gets them from libkvm either.
+
 ## /mnt/system/usr: pruned to the one file dl_lib doesn't cover
 
 `/mnt/system/usr/bin` (CVITEK sample/test binaries: `sample_vcodec`,

@@ -1,21 +1,27 @@
 diff --git a/middleware/v2/component/isp/sensor/cv182x/lontium_lt6911/lt6911_sensor_ctl.c b/middleware/v2/component/isp/sensor/cv182x/lontium_lt6911/lt6911_sensor_ctl.c
-index 29ab3a9..5ecfe2f 100644
 --- a/middleware/v2/component/isp/sensor/cv182x/lontium_lt6911/lt6911_sensor_ctl.c
 +++ b/middleware/v2/component/isp/sensor/cv182x/lontium_lt6911/lt6911_sensor_ctl.c
-@@ -185,9 +185,6 @@ int lt6911_write(VI_PIPE ViPipe, int addr, int data)
+@@ -185,46 +185,8 @@
  
  int  lt6911_probe(VI_PIPE ViPipe)
  {
 -	int nVal;
 -	int nVal2;
 -
- 	// PinMUX
- 	printf("###########   PinMux  #######################################################################\n");
- 	system("devmem 0x0300116C 32 0x3");
-@@ -202,29 +199,7 @@ int  lt6911_probe(VI_PIPE ViPipe)
- 	system("devmem 0x03001190 32 0x3");
- 	printf("###########   PinMux End  #######################################################################\n");
- 
+-	// PinMUX
+-	printf("###########   PinMux  #######################################################################\n");
+-	system("devmem 0x0300116C 32 0x3");
+-	system("devmem 0x03001170 32 0x3");
+-	system("devmem 0x03001174 32 0x3");
+-	system("devmem 0x03001178 32 0x3");
+-	system("devmem 0x0300117C 32 0x3");
+-	system("devmem 0x03001180 32 0x3");
+-	system("devmem 0x03001184 32 0x3");
+-	system("devmem 0x03001188 32 0x3");
+-	system("devmem 0x0300118C 32 0x3");
+-	system("devmem 0x03001190 32 0x3");
+-	printf("###########   PinMux End  #######################################################################\n");
+-
 -	usleep(50);
 -	printf("[lt6911_probe] -189 \n");
 -	if (lt6911_i2c_init(ViPipe) != CVI_SUCCESS)
@@ -39,7 +45,8 @@ index 29ab3a9..5ecfe2f 100644
 -	}
 -
 -	printf("[lt6911_probe] -208 = exit success \n");
-+	// Chip ID I2C probe removed: never succeeds on this board, HDMI works without it.
++	// The device tree muxes the MIPI RX pads. The chip ID I2C probe never succeeds on
++	// this board and HDMI works without it.
  	return CVI_SUCCESS;
  }
  

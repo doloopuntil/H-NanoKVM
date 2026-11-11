@@ -65,8 +65,7 @@ media drivers and the Wi-Fi/BT stack are modules.
 maps its buffers through `/dev/mem`: the 75 MiB media carveout is reserved, mapped RAM, as
 on 5.10, and `STRICT_DEVMEM` refuses all System RAM. The init scripts also use `devmem` for
 three SoC registers (the rootfs-check flag in `S01fs`, the boot confirmation in `S95nanokvm`,
-the restart reason in `S02watchdog`), and the LT6911 sensor code in `libkvm_mmf.so` sets two
-pads with it. Root can therefore read and write all physical memory, the kernel
+the restart reason in `S02watchdog`). Root can therefore read and write all physical memory, the kernel
 included. Every process that touches it already runs as root, so this adds no path for an
 unprivileged user, but it removes a barrier for code that gains root.
 
