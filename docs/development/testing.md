@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-07
+last-checked: 2026-11-11
 ---
 
 # Testing
