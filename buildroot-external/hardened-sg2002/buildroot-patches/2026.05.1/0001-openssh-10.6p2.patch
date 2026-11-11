@@ -1,0 +1,36 @@
+From: Hardened NanoKVM security maintenance
+Subject: [PATCH] package/openssh: update to 10.6p2
+
+OpenSSH 10.4p1 fixed the July 2026 security issue set. 10.6 (2026-10-06)
+disables the LZ77 dictionary coder in transport compression and bounds inflated
+payloads. 10.6p2 (2026-11-05) refuses a stored password field shorter than four
+characters in sys_auth_passwd: without PAM, a field of "*" met the "*" that
+musl's crypt(3) returns for a password over 256 bytes, so such a password logged
+in to an account with that field (CVE-2026-123158). The hash is the release
+notes' base64 SHA256 (muRIcgkM8vBrPPn/FH5/FvMJZxNAdj7S+ZJIOYrinVs=) in hex; the
+LICENCE hash is unchanged. Found in woffko/Hardened_NanoKVM (3d66e375).
+
+diff --git a/package/openssh/openssh.hash b/package/openssh/openssh.hash
+--- a/package/openssh/openssh.hash
++++ b/package/openssh/openssh.hash
+@@ -1,4 +1,4 @@
+-# From https://www.openssh.com/txt/release-10.3
+-sha256  56682a36bb92dcf4b4f016fd8ec8e74059b79a8de25c15d670d731e7d18e45f4  openssh-10.3p1.tar.gz
++# From https://www.openssh.com/txt/release-10.6p2 (base64 encoded)
++sha256  9ae44872090cf2f06b3cf9ff147e7f16f309671340763ed2f99248398ae29d5b  openssh-10.6p2.tar.gz
+ # Locally calculated
+ sha256  5bb5b160726ef5756e4f32fe95b35249c294962419650f48d05134b486d27ccb  LICENCE
+diff --git a/package/openssh/openssh.mk b/package/openssh/openssh.mk
+--- a/package/openssh/openssh.mk
++++ b/package/openssh/openssh.mk
+@@ -4,8 +4,8 @@
+ #
+ ################################################################################
+ 
+-OPENSSH_VERSION_MAJOR = 10.3
+-OPENSSH_VERSION_MINOR = p1
++OPENSSH_VERSION_MAJOR = 10.6
++OPENSSH_VERSION_MINOR = p2
+ OPENSSH_VERSION = $(OPENSSH_VERSION_MAJOR)$(OPENSSH_VERSION_MINOR)
+ OPENSSH_CPE_ID_VERSION = $(OPENSSH_VERSION_MAJOR)
+ OPENSSH_CPE_ID_UPDATE = $(OPENSSH_VERSION_MINOR)
