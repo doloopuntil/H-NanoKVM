@@ -1018,7 +1018,7 @@ frame reaches user space.
   5.10 trips were 110/120 °C passive, 130 °C critical, mainline's are 85/95/110 °C). The web UI shows the host's picture in MJPEG
   and WebRTC (H.264), and Direct H.264 works over HTTPS. Section 6.1 defines no separate cache
   test: correct frames through VI, VPSS and both encoders stand in for it here, and
-  R1 stays open for the Phase 3 soak.
+  R1 stays open for the soak at the end of the migration.
 - Load average about 4.4 while streaming H.264 at 30 fps, with the CPU 81% idle over
   5 s (4% user, 12% system, 2% softirq): the `vi` threads `vi_event_handler` and
   `cvitask_isp_{pre,err,blank}` wait in `D` state, as on 5.10 (Phase 0 baseline).
@@ -1036,6 +1036,11 @@ frames (cache bug signature), IRQ storms, clock rate differences (check
 register writes can disagree).
 
 Exit: parity or better on the Phase 0 numbers; no crashes in the soak.
+
+The 24 h soak moves to the end of the migration, after Phase 7 and before the first-setup
+step (decided 2026-11-11): later work (the C906L RTOS, kernel settings, the naming sweep)
+can change what it measures, so an earlier soak would have to be repeated. The rest of the
+Phase 3 checks are done on the Lite.
 
 **State 2026-11-06** (test 16 on the Lite):
 
@@ -1110,14 +1115,16 @@ Exit: parity or better on the Phase 0 numbers; no crashes in the soak.
   was the phone putting its external display to sleep, not a capture fault.
 - Auto stream size follows the input (9d9b1322 and the next commit): a 4:3 host mode
   is shown whole. `kvm_mmf` rounds the VPSS output width up to 64 and crops to
-  fill, so Auto picks a 64-aligned width and keeps the aspect (800x600 -> 768x576).
+  fill, so Auto picked a 64-aligned width and kept the aspect (800x600 -> 768x576). With
+  the exact-width fix, Auto rounds only to a multiple of 8 (800x600 stays 800x600).
   The fixed 800x600 menu size cropped (top, bottom and right): the 832-wide channel
   scaled the input and the camera kept 800 columns. Fix, not yet built: `kvm_mmf`
   keeps the exact channel width (VPSS pads only the stride to 64), the camera copies
   rows by the padded pitch, and `mmf_vi_frame_pop` refuses any other layout. Once
   built, Auto could use the input size directly. Phone as host: 800x600,
   1024x768, 1280x720, 1280x1024 and 1920x1080 work; at 640x480 the LT6911 raises
-  its interrupt but sends nothing on MIPI (bridge limit, not the port).
+  its interrupt but sends nothing on MIPI. A 5.10 Lite fails the same way at 640x480
+  60 Hz, so it is the bridge (or its firmware), not the port.
 - Slow mode changes (about 20 s, "no HDMI signal" and "adjusting resolution"
   alternating): `/etc/kvm/hdmi_mode` was 1. libkvm drops from bridge mode (0: read
   the size over I2C on `LT-INT`) to scan mode (1: restart the camera at each size in
@@ -1127,7 +1134,8 @@ Exit: parity or better on the Phase 0 numbers; no crashes in the soak.
   times over 1 s before falling back, return to bridge mode after a successful scan,
   reset the file at start on every bridge but `ue`, and name the modes
   (`HDMI_MODE_BRIDGE`, `HDMI_MODE_SCAN`, `HDMI_MODE_MANUAL`). The server logs an `h264 capture failure` per
-  frame while libkvm reports a change (about 60 lines a second); to throttle.
+  frame while libkvm reports a change (about 60 lines a second); now at most one
+  line every 5 s, with the number held back (not yet on the device).
 - EDID flow: nothing to test. libkvm has `lt6911_read_edid`/`lt6911_write_edid`,
   but nothing calls them and neither the server nor the UI exposes EDID.
   To do: publish our own EDID to the LT6911, so the host offers the modes we
@@ -1169,7 +1177,8 @@ on the Lite) and `/dev/mem` without `STRICT_DEVMEM`.
 
 Exit: a CI-built image flashes, boots and passes the Phase 1-3 checks unattended.
 
-**Added step: first setup approved by the user key** (decided 2026-11-08; not started).
+**Added step: first setup approved by the user key** (decided 2026-11-08; not started;
+the last step of the whole migration, after Phase 7).
 Until the first account exists, anyone who can reach the device can create it, and the
 account is root-equivalent. woffko's claim token (`b50fefe5`) was not taken because it is
 readable only on the serial console, so a unit without a UART could not finish setup;
@@ -1195,8 +1204,9 @@ which every unit has (the Lite has Reset and a user button):
   (A30, the BOOT button) is the one `gpio-keys` reports. Holding it at power-on already
   exports the whole SD card in `initramfs-init`, so anyone who can press it holds more
   access than first setup grants.
-- Own design, not a port. Land it after the name-based GPIO and input work in this
-  phase, with its own CI image and a device check.
+- Own design, not a port. Land it last, after Phase 7: until then test cards are
+  reflashed often, and each fresh card would need a button press before the first login.
+  It gets its own CI image and a device check.
 
 **State 2026-11-07** (test 20 on the Lite):
 
@@ -1389,7 +1399,7 @@ consider upstreaming it.
 | Q6 | ~~Which optional media modules to keep~~ | **Answered** (Phase 0): drop `ive mon fb snsr_i2c`; keep `dwa vo rgn` until the server is shown to start without them (section 6.2). |
 | Q7 | GPIO strategy | Phase 1: sysfs stopgap (needs `EXPERT` + `GPIO_SYSFS`) and `gpio-line-names` in the DT from day one. Phase 4: char-device access by line name; `gpio-hog` for static lines. See section 6.4. |
 | Q8 | `STRICT_DEVMEM` and the carveout region type | Phase 2 cache/`/dev/mem` test. |
-| R1 | Cache coherency and memory attributes on the carveout (stale/corrupt frames) | Phase 2 cache test; Phase 3 soak. |
+| R1 | Cache coherency and memory attributes on the carveout (stale/corrupt frames) | Phase 2 cache test; the soak at the end of the migration. |
 | R2 | ~~`snsr_i2c` vendor I2C extensions (LT6911 path)~~ | **Gone** if `snsr_i2c` is dropped (Phase 0: unused; the LT6911 goes through `/dev/i2c-4`). |
 | R10 | The 5.10 codec driver leaves `clk_h264c` enabled (enable count about 432,000 after 1.5 h) | Check enable/disable balance in the 6.18 port; mainline clk warns on unbalanced disables. |
 | R3 | Modules poke clock/reset/FMUX registers directly beside the mainline clk and pinctrl drivers | Compare `clk_summary` before and after; convert hot spots to the clk/reset API. |

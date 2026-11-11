@@ -73,6 +73,8 @@ const DIRECT_READ_IDLE: Duration = Duration::from_secs(30);
 /// At most one keyframe request per interval: a peer flooding RTCP PLI/FIR would otherwise force
 /// a keyframe for every viewer several times a second. Loss recovery once a second is still prompt.
 const H264_KEYFRAME_REQUEST_INTERVAL: Duration = Duration::from_secs(1);
+/// At most one h264 capture-failure warning per interval: every frame fails while the input changes.
+const H264_FAILURE_LOG_INTERVAL: Duration = Duration::from_secs(5);
 
 static SCREEN: LazyLock<Mutex<Screen>> = LazyLock::new(|| Mutex::new(Screen::default()));
 // Auto resolution: the last HDMI input size read, packed as width << 16 | height.
@@ -100,6 +102,7 @@ static H264_DIRECT_FIRST_ERROR_LOGGED: AtomicBool = AtomicBool::new(false);
 static H264_CAPTURE_DISABLED: AtomicBool = AtomicBool::new(false);
 static H264_CONSECUTIVE_FAILURES: AtomicUsize = AtomicUsize::new(0);
 static H264_LAST_KEYFRAME_REQUEST: Mutex<Option<Instant>> = Mutex::new(None);
+static H264_FAILURE_LOG: Mutex<LogThrottle> = Mutex::new(LogThrottle::new());
 static CAPTURE_STATUS: LazyLock<Mutex<CaptureStatusStore>> =
     LazyLock::new(|| Mutex::new(CaptureStatusStore::default()));
 
@@ -1043,12 +1046,12 @@ fn source_size() -> (u16, u16) {
     ((packed >> 16) as u16, packed as u16)
 }
 
-// kvm_mmf rounds the VPSS output width up to 64 and crops to fill it, so Auto
-// picks a width that is a multiple of 64 and scales the height to keep the aspect.
+// Auto takes the input size, rounded down to a multiple of 8 for the encoders,
+// with the height scaled to keep the aspect.
 fn source_capture_size(width: Option<i32>, height: Option<i32>) -> (u16, u16) {
     match (width, height) {
         (Some(width @ 640..=1920), Some(height @ 480..=1080)) => {
-            let out_width = width & !63;
+            let out_width = width & !7;
             let out_height = (height * out_width + width / 2) / width;
             (out_width as u16, (out_height as u16) & !7)
         }
@@ -1094,6 +1097,34 @@ pub fn request_h264_keyframe(reason: &'static str) {
     }
     info!(reason, "requesting h264 keyframe");
     kvm::request_keyframe();
+}
+
+/// Lets one message through per interval and counts the ones it holds back.
+struct LogThrottle {
+    last: Option<Instant>,
+    suppressed: usize,
+}
+
+impl LogThrottle {
+    const fn new() -> Self {
+        Self {
+            last: None,
+            suppressed: 0,
+        }
+    }
+
+    /// The number held back since the last message, or `None` if this one is held back too.
+    fn due(&mut self, now: Instant, interval: Duration) -> Option<usize> {
+        if self
+            .last
+            .is_some_and(|last| now.saturating_duration_since(last) < interval)
+        {
+            self.suppressed += 1;
+            return None;
+        }
+        self.last = Some(now);
+        Some(std::mem::take(&mut self.suppressed))
+    }
 }
 
 fn keyframe_request_due(last: Option<Instant>, now: Instant) -> bool {
@@ -1202,7 +1233,13 @@ fn record_h264_failure(
 ) {
     update_h264_capture_status(mode, -1);
     let failures = H264_CONSECUTIVE_FAILURES.fetch_add(1, Ordering::AcqRel) + 1;
-    warn!(mode, failures, detail = ?detail, reason, "h264 capture failure");
+    let due = match H264_FAILURE_LOG.lock() {
+        Ok(mut log) => log.due(Instant::now(), H264_FAILURE_LOG_INTERVAL),
+        Err(_) => Some(0),
+    };
+    if let Some(suppressed) = due {
+        warn!(mode, failures, suppressed, detail = ?detail, reason, "h264 capture failure");
+    }
 
     if failures >= H264_FAILURE_LIMIT {
         match recovery {
@@ -1346,6 +1383,25 @@ fn h264_direct_packet(is_keyframe: bool, timestamp_micros: u64, data: &[u8]) -> 
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn log_throttle_passes_one_message_per_interval_and_counts_the_rest() {
+        use super::LogThrottle;
+        use std::time::{Duration, Instant};
+        let interval = Duration::from_secs(5);
+        let start = Instant::now();
+        let mut log = LogThrottle::new();
+        assert_eq!(log.due(start, interval), Some(0));
+        // A resolution change: one failure per frame at 60 fps for 3 s.
+        for frame in 1..180 {
+            assert_eq!(
+                log.due(start + Duration::from_millis(frame * 16), interval),
+                None
+            );
+        }
+        assert_eq!(log.due(start + interval, interval), Some(179));
+        assert_eq!(log.due(start + interval * 3, interval), Some(0));
+    }
+
     #[test]
     fn keyframe_requests_are_spaced_by_their_interval() {
         use super::{H264_KEYFRAME_REQUEST_INTERVAL, keyframe_request_due};
@@ -1547,10 +1603,10 @@ mod tests {
         assert_eq!(source_capture_size(Some(1280), Some(720)), (1280, 720));
         assert_eq!(source_capture_size(Some(1920), Some(1080)), (1920, 1080));
         assert_eq!(source_capture_size(Some(1280), Some(1024)), (1280, 1024));
-        // Widths off the 64 grid shrink with the aspect kept, never cropped
-        assert_eq!(source_capture_size(Some(800), Some(600)), (768, 576));
-        assert_eq!(source_capture_size(Some(1440), Some(900)), (1408, 880));
-        assert_eq!(source_capture_size(Some(1366), Some(768)), (1344, 752));
+        assert_eq!(source_capture_size(Some(800), Some(600)), (800, 600));
+        // Sizes off the 8 grid shrink with the aspect kept
+        assert_eq!(source_capture_size(Some(1440), Some(900)), (1440, 896));
+        assert_eq!(source_capture_size(Some(1366), Some(768)), (1360, 760));
         assert_eq!(source_capture_size(Some(1600), Some(900)), (1600, 896));
     }
 
