@@ -1453,9 +1453,14 @@ configs and scripts only after the 6.18 channel is stable; update `CHANGELOG.md`
 kernel included, through `/dev/mem`. That matters once root can no longer load unsigned
 modules, so measure module signing and lockdown alongside. Remaining users, in order:
 
-1. `libkvm_mmf.so`: the LT6911 sensor code runs `devmem 0x0300116C 32 0x3` and
-   `devmem 0x03001190 32 0x3` (pinmux). Check whether the DTS already muxes those pads; if
-   so, drop the calls in `lt6911-sensor-id-probe-removed.patch`, else add them to the DTS.
+1. Done 2026-11-12, not yet built: `libkvm_mmf.so`'s LT6911 probe ran ten `devmem` writes,
+   `0x0300116C`-`0x03001190` = 3, putting the MIPI RX pads (MIPIRX4N-0P) on GPIO
+   (`XGPIOC`) so the receiver has them. Our DTS meanwhile set MIPIRX0N to `CAM_MCLK1`
+   (copied from the vendor U-Boot), a clock output on a live data lane until the server
+   started; on the Lite all ten read 3 and pinctrl showed RX0N claimed as `cam-mclk1-pins`.
+   The DTS now sets all ten to function 3 (`mipi-rx-pins`), and
+   `lt6911-sensor-id-probe-removed.patch` drops the writes. To check on the Lite: the ten
+   registers read 3 before the server starts, and capture runs at 60 fps.
 2. RTC registers: `S01fs` (rootfs-check flag, `0x05026024`) and `S95nanokvm` (boot confirmation,
    `RTC_INFO1` `0x05026020`) write them, `S02watchdog` reads the power-on reason
    (`RTC_ST_ON_REASON` `0x050260F8`). Expose them through a small kernel patch (nvmem cells

@@ -213,10 +213,22 @@
 		};
 	};
 
-	/* RX0N as CAM_MCLK1 and PWR_GPIO1 as the LT6911 INT input */
+	/*
+	 * MIPI RX pads with no digital function (XGPIOC), so the receiver has them: RX0N
+	 * carries a live lane, not CAM_MCLK1. PWR_GPIO1 is the LT6911 INT input.
+	 */
 	mipi_rx_cfg: mipi-rx-cfg {
-		cam-mclk1-pins {
-			pinmux = <PINMUX(PIN_MIPIRX0N, 5)>;
+		mipi-rx-pins {
+			pinmux = <PINMUX(PIN_MIPIRX4N, 3)>,
+				 <PINMUX(PIN_MIPIRX4P, 3)>,
+				 <PINMUX(PIN_MIPIRX3N, 3)>,
+				 <PINMUX(PIN_MIPIRX3P, 3)>,
+				 <PINMUX(PIN_MIPIRX2N, 3)>,
+				 <PINMUX(PIN_MIPIRX2P, 3)>,
+				 <PINMUX(PIN_MIPIRX1N, 3)>,
+				 <PINMUX(PIN_MIPIRX1P, 3)>,
+				 <PINMUX(PIN_MIPIRX0N, 3)>,
+				 <PINMUX(PIN_MIPIRX0P, 3)>;
 			power-source = <1800>;
 		};
 
