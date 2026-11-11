@@ -42,12 +42,12 @@ container on a Mac. The second runs the real keymap, wheel, IME-gate and HID-soc
 checked in CI only.
 
 The init-script tests `scripts/test-s50sshd.sh`, `test-udhcpc6-script.sh`,
-`test-s49ntp.sh`, `test-s30wifi.sh`, `test-s01fs.sh` and `test-s95-pid-files.sh` run BusyBox in private user, network and mount namespaces, so they need a
+`test-s49ntp.sh`, `test-s30wifi.sh`, `test-s01fs.sh`, `test-s95-pid-files.sh` and `test-s03usb-ids.sh` run BusyBox in private user, network and mount namespaces, so they need a
 Linux host that allows unprivileged overlayfs. The sshd and ntp ones also need host builds
 of OpenSSH and of ntpd with the rootfs patch (`SSHD_BIN`, `SSH_KEYGEN_BIN`, `NTPD_BIN`,
 `NTPQ_BIN`). They have not been run on this tree, except `test-s30wifi.sh`, which passes in a
-privileged Debian container with `busybox-static` and fails against the earlier `S30wifi`; `test-s01fs.sh`
-and `test-s95-pid-files.sh` also pass there (the latter as a non-root user, so that a file of another
+privileged Debian container with `busybox-static` and fails against the earlier `S30wifi`; `test-s01fs.sh`,
+`test-s03usb-ids.sh` and `test-s95-pid-files.sh` also pass there (the latter as a non-root user, so that a file of another
 account exists).
 
 ## Web UI
