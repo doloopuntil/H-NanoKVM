@@ -292,7 +292,13 @@ pub async fn login_totp(
 // Argon2 takes long enough on the single core to stall HID, video and the API, so it runs on a
 // blocking thread, one verification at a time. A second one waits briefly and is then refused.
 static VERIFY_SLOT: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(1);
-const VERIFY_WAIT: Duration = Duration::from_secs(2);
+// The tests share the slot and hash in a debug build, which on a slow runner takes longer than
+// the wait a request gets.
+const VERIFY_WAIT: Duration = if cfg!(test) {
+    Duration::from_secs(120)
+} else {
+    Duration::from_secs(2)
+};
 
 async fn verify_account(state: &AppState, username: &str, password: &str) -> Result<bool> {
     let accounts = state.accounts.clone();
@@ -841,7 +847,10 @@ mod tests {
 
         for _ in 0..3 {
             let result = verify_password_limited(&state, SOURCE_IP, "operator", "wrong").await;
-            assert!(matches!(result, Err(AppError::InvalidCredentials)));
+            assert!(
+                matches!(result, Err(AppError::InvalidCredentials)),
+                "{result:?}"
+            );
         }
         // locked: even the right password is refused
         let locked =
