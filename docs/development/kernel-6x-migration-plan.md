@@ -1367,6 +1367,13 @@ OLED text, power/reset buttons, Wi-Fi association, HDMI capture, USB gadget), an
 publish a preview image for testers. Treat PCIe `wifi`, `poe` and the `reboot` after
 first PCIe detection as the riskiest paths.
 
+**Decided 2026-11-12: no Full or PCIe testing.** Only a Lite is at hand, and no testers are
+lined up, so Phase 5 ends with the review below: no preview image and no tester round.
+dormancygrace/NanoKVM-OS, which runs on all three boards, is the reference for what the
+Lite cannot show; where it already solved a Full or PCIe problem, follow it. Work that
+only a Full or PCIe board could verify is skipped, not left open. The checklist stays for
+anyone who has such a board.
+
 **Review 2026-11-11** (code and DTS read against the 5.10 scripts; no Full or PCIe board in
 hand). Tester checklist: [board-test-checklist.md](board-test-checklist.md).
 
@@ -1424,8 +1431,9 @@ hand). Tester checklist: [board-test-checklist.md](board-test-checklist.md).
     the driver) or the D80 (`C8A1:0082`) only a running board can say (`dmesg` prints
     "USE AIC8801" or "USE AIC8800D80"). Both load from our `aic8800_and_aic8800D80`
     firmware directory, so the image covers either.
-  - Open: NanoKVM-OS's SDIO high-speed (50 MHz) and hardening patches (bounded frame and
-    message lengths, no private ioctls), once a Wi-Fi board is at hand.
+  - Skipped (no Wi-Fi board): NanoKVM-OS's SDIO high-speed (50 MHz) and hardening patches
+    (bounded frame and message lengths, no private ioctls), and moving the firmware upload
+    out of boot. Take them from NanoKVM-OS if a Wi-Fi board turns up.
 - SD clocks: `cv180x.dtsi` names the clocks the wrong way round, so `sdhci-of-dwcmshc`
   takes the 300 MHz AXI clock as its base while the divider runs from `CLK_SD0/1`. On the
   Lite `clk_sd0` runs at 375 MHz, so the "50 MHz" SD card clock is 62.5 MHz: a raw read
