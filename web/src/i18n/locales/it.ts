@@ -291,7 +291,10 @@ const it = {
       delete: 'Elimina',
       close: 'Chiudi',
       unlockDesc:
-        "Gli script vengono eseguiti come root sul NanoKVM. Inserisci la password dell'account web per caricarne o eseguirne uno.",
+        "Gli script vengono eseguiti come root sul NanoKVM. Inserisci la password dell'account web per sostituirne o eseguirne uno.",
+      unreviewedTitle: 'Script non verificato',
+      unreviewedDesc:
+        "Questo script è nuovo o è stato sostituito dall'ultima volta che lo hai eseguito. Chiunque abbia la tua sessione potrebbe averlo caricato, quindi guardalo nel terminale prima di eseguirlo come root.",
       terminalRequired:
         "Gli script richiedono l'accesso al terminale web. Attiva prima il terminale nelle impostazioni."
     },

@@ -287,7 +287,10 @@ const cz = {
       delete: 'Smazat',
       close: 'Zavřít',
       unlockDesc:
-        'Skripty běží na NanoKVM jako root. Zadejte heslo webového účtu, abyste mohli skript nahrát nebo spustit.',
+        'Skripty běží na NanoKVM jako root. Zadejte heslo webového účtu, abyste mohli skript nahradit nebo spustit.',
+      unreviewedTitle: 'Neprověřený skript',
+      unreviewedDesc:
+        'Tento skript je nový nebo byl nahrazen od vašeho posledního spuštění. Mohl ho nahrát kdokoli s vaší relací, proto si ho před spuštěním jako root prohlédněte v terminálu.',
       terminalRequired:
         'Skripty vyžadují přístup k webovému terminálu. Nejprve terminál zapněte v nastavení.'
     },

@@ -290,7 +290,10 @@ const fi = {
       delete: 'Poista',
       close: 'Sulje',
       unlockDesc:
-        'Skriptit suoritetaan NanoKVM:ssä root-oikeuksin. Anna verkkotilin salasana ladataksesi tai suorittaaksesi skriptin.',
+        'Skriptit suoritetaan NanoKVM:ssä root-oikeuksin. Anna verkkotilin salasana korvataksesi tai suorittaaksesi skriptin.',
+      unreviewedTitle: 'Tarkistamaton skripti',
+      unreviewedDesc:
+        'Tämä skripti on uusi tai se korvattiin viimeisen suorituskerran jälkeen. Sen on voinut ladata kuka tahansa, jolla on istuntosi, joten katso se päätteessä ennen kuin suoritat sen root-oikeuksin.',
       terminalRequired:
         'Skriptit tarvitsevat pääsyn verkkopäätteeseen. Ota pääte ensin käyttöön asetuksista.'
     },

@@ -272,7 +272,10 @@ const zh_tw = {
       delDesc: '確定要刪除該檔案嗎？',
       delete: '刪除',
       close: '關閉',
-      unlockDesc: '腳本在 NanoKVM 上以 root 身分執行。請輸入 Web 帳戶密碼以上傳或執行腳本。',
+      unlockDesc: '腳本在 NanoKVM 上以 root 身分執行。請輸入 Web 帳戶密碼以取代或執行腳本。',
+      unreviewedTitle: '未檢查的腳本',
+      unreviewedDesc:
+        '此腳本是新增的，或自你上次執行後被取代。任何擁有你工作階段的人都可能上傳了它，因此請先在終端機中查看，再以 root 身分執行。',
       terminalRequired: '腳本需要 Web 終端機存取權限。請先在設定中啟用終端機。'
     },
     terminal: {

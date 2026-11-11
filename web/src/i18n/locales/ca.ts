@@ -287,7 +287,10 @@ const ca = {
       delete: 'Esborra',
       close: 'Tanca',
       unlockDesc:
-        "Els scripts s'executen com a root al NanoKVM. Introduïu la contrasenya del compte web per pujar-ne o executar-ne un.",
+        "Els scripts s'executen com a root al NanoKVM. Introduïu la contrasenya del compte web per substituir-ne o executar-ne un.",
+      unreviewedTitle: 'Script sense revisar',
+      unreviewedDesc:
+        "Aquest script és nou o s'ha substituït des de l'última vegada que el vau executar. Qualsevol persona amb la vostra sessió podria haver-lo pujat, així que reviseu-lo al terminal abans d'executar-lo com a root.",
       terminalRequired:
         'Els scripts necessiten accés al terminal web. Activeu primer el terminal a la configuració.'
     },

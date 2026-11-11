@@ -291,7 +291,10 @@ const fr = {
       delete: 'Supprimer',
       close: 'Fermer',
       unlockDesc:
-        "Les scripts s'exécutent en root sur le NanoKVM. Saisissez le mot de passe du compte web pour en téléverser ou en exécuter un.",
+        "Les scripts s'exécutent en root sur le NanoKVM. Saisissez le mot de passe du compte web pour en remplacer ou en exécuter un.",
+      unreviewedTitle: 'Script non vérifié',
+      unreviewedDesc:
+        "Ce script est nouveau ou a été remplacé depuis sa dernière exécution. Toute personne disposant de votre session a pu le téléverser. Consultez-le donc dans le terminal avant de l'exécuter en root.",
       terminalRequired:
         "Les scripts nécessitent l'accès au terminal web. Activez d'abord le terminal dans les paramètres."
     },

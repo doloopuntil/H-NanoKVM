@@ -287,7 +287,10 @@ const se = {
       delete: 'Ta bort',
       close: 'Stäng',
       unlockDesc:
-        'Skript körs som root på NanoKVM. Ange webbkontots lösenord för att ladda upp eller köra ett skript.',
+        'Skript körs som root på NanoKVM. Ange webbkontots lösenord för att ersätta eller köra ett skript.',
+      unreviewedTitle: 'Ogranskat skript',
+      unreviewedDesc:
+        'Det här skriptet är nytt eller byttes ut sedan du senast körde det. Vem som helst med din session kan ha laddat upp det, så titta på det i terminalen innan du kör det som root.',
       terminalRequired:
         'Skript kräver åtkomst till webbterminalen. Aktivera först terminalen i inställningarna.'
     },

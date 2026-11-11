@@ -290,7 +290,10 @@ const nb = {
       delete: 'Slett',
       close: 'Lukk',
       unlockDesc:
-        'Skript kjøres som root på NanoKVM. Skriv inn passordet til nettkontoen for å laste opp eller kjøre et skript.',
+        'Skript kjøres som root på NanoKVM. Skriv inn passordet til nettkontoen for å erstatte eller kjøre et skript.',
+      unreviewedTitle: 'Ugjennomgått skript',
+      unreviewedDesc:
+        'Dette skriptet er nytt eller ble erstattet siden du sist kjørte det. Alle med økten din kan ha lastet det opp, så se på det i terminalen før du kjører det som root.',
       terminalRequired:
         'Skript krever tilgang til nettterminalen. Aktiver terminalen i innstillingene først.'
     },

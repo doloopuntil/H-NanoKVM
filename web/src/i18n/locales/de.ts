@@ -292,7 +292,10 @@ const de = {
       delete: 'Löschen',
       close: 'Schliessen',
       unlockDesc:
-        'Skripte laufen auf dem NanoKVM als root. Geben Sie das Passwort des Webkontos ein, um ein Skript hochzuladen oder auszuführen.',
+        'Skripte laufen auf dem NanoKVM als root. Geben Sie das Passwort des Webkontos ein, um ein Skript zu ersetzen oder auszuführen.',
+      unreviewedTitle: 'Ungeprüftes Skript',
+      unreviewedDesc:
+        'Dieses Skript ist neu oder wurde seit der letzten Ausführung ersetzt. Jeder mit Ihrer Sitzung könnte es hochgeladen haben. Sehen Sie es sich daher im Terminal an, bevor Sie es als root ausführen.',
       terminalRequired:
         'Skripte benötigen Zugriff auf das Web-Terminal. Aktivieren Sie zuerst das Terminal in den Einstellungen.'
     },

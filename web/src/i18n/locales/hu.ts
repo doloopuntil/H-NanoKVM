@@ -289,7 +289,10 @@ const hu = {
       delete: 'Törlés',
       close: 'Bezárás',
       unlockDesc:
-        'A szkriptek rootként futnak a NanoKVM-en. Szkript feltöltéséhez vagy futtatásához adja meg a webes fiók jelszavát.',
+        'A szkriptek rootként futnak a NanoKVM-en. Szkript cseréjéhez vagy futtatásához adja meg a webes fiók jelszavát.',
+      unreviewedTitle: 'Átnézetlen szkript',
+      unreviewedDesc:
+        'Ez a szkript új, vagy az utolsó futtatás óta le lett cserélve. Bárki feltölthette, akinek megvan a munkamenete, ezért rootként való futtatás előtt nézze meg a terminálban.',
       terminalRequired:
         'A szkriptekhez webes terminálhozzáférés szükséges. Először engedélyezze a terminált a beállításokban.'
     },

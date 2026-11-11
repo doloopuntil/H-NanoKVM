@@ -271,7 +271,10 @@ const zh = {
       delDesc: '确定要删除该文件吗？',
       delete: '删除',
       close: '关闭',
-      unlockDesc: '脚本在 NanoKVM 上以 root 身份运行。请输入 Web 账户密码以上传或运行脚本。',
+      unlockDesc: '脚本在 NanoKVM 上以 root 身份运行。请输入 Web 账户密码以替换或运行脚本。',
+      unreviewedTitle: '未检查的脚本',
+      unreviewedDesc:
+        '此脚本是新增的，或自你上次运行后被替换。任何拥有你会话的人都可能上传了它，因此请先在终端中查看，再以 root 身份运行。',
       terminalRequired: '脚本需要 Web 终端访问权限。请先在设置中启用终端。'
     },
     terminal: {

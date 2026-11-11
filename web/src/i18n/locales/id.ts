@@ -288,7 +288,10 @@ const id = {
       delete: 'Hapus',
       close: 'Tutup',
       unlockDesc:
-        'Skrip berjalan sebagai root di NanoKVM. Masukkan kata sandi akun web untuk mengunggah atau menjalankan skrip.',
+        'Skrip berjalan sebagai root di NanoKVM. Masukkan kata sandi akun web untuk mengganti atau menjalankan skrip.',
+      unreviewedTitle: 'Skrip belum ditinjau',
+      unreviewedDesc:
+        'Skrip ini baru atau telah diganti sejak terakhir kali Anda menjalankannya. Siapa pun dengan sesi Anda bisa mengunggahnya, jadi lihat dulu di terminal sebelum menjalankannya sebagai root.',
       terminalRequired:
         'Skrip memerlukan akses terminal web. Aktifkan terminal di pengaturan terlebih dahulu.'
     },

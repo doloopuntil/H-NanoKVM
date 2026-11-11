@@ -289,7 +289,10 @@ const pl = {
       delete: 'Usuń',
       close: 'Zamknij',
       unlockDesc:
-        'Skrypty działają na NanoKVM jako root. Wprowadź hasło konta webowego, aby przesłać lub uruchomić skrypt.',
+        'Skrypty działają na NanoKVM jako root. Wprowadź hasło konta webowego, aby zastąpić lub uruchomić skrypt.',
+      unreviewedTitle: 'Niezweryfikowany skrypt',
+      unreviewedDesc:
+        'Ten skrypt jest nowy lub został zastąpiony od ostatniego uruchomienia. Mógł go przesłać każdy, kto ma Twoją sesję, więc obejrzyj go w terminalu, zanim uruchomisz go jako root.',
       terminalRequired:
         'Skrypty wymagają dostępu do terminala webowego. Najpierw włącz terminal w ustawieniach.'
     },

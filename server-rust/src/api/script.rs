@@ -6,31 +6,38 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::BTreeSet,
     ffi::OsStr,
     fs::{self, OpenOptions},
     io::Write,
     os::unix::fs::OpenOptionsExt,
     path::{Path, PathBuf},
     process::Stdio,
+    sync::Mutex,
     time::Duration,
 };
 use tokio::{io::AsyncReadExt, process::Command, time};
 
 use crate::{
-    AppError, Result, auth::session::Session, error::ApiResponse, http::middleware::CurrentSession,
-    state::AppState,
+    AppError, Result, auth::session::Session, error::ApiResponse, fsutil::write_0600_atomic,
+    http::middleware::CurrentSession, state::AppState,
 };
 
 pub const MAX_SCRIPT_BYTES: usize = 256 * 1024;
-/// Carries a terminal unlock ticket for exactly one script upload or run.
+/// Carries a terminal unlock ticket for exactly one script run.
 pub const UNLOCK_HEADER: &str = "x-nanokvm-terminal-ticket";
 const MAX_SCRIPT_OUTPUT_BYTES: usize = 64 * 1024;
 const SCRIPT_DIRECTORY: &str = "/etc/kvm/scripts";
+/// The names of the scripts the user has run: a name that is not in it was added or
+/// replaced since, and the web UI warns before running it.
+const APPROVED_FILE: &str = "/etc/kvm/scripts-approved.json";
 const SCRIPT_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[derive(Debug, Serialize)]
 pub struct GetScriptsRsp {
     pub files: Vec<String>,
+    /// Scripts that were added or replaced since the user last ran them.
+    pub unapproved: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -74,13 +81,17 @@ pub async fn get_scripts() -> Result<impl IntoResponse> {
         }
     }
     files.sort();
+    let unapproved = unapproved_names(&files, &read_approved_at(Path::new(APPROVED_FILE)));
 
-    Ok(Json(ApiResponse::ok(GetScriptsRsp { files })))
+    Ok(Json(ApiResponse::ok(GetScriptsRsp { files, unapproved })))
 }
 
-// Scripts run as root, so they pass the terminal's gate: terminal access is
-// enabled, and each upload or run consumes a fresh unlock ticket of this
-// session, issued after its password was entered again.
+// Scripts run as root, so running one passes the terminal's gate: terminal access is
+// enabled, and each run consumes a fresh unlock ticket of this session, issued after
+// its password was entered again. Adding a script under a new name does not need it:
+// nothing executes a file in the script directory except a run. Replacing an existing
+// script does, so that a script the user has run cannot be swapped by a session alone.
+// A script that is new or was deleted and added again is warned about before it runs.
 async fn require_terminal_unlock(
     state: &AppState,
     session: Option<&Session>,
@@ -109,7 +120,6 @@ pub async fn upload_script(
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse> {
     let session = session.map(|Extension(CurrentSession(session))| session);
-    require_terminal_unlock(&state, session.as_ref(), &headers).await?;
     let mut uploaded = None;
     while let Some(field) = multipart
         .next_field()
@@ -135,7 +145,16 @@ pub async fn upload_script(
             return Err(AppError::BadRequest("script file is empty".to_string()));
         }
 
+        let exists = fs::symlink_metadata(script_path(&filename)?).is_ok();
+        if exists {
+            require_terminal_unlock(&state, session.as_ref(), &headers).await?;
+        }
         write_script_file(&filename, &data)?;
+        if !exists {
+            change_approved(|names| {
+                names.remove(&filename);
+            })?;
+        }
         uploaded = Some(filename);
         break;
     }
@@ -147,6 +166,9 @@ pub async fn upload_script(
 pub async fn delete_script(Json(req): Json<DeleteScriptReq>) -> Result<impl IntoResponse> {
     let path = checked_script_path(&req.name)?;
     remove_script_file(&path)?;
+    change_approved(|names| {
+        names.remove(&req.name);
+    })?;
     Ok(Json(ApiResponse::<()>::ok_empty()))
 }
 
@@ -161,10 +183,12 @@ pub async fn run_script(
     let path = checked_script_path(&req.name)?;
     match req.kind.as_str() {
         "foreground" => {
+            approve(&req.name)?;
             let log = run_script_foreground(&path).await?;
             Ok(Json(ApiResponse::ok(RunScriptRsp { log })))
         }
         "background" => {
+            approve(&req.name)?;
             run_script_background(&path)?;
             Ok(Json(ApiResponse::ok(RunScriptRsp { log: String::new() })))
         }
@@ -205,6 +229,47 @@ fn checked_script_path(name: &str) -> Result<PathBuf> {
         return Err(AppError::BadRequest("invalid script file".to_string()));
     }
     Ok(path)
+}
+
+// The names the user has run. An unreadable or malformed file counts as empty, so every
+// script is warned about once more.
+fn read_approved_at(path: &Path) -> BTreeSet<String> {
+    fs::read(path)
+        .ok()
+        .and_then(|data| serde_json::from_slice(&data).ok())
+        .unwrap_or_default()
+}
+
+fn unapproved_names(files: &[String], approved: &BTreeSet<String>) -> Vec<String> {
+    files
+        .iter()
+        .filter(|name| !approved.contains(*name))
+        .cloned()
+        .collect()
+}
+
+fn change_approved_at(path: &Path, change: impl FnOnce(&mut BTreeSet<String>)) -> Result<()> {
+    static LOCK: Mutex<()> = Mutex::new(());
+    let _guard = LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let mut names = read_approved_at(path);
+    let before = names.clone();
+    change(&mut names);
+    if names == before {
+        return Ok(());
+    }
+    let data = serde_json::to_vec(&names)
+        .map_err(|err| AppError::Internal(format!("encode approved scripts: {err}")))?;
+    write_0600_atomic(path, &data)
+}
+
+fn change_approved(change: impl FnOnce(&mut BTreeSet<String>)) -> Result<()> {
+    change_approved_at(Path::new(APPROVED_FILE), change)
+}
+
+fn approve(name: &str) -> Result<()> {
+    change_approved(|names| {
+        names.insert(name.to_string());
+    })
 }
 
 fn write_script_file(name: &str, data: &[u8]) -> Result<()> {
@@ -330,8 +395,38 @@ mod tests {
         assert!(validate_script_name("x.sh/evil").is_err());
     }
 
+    #[test]
+    fn the_approved_list_keeps_the_names_that_were_run_and_survives_garbage() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("approved.json");
+        assert!(read_approved_at(&path).is_empty());
+        change_approved_at(&path, |names| {
+            names.insert("a.sh".to_string());
+            names.insert("b.py".to_string());
+        })
+        .unwrap();
+        change_approved_at(&path, |names| {
+            names.remove("a.sh");
+        })
+        .unwrap();
+        assert_eq!(
+            read_approved_at(&path).into_iter().collect::<Vec<_>>(),
+            vec!["b.py".to_string()]
+        );
+        fs::write(&path, b"not json").unwrap();
+        assert!(read_approved_at(&path).is_empty());
+    }
+
+    #[test]
+    fn a_script_that_was_not_run_is_listed_as_unapproved() {
+        let files = vec!["a.sh".to_string(), "b.sh".to_string(), "c.py".to_string()];
+        let approved: BTreeSet<String> = ["b.sh".to_string()].into_iter().collect();
+        assert_eq!(unapproved_names(&files, &approved), vec!["a.sh", "c.py"]);
+        assert!(unapproved_names(&files, &BTreeSet::new()).len() == 3);
+    }
+
     #[tokio::test]
-    async fn script_operations_need_terminal_access_and_a_fresh_unlock_of_this_session() {
+    async fn running_a_script_needs_terminal_access_and_a_fresh_unlock_of_this_session() {
         use std::sync::atomic::Ordering;
         let mut config = crate::config::Config {
             stun: "disable".into(),

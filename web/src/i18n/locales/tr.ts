@@ -286,7 +286,10 @@ const tr = {
       delete: 'Sil',
       close: 'Kapat',
       unlockDesc:
-        'Betikler NanoKVM üzerinde root olarak çalışır. Bir betik yüklemek veya çalıştırmak için web hesabı parolasını girin.',
+        'Betikler NanoKVM üzerinde root olarak çalışır. Bir betiği değiştirmek veya çalıştırmak için web hesabı parolasını girin.',
+      unreviewedTitle: 'İncelenmemiş betik',
+      unreviewedDesc:
+        'Bu betik yeni ya da en son çalıştırmanızdan sonra değiştirilmiş. Oturumunuza sahip herkes yüklemiş olabilir, bu yüzden root olarak çalıştırmadan önce terminalde inceleyin.',
       terminalRequired:
         'Betikler web terminali erişimi gerektirir. Önce ayarlardan terminali etkinleştirin.'
     },

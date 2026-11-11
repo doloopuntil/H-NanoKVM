@@ -284,7 +284,10 @@ const vi = {
       delete: 'Xóa',
       close: 'Đóng',
       unlockDesc:
-        'Các script chạy với quyền root trên NanoKVM. Nhập mật khẩu tài khoản web để tải lên hoặc chạy script.',
+        'Các script chạy với quyền root trên NanoKVM. Nhập mật khẩu tài khoản web để thay thế hoặc chạy script.',
+      unreviewedTitle: 'Script chưa được xem xét',
+      unreviewedDesc:
+        'Script này là script mới hoặc đã bị thay thế kể từ lần bạn chạy gần nhất. Bất kỳ ai có phiên của bạn đều có thể đã tải nó lên, vì vậy hãy xem nó trong terminal trước khi chạy với quyền root.',
       terminalRequired:
         'Script cần quyền truy cập terminal web. Hãy bật terminal trong phần cài đặt trước.'
     },

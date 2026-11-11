@@ -292,7 +292,10 @@ const nl = {
       delete: 'Verwijderen',
       close: 'Sluiten',
       unlockDesc:
-        'Scripts draaien als root op de NanoKVM. Voer het wachtwoord van het webaccount in om een script te uploaden of uit te voeren.',
+        'Scripts draaien als root op de NanoKVM. Voer het wachtwoord van het webaccount in om een script te vervangen of uit te voeren.',
+      unreviewedTitle: 'Niet gecontroleerd script',
+      unreviewedDesc:
+        'Dit script is nieuw of is vervangen sinds je het voor het laatst uitvoerde. Iedereen met jouw sessie kan het hebben geüpload, dus bekijk het in de terminal voordat je het als root uitvoert.',
       terminalRequired:
         'Scripts hebben toegang tot de webterminal nodig. Schakel eerst de terminal in bij de instellingen.'
     },

@@ -34,7 +34,7 @@ behaviour is in the guides ([sign-in](../guide/sign-in.md),
 | CSRF and origin | CSRF token (compared in constant time) plus `Origin`/`Referer` check on every state-changing request; an `Origin` or `Referer` that is not text is refused, not ignored. WebSockets check `Origin`. |
 | Brute force | Lockout after 5 failures per source and user, for 10 minutes; the source is an IPv4 address or the /64 of an IPv6 address, so one host cannot rotate through its network. A source also has one budget of four times that across all names, so rotating names does not get around the lockout, and each table keeps at most 1024 entries. A login name over 256 bytes or empty, and a password over 4 KiB as sent, are refused before the lockout or the hash. One password check runs at a time on a blocking thread, and a wrong username takes as long as a wrong password. TOTP failures count too. The address is the TCP peer's, or, from a peer in `security.trusted_proxies` only, the rightmost `X-Forwarded-For` hop that is not itself trusted. |
 | Reverse proxy | `X-Forwarded-For` and `X-Forwarded-Proto` are ignored unless the peer is in `security.trusted_proxies` (empty by default). A trusted peer sets the client address of the lockout and the log, the `Secure` flag of the cookies, and pins the scheme of the `Origin` checks. The raw peer still decides loopback-only routes. [Guide](../guide/reverse-proxy.md). |
-| Step-up | Changing the password, disabling two-factor, reissuing backup codes, unlocking the terminal, uploading or running a script, setting or removing the local update key, changing the HTTPS certificate source, changing the trusted proxies and turning remote image download on need the password and, when the account has two-factor, a fresh code. |
+| Step-up | Changing the password, disabling two-factor, reissuing backup codes, unlocking the terminal, running a script, setting or removing the local update key, changing the HTTPS certificate source, changing the trusted proxies and turning remote image download on need the password and, when the account has two-factor, a fresh code. |
 | Password re-checks | Password change, two-factor changes, the local update key and the terminal share one lockout per address and user, apart from the login's. Wrong codes lock out separately. |
 | Public routes | The routes that need no session (health, version, sign-in, setup, AP-mode Wi-Fi) answer an internal error with `internal error` and log the detail. The HTTP to HTTPS redirect uses the `Host` header only when it is a host name, an IPv4 address or a bracketed IPv6 address with an optional port, and answers 400 otherwise. |
 | Online app update | Moves forward only: signed metadata for an older or equal version is refused before the download. A manual import is the way to install an older release. Metadata has no expiry or sequence number, so withholding newer releases is not detected. |
@@ -103,12 +103,18 @@ Main command call sites:
 Known exceptions:
 
 - `server-rust/src/api/script.rs` runs user-managed scripts from the configured
-  script inventory and remains a root-required administrative feature. Upload and
-  run pass the terminal's gate: terminal access is on, authentication is on, and
-  each operation consumes a fresh unlock ticket of the same session (header
+  script inventory and remains a root-required administrative feature. Running a
+  script passes the terminal's gate: terminal access is on, authentication is on,
+  and each run consumes a fresh unlock ticket of the same session (header
   `X-NanoKVM-Terminal-Ticket`), issued after the password, and the code when the
-  account has two-factor, was entered again. Listing and deleting need only the
-  session.
+  account has two-factor, was entered again. Listing, deleting and adding a script
+  under a new name need only the session, because nothing executes a file in the
+  script directory except a run. Replacing an existing script needs the same
+  unlock as a run. The names of the scripts that were run are kept in
+  `/etc/kvm/scripts-approved.json`; a script that is not in it (new, or deleted and
+  added again) makes the web UI warn before the run and ask the user to look at
+  it in the terminal first. Nothing checks a script's content, so a script edited
+  over SSH is not flagged.
 - `server-rust/src/ws/hid.rs` invokes the fixed USB gadget init script for HID
   recovery.
 - `server-rust/src/api/system_update.rs` runs a staged, generated loader from

@@ -1,5 +1,5 @@
 import { ChangeEvent, useRef, useState } from 'react';
-import { Button, Popconfirm } from 'antd';
+import { Button, Popconfirm, Typography } from 'antd';
 import clsx from 'clsx';
 import {
   ChevronRightIcon,
@@ -12,7 +12,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/script.ts';
-import { attempt } from '@/lib/feedback.ts';
+import { attempt, confirm } from '@/lib/feedback.ts';
 import { usePopconfirmColor } from '@/hooks/usePopconfirmColor.ts';
 import { MenuItem } from '@/components/menu-item.tsx';
 import { MenuHeader } from '@/components/menu-rows.tsx';
@@ -21,15 +21,19 @@ import { confirmOkProps } from '@/components/popconfirm-ok.ts';
 import { Run } from './run';
 import { Unlock } from './unlock';
 
-// What the unlock dialog is for. The file is chosen first, inside the click, and the password
-// asked after.
+// What the unlock dialog is for: a run, or the replacement of a script that exists. A new
+// script needs no password, only running one does.
 type Pending = { kind: 'upload'; file: File } | { kind: 'run'; type: string; script: string };
+
+const SCRIPT_DIRECTORY = '/etc/kvm/scripts';
 
 export const Script = () => {
   const { t } = useTranslation();
   const popconfirmColor = usePopconfirmColor();
 
   const [scripts, setScripts] = useState<string[]>([]);
+  // added or replaced since the user last ran them
+  const [unapproved, setUnapproved] = useState<string[]>([]);
   const [currentScript, setCurrentScript] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [runTicket, setRunTicket] = useState('');
@@ -57,10 +61,16 @@ export const Script = () => {
 
   function uploadFile(e: ChangeEvent<HTMLInputElement>) {
     if (!e.target?.files?.length || isUploading) return;
-    setPending({ kind: 'upload', file: e.target.files[0] });
+    const file = e.target.files[0];
+    // replacing a script needs the password; adding a new one does not
+    if (scripts.includes(file.name)) {
+      setPending({ kind: 'upload', file });
+    } else {
+      upload(file);
+    }
   }
 
-  function upload(file: File, ticket: string) {
+  function upload(file: File, ticket?: string) {
     setIsUploading(true);
 
     const formData = new FormData();
@@ -72,6 +82,7 @@ export const Script = () => {
 
         if (!scripts.includes(rsp.data.file)) {
           setScripts([...scripts, rsp.data.file]);
+          setUnapproved((list) => [...list, rsp.data.file]);
         }
       })
       .finally(() => {
@@ -80,8 +91,27 @@ export const Script = () => {
   }
 
   function runScript(type: string) {
-    if (!currentScript) return;
-    setPending({ kind: 'run', type, script: currentScript });
+    const script = currentScript;
+    if (!script) return;
+
+    if (!unapproved.includes(script)) {
+      setPending({ kind: 'run', type, script });
+      return;
+    }
+
+    // new, or replaced since the last run: anyone with the session could have uploaded it
+    confirm({
+      danger: true,
+      title: t('script.unreviewedTitle'),
+      content: (
+        <div className="space-y-1">
+          <p>{t('script.unreviewedDesc')}</p>
+          <Typography.Text code>{`cat ${SCRIPT_DIRECTORY}/${script}`}</Typography.Text>
+        </div>
+      ),
+      okText: t('script.run'),
+      onOk: () => setPending({ kind: 'run', type, script })
+    });
   }
 
   function unlocked(ticket: string) {
@@ -91,7 +121,13 @@ export const Script = () => {
 
     if (action.kind === 'upload') {
       upload(action.file, ticket);
-    } else if (action.type === 'foreground') {
+      return;
+    }
+
+    // the server notes that the script has been run
+    setUnapproved((list) => list.filter((name) => name !== action.script));
+
+    if (action.type === 'foreground') {
       setRunName(action.script);
       setRunTicket(ticket);
       setIsRunning(true);
@@ -107,6 +143,7 @@ export const Script = () => {
       if (rsp.data?.files?.length > 0) {
         setScripts(rsp.data.files);
       }
+      setUnapproved(rsp.data?.unapproved ?? []);
     });
   }
 
@@ -115,6 +152,7 @@ export const Script = () => {
       if (!rsp) return;
 
       setScripts((list) => list.filter((script) => script !== name));
+      setUnapproved((list) => list.filter((script) => script !== name));
     });
   }
 

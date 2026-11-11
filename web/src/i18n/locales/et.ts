@@ -283,7 +283,10 @@ const et = {
       delete: 'Kustuta',
       close: 'Sulge',
       unlockDesc:
-        'Skriptid töötavad NanoKVM-is root-õigustes. Skripti üleslaadimiseks või käivitamiseks sisestage veebikonto parool.',
+        'Skriptid töötavad NanoKVM-is root-õigustes. Skripti asendamiseks või käivitamiseks sisestage veebikonto parool.',
+      unreviewedTitle: 'Kontrollimata skript',
+      unreviewedDesc:
+        'See skript on uus või asendati pärast viimast käivitamist. Selle võis üles laadida igaüks, kellel on teie seanss, nii et vaadake see enne root-õigustes käivitamist terminalis üle.',
       terminalRequired:
         'Skriptid vajavad juurdepääsu veebiterminalile. Lubage esmalt terminal seadetes.'
     },

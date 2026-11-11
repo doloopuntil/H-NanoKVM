@@ -1,15 +1,16 @@
 import { http } from '@/lib/http.ts';
 
-// A terminal unlock ticket for exactly one upload or run: scripts run as root.
+// A terminal unlock ticket for exactly one run, or one replacement of an existing script:
+// scripts run as root. Adding a script under a new name needs none.
 const UNLOCK_HEADER = 'X-NanoKVM-Terminal-Ticket';
 
-export function uploadScript(formData: FormData, ticket: string) {
+export function uploadScript(formData: FormData, ticket?: string) {
   return http.request({
     url: '/api/vm/script/upload',
     method: 'post',
     headers: {
       'Content-Type': 'multipart/form-data',
-      [UNLOCK_HEADER]: ticket
+      ...(ticket ? { [UNLOCK_HEADER]: ticket } : {})
     },
     data: formData
   });

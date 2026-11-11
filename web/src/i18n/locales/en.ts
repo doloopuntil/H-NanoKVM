@@ -287,7 +287,10 @@ const en = {
       delete: 'Delete',
       close: 'Close',
       unlockDesc:
-        'Scripts run as root on NanoKVM. Enter your web account password to upload or run one.',
+        'Scripts run as root on NanoKVM. Enter your web account password to replace or run one.',
+      unreviewedTitle: 'Unreviewed script',
+      unreviewedDesc:
+        'This script is new or was replaced since you last ran it. Anyone with your session could have uploaded it, so look at it in the terminal before you run it as root.',
       terminalRequired: 'Scripts need web terminal access. Enable the terminal in settings first.'
     },
     terminal: {

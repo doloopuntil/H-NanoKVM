@@ -288,7 +288,10 @@ const pt_br = {
       delete: 'Excluir',
       close: 'Fechar',
       unlockDesc:
-        'Os scripts são executados como root no NanoKVM. Digite a senha da conta web para enviar ou executar um script.',
+        'Os scripts são executados como root no NanoKVM. Digite a senha da conta web para substituir ou executar um script.',
+      unreviewedTitle: 'Script não revisado',
+      unreviewedDesc:
+        'Este script é novo ou foi substituído desde a última vez que você o executou. Qualquer pessoa com a sua sessão pode tê-lo enviado, então veja-o no terminal antes de executá-lo como root.',
       terminalRequired:
         'Os scripts exigem acesso ao terminal web. Ative primeiro o terminal nas configurações.'
     },

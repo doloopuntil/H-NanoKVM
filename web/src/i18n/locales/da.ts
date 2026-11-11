@@ -287,7 +287,10 @@ const da = {
       delete: 'Slet',
       close: 'Luk',
       unlockDesc:
-        'Scripts kører som root på NanoKVM. Indtast adgangskoden til webkontoen for at uploade eller køre et script.',
+        'Scripts kører som root på NanoKVM. Indtast adgangskoden til webkontoen for at erstatte eller køre et script.',
+      unreviewedTitle: 'Ugennemgået script',
+      unreviewedDesc:
+        'Dette script er nyt eller blev erstattet, siden du sidst kørte det. Alle med din session kan have uploadet det, så se det i terminalen, før du kører det som root.',
       terminalRequired:
         'Scripts kræver adgang til webterminalen. Aktivér først terminalen i indstillingerne.'
     },

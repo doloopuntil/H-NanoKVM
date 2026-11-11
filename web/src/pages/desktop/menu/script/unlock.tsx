@@ -9,7 +9,6 @@ import * as vmApi from '@/api/vm.ts';
 import { encrypt } from '@/lib/encrypt.ts';
 import { attempt } from '@/lib/feedback.ts';
 import { isKeyboardEnableAtom } from '@/jotai/keyboard.ts';
-import { DialogHint } from '@/components/dialog-parts.tsx';
 
 type UnlockProps = {
   onUnlock: (ticket: string) => void;
@@ -83,7 +82,7 @@ export const Unlock = ({ onUnlock, onCancel }: UnlockProps) => {
       onCancel={onCancel}
     >
       <div className="flex flex-col gap-4 py-2">
-        <DialogHint>{t('script.unlockDesc')}</DialogHint>
+        <p className="m-0">{t('script.unlockDesc')}</p>
         <Input.Password
           autoFocus
           value={password}

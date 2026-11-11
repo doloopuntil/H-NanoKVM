@@ -168,7 +168,7 @@ is handled the same way. Authenticated routes keep the detailed message.
 | GET/POST        | `/api/vm/cert`             | Implemented. GET: the certificate source (`selfSigned`, `tailscale`, `acme`), domain, email, status (expiry, last attempt and error), whether a request runs (`busy`), `tailscaleAvailable`, and `blocker` (`clockUnsynced`, `httpsOff` or `paranoidFirewall`) when something stops both managed sources. POST: changes the source after the account password and, if set, a two-factor code; the request runs in the background and a new certificate waits for confirmation (`/api/vm/tls/confirm`) or is reverted without a restart. |
 | POST            | `/api/vm/cert/renew`       | Implemented; requests a new certificate for the current source now. |
 | GET/POST/DELETE | `/api/vm/autostart*`       | Implemented with basename/path validation and size limits.                                                         |
-| GET/POST/DELETE | `/api/vm/script*`          | Basename/path validation; upload and run need terminal access and a fresh terminal unlock ticket.                  |
+| GET/POST/DELETE | `/api/vm/script*`          | Basename/path validation; run, and an upload that replaces an existing script, need terminal access and a fresh terminal unlock ticket; adding a new name, listing and deleting need only the session. The list also returns `unapproved`, the scripts not run since they were added. |
 
 ### Video And HID
 

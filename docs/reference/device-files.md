@@ -51,6 +51,7 @@ A system update rewrites the first two; `/data` and the saved `/etc/kvm` survive
 | `mouse-jiggler`, `shortcuts.json`, `leader-key` | Input settings. |
 | `web-title` | Browser tab title. |
 | `scripts/`, `autostart/` | Uploaded user scripts and autostart scripts. |
+| `scripts-approved.json` | Names of the scripts that were run (0600); a script that is not in it gets a warning before it runs. |
 | `cache/wol` | Saved Wake-on-LAN MAC addresses. |
 | `GOMEMLIMIT` | Tailscale memory limit. |
 | `wifi.ssid`, `wifi.pass` | Wi-Fi credentials. |
