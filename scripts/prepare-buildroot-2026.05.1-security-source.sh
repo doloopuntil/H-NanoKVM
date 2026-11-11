@@ -26,8 +26,8 @@ verify_sha256() {
 }
 
 verify_sha256 "$ARCHIVE" "$EXPECTED_ARCHIVE_SHA256" "Buildroot archive"
-verify_sha256 "$PATCH_DIR/0001-openssh-10.5p1.patch" \
-	a5c0253ae9ec1c6e422442aa920fd0ff876ca778d1f5e4201f93365740a98a18 \
+verify_sha256 "$PATCH_DIR/0001-openssh-10.6p2.patch" \
+	e321a5264416e1ad21014b1b2252f65d8992741a70b951c11f63bdc3093ac522 \
 	"OpenSSH Buildroot patch"
 verify_sha256 "$PATCH_DIR/0002-hostapd-2.12-minimal.patch" \
 	ca5e3458ab7a641d26354b7461e4d1a35a7bc23bb3ef61362dc75b2e7097b29b \
@@ -42,7 +42,7 @@ if [ -e "$OUTPUT_DIR" ]; then
 		exit 1
 	}
 	grep -qx 'buildroot=2026.05.1' "$OUTPUT_DIR/.hardened-security-backports"
-	grep -qx 'openssh=10.5p1' "$OUTPUT_DIR/.hardened-security-backports"
+	grep -qx 'openssh=10.6p2' "$OUTPUT_DIR/.hardened-security-backports"
 	grep -qx 'hostapd=2.12-no-11be' "$OUTPUT_DIR/.hardened-security-backports"
 	for patch_file in "$PATCH_DIR"/*.patch; do
 		grep -Fqx "$(sha256sum "$patch_file")" "$OUTPUT_DIR/.hardened-security-backports" || {
@@ -86,7 +86,7 @@ rm -f \
 	"$SOURCE/package/hostapd/0001-RADIUS-Drop-pending-request-only-when-accepting-the-response.patch" \
 	"$SOURCE/package/hostapd/0002-RADIUS-Fix-pending-request-dropping.patch"
 
-grep -q '^OPENSSH_VERSION_MAJOR = 10.5$' "$SOURCE/package/openssh/openssh.mk"
+grep -q '^OPENSSH_VERSION_MAJOR = 10.6$' "$SOURCE/package/openssh/openssh.mk"
 grep -q '^HOSTAPD_VERSION = 2.12$' "$SOURCE/package/hostapd/hostapd.mk"
 ! grep -q 'CONFIG_IEEE80211BE' "$SOURCE/package/hostapd/hostapd.mk"
 
@@ -103,7 +103,7 @@ ln -s "$SHARED_DL_DIR" "$SOURCE/dl"
 {
 	printf 'buildroot=2026.05.1\n'
 	printf 'archive_sha256=%s\n' "$EXPECTED_ARCHIVE_SHA256"
-	printf 'openssh=10.5p1\n'
+	printf 'openssh=10.6p2\n'
 	printf 'hostapd=2.12-no-11be\n'
 	sha256sum "$PATCH_DIR"/*.patch
 } > "$SOURCE/.hardened-security-backports"
