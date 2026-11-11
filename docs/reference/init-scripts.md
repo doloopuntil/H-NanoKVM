@@ -18,7 +18,9 @@ filesystem that does not mount after `e2fsck -fp`; see
 The kernel keeps feeding the watchdog the FSBL armed until `S02watchdog` takes it over.
 
 Buildroot adds its own scripts between these (`S01seedrng`, `S02sysctl`, `S10udevd`,
-`S11modules`, `S35nftables`, `S40network`, `S50crond`); the table lists ours.
+`S11modules`, `S35nftables`, `S40network`, `S50crond`); the table lists ours. `S10udevd`'s
+coldplug loads the AIC8800 Wi-Fi driver by the card's SDIO ID on boards that have one (options
+in `/etc/modprobe.d/aic8800.conf`), so `wlan0` exists before `kvm_system` looks for it.
 
 | Script | Does |
 | --- | --- |
@@ -28,7 +30,7 @@ Buildroot adds its own scripts between these (`S01seedrng`, `S02sysctl`, `S10ude
 | `S02watchdog` | Arms the SoC hardware watchdog (60 s timeout, fed every 10 s) and sets `kernel.panic=10`, so a hung or panicked system restarts by itself. Records why the chip last restarted in `/tmp/boot-reason`. `/boot/disable_watchdog` turns it off and disarms the timer the FSBL started. The raw system update stops it before writing the partitions. |
 | `S03usbdev` | Builds the USB gadget: keyboard, mice, mass storage, network. Hands over to `S03usbhid` when `/boot/usb.hidonly` exists. |
 | `S03usbhid` | The HID-only gadget: keyboard and mice only. |
-| `S15kvmhwd` | Detects the board and the HDMI bridge once and writes `/etc/kvm/hw` (`beta` or `pcie`, rebooting after the first `pcie` detection) and `/etc/kvm/hdmi_version`; `re-detect` repeats it. Sets the SDIO pins for the PCIe board's Wi-Fi. The device tree muxes the other pins and names the GPIO lines, which the server and libkvm claim by name. |
+| `S15kvmhwd` | Detects the board and the HDMI bridge once and writes `/etc/kvm/hw` (`beta` or `pcie`, rebooting after the first `pcie` detection) and `/etc/kvm/hdmi_version`; `re-detect` repeats it. The device tree muxes every pin (the Wi-Fi SDIO pins with `sdhci1`) and names the GPIO lines, which the server and libkvm claim by name; the script writes no registers. |
 | `S30eth` | Wired network: DHCP or static IPv4, fixed DNS servers, IPv6 modes, MAC derived from the chip ID. |
 | `S30wifi` | Wi-Fi client or access-point mode. |
 | `S40firewall` | Applies the firewall mode from `/etc/kvm/firewall.json`, including the WireGuard rules. `acme-open` and `acme-close` add and remove one rule that lets any source reach the HTTPS port while a certificate authority validates an order. See [Firewall modes](../guide/firewall.md). |

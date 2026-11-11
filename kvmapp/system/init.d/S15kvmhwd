@@ -1,17 +1,7 @@
 #!/bin/sh
 # kvmhwd: detect the board (beta or pcie) and its HDMI bridge.
-# The DT muxes the GPIO pins and names the lines: the server claims the ATX lines,
-# libkvm hdmi-reset, and oled-reset is a DT hog.
-
-init_hw(){
-  # SDIO pins to SD1 (PCIe board Wi-Fi), as before, until the DT describes them
-  devmem 0x030010E4 32 0x0  # SDIO CLK
-  devmem 0x030010E0 32 0x0  # SDIO CMD
-  devmem 0x030010DC 32 0x0  # SDIO D0
-  devmem 0x030010D8 32 0x0  # SDIO D1
-  devmem 0x030010D4 32 0x0  # SDIO D2
-  devmem 0x030010D0 32 0x0  # SDIO D3
-}
+# The DT muxes every pin and names the lines: the server claims the ATX lines,
+# libkvm hdmi-reset, oled-reset is a DT hog, and sdhci1 drives the Wi-Fi reset.
 
 kvm_hdmi_version_detect()
 {
@@ -49,7 +39,6 @@ kvm_hw_detect(){
 
 kvm_hw_init(){
   echo "hw = $(cat /etc/kvm/hw)!"
-  init_hw
 }
 
 case "$1" in
