@@ -154,7 +154,14 @@ async fn the_gateway_relay_closes_when_its_session_ends() {
         .await
         .expect("the upstream gateway stayed open")
         .unwrap();
-    assert_ne!(session_lock_owner(), "relay-fixture");
+    // the relay frees its Pico session lock after it has closed the upstream, a moment later
+    let freed = time::timeout(Duration::from_secs(2), async {
+        while session_lock_owner() == "relay-fixture" {
+            time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await;
+    assert!(freed.is_ok(), "the relay kept its Pico session lock");
     server.abort();
 }
 
