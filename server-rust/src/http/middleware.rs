@@ -88,7 +88,10 @@ pub async fn protected(
             .headers()
             .get("x-csrf-token")
             .and_then(|value| value.to_str().ok());
-        if csrf_header != Some(session.csrf_token.as_str()) {
+        let csrf_ok = csrf_header
+            .map(|value| crate::api::network::constant_time_eq(value, session.csrf_token.as_str()))
+            .unwrap_or(false);
+        if !csrf_ok {
             return AppError::Forbidden("missing or invalid CSRF token".to_string())
                 .into_response();
         }
@@ -168,17 +171,17 @@ fn validate_http_origin(
     config: &Config,
     forwarded_https: Option<bool>,
 ) -> bool {
-    if let Some(origin) = headers
-        .get(header::ORIGIN)
-        .and_then(|value| value.to_str().ok())
-    {
+    if let Some(value) = headers.get(header::ORIGIN) {
+        let Ok(origin) = value.to_str() else {
+            return false;
+        };
         return is_allowed_origin(origin, headers, config, forwarded_https);
     }
 
-    if let Some(referer) = headers
-        .get(header::REFERER)
-        .and_then(|value| value.to_str().ok())
-    {
+    if let Some(value) = headers.get(header::REFERER) {
+        let Ok(referer) = value.to_str() else {
+            return false;
+        };
         let Some(origin) = normalize_origin(referer) else {
             return false;
         };
@@ -279,6 +282,25 @@ mod tests {
         );
 
         assert!(validate_http_origin(&headers, &Config::default(), None));
+    }
+
+    #[test]
+    fn an_origin_or_referer_that_is_not_text_is_refused_not_ignored() {
+        let mut headers = HeaderMap::new();
+        headers.insert(header::HOST, HeaderValue::from_static("kvm.local"));
+        headers.insert(
+            header::ORIGIN,
+            HeaderValue::from_bytes(b"http://\xff").unwrap(),
+        );
+        assert!(!validate_http_origin(&headers, &Config::default(), None));
+
+        let mut headers = HeaderMap::new();
+        headers.insert(header::HOST, HeaderValue::from_static("kvm.local"));
+        headers.insert(
+            header::REFERER,
+            HeaderValue::from_bytes(b"http://\xff").unwrap(),
+        );
+        assert!(!validate_http_origin(&headers, &Config::default(), None));
     }
 
     #[test]
