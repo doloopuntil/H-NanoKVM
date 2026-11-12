@@ -88,7 +88,9 @@ build_stage() {
 	# Kernel: no /dev/mem, signed modules only, lockdown (integrity)
 	kconfig="$OUTPUT_DIR/build/linux-$EXPECTED_KERNEL_RELEASE/.config"
 	[ -f "$kconfig" ] || die "missing $kconfig"
-	grep -qx '# CONFIG_DEVMEM is not set' "$kconfig" || die "kernel has DEVMEM"
+	for option in CONFIG_DEVMEM CONFIG_DEVPORT CONFIG_LEGACY_PTYS CONFIG_PROC_PAGE_MONITOR; do
+		grep -qx "# $option is not set" "$kconfig" || die "kernel has $option"
+	done
 	for option in CONFIG_MODULE_SIG_FORCE CONFIG_MODULE_SIG_ALL CONFIG_SECURITY_LOCKDOWN_LSM_EARLY \
 		CONFIG_LOCK_DOWN_KERNEL_FORCE_INTEGRITY; do
 		grep -qx "$option=y" "$kconfig" || die "kernel lacks $option"
