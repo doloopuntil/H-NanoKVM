@@ -219,9 +219,20 @@ then
         # update can leave that flag behind. Check it once, before the resize below. RTC_INFO2
         # remembers an attempt across the restart, so a filesystem that stays flagged is left
         # alone until the next power cycle.
+        RTC_INFO=/sys/bus/nvmem/devices/cv1800-rtc-info/nvmem
+        # word N of RTC_INFO0-3 as 8 hex digits, empty on failure
+        rtc_info_read() {
+                dd if="$RTC_INFO" bs=4 skip="$1" count=1 2>/dev/null | od -An -tx4 | tr -d ' '
+        }
+        rtc_info_write() {
+                v=$(($2))
+                printf "\\$(printf %03o $((v & 255)))\\$(printf %03o $(((v >> 8) & 255)))\\$(printf %03o $(((v >> 16) & 255)))\\$(printf %03o $(((v >> 24) & 255)))" |
+                        dd of="$RTC_INFO" bs=4 seek="$1" count=1 conv=notrunc 2>/dev/null
+        }
+
         heal_root_filesystem() {
                 ROOT_DEVICE=/dev/mmcblk0p2
-                GUARD_REG=0x05026024
+                GUARD_WORD=2
                 GUARD_MAGIC=0x66736B31
                 GUARD_DEFAULT=0xABCD1234
 
@@ -231,16 +242,17 @@ then
                 case "$state" in
                 *rror*) ;;
                 *)
-                        devmem "$GUARD_REG" 32 "$GUARD_DEFAULT" >/dev/null 2>&1 || true
+                        rtc_info_write "$GUARD_WORD" "$GUARD_DEFAULT" || true
                         return 0
                         ;;
                 esac
 
-                if [ "$(devmem "$GUARD_REG" 32 2>/dev/null)" = "$GUARD_MAGIC" ]; then
+                guard=$(rtc_info_read "$GUARD_WORD")
+                if [ -n "$guard" ] && [ $((0x$guard)) -eq $((GUARD_MAGIC)) ]; then
                         echo "rootfs still flagged with errors after a check; leaving it" > /dev/kmsg 2>/dev/null || true
                         return 0
                 fi
-                devmem "$GUARD_REG" 32 "$GUARD_MAGIC" >/dev/null 2>&1 || return 0
+                rtc_info_write "$GUARD_WORD" "$GUARD_MAGIC" || return 0
 
                 echo "rootfs is flagged with errors; checking it" > /dev/kmsg 2>/dev/null || true
                 # only the root filesystem is mounted this early, so the emergency remount is safe

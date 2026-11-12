@@ -495,13 +495,13 @@ restart_server_safe() {
 }
 
 # Tells the FSBL boot guard that this boot got as far as a healthy server: the count of
-# unconfirmed boots in RTC_INFO1 goes back to its default.
-BOOT_GUARD_REG=0x05026020
-BOOT_GUARD_DEFAULT=0xDEADBEEF
+# unconfirmed boots in RTC_INFO1 (word 1 of the RTC info nvmem) goes back to its default,
+# 0xDEADBEEF, written little-endian.
+BOOT_GUARD_NVMEM=/sys/bus/nvmem/devices/cv1800-rtc-info/nvmem
 boot_confirmed=0
 confirm_boot() {
     [ "$boot_confirmed" = 1 ] && return
-    if devmem "$BOOT_GUARD_REG" 32 "$BOOT_GUARD_DEFAULT" >/dev/null 2>&1; then
+    if printf '\357\276\255\336' | dd of="$BOOT_GUARD_NVMEM" bs=4 seek=1 count=1 conv=notrunc 2>/dev/null; then
         boot_confirmed=1
         runtime_log "boot confirmed"
     fi

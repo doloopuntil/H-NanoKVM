@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
-last-checked: 2026-11-11
+last-checked: 2026-11-12
 source: constants in server-rust/src and kvmapp/system/init.d
 ---
 
@@ -104,6 +104,16 @@ run. `/sys/kernel/debug/gpio` lists every line with its name, owner and level.
 | `hdmi-bridge-int` | kernel (`cif`), interrupt | LT6911 interrupt on a mode change; edges are counted in `/proc/lt_int`. |
 | `user-key` | `gpio-keys` | The User Key, reported as an input device. |
 | `user-led` | `gpio-leds` | The user LED. |
+
+## RTC registers
+
+Kernel patch `0006` exposes RTC registers that keep their value across a reset (not a power
+loss) as nvmem devices under `/sys/bus/nvmem/devices/`, in little-endian 32-bit words, root only.
+
+| File | Words | Use |
+| --- | --- | --- |
+| `cv1800-rtc-info/nvmem` | `RTC_INFO0`-`3`, read and write | Word 1: the FSBL boot guard's count of unconfirmed boots, set back to `0xDEADBEEF` by `S95nanokvm`. Word 2: `S01fs`'s one-check-per-power-cycle flag for the root filesystem. |
+| `cv1800-rtc-reason/nvmem` | `RTC_ST_ON_REASON`, `RTC_ST_OFF_REASON`, read only | Why the chip last came on; `S02watchdog` writes it to `/tmp/boot-reason`. |
 
 ## Elsewhere
 

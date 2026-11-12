@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
-last-checked: 2026-11-11
+last-checked: 2026-11-12
 ---
 
 # Security model
@@ -63,10 +63,10 @@ media drivers and the Wi-Fi/BT stack are modules.
 
 `/dev/mem` stays open to root, without `STRICT_DEVMEM`. The media middleware (`libsys`)
 maps its buffers through `/dev/mem`: the 75 MiB media carveout is reserved, mapped RAM, as
-on 5.10, and `STRICT_DEVMEM` refuses all System RAM. The init scripts also use `devmem` for
-three SoC registers (the rootfs-check flag in `S01fs`, the boot confirmation in `S95nanokvm`,
-the restart reason in `S02watchdog`). Root can therefore read and write all physical memory, the kernel
-included. Every process that touches it already runs as root, so this adds no path for an
+on 5.10, and `STRICT_DEVMEM` refuses all System RAM. The init scripts no longer use
+`devmem`: the RTC registers they need are nvmem devices (see
+[Files on the device](device-files.md#rtc-registers)). Root can therefore read and write all
+physical memory, the kernel included. Every process that touches it already runs as root, so this adds no path for an
 unprivileged user, but it removes a barrier for code that gains root.
 
 ## Open items
