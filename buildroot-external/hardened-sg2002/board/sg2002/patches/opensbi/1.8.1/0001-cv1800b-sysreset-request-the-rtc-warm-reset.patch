@@ -1,0 +1,78 @@
+From: Daniele Masato <daniele.masato@pm.me>
+Subject: [PATCH] reset: cv1800b: request the RTC warm reset on reboot
+
+licheerv's cv1800b sysreset driver restarts the chip by letting the
+DesignWare watchdog bite, as the vendor FSBL's __system_reset() does.
+The RTC then records every reboot as a watchdog reset (ON_REASON input
+REQ_WDG_RST), and userspace cannot tell a reboot from a hang.
+
+On a cold or warm reboot, first ask the RTC state machine for a warm
+reset, the request the vendor 5.10 kernel (cvi-reboot) uses: unlock
+RTC_CTRL0, set EN_WARM_RST_REQ, wait for it and for the state machine
+to be on, then set req_warm_rst in RTC_CTRL0. Each wait gives up after
+100 ms, and if the chip is still running 100 ms after the request the
+watchdog path runs as before. Shutdown is unchanged.
+
+Applies on top of licheerv's 0001-cv1800b-rtcsys-sysreset.patch.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/lib/utils/reset/fdt_reset_cv1800b.c
++++ b/lib/utils/reset/fdt_reset_cv1800b.c
+@@ -32,6 +32,14 @@
+ #define CTRL_UNLOCKKEY_MAGIC	0xab18
+ #define CTRL_EN_WDT_RST		0x00400040	/* route wdt bite -> full RTC reset */
+ #define CTRL_REQ_SHDN		0x00010001	/* BIT0: shutdown request */
++#define REG_32K_READ_SEL	((void *)0x0502603cUL)
++#define REG_EN_WARM_RST_REQ	((void *)0x050260ccUL)
++#define REG_RSM_STATE		((void *)0x050260d4UL)
++#define RSM_STATE_ON		0x3
++#define CTRL_WRITE_MASK		0xffff0000	/* bits 31:16 enable writes to 15:0 */
++#define CTRL_CLK32K_CG_EN	BIT(11)
++#define CTRL_REQ_WARM_RST	BIT(4)
++#define WARM_RST_TIMEOUT_US	100000
+ 
+ /* DesignWare TOP watchdog */
+ #define WDT_CR			((void *)0x03010000UL)
+@@ -52,6 +60,31 @@
+ 	writel(CTRL_EN_WDT_RST, REG_CTRL);
+ }
+ 
++static bool cv1800b_poll(void *reg, u32 val)
++{
++	int us;
++
++	for (us = 0; us < WARM_RST_TIMEOUT_US; us += 10) {
++		if (readl(reg) == val)
++			return true;
++		sbi_timer_udelay(10);
++	}
++	return false;
++}
++
++/* RTC warm reset (ON_REASON REQ_WARM_RST); returns only if it did not happen. */
++static void cv1800b_rtc_warm_reset(void)
++{
++	writel(0x1, REG_32K_READ_SEL);
++	writel(CTRL_UNLOCKKEY_MAGIC, REG_CTRL_UNLOCKKEY);
++	writel(0x1, REG_EN_WARM_RST_REQ);
++	if (!cv1800b_poll(REG_EN_WARM_RST_REQ, 0x1) ||
++	    !cv1800b_poll(REG_RSM_STATE, RSM_STATE_ON))
++		return;
++	writel(CTRL_WRITE_MASK | CTRL_CLK32K_CG_EN | CTRL_REQ_WARM_RST, REG_CTRL);
++	sbi_timer_udelay(WARM_RST_TIMEOUT_US);
++}
++
+ static int cv1800b_system_reset_check(u32 type, u32 reason)
+ {
+ 	switch (type) {
+@@ -65,6 +98,9 @@
+ 
+ static void cv1800b_system_reset(u32 type, u32 reason)
+ {
++	if (type != SBI_SRST_RESET_TYPE_SHUTDOWN)
++		cv1800b_rtc_warm_reset();
++
+ 	cv1800b_rtc_route_wdt_reset();
+ 
+ 	if (type == SBI_SRST_RESET_TYPE_SHUTDOWN) {

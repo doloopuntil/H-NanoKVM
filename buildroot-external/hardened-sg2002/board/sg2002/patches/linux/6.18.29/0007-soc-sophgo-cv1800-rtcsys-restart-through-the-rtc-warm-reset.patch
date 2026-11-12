@@ -1,0 +1,103 @@
+From: Daniele Masato <daniele.masato@pm.me>
+Subject: [PATCH] soc: sophgo: cv1800-rtcsys: restart through the RTC warm reset
+
+Linux has no restart handler for this SoC. Where the firmware offers no
+SBI system reset, a reboot falls through to the DesignWare watchdog, so
+the RTC records every restart as a watchdog reset and userspace cannot
+tell a reboot from a hang.
+
+Register a restart handler that asks the RTC state machine for a warm
+reset, the sequence of the Sophgo BSP cvi-reboot driver. RTC_CTRL0 is
+written as named bits: the write mask in bits 31:16, the 32 kHz clock
+switch (bit 11, on) and req_warm_rst (bit 4). Both polls time out after
+100 ms; on failure the next handler (the watchdog) still restarts the
+chip.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/drivers/soc/sophgo/Kconfig
++++ b/drivers/soc/sophgo/Kconfig
+@@ -9,6 +9,7 @@
+ config SOPHGO_CV1800_RTCSYS
+ 	tristate "Sophgo CV1800 RTC MFD"
+ 	select MFD_CORE
++	select MFD_SYSCON
+ 	help
+ 	  If you say yes here you get support the RTC MFD driver for Sophgo
+ 	  CV1800 series SoC. The RTC module comprises a 32kHz oscillator,
+--- a/drivers/soc/sophgo/cv1800-rtcsys.c
++++ b/drivers/soc/sophgo/cv1800-rtcsys.c
+@@ -11,10 +11,56 @@
+  */
+ 
+ #include <linux/mfd/core.h>
++#include <linux/mfd/syscon.h>
++#include <linux/reboot.h>
++#include <linux/regmap.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
+ #include <linux/property.h>
+ 
++/* Warm-reset sequence from the Sophgo CV181x BSP cvi-reboot driver. */
++#define RTC_CTRL0_UNLOCKKEY	0x0004
++#define RTC_CTRL0		0x0008
++#define RTC_CTRL0_WRITE_MASK	0xffff0000	/* bits 31:16 enable writes to 15:0 */
++#define RTC_CTRL0_CLK32K_CG_EN	BIT(11)
++#define RTC_CTRL0_REQ_WARM_RST	BIT(4)
++#define RTC_32K_READ_SELECT	0x103c
++#define RTC_EN_WARM_RST_REQ	0x10cc
++#define RTC_RSM_STATE		0x10d4
++#define RTC_STATE_ON		0x3
++
++static int cv1800_rtcsys_restart(struct sys_off_data *data)
++{
++	struct regmap *map = data->cb_data;
++	unsigned int val;
++	int ret;
++
++	ret = regmap_write(map, RTC_32K_READ_SELECT, 1);
++	if (ret)
++		goto failed;
++	ret = regmap_write(map, RTC_CTRL0_UNLOCKKEY, 0xab18);
++	if (ret)
++		goto failed;
++	ret = regmap_write(map, RTC_EN_WARM_RST_REQ, 1);
++	if (ret)
++		goto failed;
++	ret = regmap_read_poll_timeout_atomic(map, RTC_EN_WARM_RST_REQ,
++					     val, val == 1, 10, 100000);
++	if (ret)
++		goto failed;
++	ret = regmap_read_poll_timeout_atomic(map, RTC_RSM_STATE,
++					     val, val == RTC_STATE_ON, 10, 100000);
++	if (ret)
++		goto failed;
++	ret = regmap_write(map, RTC_CTRL0, RTC_CTRL0_WRITE_MASK |
++			   RTC_CTRL0_CLK32K_CG_EN | RTC_CTRL0_REQ_WARM_RST);
++	if (!ret)
++		return NOTIFY_DONE;
++failed:
++	dev_err(data->dev, "warm reset failed: %d\n", ret);
++	return notifier_from_errno(ret);
++}
++
+ static struct resource cv1800_rtcsys_irq_resources[] = {
+ 	DEFINE_RES_IRQ_NAMED(0, "alarm"),
+ };
+@@ -29,7 +75,15 @@
+ 
+ static int cv1800_rtcsys_probe(struct platform_device *pdev)
+ {
+-	int irq;
++	struct regmap *map;
++	int irq, ret;
++
++	map = syscon_node_to_regmap(pdev->dev.of_node);
++	if (IS_ERR(map))
++		return dev_err_probe(&pdev->dev, PTR_ERR(map), "missing RTC syscon\n");
++	ret = devm_register_restart_handler(&pdev->dev, cv1800_rtcsys_restart, map);
++	if (ret)
++		return dev_err_probe(&pdev->dev, ret, "restart registration failed\n");
+ 
+ 	irq = platform_get_irq_byname(pdev, "alarm");
+ 	if (irq < 0)

@@ -113,7 +113,7 @@ loss) as nvmem devices under `/sys/bus/nvmem/devices/`, in little-endian 32-bit 
 | File | Words | Use |
 | --- | --- | --- |
 | `cv1800-rtc-info/nvmem` | `RTC_INFO0`-`3`, read and write | Word 1: the FSBL boot guard's count of unconfirmed boots, set back to `0xDEADBEEF` by `S95nanokvm`. Word 2: `S01fs`'s one-check-per-power-cycle flag for the root filesystem. |
-| `cv1800-rtc-reason/nvmem` | `RTC_ST_ON_REASON`, `RTC_ST_OFF_REASON`, read only | Why the chip last came on; `S02watchdog` writes it to `/tmp/boot-reason`. |
+| `cv1800-rtc-reason/nvmem` | `RTC_ST_ON_REASON`, `RTC_ST_OFF_REASON`, read only | Why the chip last came on; `S02watchdog` writes it to `/tmp/boot-reason`. A `reboot` is an RTC warm reset (OpenSBI patch `0001-cv1800b-sysreset-request-the-rtc-warm-reset`) and reads as `restart`; a watchdog bite reads as `watchdog`. |
 
 ## Elsewhere
 
