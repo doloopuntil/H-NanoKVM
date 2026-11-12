@@ -104,6 +104,9 @@ jobs:
           patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
             < support/sg2002/middleware-patches/cvi-mpi-693a72a-no-vi-dbg-thread.patch
           ! grep -q vi_dbg_handler "$RUNNER_TEMP/cvi_mpi/modules/vi/src/cvi_vi.c"
+          patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
+            < support/sg2002/middleware-patches/cvi-mpi-693a72a-map-through-cvi-sys.patch
+          ! grep -q '"/dev/mem"' "$RUNNER_TEMP/cvi_mpi/modules/sys/src/devmem.c"
 
       # Replaces MaixCDK's prebuilt libsys/libvenc/libvdec/libvpu/libini, so libkvm_mmf.so links
       # against these and the image ships them. libvpu is split into libvi/libvpss/libvo/libgdc/

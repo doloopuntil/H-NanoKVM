@@ -1,0 +1,66 @@
+diff --git a/interdrv/sys/common/sys.c b/interdrv/sys/common/sys.c
+index 7d12827..01bb5c8 100644
+--- a/interdrv/sys/common/sys.c
++++ b/interdrv/sys/common/sys.c
+@@ -1,5 +1,6 @@
+ #include <linux/genalloc.h>
+ #include <linux/io.h>
++#include <linux/mm.h>
+ #include <linux/of.h>
+ #include <linux/of_reserved_mem.h>
+ #include <linux/platform_device.h>
+@@ -361,7 +362,7 @@ static CVI_S32 sys_ion_alloc_user(struct cvi_sys_device *ndev, unsigned long arg
+ 	}
+ 
+ 	ioctl_arg.addr_p = addr_p;
+-	/* No dma-buf: userspace maps buffers through /dev/mem by physical address. */
++	/* No dma-buf: userspace maps buffers through /dev/cvi-sys by physical address. */
+ 	ioctl_arg.dmabuf_fd = -1;
+ 
+ 	ret = copy_to_user((struct sys_ion_data __user *)arg,
+@@ -880,10 +881,45 @@ static int cvi_sys_close(struct inode *inode, struct file *filp)
+ 	return 0;
+ }
+ 
++/*
++ * Maps a buffer of the carveout by physical address (the mmap offset), in place of
++ * /dev/mem. Only ranges inside an allocated buffer; O_SYNC maps uncached, as /dev/mem.
++ */
++static int cvi_sys_mmap(struct file *filp, struct vm_area_struct *vma)
++{
++	size_t len = vma->vm_end - vma->vm_start;
++	phys_addr_t pa = (phys_addr_t)vma->vm_pgoff << PAGE_SHIFT;
++	struct sys_mem_buf *buf;
++	bool found = false;
++
++	if (!(vma->vm_flags & VM_SHARED))
++		return -EINVAL;
++
++	mutex_lock(&sys_mem_lock);
++	list_for_each_entry(buf, &sys_mem_bufs, list) {
++		if (pa >= buf->paddr && len <= buf->size &&
++		    pa - buf->paddr <= buf->size - len) {
++			found = true;
++			break;
++		}
++	}
++	mutex_unlock(&sys_mem_lock);
++
++	if (!found)
++		return -EPERM;
++
++	if (filp->f_flags & O_SYNC)
++		vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
++
++	return remap_pfn_range(vma, vma->vm_start, vma->vm_pgoff, len,
++			       vma->vm_page_prot);
++}
++
+ static const struct file_operations cvi_sys_fops = {
+ 	.owner = THIS_MODULE,
+ 	.open = cvi_sys_open,
+ 	.release = cvi_sys_close,
++	.mmap = cvi_sys_mmap,
+ 	.unlocked_ioctl = cvi_sys_ioctl,
+ #ifdef CONFIG_COMPAT
+ 	.compat_ioctl = compat_ptr_ioctl,

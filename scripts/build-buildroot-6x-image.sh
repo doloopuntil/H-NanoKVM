@@ -21,7 +21,10 @@ EXPECTED_TARGET="${EXPECTED_SYSTEM_TARGET:-sg2002-hnanokvm-sd}"
 MEDIA_MODULES="soph_sys soph_base soph_mipi_rx soph_vi soph_vpss soph_dwa soph_vo soph_rgn soph_vcodec soph_jpeg soph_vc_driver"
 KERNEL_PATCHES="0001-usb-dwc2-gadget-read-DTXFSTS-by-endpoint-index.patch
 0002-usb-dwc2-use-DMA-on-Sophgo-CV18xx.patch
-0003-riscv-mm-reserve-the-DTB-before-reserved-memory.patch"
+0003-riscv-mm-reserve-the-DTB-before-reserved-memory.patch
+0004-pinctrl-sophgo-cv18xx-allow-plain-functions-on-dual-mux-pins.patch
+0005-pinctrl-sophgo-cv18xx-support-bias-disable.patch
+0006-rtc-cv1800-expose-info-and-reason-registers-as-nvmem.patch"
 
 die() {
 	echo "error: $*" >&2
@@ -73,7 +76,7 @@ build_stage() {
 	done
 	[ -x "$OUTPUT_DIR/build/linux-$EXPECTED_KERNEL_RELEASE/usr/gen_init_cpio" ] || die "missing gen_init_cpio"
 
-	# Kernel: release string and the three board patches
+	# Kernel: release string and our kernel patches
 	strings "$IMAGES/Image" | grep -q "^Linux version $EXPECTED_KERNEL_RELEASE " || \
 		die "Image is not Linux $EXPECTED_KERNEL_RELEASE"
 	applied="$OUTPUT_DIR/build/linux-$EXPECTED_KERNEL_RELEASE/.applied_patches_list"
@@ -107,6 +110,10 @@ build_stage() {
 		debugfs -R "stat /kvmapp/server/dl_lib/$lib" "$ROOTFS" 2>/dev/null | \
 			grep -q "Type: regular" || die "rootfs lacks $lib"
 	done
+	# libsys maps media buffers through /dev/cvi-sys, never /dev/mem
+	debugfs -R "dump /kvmapp/server/dl_lib/libsys.so $REPORT_DIR/libsys.so" "$ROOTFS" >/dev/null 2>&1
+	grep -aq '/dev/cvi-sys' "$REPORT_DIR/libsys.so" || die "libsys.so does not map through /dev/cvi-sys"
+	! grep -aq '/dev/mem' "$REPORT_DIR/libsys.so" || die "libsys.so still opens /dev/mem"
 	debugfs -R "dump /etc/kvm/system-version.json $REPORT_DIR/system-version.json" "$ROOTFS" \
 		>/dev/null 2>&1
 	grep -q "\"target\": \"$EXPECTED_TARGET\"" "$REPORT_DIR/system-version.json" || \
@@ -176,7 +183,7 @@ assemble_stage() {
 	sha256sum "$IMAGES/hardened-sg2002-6x.img" "$IMAGES/boot.vfat" "$IMAGES/rootfs.ext4" \
 		"$IMAGES/boot-input/boot.itb" > "$REPORT_DIR/sha256.txt"
 	cat > "$REPORT_DIR/summary.md" <<EOF
-- target **$EXPECTED_TARGET**, kernel **Linux $EXPECTED_KERNEL_RELEASE**, board patches 0001-0003 applied
+- target **$EXPECTED_TARGET**, kernel **Linux $EXPECTED_KERNEL_RELEASE**, kernel patches 0001-0006 applied
 - boot partition: FIPs, boot.scr, boot.itb (lz4 kernel, DTB, recovery initramfs)
 - media modules in /lib/modules/$EXPECTED_KERNEL_RELEASE/extra: **$(echo $MEDIA_MODULES | wc -w)**
 - rootfs validation: **pass**
