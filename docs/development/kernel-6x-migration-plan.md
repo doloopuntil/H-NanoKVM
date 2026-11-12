@@ -493,7 +493,7 @@ cores. Not in scope for this migration.
 | `/dev/watchdog` | `S02watchdog`, `watchdog.rs` | `soph_wdt` | `dw_wdt` (licheerv `0019`); must adopt the FSBL-armed watchdog |
 | `/sys/class/thermal/thermal_zone0/temp` | monitor, update script | vendor | licheerv `0020` provides a zone; check the path |
 | `/dev/i2c-1`, `-4`, `-5` | OLED, HDMI probe | numbered by probe order | DT `aliases` so bus numbers stay 1, 4, 5 (or probe by name) |
-| `/dev/mem` + `devmem` | libsys, `S15kvmhwd`, boot-guard register `0x05026020` | on | keep `DEVMEM`, decide `STRICT_DEVMEM` (6.1) |
+| `/dev/mem` + `devmem` | libsys, `S15kvmhwd`, boot-guard register `0x05026020` | on | `DEVMEM` off since Phase 6; users moved to `/dev/cvi-sys` and nvmem |
 | exFAT `/data` | `S01fs` | vendor `exfat` | mainline `EXFAT_FS` |
 | `wlan0/eth0` carrier | `kvm_system`, hwmon | fine | unchanged names |
 
@@ -1498,9 +1498,22 @@ modules, so measure module signing and lockdown alongside. Remaining users, in o
    go through `/dev/cvi-sys`, mapping kernel RAM, a register block or free carveout fails
    with `EPERM`, MJPEG, H.264 and WebRTC all stream, no `mmap failed` in the log. The image
    build checks that `libsys.so` names `/dev/cvi-sys` and not `/dev/mem`.
-4. Turn `DEVMEM` off (`STRICT_DEVMEM` alone would not do: the carveout is reserved RAM,
-   section 6.1 option a), drop `devmem` from BusyBox, update `security-model.md` and
-   close Q8.
+4. Done 2026-11-12: `DEVMEM` off, with module signing and lockdown. `nanokvm.fragment`
+   turns `DEVMEM` off (`STRICT_DEVMEM` alone would not have done: the carveout is reserved
+   RAM, section 6.1 option a), enforces signed modules (`MODULE_SIG_FORCE`, `MODULE_SIG_ALL`,
+   SHA-256, the key the kernel build generates; the private half stays in the build tree,
+   which no CI cache or artifact keeps) and forces lockdown in integrity mode.
+   `linux-6.18/busybox.fragment` drops BusyBox's `devmem` (the 5.10 test rootfs keeps it).
+   `post-build.sh` signs modules a package copies in without `modules_install`
+   (licheerv's `aic8800-modules`), and the image build fails on an unsigned module, on
+   `DEVMEM`, and on a BusyBox with `devmem`. The bundled 5.10 `soph_mipi_rx.ko` and the
+   `S95nanokvm` code that copied it to `/mnt/system/ko` are gone: on 6.x every module comes
+   with the system image, so a per-build key is enough. Checked on the Lite with a local
+   build (kernel, 50 in-tree and media modules signed by `modules_install`, the three
+   AIC8800 ones by the post-build step): locked down, no `/dev/mem`, all media modules load,
+   an unsigned module is refused (`Key was rejected by service`), a signed one loads,
+   debugfs reads still work, 60 fps capture. The media modules finish loading 0.4 s later
+   (3.14 s against 2.72 s); the video pipeline opens 0.2 s later (18.26 s against 18.03 s).
 
 ### Phase 7: naming sweep
 
@@ -1569,7 +1582,7 @@ consider upstreaming it.
 | Q5 | ~~Where the BOOT-button USB reflash mode lives~~ | **Answered** (Phase 0): the vendor initramfs `/init`. Rebuild it in a source-built initramfs or in U-Boot (section 6.5). |
 | Q6 | ~~Which optional media modules to keep~~ | **Answered** (Phase 0): drop `ive mon fb snsr_i2c`; keep `dwa vo rgn` until the server is shown to start without them (section 6.2). |
 | Q7 | GPIO strategy | Phase 1: sysfs stopgap (needs `EXPERT` + `GPIO_SYSFS`) and `gpio-line-names` in the DT from day one. Phase 4: char-device access by line name; `gpio-hog` for static lines. See section 6.4. |
-| Q8 | `STRICT_DEVMEM` and the carveout region type | Phase 2 cache/`/dev/mem` test. |
+| Q8 | `STRICT_DEVMEM` and the carveout region type | Closed 2026-11-12: moot, `DEVMEM` is off (Phase 6, "Remove `/dev/mem`"). |
 | R1 | Cache coherency and memory attributes on the carveout (stale/corrupt frames) | Phase 2 cache test; the soak at the end of the migration. |
 | R2 | ~~`snsr_i2c` vendor I2C extensions (LT6911 path)~~ | **Gone** if `snsr_i2c` is dropped (Phase 0: unused; the LT6911 goes through `/dev/i2c-4`). |
 | R10 | The 5.10 codec driver leaves `clk_h264c` enabled (enable count about 432,000 after 1.5 h) | Check enable/disable balance in the 6.18 port; mainline clk warns on unbalanced disables. |

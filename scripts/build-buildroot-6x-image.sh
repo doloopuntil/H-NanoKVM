@@ -85,6 +85,20 @@ build_stage() {
 		grep -q "/$patch\$" "$applied" || die "kernel patch not applied: $patch"
 	done
 
+	# Kernel: no /dev/mem, signed modules only, lockdown (integrity)
+	kconfig="$OUTPUT_DIR/build/linux-$EXPECTED_KERNEL_RELEASE/.config"
+	[ -f "$kconfig" ] || die "missing $kconfig"
+	grep -qx '# CONFIG_DEVMEM is not set' "$kconfig" || die "kernel has DEVMEM"
+	for option in CONFIG_MODULE_SIG_FORCE CONFIG_MODULE_SIG_ALL CONFIG_SECURITY_LOCKDOWN_LSM_EARLY \
+		CONFIG_LOCK_DOWN_KERNEL_FORCE_INTEGRITY; do
+		grep -qx "$option=y" "$kconfig" || die "kernel lacks $option"
+	done
+	unsigned=$(find "$OUTPUT_DIR/target/lib/modules" -name '*.ko' -type f | while IFS= read -r ko; do
+		tail -c 28 "$ko" | grep -q '~Module signature appended~' || echo "$ko"
+	done)
+	[ -z "$unsigned" ] || die "unsigned modules: $unsigned"
+	! grep -aq '/dev/mem' "$OUTPUT_DIR/target/usr/bin/busybox" || die "BusyBox still has devmem"
+
 	# U-Boot: no autoboot delay
 	uboot_config="$(find "$OUTPUT_DIR/build" -maxdepth 2 -path '*/uboot-*/.config' | head -n 1)"
 	[ -n "$uboot_config" ] || die "missing U-Boot .config"

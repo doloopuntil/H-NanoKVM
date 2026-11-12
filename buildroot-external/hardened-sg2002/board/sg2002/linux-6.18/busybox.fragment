@@ -1,0 +1,4 @@
+# On top of ../busybox.fragment, for the 6.18 image only.
+
+# The kernel has no /dev/mem (CONFIG_DEVMEM off).
+# CONFIG_DEVMEM is not set

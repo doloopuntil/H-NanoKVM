@@ -55,7 +55,6 @@ CONFIG_LEDS_GPIO=y
 CONFIG_RTC_DRV_CV1800=y
 CONFIG_SOPHGO_CV1800_RTCSYS=y
 CONFIG_CV1800_THERMAL=y
-CONFIG_DEVMEM=y
 CONFIG_MAGIC_SYSRQ=y
 
 # File systems
@@ -122,3 +121,15 @@ CONFIG_MDIO_BUS_MUX_MMIOREG=y
 # CONFIG_ARCH_VIRT is not set
 # CONFIG_PCI is not set
 # CONFIG_DRM_VIRTIO_GPU is not set
+
+# Nothing maps /dev/mem: media buffers go through /dev/cvi-sys, RTC registers through nvmem
+# CONFIG_DEVMEM is not set
+# Every module signed with a key the kernel build generates and keeps only the public half of
+CONFIG_MODULE_SIG=y
+CONFIG_MODULE_SIG_FORCE=y
+CONFIG_MODULE_SIG_ALL=y
+CONFIG_MODULE_SIG_SHA256=y
+# Lockdown, integrity mode: no unsigned code or raw memory writes into the kernel, even as root
+CONFIG_SECURITY_LOCKDOWN_LSM=y
+CONFIG_SECURITY_LOCKDOWN_LSM_EARLY=y
+CONFIG_LOCK_DOWN_KERNEL_FORCE_INTEGRITY=y
