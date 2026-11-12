@@ -1462,9 +1462,22 @@ ptys (`LEGACY_PTYS`, 432 unused `/dev/ptyXX`/`ttyXX` nodes; `sshd` uses `/dev/pt
 `PROC_PAGE_MONITOR` (`pagemap`, `smaps`; nothing reads them) and `/dev/port` (not in the
 5.10 riscv build). The image build checks all four absent options. Checked on the Lite
 with a local build: none of the three exist, an SSH session gets `/dev/pts/0`, all media
-modules load, 60 fps capture. Still off on both and
-left for measuring: hardened usercopy, `FORTIFY_SOURCE`, freelist pointer hardening,
-zeroing on free, list hardening, KASLR (`RANDOMIZE_BASE`, available on 6.18 riscv).
+modules load, 60 fps capture.
+
+**Memory-safety hardening** (measured 2026-11-13). Off on both kernels before, now on in
+`nanokvm.fragment` and checked by the image build: `HARDENED_USERCOPY`, `FORTIFY_SOURCE`,
+`SLAB_FREELIST_HARDENED`, `SLAB_BUCKETS`, `INIT_ON_FREE_DEFAULT_ON`, `LIST_HARDENED` with
+`BUG_ON_DATA_CORRUPTION`, `RANDOMIZE_KSTACK_OFFSET_DEFAULT` (built in, now on) and
+`SCHED_STACK_END_CHECK`. On the Lite with local builds, idle, a worst case of 500 MB
+through a pipe in 64 KB writes took 3.46 s without them and 5.75 s with all nine (the slab
+pair alone 4.47 s, fortify, list and stack-end 4.73 s; turning off usercopy, zeroing on free
+or stack offset at boot saved 0.3-0.5 s each); fork and exec, memory, module load and boot
+times did not move. MJPEG streaming, which keeps the core about 95% busy with half of it in
+the kernel, sent 6.54 MB/s without and 6.46 MB/s with them, within the run-to-run spread.
+No hardening report in the kernel log across MJPEG, H.264 and WebRTC. Left off: KASLR
+(`RANDOMIZE_BASE`): nothing passes a seed (no RNG driver or node, no `kaslr-seed` from
+U-Boot), so the kernel would load at the same address every boot; `RANDOM_KMALLOC_CACHES`
+(16 copies of every kmalloc cache, too much for 161 MB); `ZERO_CALL_USED_REGS` (not measured).
 
 **Remove `/dev/mem`** (added 2026-11-12). Root can read and write all physical memory,
 kernel included, through `/dev/mem`. That matters once root can no longer load unsigned

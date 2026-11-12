@@ -86,14 +86,17 @@ build_stage() {
 		grep -q "/$patch\$" "$applied" || die "kernel patch not applied: $patch"
 	done
 
-	# Kernel: no /dev/mem, signed modules only, lockdown (integrity)
+	# Kernel: no /dev/mem, signed modules only, lockdown (integrity), memory-safety hardening
 	kconfig="$OUTPUT_DIR/build/linux-$EXPECTED_KERNEL_RELEASE/.config"
 	[ -f "$kconfig" ] || die "missing $kconfig"
 	for option in CONFIG_DEVMEM CONFIG_DEVPORT CONFIG_LEGACY_PTYS CONFIG_PROC_PAGE_MONITOR; do
 		grep -qx "# $option is not set" "$kconfig" || die "kernel has $option"
 	done
 	for option in CONFIG_MODULE_SIG_FORCE CONFIG_MODULE_SIG_ALL CONFIG_SECURITY_LOCKDOWN_LSM_EARLY \
-		CONFIG_LOCK_DOWN_KERNEL_FORCE_INTEGRITY; do
+		CONFIG_LOCK_DOWN_KERNEL_FORCE_INTEGRITY CONFIG_HARDENED_USERCOPY CONFIG_FORTIFY_SOURCE \
+		CONFIG_SLAB_FREELIST_HARDENED CONFIG_SLAB_BUCKETS CONFIG_INIT_ON_FREE_DEFAULT_ON \
+		CONFIG_LIST_HARDENED CONFIG_BUG_ON_DATA_CORRUPTION CONFIG_RANDOMIZE_KSTACK_OFFSET_DEFAULT \
+		CONFIG_SCHED_STACK_END_CHECK; do
 		grep -qx "$option=y" "$kconfig" || die "kernel lacks $option"
 	done
 	unsigned=$(find "$OUTPUT_DIR/target/lib/modules" -name '*.ko' -type f | while IFS= read -r ko; do
