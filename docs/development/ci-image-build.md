@@ -72,7 +72,9 @@ image.
 - **`build-buildroot`** (`needs: build-native-libkvm`): builds the Rust server
   against the fresh `libkvm`, then runs `scripts/build-buildroot-6x-image.sh build`:
   Buildroot without the post-image step, followed by checks on the result (the kernel
-  release string and patches 0001-0006, U-Boot's `BOOTDELAY=0`, the 11 modules in
+  release string and patches 0001-0006, `DEVMEM` off, signed modules only and lockdown in the
+  kernel `.config`, a signature on every `.ko`, no `devmem` in BusyBox, U-Boot's `BOOTDELAY=0`,
+  the 11 modules in
   `/lib/modules/6.18.29/extra`, the GCC runtime in `dl_lib`, a `libsys.so` that maps through
   `/dev/cvi-sys` and not `/dev/mem`, the `sg2002-hnanokvm-sd` target and
   kernel version in `system-version.json`, and `scripts/validate-nanokvm-rootfs.sh`). It

@@ -53,6 +53,18 @@ restore_rust_elf server/NanoKVM-Server kvmapp/server/NanoKVM-Server
 restore_rust_elf backends/NanoKVM-Server.rust kvmapp/backends/NanoKVM-Server.rust
 restore_rust_elf hwmon/nanokvm-hwmon kvmapp/hwmon/nanokvm-hwmon
 
+# Packages that copy their .ko files instead of running modules_install (aic8800-modules)
+# leave them unsigned: sign them with the kernel build's key, on kernels that sign modules.
+LINUX_DIR="$(ls -d "${BUILD_DIR:-/nonexistent}"/linux-[0-9]* 2>/dev/null | head -n 1)"
+if [ -n "$LINUX_DIR" ] && grep -qx 'CONFIG_MODULE_SIG_ALL=y' "$LINUX_DIR/.config"; then
+	sig_hash="$(sed -n 's/^CONFIG_MODULE_SIG_HASH="\(.*\)"$/\1/p' "$LINUX_DIR/.config")"
+	find "$TARGET_DIR/lib/modules" -name '*.ko' -type f | while IFS= read -r ko; do
+		tail -c 28 "$ko" | grep -q '~Module signature appended~' && continue
+		"$LINUX_DIR/scripts/sign-file" "$sig_hash" "$LINUX_DIR/certs/signing_key.pem" \
+			"$LINUX_DIR/certs/signing_key.x509" "$ko"
+	done
+fi
+
 if [ -n "$RUNTIME_SYSTEM_VERSION" ] || [ -n "$RUNTIME_KERNEL_VERSION" ] || [ -n "$RUNTIME_SECURITY_PATCH_LEVEL" ]; then
 	case "$RUNTIME_SYSTEM_VERSION$RUNTIME_KERNEL_VERSION$RUNTIME_SECURITY_PATCH_LEVEL" in
 		*['&|\\']*)

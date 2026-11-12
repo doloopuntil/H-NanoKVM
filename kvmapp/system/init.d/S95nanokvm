@@ -51,10 +51,6 @@ APP_UPDATE_WATCHDOG_PID_FILE=/tmp/app-update-watchdog.pid
 SENSOR_BUNDLE_DIR=/kvmapp/system/mnt-data
 SENSOR_DATA_DIR=/mnt/data
 LEGACY_NEW_APP_MARKER=/kvmapp/kvm_new_app
-MIPI_RX_MODULE=/mnt/system/ko/soph_mipi_rx.ko
-MIPI_RX_BUNDLED_MODULE=/kvmapp/system/ko/soph_mipi_rx.ko
-MIPI_RX_LEGACY_MD5=086ed01749188975afaa40fb569374f8
-MIPI_RX_CURRENT_MD5=69be7eeded3777f750480a5dd5a1aa26
 BOOT_INIT_SCRIPTS="S00kmod S01fs S01syslogd S02klogd S02watchdog S03usbdev S15kvmhwd S30eth S30wifi S40firewall S45wireguard S49ntp S50avahi-daemon S50sshd S95nanokvm"
 OPTIONAL_BOOT_INIT_SCRIPTS="S98tailscaled"
 
@@ -86,55 +82,12 @@ install_optional_boot_scripts() {
     done
 }
 
-file_md5() {
-    md5sum "$1" 2>/dev/null | awk '{ print $1 }'
-}
-
-ensure_hdmi_version_file() {
-    [ -x /kvmapp/system/init.d/S15kvmhwd ] || return
-    /kvmapp/system/init.d/S15kvmhwd get_hdmi_version >/dev/null 2>&1 || true
-}
-
-mipi_rx_module_is_compatible() {
-    current_md5="$(file_md5 "$MIPI_RX_MODULE")"
-    [ -n "$current_md5" ] || return 1
-
-    hdmi_version="$(cat /etc/kvm/hdmi_version 2>/dev/null | head -c 2)"
-    case "$hdmi_version" in
-        u*|d*)
-            [ "$current_md5" = "$MIPI_RX_CURRENT_MD5" ]
-            ;;
-        *)
-            [ "$current_md5" = "$MIPI_RX_LEGACY_MD5" ] || [ "$current_md5" = "$MIPI_RX_CURRENT_MD5" ]
-            ;;
-    esac
-}
-
-update_mipi_rx_module_if_needed() {
-    [ -f "$MIPI_RX_BUNDLED_MODULE" ] || return
-
-    ensure_hdmi_version_file
-    if mipi_rx_module_is_compatible; then
-        return
-    fi
-
-    if cp "$MIPI_RX_BUNDLED_MODULE" "$MIPI_RX_MODULE"; then
-        runtime_log "updated legacy soph_mipi_rx.ko; rebooting before runtime start"
-        sync
-        reboot
-        exit 0
-    fi
-
-    runtime_log "failed to update legacy soph_mipi_rx.ko; continuing boot"
-}
-
 cleanup_legacy_new_app_marker() {
     [ -e "$LEGACY_NEW_APP_MARKER" ] || return
 
     runtime_log "handling legacy kvm_new_app marker in S95nanokvm"
     rmmod soph_saradc 2>/dev/null || true
     rm -f /mnt/system/ko/soph_saradc.ko 2>/dev/null || true
-    update_mipi_rx_module_if_needed
     [ -e /root/old/kvm_new_img ] && rm -rf /root/old 2>/dev/null || true
     rm -f "$LEGACY_NEW_APP_MARKER" 2>/dev/null || true
 }

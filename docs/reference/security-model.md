@@ -55,22 +55,28 @@ media drivers and the Wi-Fi/BT stack are modules.
 
 | | Settings |
 | --- | --- |
-| On | Strong stack protector, virtually mapped stacks, read-only kernel and module text (`STRICT_KERNEL_RWX`, `STRICT_MODULE_RWX`), zeroed stack variables and allocations (`INIT_STACK_ALL_ZERO`, `INIT_ON_ALLOC_DEFAULT_ON`), randomised slab freelists, `dmesg` for root only (`SECURITY_DMESG_RESTRICT`), seccomp. Zeroed allocations, randomised freelists and root-only `dmesg` carry over the 5.10 hardening, as does the missing user namespace support. |
-| Not built | Namespaces (user namespaces included), the `bpf()` syscall, io_uring, userfaultfd, kexec, `/proc/kcore`, 32-bit compat, SELinux, AppArmor, audit, ftrace and kprobes. |
+| On | Strong stack protector, virtually mapped stacks, read-only kernel and module text (`STRICT_KERNEL_RWX`, `STRICT_MODULE_RWX`), zeroed stack variables and allocations (`INIT_STACK_ALL_ZERO`, `INIT_ON_ALLOC_DEFAULT_ON`), randomised slab freelists, `dmesg` for root only (`SECURITY_DMESG_RESTRICT`), seccomp, signed modules only (`MODULE_SIG_FORCE`), lockdown in integrity mode (next paragraph). Zeroed allocations, randomised freelists and root-only `dmesg` carry over the 5.10 hardening, as does the missing user namespace support. |
+| Not built | Namespaces (user namespaces included), the `bpf()` syscall, io_uring, userfaultfd, kexec, `/dev/mem` (`DEVMEM`), `/proc/kcore`, 32-bit compat, SELinux, AppArmor, audit, ftrace and kprobes. |
 | Built but off | Kernel stack offset randomisation (`RANDOMIZE_KSTACK_OFFSET`, not on by default). |
-| Not enabled | KASLR, hardened usercopy, `FORTIFY_SOURCE`, slab freelist hardening, zeroing on free, list hardening, module signing. `kernel.kptr_restrict` is 0 and `kernel.sysrq` is 1. |
-| Needed by the system | `DEBUG_FS` (the server reads `clk_summary`, the initramfs reads the User Key from `/sys/kernel/debug/gpio`), `DEVMEM` (next paragraph). |
+| Not enabled | KASLR, hardened usercopy, `FORTIFY_SOURCE`, slab freelist hardening, zeroing on free, list hardening. `kernel.kptr_restrict` is 0 and `kernel.sysrq` is 1. |
+| Needed by the system | `DEBUG_FS`, read only under lockdown (the server reads `clk_summary`, the initramfs reads the User Key from `/sys/kernel/debug/gpio`). |
 
-`/dev/mem` stays open to root, without `STRICT_DEVMEM`, but nothing in the system uses it
-any more. The media middleware (`libsys`) maps its buffers through `/dev/cvi-sys`, which
+Root cannot reach kernel memory directly. There is no `/dev/mem` (and BusyBox has no
+`devmem`); the kernel loads only modules signed with a key it generates at build time and
+keeps only the public half of, so a new key comes with every build and the private one is
+never stored; and lockdown (integrity) also blocks raw I/O ports, unsafe module parameters
+and writes through debugfs. Every module comes with the system image and a system update
+replaces kernel and modules together, so no module has to be signed after the build. The
+media middleware (`libsys`) maps its buffers through `/dev/cvi-sys`, which
 maps only buffers the media `sys` driver allocated in the 75 MiB carveout (uncached when
 opened with `O_SYNC`) and refuses kernel memory, registers and free carveout. The video
 encoder keeps every stream packet it hands to userspace in the carveout; the vendor driver
 used kernel heap memory for H.264 headers, which userspace then mapped through `/dev/mem`.
 The init scripts read the RTC registers they need through nvmem devices (see
-[Files on the device](device-files.md#rtc-registers)). Until `DEVMEM` is turned off, root can
-still read and write all physical memory, the kernel included. Every process that touches it already runs as root, so this adds no path for an
-unprivileged user, but it removes a barrier for code that gains root.
+[Files on the device](device-files.md#rtc-registers)). Checking the signatures of the media
+modules adds about 0.4 s to boot (measured on a Lite). These are barriers for code that has
+already gained root; every process involved runs as root, so they add nothing for an
+unprivileged user.
 
 ## Open items
 
@@ -83,10 +89,8 @@ unprivileged user, but it removes a barrier for code that gains root.
 - Remote ISO download has no allowlist of sources, only the public-host check; it stays off by default.
 - Retained vendor components with `NOASSERTION` licence metadata remain a
   documented limitation.
-- Kernel: `/dev/mem` still built in, though unused (turning `DEVMEM` off is the last step in
-  the [migration plan](../development/kernel-6x-migration-plan.md), Phase 6), and the
-  settings under "Not enabled" above, each to be measured on the device before it is turned
-  on.
+- Kernel: the settings under "Not enabled" above, each to be measured on the device before
+  it is turned on.
 
 ## Root-Required Operations
 
