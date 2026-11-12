@@ -11,11 +11,13 @@ HARDENED_SOPH_MEDIA_SITE = https://github.com/sophgo/osdrv.git
 HARDENED_SOPH_MEDIA_SITE_METHOD = git
 HARDENED_SOPH_MEDIA_LICENSE = GPL-2.0
 
-# The eight osdrv patches of the 5.10 image, in its order, then the 6.18 port.
+# The eight osdrv patches of the 5.10 image, in its order, then the 6.18 port, then
+# media buffers mapped through /dev/cvi-sys instead of /dev/mem.
 HARDENED_SOPH_MEDIA_PATCH_DIR = $(BR2_EXTERNAL_HARDENED_SG2002_PATH)/board/sg2002/kernel/patches
 HARDENED_SOPH_MEDIA_OSDRV_PATCHES = \
 	soph-module-names linux-5.10.265-compat pwm-from-28215f2 lt-int \
-	vi-log-level vi-dci-yuv-bypass sys-carveout-allocator venc-fixes linux-6.18
+	vi-log-level vi-dci-yuv-bypass sys-carveout-allocator venc-fixes linux-6.18 \
+	sys-mmap vc-packets-in-carveout
 
 # Build order follows KBUILD_EXTRA_SYMBOLS: each directory links against the ones before it.
 HARDENED_SOPH_MEDIA_DIRS = sys base cif vcodec jpeg cvi_vc_drv vi vpss dwa rgn vo

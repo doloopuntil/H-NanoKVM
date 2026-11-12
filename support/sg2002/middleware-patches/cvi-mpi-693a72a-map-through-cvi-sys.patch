@@ -1,0 +1,36 @@
+diff --git a/modules/sys/src/devmem.c b/modules/sys/src/devmem.c
+index 4112da7..4ef1efc 100644
+--- a/modules/sys/src/devmem.c
++++ b/modules/sys/src/devmem.c
+@@ -1,6 +1,6 @@
+ /*
+  ** read/write phy addr in userspace
+- ** open /dev/mem
++ ** open /dev/cvi-sys, which maps only buffers the sys driver allocated
+  ** taiqiang.cao@bitmain.com
+  */
+ #include <stdio.h>
+@@ -22,9 +22,9 @@ int devm_open(void)
+ {
+ 	int fd;
+ 
+-	fd = open("/dev/mem", O_RDWR | O_SYNC);
++	fd = open("/dev/cvi-sys", O_RDWR | O_SYNC);
+ 	if (fd == -1) {
+-		printf("cannot open '/dev/mem'\n");
++		printf("cannot open '/dev/cvi-sys'\n");
+ 		goto open_err;
+ 	}
+ 
+@@ -37,9 +37,9 @@ int devm_open_cached(void)
+ {
+ 	int fd;
+ 
+-	fd = open("/dev/mem", O_RDWR);
++	fd = open("/dev/cvi-sys", O_RDWR);
+ 	if (fd == -1) {
+-		printf("cannot open '/dev/mem'\n");
++		printf("cannot open '/dev/cvi-sys'\n");
+ 		goto open_err;
+ 	}
+ 

@@ -1482,10 +1482,22 @@ modules, so measure module signing and lockdown alongside. Remaining users, in o
    nvmem was set back to the default by `S01fs` at the next boot. Found on the way: a plain
    `reboot` is reported as `watchdog` (`RTC_ST_ON_REASON` `0x08090003`), so a restart and
    a real watchdog reset look the same; to look into.
-3. libsys: maps every media buffer by physical address through `/dev/mem` (`O_SYNC` for
-   uncached). Give the osdrv `sys` driver an `mmap` on `/dev/cvi-sys` that accepts only
-   buffers it allocated, cached or uncached, and point libsys (built from `cvi_mpi`) at it.
-   Rerun the Phase 1-3 checks on the Lite.
+3. Done 2026-11-12: libsys. It mapped every media buffer by physical address through
+   `/dev/mem` (`O_SYNC` for uncached). osdrv patch `sys-mmap` gives `/dev/cvi-sys` an `mmap`
+   (offset = physical address) that accepts only ranges inside a buffer the carveout
+   allocator handed out, uncached with `O_SYNC` as `/dev/mem`; the cvi_mpi patch
+   `map-through-cvi-sys` makes libsys's `devmem.c` open `/dev/cvi-sys`, which covers every
+   `CVI_SYS_Mmap` user (libkvm_mmf, libvi, libvpss, librgn) and libvenc's stream mapping.
+   libsys's `regInit` (ISP registers) now fails; nothing calls it. First test: MJPEG worked,
+   H.264 showed no image, because `cvi_vc_drv` put SPS/PPS (and SEI, copied P frames, the
+   JPEG overflow stream) in `kmalloc` memory and gave userspace `virt_to_phys()` of it, so
+   the server mapped kernel heap pages through `/dev/mem`. osdrv patch
+   `vc-packets-in-carveout` allocates every such packet with `osal_ion_alloc` and frees it
+   with `osal_ion_free` (the vendor freed `vzalloc`'d `NAL_NONE` copies with `kfree`).
+   Checked on the Lite with local builds: the server holds no `/dev/mem`, its frame mappings
+   go through `/dev/cvi-sys`, mapping kernel RAM, a register block or free carveout fails
+   with `EPERM`, MJPEG, H.264 and WebRTC all stream, no `mmap failed` in the log. The image
+   build checks that `libsys.so` names `/dev/cvi-sys` and not `/dev/mem`.
 4. Turn `DEVMEM` off (`STRICT_DEVMEM` alone would not do: the carveout is reserved RAM,
    section 6.1 option a), drop `devmem` from BusyBox, update `security-model.md` and
    close Q8.

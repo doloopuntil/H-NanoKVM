@@ -61,12 +61,15 @@ media drivers and the Wi-Fi/BT stack are modules.
 | Not enabled | KASLR, hardened usercopy, `FORTIFY_SOURCE`, slab freelist hardening, zeroing on free, list hardening, module signing. `kernel.kptr_restrict` is 0 and `kernel.sysrq` is 1. |
 | Needed by the system | `DEBUG_FS` (the server reads `clk_summary`, the initramfs reads the User Key from `/sys/kernel/debug/gpio`), `DEVMEM` (next paragraph). |
 
-`/dev/mem` stays open to root, without `STRICT_DEVMEM`. The media middleware (`libsys`)
-maps its buffers through `/dev/mem`: the 75 MiB media carveout is reserved, mapped RAM, as
-on 5.10, and `STRICT_DEVMEM` refuses all System RAM. The init scripts no longer use
-`devmem`: the RTC registers they need are nvmem devices (see
-[Files on the device](device-files.md#rtc-registers)). Root can therefore read and write all
-physical memory, the kernel included. Every process that touches it already runs as root, so this adds no path for an
+`/dev/mem` stays open to root, without `STRICT_DEVMEM`, but nothing in the system uses it
+any more. The media middleware (`libsys`) maps its buffers through `/dev/cvi-sys`, which
+maps only buffers the media `sys` driver allocated in the 75 MiB carveout (uncached when
+opened with `O_SYNC`) and refuses kernel memory, registers and free carveout. The video
+encoder keeps every stream packet it hands to userspace in the carveout; the vendor driver
+used kernel heap memory for H.264 headers, which userspace then mapped through `/dev/mem`.
+The init scripts read the RTC registers they need through nvmem devices (see
+[Files on the device](device-files.md#rtc-registers)). Until `DEVMEM` is turned off, root can
+still read and write all physical memory, the kernel included. Every process that touches it already runs as root, so this adds no path for an
 unprivileged user, but it removes a barrier for code that gains root.
 
 ## Open items
@@ -80,9 +83,8 @@ unprivileged user, but it removes a barrier for code that gains root.
 - Remote ISO download has no allowlist of sources, only the public-host check; it stays off by default.
 - Retained vendor components with `NOASSERTION` licence metadata remain a
   documented limitation.
-- Kernel: `/dev/mem` without `STRICT_DEVMEM` (closing it needs the media driver to map its
-  buffers itself, through `/dev/cvi-sys`, instead of `libsys` mapping `/dev/mem`; the steps
-  are in the [migration plan](../development/kernel-6x-migration-plan.md), Phase 6), and the
+- Kernel: `/dev/mem` still built in, though unused (turning `DEVMEM` off is the last step in
+  the [migration plan](../development/kernel-6x-migration-plan.md), Phase 6), and the
   settings under "Not enabled" above, each to be measured on the device before it is turned
   on.
 

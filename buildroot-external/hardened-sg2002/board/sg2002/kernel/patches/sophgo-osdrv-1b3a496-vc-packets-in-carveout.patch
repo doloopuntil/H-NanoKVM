@@ -1,0 +1,204 @@
+diff --git a/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/inc/cvi_jpg_internal.h b/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/inc/cvi_jpg_internal.h
+index 12d892c..41b7bef 100644
+--- a/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/inc/cvi_jpg_internal.h
++++ b/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/inc/cvi_jpg_internal.h
+@@ -11,6 +11,9 @@
+ #define MEM_KMALLOC(SIZE) kmalloc(SIZE, GFP_KERNEL)
+ #define MEM_FREE(PTR) vfree(PTR)
+ #define MEM_KFREE(PTR) kfree(PTR)
++/* carveout, for buffers userspace maps through /dev/cvi-sys (vdi_osal.c) */
++void *osal_ion_alloc(int size);
++void osal_ion_free(void *p);
+ 
+ /* DEC */
+ int cviJpgDecOpen(CVIJpgHandle *pHandle, CVIDecConfigParam *pConfig);
+diff --git a/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/src/cvi_jpg_enc_internal.c b/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/src/cvi_jpg_enc_internal.c
+index ecb4d7b..7d11fb9 100644
+--- a/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/src/cvi_jpg_enc_internal.c
++++ b/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/src/cvi_jpg_enc_internal.c
+@@ -1324,7 +1324,7 @@ static int cviJpegEncGetFinalStream(JpgEncInfo *pEncInfo, BYTE **virt_addr,
+ 		return JPG_RET_SUCCESS;
+ 	}
+ 
+-	pEncInfo->pFinalStream = MEM_KMALLOC(pEncInfo->preStreamLen + *size);
++	pEncInfo->pFinalStream = osal_ion_alloc(pEncInfo->preStreamLen + *size);
+ 
+ 	if (pEncInfo->pFinalStream == NULL) {
+ 		JLOG(ERR, "null pointer\n");
+diff --git a/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/src/cvi_jpg_interface.c b/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/src/cvi_jpg_interface.c
+index 43fd513..4dc7b1e 100644
+--- a/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/src/cvi_jpg_interface.c
++++ b/interdrv/cvi_vc_drv/jpeg/cvi_jpg_interface/src/cvi_jpg_interface.c
+@@ -285,7 +285,7 @@ int CVIJpgReleaseFrameData(CVIJpgHandle jpgHandle)
+ 
+ 	pEncInfo = &pJpgInst->JpgInfo.encInfo;
+ 	if (pEncInfo->pFinalStream) {
+-		MEM_KFREE(pEncInfo->pFinalStream);
++		osal_ion_free(pEncInfo->pFinalStream);
+ 		pEncInfo->pFinalStream = NULL;
+ 	}
+ 
+diff --git a/interdrv/cvi_vc_drv/module/src/enc_ctx.c b/interdrv/cvi_vc_drv/module/src/enc_ctx.c
+index fb60921..af4091f 100644
+--- a/interdrv/cvi_vc_drv/module/src/enc_ctx.c
++++ b/interdrv/cvi_vc_drv/module/src/enc_ctx.c
+@@ -1113,11 +1113,7 @@ static CVI_S32 drop_all_packs(stStreamPack *psp)
+ 			pPack = &psp->pack[idx];
+ 
+ 			if (pPack->addr && pPack->need_free) {
+-				if (pPack->cviNalType >= NAL_I && pPack->cviNalType <= NAL_IDR) {
+-					osal_ion_free(pPack->addr);
+-				} else {
+-					osal_kfree(pPack->addr);
+-				}
++				osal_ion_free(pPack->addr);
+ 				pPack->addr = NULL;
+ 			}
+ 			pPack->len = 0;
+diff --git a/interdrv/cvi_vc_drv/vcodec/cvi/cvi_enc_internal.c b/interdrv/cvi_vc_drv/vcodec/cvi/cvi_enc_internal.c
+index 4ab3634..3b8797e 100644
+--- a/interdrv/cvi_vc_drv/vcodec/cvi/cvi_enc_internal.c
++++ b/interdrv/cvi_vc_drv/vcodec/cvi/cvi_enc_internal.c
+@@ -99,7 +99,7 @@ static int cviEncode265HeaderByType(stTestEncoder *pTestEnc,
+ 
+ 			// sps maybe realloc mem for vui info later
+ 			if (enType == CODEOPT_ENC_SPS) {
+-				pSpsBuf = (Uint8 *)osal_kmalloc(pPack->len);
++				pSpsBuf = (Uint8 *)osal_ion_alloc(pPack->len);
+ 				memcpy(pSpsBuf, pPack->addr, pPack->len);
+ 				pPack->addr = pSpsBuf;
+ 				pPack->u64PhyAddr = virt_to_phys(pSpsBuf);
+@@ -154,7 +154,7 @@ static int cviEncode265HeaderByType(stTestEncoder *pTestEnc,
+ 		if (pTestEnc->bEncHeader == 0) {
+ 			pPack = &psp->pack[nalIdx];
+ 			pTestEnc->headerBackup[nalIdx].size = pPack->len;
+-			pTestEnc->headerBackup[nalIdx].pBuf = (Uint8 *)osal_kmalloc(pPack->len);
++			pTestEnc->headerBackup[nalIdx].pBuf = (Uint8 *)osal_ion_alloc(pPack->len);
+ 			pTestEnc->headerBackup[nalIdx].buf = virt_to_phys(pTestEnc->headerBackup[nalIdx].pBuf);
+ 			memcpy(pTestEnc->headerBackup[nalIdx].pBuf, pPack->addr, pPack->len);
+ 		}
+@@ -219,7 +219,7 @@ static void cviBackupEncodeHeader(stTestEncoder *pTestEnc, int cacheIdx)
+ 	if (totalPaks >= 1) {
+ 		pPack = &psp->pack[totalPaks-1];
+ 		pTestEnc->headerBackup[cacheIdx].size = pPack->len;
+-		pTestEnc->headerBackup[cacheIdx].pBuf = (Uint8 *)osal_kmalloc(pPack->len);
++		pTestEnc->headerBackup[cacheIdx].pBuf = (Uint8 *)osal_ion_alloc(pPack->len);
+ 		pTestEnc->headerBackup[cacheIdx].buf = virt_to_phys(pTestEnc->headerBackup[cacheIdx].pBuf);
+ 		memcpy(pTestEnc->headerBackup[cacheIdx].pBuf, pPack->addr, pPack->len);
+ 	}
+@@ -276,7 +276,7 @@ int cviEncode264Header(stTestEncoder *pTestEnc)
+ 
+ 				// sps maybe realloc mem for vui info later
+ 				if (nalType == NAL_SPS) {
+-					pSpsBuf = (Uint8 *)osal_kmalloc(pPack->len);
++					pSpsBuf = (Uint8 *)osal_ion_alloc(pPack->len);
+ 					memcpy(pSpsBuf, pPack->addr, pPack->len);
+ 					pPack->addr = pSpsBuf;
+ 					pPack->u64PhyAddr = virt_to_phys(pSpsBuf);
+@@ -588,7 +588,7 @@ static int cviInsertOneUserDataSegment(stStreamPack *psp, Uint8 *pUserData,
+ 	}
+ 	MUTEX_UNLOCK(&psp->packMutex);
+ 
+-	pBuffer = (Uint8 *)osal_kmalloc(userDataLen);
++	pBuffer = (Uint8 *)osal_ion_alloc(userDataLen);
+ 	if (pBuffer == NULL) {
+ 		CVI_VC_ERR("out of memory\n");
+ 		return FALSE;
+@@ -656,11 +656,7 @@ static int cviConcatePartialEsBuffer(stTestEncoder *pTestEnc, stPack *pPack,
+ 	       esCopiedSize);
+ 
+ 	if (pPack->need_free) {
+-		if (pPack->cviNalType >= NAL_I && pPack->cviNalType <= NAL_IDR) {
+-			osal_ion_free(esBuf);
+-		} else {
+-			osal_kfree(esBuf);
+-		}
++		osal_ion_free(esBuf);
+ 		esBuf = NULL;
+ 	}
+ 
+@@ -709,11 +705,7 @@ int cviPutEsInPack(stTestEncoder *pTestEnc, PhysicalAddress paBsBufStart,
+ 			   psp->totalPacks);
+ 		if (!bSkipCopy) {
+ 			if (esBuf && !bSkipCopy) {
+-				if (cviNalType >= NAL_I && cviNalType <= NAL_IDR) {
+-					osal_ion_free(esBuf);
+-				} else {
+-					osal_kfree(esBuf);
+-				}
++				osal_ion_free(esBuf);
+ 			}
+ 		}
+ 
+diff --git a/interdrv/cvi_vc_drv/vcodec/sample/helper/bitstream/bitstreamreader.c b/interdrv/cvi_vc_drv/vcodec/sample/helper/bitstream/bitstreamreader.c
+index ce4468b..18cf586 100644
+--- a/interdrv/cvi_vc_drv/vcodec/sample/helper/bitstream/bitstreamreader.c
++++ b/interdrv/cvi_vc_drv/vcodec/sample/helper/bitstream/bitstreamreader.c
+@@ -199,13 +199,8 @@ int cviCopyStreamToBuf(BitstreamReader reader, Int32 *pEsCopiedSize,
+ #endif
+ 		{
+ 			*bSkipCopy = FALSE;
+-			if (cviNalType >= NAL_I && cviNalType <= NAL_IDR) {
+-				pOutputEsBuf = (Uint8 *)osal_ion_alloc(esCopiedSize);
+-			} else if (cviNalType == NAL_NONE) {
+-				pOutputEsBuf = (Uint8 *)osal_malloc(esCopiedSize);
+-			}  else {
+-				pOutputEsBuf = (Uint8 *)osal_kmalloc(esCopiedSize);
+-			}
++			/* userspace maps packets through /dev/cvi-sys: carveout only */
++			pOutputEsBuf = (Uint8 *)osal_ion_alloc(esCopiedSize);
+ 			if (pOutputEsBuf == NULL) {
+ 				CVI_VC_ERR("malloc size %d, cviNalType:%d fail\n", esCopiedSize, cviNalType);
+ 				return -1;
+diff --git a/interdrv/cvi_vc_drv/vcodec/sample/main_enc_cvitest.c b/interdrv/cvi_vc_drv/vcodec/sample/main_enc_cvitest.c
+index b74ef9f..2426081 100644
+--- a/interdrv/cvi_vc_drv/vcodec/sample/main_enc_cvitest.c
++++ b/interdrv/cvi_vc_drv/vcodec/sample/main_enc_cvitest.c
+@@ -3089,11 +3089,7 @@ static CVI_S32 cviDropEsPacks(stStreamPack *psp)
+ 			pPack = &psp->pack[idx];
+ 
+ 			if (pPack->addr && pPack->need_free) {
+-				if (pPack->cviNalType >= NAL_I && pPack->cviNalType <= NAL_IDR) {
+-					osal_ion_free(pPack->addr);
+-				} else {
+-					osal_kfree(pPack->addr);
+-				}
++				osal_ion_free(pPack->addr);
+ 				pPack->addr = NULL;
+ 			}
+ 			pPack->len = 0;
+@@ -3362,11 +3358,7 @@ int cviVEncReleaseStream(void *handle, cviVEncStreamInfo *pStreamInfo)
+ 
+ 			if (pPack->bUsed) {
+ 				if (pPack->addr && pPack->need_free) {
+-					if (pPack->cviNalType >= NAL_I && pPack->cviNalType <= NAL_IDR) {
+-						osal_ion_free(pPack->addr);
+-					} else {
+-						osal_kfree(pPack->addr);
+-					}
++					osal_ion_free(pPack->addr);
+ 					pPack->addr = NULL;
+ 				}
+ 				pPack->len = 0;
+@@ -5089,11 +5081,7 @@ static int cviVEncStart(stTestEncoder *pTestEnc, void *arg)
+ 		for (idx = 0; idx < psp->totalPacks; idx++) {
+ 			pPack = &psp->pack[idx];
+ 			if (pPack->addr && pPack->need_free) {
+-				if (pPack->cviNalType >= NAL_I && pPack->cviNalType <= NAL_IDR) {
+-					osal_ion_free(pPack->addr);
+-				} else {
+-					osal_kfree(pPack->addr);
+-				}
++				osal_ion_free(pPack->addr);
+ 				pPack->addr = NULL;
+ 			}
+ 			pPack->len = 0;
+@@ -5725,7 +5713,7 @@ int cviVEncClose(void *handle)
+ 	if (pTestEnc->bEncHeader) {
+ 		for (i = 0; i < ARRAY_SIZE(pTestEnc->headerBackup); i++) {
+ 			if (pTestEnc->headerBackup[i].size)
+-				osal_kfree(pTestEnc->headerBackup[i].pBuf);
++				osal_ion_free(pTestEnc->headerBackup[i].pBuf);
+ 		}
+ 	}
+ #endif
