@@ -1459,8 +1459,18 @@ modules, so measure module signing and lockdown alongside. Remaining users, in o
    (copied from the vendor U-Boot), a clock output on a live data lane until the server
    started; on the Lite all ten read 3 and pinctrl showed RX0N claimed as `cam-mclk1-pins`.
    The DTS now sets all ten to function 3 (`mipi-rx-pins`), and
-   `lt6911-sensor-id-probe-removed.patch` drops the writes. To check on the Lite: the ten
-   registers read 3 before the server starts, and capture runs at 60 fps.
+   `lt6911-sensor-id-probe-removed.patch` drops the writes. The first image with this
+   (e3fce31b) had no video: the 6.18 pinctrl driver accepts only function 0 on the four pads
+   with a second mux register (MIPIRX4N/4P/3N/3P; `mux2.pfunc` is never set), so it rejected
+   the whole group (`group mipi-rx-cfg.mipi-rx-pins pin 0 is invalid`) and `a0c2000.cif`
+   never bound. Still so in mainline and linux-next; NanoKVM-OS patches the check. Kernel
+   patch `0004` checks the second mux only when the pad selects the function that feeds it.
+   The pads also reset with an 87 kOhm pull-down on the lanes, which the vendor code left
+   on; like NanoKVM-OS the DTS now sets `bias-disable`, which the driver did not accept
+   until kernel patch `0005`. Checked on the Lite with a local kernel build: no pinctrl
+   error, cif bound, the ten mux registers read 3, the pad registers
+   (`0x03001C38`-`0x03001C5C`) read `0x40` (pull-down off, was `0x48`), capture at 60 fps,
+   all three stream modes work. Still to check: the first CI image with both patches.
 2. RTC registers: `S01fs` (rootfs-check flag, `0x05026024`) and `S95nanokvm` (boot confirmation,
    `RTC_INFO1` `0x05026020`) write them, `S02watchdog` reads the power-on reason
    (`RTC_ST_ON_REASON` `0x050260F8`). Expose them through a small kernel patch (nvmem cells

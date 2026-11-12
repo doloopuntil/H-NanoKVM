@@ -215,7 +215,8 @@
 
 	/*
 	 * MIPI RX pads with no digital function (XGPIOC), so the receiver has them: RX0N
-	 * carries a live lane, not CAM_MCLK1. PWR_GPIO1 is the LT6911 INT input.
+	 * carries a live lane, not CAM_MCLK1. No pulls on the lanes. RX4N-RX3P need
+	 * kernel patch 0004, bias-disable 0005. PWR_GPIO1 is the LT6911 INT input.
 	 */
 	mipi_rx_cfg: mipi-rx-cfg {
 		mipi-rx-pins {
@@ -230,6 +231,7 @@
 				 <PINMUX(PIN_MIPIRX0N, 3)>,
 				 <PINMUX(PIN_MIPIRX0P, 3)>;
 			power-source = <1800>;
+			bias-disable;
 		};
 
 		lt-int-pins {
