@@ -56,7 +56,7 @@ media drivers and the Wi-Fi/BT stack are modules.
 | | Settings |
 | --- | --- |
 | On | Strong stack protector, virtually mapped stacks, read-only kernel and module text (`STRICT_KERNEL_RWX`, `STRICT_MODULE_RWX`), zeroed stack variables and allocations (`INIT_STACK_ALL_ZERO`, `INIT_ON_ALLOC_DEFAULT_ON`), randomised slab freelists, `dmesg` for root only (`SECURITY_DMESG_RESTRICT`), seccomp, signed modules only (`MODULE_SIG_FORCE`), lockdown in integrity mode (next paragraph). Zeroed allocations, randomised freelists and root-only `dmesg` carry over the 5.10 hardening, as does the missing user namespace support. |
-| Not built | Namespaces (user namespaces included), the `bpf()` syscall, io_uring, userfaultfd, kexec, `/dev/mem` (`DEVMEM`), `/proc/kcore`, 32-bit compat, SELinux, AppArmor, audit, ftrace and kprobes. |
+| Not built | Namespaces (user namespaces included), the `bpf()` syscall, io_uring, userfaultfd, kexec, `/dev/mem` and `/dev/port`, `/proc/kcore`, `/proc/<pid>/pagemap` and `smaps` (`PROC_PAGE_MONITOR`), BSD ptys (`LEGACY_PTYS`), 32-bit compat, SELinux, AppArmor, audit, ftrace and kprobes. |
 | Built but off | Kernel stack offset randomisation (`RANDOMIZE_KSTACK_OFFSET`, not on by default). |
 | Not enabled | KASLR, hardened usercopy, `FORTIFY_SOURCE`, slab freelist hardening, zeroing on free, list hardening. `kernel.kptr_restrict` is 0 and `kernel.sysrq` is 1. |
 | Needed by the system | `DEBUG_FS`, read only under lockdown (the server reads `clk_summary`, the initramfs reads the User Key from `/sys/kernel/debug/gpio`). |

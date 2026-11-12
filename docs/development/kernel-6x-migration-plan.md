@@ -1449,6 +1449,23 @@ Confirm hardening parity in the final `.config`; remove the 5.10 kernel patches,
 configs and scripts only after the 6.18 channel is stable; update `CHANGELOG.md`,
 `docs/releases/`, and record the dropped hardware (alpha) in the install docs.
 
+**Hardening parity** (checked 2026-11-12). The 5.10 config, resolved from the vendor
+`sg2002_licheervnano_sd_defconfig` plus `phase4-01-no-ion.config` against 5.10.265's
+Kconfig, against the 6.18 config on the Lite. Same on both: strong stack protector,
+seccomp, root-only `dmesg`, randomised slab freelists (pointer hardening off, rejected on
+5.10), zeroing on allocation (not on free), zeroed stack variables, no `/proc/kcore`, no
+bpf, no userfaultfd, no ftrace or perf. Only on 6.18: virtually mapped stacks,
+`STRICT_KERNEL_RWX` and `STRICT_MODULE_RWX`, stack offset randomisation (built, off by
+default), no namespaces, no io_uring (on in 5.10), no 32-bit compat, no kexec, signed
+modules, lockdown, no `/dev/mem`. Weaker on 6.18 and now off in `nanokvm.fragment`: BSD
+ptys (`LEGACY_PTYS`, 432 unused `/dev/ptyXX`/`ttyXX` nodes; `sshd` uses `/dev/ptmx`),
+`PROC_PAGE_MONITOR` (`pagemap`, `smaps`; nothing reads them) and `/dev/port` (not in the
+5.10 riscv build). The image build checks all four absent options. Checked on the Lite
+with a local build: none of the three exist, an SSH session gets `/dev/pts/0`, all media
+modules load, 60 fps capture. Still off on both and
+left for measuring: hardened usercopy, `FORTIFY_SOURCE`, freelist pointer hardening,
+zeroing on free, list hardening, KASLR (`RANDOMIZE_BASE`, available on 6.18 riscv).
+
 **Remove `/dev/mem`** (added 2026-11-12). Root can read and write all physical memory,
 kernel included, through `/dev/mem`. That matters once root can no longer load unsigned
 modules, so measure module signing and lockdown alongside. Remaining users, in order:

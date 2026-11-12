@@ -124,6 +124,10 @@ CONFIG_MDIO_BUS_MUX_MMIOREG=y
 
 # Nothing maps /dev/mem: media buffers go through /dev/cvi-sys, RTC registers through nvmem
 # CONFIG_DEVMEM is not set
+# As on 5.10: no BSD ptys, no /proc/<pid>/pagemap or smaps; and no /dev/port
+# CONFIG_LEGACY_PTYS is not set
+# CONFIG_PROC_PAGE_MONITOR is not set
+# CONFIG_DEVPORT is not set
 # Every module signed with a key the kernel build generates and keeps only the public half of
 CONFIG_MODULE_SIG=y
 CONFIG_MODULE_SIG_FORCE=y
