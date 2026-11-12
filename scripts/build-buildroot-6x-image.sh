@@ -24,7 +24,8 @@ KERNEL_PATCHES="0001-usb-dwc2-gadget-read-DTXFSTS-by-endpoint-index.patch
 0003-riscv-mm-reserve-the-DTB-before-reserved-memory.patch
 0004-pinctrl-sophgo-cv18xx-allow-plain-functions-on-dual-mux-pins.patch
 0005-pinctrl-sophgo-cv18xx-support-bias-disable.patch
-0006-rtc-cv1800-expose-info-and-reason-registers-as-nvmem.patch"
+0006-rtc-cv1800-expose-info-and-reason-registers-as-nvmem.patch
+0007-soc-sophgo-cv1800-rtcsys-restart-through-the-rtc-warm-reset.patch"
 
 die() {
 	echo "error: $*" >&2
@@ -199,7 +200,7 @@ assemble_stage() {
 	sha256sum "$IMAGES/hardened-sg2002-6x.img" "$IMAGES/boot.vfat" "$IMAGES/rootfs.ext4" \
 		"$IMAGES/boot-input/boot.itb" > "$REPORT_DIR/sha256.txt"
 	cat > "$REPORT_DIR/summary.md" <<EOF
-- target **$EXPECTED_TARGET**, kernel **Linux $EXPECTED_KERNEL_RELEASE**, kernel patches 0001-0006 applied
+- target **$EXPECTED_TARGET**, kernel **Linux $EXPECTED_KERNEL_RELEASE**, kernel patches 0001-0007 applied
 - boot partition: FIPs, boot.scr, boot.itb (lz4 kernel, DTB, recovery initramfs)
 - media modules in /lib/modules/$EXPECTED_KERNEL_RELEASE/extra: **$(echo $MEDIA_MODULES | wc -w)**
 - rootfs validation: **pass**

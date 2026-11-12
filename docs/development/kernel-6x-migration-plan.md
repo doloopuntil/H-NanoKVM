@@ -1498,7 +1498,21 @@ modules, so measure module signing and lockdown alongside. Remaining users, in o
    (`RTC_INFO1` back to `0xDEADBEEF`), and a test value written to `RTC_INFO2` through
    nvmem was set back to the default by `S01fs` at the next boot. Found on the way: a plain
    `reboot` is reported as `watchdog` (`RTC_ST_ON_REASON` `0x08090003`), so a restart and
-   a real watchdog reset look the same; to look into.
+   a real watchdog reset look the same (input bit 11, `REQ_WDG_RST`). The restart goes
+   through SBI SRST to licheerv's OpenSBI patch `0001-cv1800b-rtcsys-sysreset` (applied
+   through `BR2_GLOBAL_PATCH_DIR`, matched by the `sophgo,cv1800b-sysreset` node in the FDT
+   embedded in `fip.bin`), which copies the FSBL's `__system_reset()`: it arms the watchdog
+   and lets it bite. The 5.10 vendor kernel asked the RTC for a warm reset (`cvi-reboot`).
+   Our OpenSBI patch `0001-cv1800b-sysreset-request-the-rtc-warm-reset` makes licheerv's
+   driver request that warm reset first and bite the watchdog only if the chip is still
+   running 100 ms later. Kernel patch `0007` adds the same sequence as a restart handler
+   in `cv1800-rtcsys`, for firmware without SBI system reset; with ours, SRST has the
+   higher priority and the handler does not run. Both write `RTC_CTRL0` as named bits:
+   the write mask in bits 31:16 (not in the TRM, which lists them as reserved; every
+   vendor and licheerv write uses them so), the 32 kHz clock switch (bit 11) and
+   `req_warm_rst` (bit 4). Checked on the Lite with a local `fip.bin` that differs from
+   the installed one only in OpenSBI: it boots, a `reboot` reads `restart`
+   (`0x04090003`, input bit 10, `REQ_WARM_RST`), the boot is confirmed through nvmem.
 3. Done 2026-11-12: libsys. It mapped every media buffer by physical address through
    `/dev/mem` (`O_SYNC` for uncached). osdrv patch `sys-mmap` gives `/dev/cvi-sys` an `mmap`
    (offset = physical address) that accepts only ranges inside a buffer the carveout
