@@ -6,14 +6,15 @@ PIDFILE=/var/run/kvm-watchdog.pid
 DEVICE=/dev/watchdog
 DISABLE_FLAG=/boot/disable_watchdog
 REASON_FILE=/tmp/boot-reason
-# RTC_ST_ON_REASON: why the chip last came on
-ON_REASON_REG=0x050260F8
+# RTC_ST_ON_REASON (word 0): why the chip last came on
+ON_REASON_NVMEM=/sys/bus/nvmem/devices/cv1800-rtc-reason/nvmem
 TIMEOUT=60
 PERIOD=10
 
 boot_reason() {
-    value=$(devmem "$ON_REASON_REG" 32 2>/dev/null) || return 0
-    value=$((value))
+    value=$(dd if="$ON_REASON_NVMEM" bs=4 count=1 2>/dev/null | od -An -tx4 | tr -d ' ')
+    [ -n "$value" ] || return 0
+    value=$((0x$value))
     inputs=$(((value >> 16) & 0xFFFF))
     if [ $((value & 0xF)) -eq 0 ]; then
         reason=power-on

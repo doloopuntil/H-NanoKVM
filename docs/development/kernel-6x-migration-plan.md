@@ -1471,10 +1471,17 @@ modules, so measure module signing and lockdown alongside. Remaining users, in o
    error, cif bound, the ten mux registers read 3, the pad registers
    (`0x03001C38`-`0x03001C5C`) read `0x40` (pull-down off, was `0x48`), capture at 60 fps,
    all three stream modes work. Still to check: the first CI image with both patches.
-2. RTC registers: `S01fs` (rootfs-check flag, `0x05026024`) and `S95nanokvm` (boot confirmation,
-   `RTC_INFO1` `0x05026020`) write them, `S02watchdog` reads the power-on reason
-   (`RTC_ST_ON_REASON` `0x050260F8`). Expose them through a small kernel patch (nvmem cells
-   for the info registers, a read-only reason) and switch the scripts.
+2. Done 2026-11-12: RTC registers. `S01fs` (rootfs-check flag, `RTC_INFO2` `0x05026024`)
+   and `S95nanokvm` (boot confirmation, `RTC_INFO1` `0x05026020`) wrote them with `devmem`,
+   `S02watchdog` read the power-on reason (`RTC_ST_ON_REASON` `0x050260F8`). Kernel patch
+   `0006` registers two nvmem devices in `rtc-cv1800`: `cv1800-rtc-info` (`RTC_INFO0`-`3`,
+   read-write) and `cv1800-rtc-reason` (on and off reason, read-only), both root only; the
+   scripts read and write 4-byte words with `dd` and `od`. Checked on the Lite with a local
+   kernel build: both devices match `devmem`, the boot was confirmed through the new path
+   (`RTC_INFO1` back to `0xDEADBEEF`), and a test value written to `RTC_INFO2` through
+   nvmem was set back to the default by `S01fs` at the next boot. Found on the way: a plain
+   `reboot` is reported as `watchdog` (`RTC_ST_ON_REASON` `0x08090003`), so a restart and
+   a real watchdog reset look the same; to look into.
 3. libsys: maps every media buffer by physical address through `/dev/mem` (`O_SYNC` for
    uncached). Give the osdrv `sys` driver an `mmap` on `/dev/cvi-sys` that accepts only
    buffers it allocated, cached or uncached, and point libsys (built from `cvi_mpi`) at it.

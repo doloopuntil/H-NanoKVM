@@ -1,0 +1,125 @@
+From: Daniele Masato <daniele.masato@pm.me>
+Subject: [PATCH] rtc: cv1800: expose the info and reason registers as nvmem
+
+RTC_INFO0-3 are scratch words that keep their value across a reset (not
+a power loss); boot firmware and userspace use them to pass state from
+one boot to the next. RTC_ST_ON_REASON and RTC_ST_OFF_REASON say why the
+chip last powered on and off. Without a driver interface userspace has
+to reach them through /dev/mem.
+
+Register RTC_INFO0-3 as a read-write nvmem device ("cv1800-rtc-info")
+and the two reason registers as a read-only one ("cv1800-rtc-reason"),
+both 32-bit words and readable by root only.
+
+Applies on top of licheerv's 32k oscillator calibration patch.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/drivers/rtc/rtc-cv1800.c
++++ b/drivers/rtc/rtc-cv1800.c
+@@ -12,6 +12,7 @@
+ #include <linux/math64.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/module.h>
++#include <linux/nvmem-provider.h>
+ #include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/regmap.h>
+@@ -30,7 +31,14 @@
+ #define SET_SEC_CNTR_VAL       0x1010
+ #define SET_SEC_CNTR_TRIG      0x1014
+ #define SEC_CNTR_VAL           0x1018
++#define RTC_INFO0              0x101C
++#define ST_ON_REASON           0x10F8
+ 
++/* RTC_INFO0-3: scratch words that survive a reset, not a power loss */
++#define RTC_INFO_SIZE          16
++/* ST_ON_REASON and ST_OFF_REASON */
++#define ST_REASON_SIZE         8
++
+ /*
+  * When in VDDBKUP domain, this MACRO register
+  * does not power down
+@@ -169,6 +177,73 @@
+ 	return IRQ_HANDLED;
+ }
+ 
++static int cv1800_rtc_info_read(void *priv, unsigned int offset, void *val,
++				size_t bytes)
++{
++	struct cv1800_rtc_priv *info = priv;
++
++	return regmap_bulk_read(info->rtc_map, RTC_INFO0 + offset, val,
++				bytes / 4);
++}
++
++static int cv1800_rtc_info_write(void *priv, unsigned int offset, void *val,
++				 size_t bytes)
++{
++	struct cv1800_rtc_priv *info = priv;
++
++	return regmap_bulk_write(info->rtc_map, RTC_INFO0 + offset, val,
++				 bytes / 4);
++}
++
++static int cv1800_rtc_reason_read(void *priv, unsigned int offset, void *val,
++				  size_t bytes)
++{
++	struct cv1800_rtc_priv *info = priv;
++
++	return regmap_bulk_read(info->rtc_map, ST_ON_REASON + offset, val,
++				bytes / 4);
++}
++
++static void cv1800_rtc_register_nvmem(struct device *dev,
++				      struct cv1800_rtc_priv *info)
++{
++	struct nvmem_config info_cfg = {
++		.name = "cv1800-rtc-info",
++		.id = NVMEM_DEVID_NONE,
++		.root_only = true,
++		.word_size = 4,
++		.stride = 4,
++		.size = RTC_INFO_SIZE,
++		.reg_read = cv1800_rtc_info_read,
++		.reg_write = cv1800_rtc_info_write,
++		.priv = info,
++	};
++	struct nvmem_config reason_cfg = {
++		.dev = dev,
++		.owner = THIS_MODULE,
++		.name = "cv1800-rtc-reason",
++		.id = NVMEM_DEVID_NONE,
++		.read_only = true,
++		.root_only = true,
++		.word_size = 4,
++		.stride = 4,
++		.size = ST_REASON_SIZE,
++		.reg_read = cv1800_rtc_reason_read,
++		.priv = info,
++	};
++	struct nvmem_device *nvmem;
++	int ret;
++
++	ret = devm_rtc_nvmem_register(info->rtc_dev, &info_cfg);
++	if (ret)
++		dev_warn(dev, "cannot register info nvmem (%d)\n", ret);
++
++	nvmem = devm_nvmem_register(dev, &reason_cfg);
++	if (IS_ERR(nvmem))
++		dev_warn(dev, "cannot register reason nvmem (%ld)\n",
++			 PTR_ERR(nvmem));
++}
++
+ static const struct rtc_class_ops cv1800_rtc_ops = {
+ 	.read_time = cv1800_rtc_read_time,
+ 	.set_time = cv1800_rtc_set_time,
+@@ -342,6 +417,8 @@
+ 	rtc->rtc_dev->ops = &cv1800_rtc_ops;
+ 	rtc->rtc_dev->range_max = U32_MAX;
+ 
++	cv1800_rtc_register_nvmem(&pdev->dev, rtc);
++
+ 	ret = devm_request_irq(&pdev->dev, rtc->irq, cv1800_rtc_irq_handler,
+ 			       IRQF_TRIGGER_HIGH, "rtc alarm", rtc);
+ 	if (ret)
