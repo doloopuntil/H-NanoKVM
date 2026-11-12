@@ -1,0 +1,37 @@
+From: Daniele Masato <daniele.masato@pm.me>
+Subject: [PATCH] pinctrl: sophgo: cv18xx: support bias-disable
+
+The cv18xx pad registers have separate pull-up and pull-down enables, but
+the driver only accepts bias-pull-up and bias-pull-down, and rejects any
+other parameter, which fails the whole pin state. A pad that must float
+cannot be described: the SG2002 MIPI RX pads reset with an 87 kOhm
+pull-down that stays on the CSI lanes.
+
+Accept bias-disable: clear both enables, and report it when neither is set.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/drivers/pinctrl/sophgo/pinctrl-cv18xx.c
++++ b/drivers/pinctrl/sophgo/pinctrl-cv18xx.c
+@@ -260,6 +260,10 @@
+ 	value = readl(cv1800_pinctrl_get_component_addr(priv, &pin->conf));
+ 
+ 	switch (param) {
++	case PIN_CONFIG_BIAS_DISABLE:
++		enabled = !(value & (PIN_IO_PULLUP | PIN_IO_PULLDOWN));
++		arg = 0;
++		break;
+ 	case PIN_CONFIG_BIAS_PULL_DOWN:
+ 		enabled = FIELD_GET(PIN_IO_PULLDOWN, value);
+ 		arg = sophgo_pinctrl_typical_pull_down(pctrl, sp, priv->power_cfg);
+@@ -330,6 +334,10 @@
+ 		u32 arg = pinconf_to_config_argument(configs[i]);
+ 
+ 		switch (param) {
++		case PIN_CONFIG_BIAS_DISABLE:
++			v &= ~(PIN_IO_PULLUP | PIN_IO_PULLDOWN);
++			m |= PIN_IO_PULLUP | PIN_IO_PULLDOWN;
++			break;
+ 		case PIN_CONFIG_BIAS_PULL_DOWN:
+ 			v &= ~PIN_IO_PULLDOWN;
+ 			v |= FIELD_PREP(PIN_IO_PULLDOWN, arg);

@@ -1,0 +1,32 @@
+From: Daniele Masato <daniele.masato@pm.me>
+Subject: [PATCH] pinctrl: sophgo: cv18xx: allow plain functions on dual-mux pins
+
+Some SG2002 pads (MIPIRX4N/4P/3N/3P) have a second mux register that is
+used only when the pad's own mux selects the function that feeds it.
+cv1800_verify_pinmux_config() requires every pinmux on such a pad to
+select that function, and mux2.pfunc is never set, so only function 0
+passes. PINMUX(PIN_MIPIRX4N, 3) (XGPIOC) is rejected, and with it the
+whole pin group: on the NanoKVM the MIPI CSI pin state fails and the
+capture device never probes.
+
+Check mux2 only when mux selects the feeding function; otherwise treat
+the pad like a single-mux pad, which requires mux2 to be unset.
+cv1800_set_pinmux_config() already skips mux2 when it is unset.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+--- a/drivers/pinctrl/sophgo/pinctrl-cv18xx.c
++++ b/drivers/pinctrl/sophgo/pinctrl-cv18xx.c
+@@ -133,10 +133,8 @@
+ 	if (mux > pin->mux.max)
+ 		return -EINVAL;
+ 
+-	if (pin->pin.flags & CV1800_PIN_HAVE_MUX2) {
+-		if (mux != pin->mux2.pfunc)
+-			return -EINVAL;
+-
++	/* mux2 only applies when mux selects the function that feeds it */
++	if ((pin->pin.flags & CV1800_PIN_HAVE_MUX2) && mux == pin->mux2.pfunc) {
+ 		if (mux2 > pin->mux2.max)
+ 			return -EINVAL;
+ 	} else {
