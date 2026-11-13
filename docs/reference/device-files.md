@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
-last-checked: 2026-11-12
+last-checked: 2026-11-13
 source: constants in server-rust/src and kvmapp/system/init.d
 ---
 
@@ -49,6 +49,7 @@ The boot files:
 | `usb_management` | An empty file the operator creates to let the computer under control open connections to the NanoKVM over `usb0`; without it the firewall drops them in every mode. |
 | `wireguard/kvm.conf`, `wireguard/private.key` | WireGuard settings and private key (0600). |
 | `network/dns.mode`, `network/dns.servers` | DNS mode (`dhcp`/`manual`) and fixed DNS servers. |
+| `network/eth.rx-batching` | An empty file the operator creates to batch Ethernet receive interrupts: fewer interrupts and more CPU for the video during large transfers, at some interactive latency while the link is busy. `S30eth` applies it at the next start. |
 | `time.json` | NTP servers and time zone. |
 | `syslog.json` | Remote syslog and log buffer settings. |
 | `system-update-signing.pub.pem` | Key that update metadata must be signed with. |
