@@ -1,0 +1,64 @@
+From: Daniele Masato <daniele.masato@pm.me>
+Date: Fri, 13 Nov 2026 20:53:24 +0100
+Subject: [PATCH 16/16] riscv: errata: thead: the C906 is not affected by
+ GhostWrite
+
+The GhostWrite probe cannot tell T-Head cores apart, because target-c9xx
+cores all report archid and impid 0, so it marks every one of them
+vulnerable and the mitigation disables XTheadVector. GhostWrite was found
+in the C910 and C920 only; the C906 is not affected.
+
+Report "Not affected" and keep XTheadVector when every CPU node in the
+device tree is compatible with "thead,c906". Other T-Head systems keep
+the current behaviour.
+---
+ arch/riscv/kernel/bugs.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/arch/riscv/kernel/bugs.c b/arch/riscv/kernel/bugs.c
+index 3655fe7d6..d96ab9d2c 100644
+--- a/arch/riscv/kernel/bugs.c
++++ b/arch/riscv/kernel/bugs.c
+@@ -5,6 +5,7 @@
+ 
+ #include <linux/cpu.h>
+ #include <linux/device.h>
++#include <linux/of.h>
+ #include <linux/sprintf.h>
+ 
+ #include <asm/bugs.h>
+@@ -17,6 +18,22 @@ void ghostwrite_set_vulnerable(void)
+ 	ghostwrite_state = VULNERABLE;
+ }
+ 
++/* GhostWrite is a C910/C920 bug; all-C906 systems are not affected. */
++static bool ghostwrite_only_c906(void)
++{
++	struct device_node *np;
++	bool found = false;
++
++	for_each_of_cpu_node(np) {
++		if (!of_device_is_compatible(np, "thead,c906")) {
++			of_node_put(np);
++			return false;
++		}
++		found = true;
++	}
++	return found;
++}
++
+ /*
+  * Vendor extension alternatives will use the value set at the time of boot
+  * alternative patching, thus this must be called before boot alternatives are
+@@ -26,6 +43,11 @@ void ghostwrite_set_vulnerable(void)
+  */
+ bool ghostwrite_enable_mitigation(void)
+ {
++	if (ghostwrite_state == VULNERABLE && ghostwrite_only_c906()) {
++		ghostwrite_state = UNAFFECTED;
++		return false;
++	}
++
+ 	if (IS_ENABLED(CONFIG_RISCV_ISA_XTHEADVECTOR) &&
+ 	    ghostwrite_state == VULNERABLE && !cpu_mitigations_off()) {
+ 		disable_xtheadvector();
