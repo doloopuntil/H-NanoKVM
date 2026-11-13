@@ -13,7 +13,7 @@ The host sizes below are not the image target; see "Size" and "What to verify on
 ## Build context
 
 - Image target `riscv64gc-unknown-linux-musl`, Rust 1.99.0 (pinned as `RUST_VERSION` in
-  `system-image.yml`), edition 2024, rust-lld, static CRT (`.cargo/config.toml`).
+  `system-image-6x.yml`), edition 2024, rust-lld, static CRT (`.cargo/config.toml`).
 - Release profile: `opt-level="z"`, LTO, `codegen-units=1`, strip, `panic=abort`;
   `ring`, `rustls`, `tungstenite`, `tokio-tungstenite`, `rtc-srtp`, `rtc-crypto`, `aes`,
   `ctr`, `hmac`, `sha1` are built at `opt-level=3`. SRTP AES-GCM goes through `ring`.

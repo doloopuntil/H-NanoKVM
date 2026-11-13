@@ -2,7 +2,7 @@
 set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
-DEFCONFIG="$ROOT/buildroot-external/hardened-sg2002/configs/hardened_sg2002_licheervnano_defconfig"
+DEFCONFIG="$ROOT/buildroot-external/hardened-sg2002/configs/hardened_sg2002_nanokvm_6x_defconfig"
 PATCH_ROOT="$ROOT/buildroot-external/hardened-sg2002/board/sg2002/patches"
 PREPARE="$ROOT/scripts/prepare-buildroot-2026.05.1-security-source.sh"
 VENDOR_MK="$ROOT/buildroot-external/hardened-sg2002/package/hardened-sg2002-vendor-runtime/hardened-sg2002-vendor-runtime.mk"
@@ -99,12 +99,6 @@ grep -Fq '$(NANOKVM_KVMAPP_SOURCE_DIR)/server/dl_lib/libkvm_mmf.so' "$VENDOR_MK"
 grep -Fq 'vendor-runtime-source-media-v1' "$VENDOR_MK"
 grep -Fq 'vendor-runtime-source-media-v1' \
 	"$ROOT/scripts/build-latest-buildroot-sg2002-rootfs.sh"
-grep -Fq 'HARDENED_SG2002_FIP_STD_IMAGE' \
-	"$ROOT/scripts/assemble-latest-buildroot-sg2002-sd-image.sh"
-grep -Fq 'HARDENED_SG2002_BOOT_IMAGE' \
-	"$ROOT/scripts/assemble-latest-buildroot-sg2002-sd-image.sh"
-grep -Fq 'HARDENED_SG2002_LOGO_IMAGE' \
-	"$ROOT/scripts/assemble-latest-buildroot-sg2002-sd-image.sh"
 grep -Fq 'SYSTEM_UPDATE_KEY_POLICY=/etc/kvm/update-key-policy' \
 	"$ROOT/kvmapp/system/init.d/S95nanokvm"
 
@@ -114,4 +108,4 @@ if [ -d "$ROOT/build/kvmapp-rust/kvmapp/server/dl_lib" ]; then
 	test ! -e "$ROOT/build/kvmapp-rust/kvmapp/server/dl_lib/libz.so.1.3"
 fi
 
-printf 'latest Buildroot raw.11 security policy: PASS\n'
+printf 'Buildroot security policy: PASS\n'

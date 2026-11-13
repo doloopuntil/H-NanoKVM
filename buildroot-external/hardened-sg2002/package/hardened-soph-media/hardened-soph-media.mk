@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-# The same osdrv release as the 5.10 image (SOPHGO_OSDRV_SHA in system-image.yml); the
-# middleware's ioctl ABI depends on it.
+# The osdrv release the middleware headers come from (SOPHGO_OSDRV_SHA in system-image-6x.yml);
+# the middleware's ioctl ABI depends on it.
 HARDENED_SOPH_MEDIA_VERSION = 1b3a49649d18488ecf54fb4fcb6c27599e433fdc
 HARDENED_SOPH_MEDIA_SITE = https://github.com/sophgo/osdrv.git
 HARDENED_SOPH_MEDIA_SITE_METHOD = git

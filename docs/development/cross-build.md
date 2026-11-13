@@ -32,7 +32,7 @@ That script sets the NanoKVM dynamic loader, RPATH, sysroot libraries, and the
 
 ## Toolchain
 
-CI pins Rust `1.99.0` (`RUST_VERSION` in `.github/workflows/system-image.yml`);
+CI pins Rust `1.99.0` (`RUST_VERSION` in `.github/workflows/system-image-6x.yml`);
 use the same version locally. The link step uses the position-independent C
 runtime objects (`Scrt1.o`, `crtbeginS.o`, `crtendS.o`) because newer Rust no
 longer links with the non-PIC `crt1.o`.

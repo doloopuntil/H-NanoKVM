@@ -13,7 +13,7 @@ source: .github/workflows/system-image-6x.yml
 gh workflow run system-image-6x.yml --ref <branch>
 ```
 
-The run takes a few hours. When it finishes:
+The run takes about 40 minutes with warm caches and longer from cold. When it finishes:
 
 - `sg2002-6x-sd-image` (kept 14 days) holds `sd-image/hardened-sg2002-6x.img.xz` with its
   `SHA256SUMS`, and `_reports/` with the boot-partition listing, the FIT summary, the module
@@ -29,10 +29,6 @@ Three places must carry the same version or the build fails: `kvmapp/version`,
 and `EXPECTED_SYSTEM_VERSION` / `EXPECTED_KVMAPP_VERSION` in the workflow (both jobs that
 set them).
 
-`system-image.yml` still builds the vendor 5.10 image. It is kept only until the 6.18
-channel is stable ([migration plan](kernel-6x-migration-plan.md), Phase 6) and is described
-under [The 5.10 pipeline](#the-510-pipeline).
-
 ## What it builds
 
 `.github/workflows/system-image-6x.yml` builds the SD image from source on
@@ -42,19 +38,20 @@ under [The 5.10 pipeline](#the-510-pipeline).
 `scripts/fetch-licheerv-external.sh`), builds:
 
 - the musl toolchain and the userland;
-- Linux 6.18.29 with licheerv's patch series and our board patches 0001-0003, configured from
+- Linux 6.18.29 with licheerv's patch series and our board patches 0001-0007, configured from
   `board/sg2002/linux-6.18/nanokvm_defconfig` plus `nanokvm.fragment`, and the
   `sg2002-nanokvm-lite.dts` device tree;
 - the 11 Sophgo media modules (`hardened-soph-media`, `sophgo/osdrv` at `SOPHGO_OSDRV_SHA`);
-- OpenSBI 1.8.1, U-Boot 2025.10, and the FSBL from the pinned LicheeRV Nano SDK, packed into
+- OpenSBI 1.8.1 (licheerv's reset driver with our warm-reset patch), U-Boot 2025.10, and the
+  FSBL from the pinned LicheeRV Nano SDK, packed into
   `fip.std.bin` and `fip.od.bin` (`hardened-sg2002-fip`; `fip.bin` is a copy of the standard
   one);
 - the root filesystem with the `kvmapp` package.
 
 `board/sg2002/linux-6.18/post-image.sh` then packs the boot FIT (`boot.itb`: LZ4 kernel,
 DTB and the recovery initramfs, each with a SHA-256 hash U-Boot checks), `boot.scr`, the
-32 MiB boot partition and `hardened-sg2002-6x.img` (`genimage.cfg`: the same two partitions
-as the 5.10 image, so the raw updater can write both).
+32 MiB boot partition and `hardened-sg2002-6x.img` (`genimage.cfg`: a FAT boot partition and
+an ext4 root partition).
 
 ## Pipeline shape
 
@@ -77,7 +74,11 @@ image.
   the 11 modules in
   `/lib/modules/6.18.29/extra`, the GCC runtime in `dl_lib`, a `libsys.so` that maps through
   `/dev/cvi-sys` and not `/dev/mem`, the `sg2002-hnanokvm-sd` target and
-  kernel version in `system-version.json`, and `scripts/validate-nanokvm-rootfs.sh`). It
+  kernel version in `system-version.json`, `scripts/validate-nanokvm-rootfs.sh`, and
+  `scripts/validate-6x-rootfs.sh`: BusyBox not setuid, every account but root locked and root
+  locked until the first setup, no empty SSH passwords, the pinned filesystem UUID, required and
+  forbidden packages, the Avahi limits, musl and `kvm_system` built for the T-Head extensions
+  without vector, and the installed init scripts matching the packaged ones). It
   uploads a handoff for the next job: the images, the host tools without the cross
   toolchain, `gen_init_cpio`, the initramfs binaries and `SOURCE_DATE_EPOCH`. The compiler
   cache (2 GB) and the download cache are saved even when the build fails.
@@ -90,12 +91,12 @@ image.
 All jobs run in the `sg2002-image-build-6x` concurrency group
 (`cancel-in-progress: false`): dispatches queue rather than race.
 
-### What the 6.18 build sources differently
+### What the 6.18 build sources differently from the removed 5.10 pipeline
 
 | Content | 5.10 pipeline | 6.18 pipeline |
 | --- | --- | --- |
 | Toolchain for kernel and modules | `sophgo/host-tools` GCC | Buildroot's own musl GCC |
-| Kernel | vendor 5.10 rehydrated to 5.10.265 from `git.kernel.org` stable | Linux 6.18.29 from kernel.org through Buildroot, licheerv patches plus 0001-0003 |
+| Kernel | vendor 5.10 rehydrated to 5.10.265 from `git.kernel.org` stable | Linux 6.18.29 from kernel.org through Buildroot, licheerv patches plus 0001-0007 |
 | Kernel modules | 57 in-tree, external and media modules into the `/mnt/system/ko` skeleton | built in except the 11 media modules (`hardened-soph-media`) and the Wi-Fi/BT modules |
 | FSBL, OpenSBI, U-Boot | vendor SDK stock build (U-Boot 2021.10) | FSBL from the SDK source, OpenSBI 1.8.1 and U-Boot 2025.10 from Buildroot |
 | Boot payload | `boot.sd` | `boot.scr` and the verified FIT `boot.itb` |
@@ -106,15 +107,17 @@ All jobs run in the `sg2002-image-build-6x` concurrency group
 `ddr_param.bin` is the one vendor blob inside the FIPs: no source exists for it anywhere,
 and the SDK, licheerv and varyhin carry the same file.
 
-## The 5.10 pipeline
+## The 5.10 pipeline (removed)
 
-`.github/workflows/system-image.yml` has six jobs: `vendor-sdk-source`, `vendor-sdk`,
+The 5.10 workflow, `.github/workflows/system-image.yml`, was removed on 2026-11-13 with the
+rest of the 5.10 build (its defconfig, scripts and `support/sg2002/kernel/5.10.265`); git
+history keeps them. It had six jobs: `vendor-sdk-source`, `vendor-sdk`,
 `build-native-libkvm`, `build-kernel` (the rehydrated 5.10.265 kernel), `build-modules`
 (57 modules checked against the kernel's vermagic and `System.map` with `depmod -e`) and
 `build-image` (Buildroot, the `kvmapp` bridge, rootfs, boot FIT and recovery-SD image).
-Its artifact is `sg2002-recovery-sd-image` with `hardened-sg2002-port.img.xz`. The rest of
+Its artifact was `sg2002-recovery-sd-image` with `hardened-sg2002-port.img.xz`. The rest of
 this page records how that pipeline stopped depending on published artifacts; the 6.18
-pipeline inherits the result.
+pipeline inherits the result. Files it names that only the 5.10 build used are gone.
 
 ## Why this exists
 
@@ -229,10 +232,10 @@ Every claim above is backed by one of:
 - **`dlopen()` reference search** across every native binary and every
   tracked script, for content removed on the basis of "nothing references
   it."
-- **SHA-256 pinning** throughout the workflow and in
-  `scripts/validate-latest-buildroot-sg2002-rootfs.sh`, which re-checks
-  final image content against pinned hashes regardless of which step
-  produced it.
+- **SHA-256 pinning** throughout the workflow and in the 5.10 rootfs
+  validator (`scripts/validate-latest-buildroot-sg2002-rootfs.sh`, removed with
+  the 5.10 build), which re-checked final image content against pinned hashes
+  regardless of which step produced it.
 
 Dead ends are documented, not silently dropped: the public
 `sophgo/host-tools` cross-toolchain repo was tried for both the loaders and

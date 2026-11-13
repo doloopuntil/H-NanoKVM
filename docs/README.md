@@ -38,7 +38,7 @@ For people running the device.
 - [Web UI](development/web.md)
 - [Web UI layout rules](development/web-ui-layout-rules.md), including the copy rules
 - [CI image build](development/ci-image-build.md): rebuilding the SD image from source
-- [Kernel 6.x migration plan](development/kernel-6x-migration-plan.md): moving from the vendor 5.10 kernel to mainline 6.18 (plan, not implemented)
+- [Kernel 6.x migration plan](development/kernel-6x-migration-plan.md): the move from the vendor 5.10 kernel to mainline 6.18 (phases, decisions, measurements)
 - [Kernel 6.x Phase 0 baseline](development/kernel-6x-phase0-baseline.md): what the 5.10 Lite uses and how fast it is, for comparison
 - [Testing](development/testing.md)
 - [Rust dependency audit](development/dependency-audit.md)
@@ -50,6 +50,7 @@ For people running the device.
 ## Releases
 
 - [Changelog](../CHANGELOG.md): the list of release pages
+- [System 1.0.0 / application 3.0.0, Linux 6.18](releases/1.0.0.md) (unreleased)
 - [System 0.4.0 / application 2.1.0](releases/0.4.0.md) (unreleased)
 - [RC12: application 2.0.42 / system 0.3.0-raw.12](releases/rc12-2.0.42-raw.12.md)
   and its [key transition](releases/2.0.42-key-transition.md)
