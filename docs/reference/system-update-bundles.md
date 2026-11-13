@@ -250,14 +250,13 @@ KERNEL_VERSION=5.10.4-tag-hardened.1 \
 make system-update-bundle SYSTEM_UPDATE_VERSION=0.1.0
 ```
 
-Create an experimental raw boot/rootfs bundle from the patched Hardened SD
-image:
+Create a raw boot/rootfs bundle from a Hardened SD image (the CI build also makes
+one, the `system-update-archive-6x` artifact):
 
 ```sh
-make rust-kvmapp RUST_TARGET=riscv64gc-unknown-linux-musl
-make sd-image HARDENED_RELEASE_VERSION=1.0.3
-make raw-system-update-images HARDENED_RELEASE_VERSION=1.0.3
-make raw-system-update-bundle SYSTEM_UPDATE_VERSION=0.1.0-raw.1
+scripts/extract-sd-raw-images.sh hardened-sg2002-6x.img.xz build/raw
+scripts/create-raw-system-update-bundle.sh 1.0.0 sg2002-hnanokvm-sd \
+  build/raw/boot.vfat build/raw/rootfs.sd build/system-updates
 ```
 
 The default raw inputs are extracted from the patched SD image into:
