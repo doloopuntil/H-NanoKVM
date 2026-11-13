@@ -2132,6 +2132,19 @@ int mmf_enc_jpg_push_with_quality(int ch, uint8_t *data, int w, int h, int forma
 		}
 	}
 
+	// A camera frame still leased from VPSS goes to the encoder as is, as in mmf_venc_push
+	if (real_format == PIXEL_FORMAT_NV21) {
+		VIDEO_FRAME_INFO_S *vi_frame = NULL;
+		if (_mmf_find_deferred_vi_frame(data, w, h, format, &vi_frame) >= 0) {
+			s32Ret = CVI_VENC_SendFrame(ch, vi_frame, 1000);
+			if (s32Ret == CVI_SUCCESS) {
+				priv.enc_jpg_running = 1;
+				return s32Ret;
+			}
+			printf("CVI_VENC_SendFrame zero-copy jpg failed with %#x, fallback to copy\n", s32Ret);
+		}
+	}
+
 	switch (real_format) {
 		case PIXEL_FORMAT_UINT8_C1:
 			if (priv.enc_jpg_frame->stVFrame.u32Stride[0] != (CVI_U32)w) {
