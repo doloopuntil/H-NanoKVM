@@ -72,6 +72,26 @@ find_udhcpc6() {
     return 1
 }
 
+RX_BATCHING_FLAG="${RX_BATCHING_FLAG:-/etc/kvm/network/eth.rx-batching}"
+NET_CLASS_DIR="${NET_CLASS_DIR:-/sys/class/net}"
+
+# Opt-in NAPI interrupt deferral: fewer RX interrupts, more latency under load.
+# Leaves values someone else set alone.
+apply_rx_batching() {
+    [ -e "$RX_BATCHING_FLAG" ] || return 0
+    net="$NET_CLASS_DIR/eth0"
+    flush="$net/gro_flush_timeout"
+    defer="$net/napi_defer_hard_irqs"
+    [ -w "$flush" ] && [ -w "$defer" ] || return 0
+    [ "$(cat "$flush")" = 0 ] && [ "$(cat "$defer")" = 0 ] || return 0
+    if echo 200000 > "$flush" && echo 2 > "$defer"; then
+        return 0
+    fi
+    echo 0 > "$defer" 2>/dev/null
+    echo 0 > "$flush" 2>/dev/null
+    echo "could not apply Ethernet RX batching" >&2
+}
+
 NFT=/usr/sbin/nft
 IPV6_OFF_TABLE=kvm_ipv6_off
 
@@ -262,6 +282,7 @@ start() {
     fi
 
     apply_ipv6
+    apply_rx_batching
 }
 
 stop() {
