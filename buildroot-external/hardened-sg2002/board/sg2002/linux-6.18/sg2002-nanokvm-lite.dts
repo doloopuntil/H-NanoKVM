@@ -104,10 +104,12 @@
 	};
 };
 
-/* The C906 vector unit is pre-ratification XTheadVector, not RVV 1.0. */
+/* The C906 vector unit is pre-ratification XTheadVector, not RVV 1.0. Without
+ * thead,vlenb, 6.18 reads the vlenb CSR at boot and hangs; mainline's D1 sets it too. */
 &cpu0 {
 	riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicntr", "zicsr",
 			       "zifencei", "zihpm", "xtheadvector";
+	thead,vlenb = <16>;
 };
 
 &osc {
