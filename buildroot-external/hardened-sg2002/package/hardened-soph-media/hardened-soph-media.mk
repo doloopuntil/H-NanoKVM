@@ -17,7 +17,9 @@ HARDENED_SOPH_MEDIA_PATCH_DIR = $(BR2_EXTERNAL_HARDENED_SG2002_PATH)/board/sg200
 HARDENED_SOPH_MEDIA_OSDRV_PATCHES = \
 	soph-module-names linux-5.10.265-compat pwm-from-28215f2 lt-int \
 	vi-log-level vi-dci-yuv-bypass sys-carveout-allocator venc-fixes linux-6.18 \
-	sys-mmap vc-packets-in-carveout
+	sys-mmap vc-packets-in-carveout vc-timed-locks jpeg-wait-by-interrupt \
+	vpu-block-lock-sleeps jpeg-huffman-tables-without-vmalloc \
+	jpeg-load-tables-only-when-they-change
 
 # Build order follows KBUILD_EXTRA_SYMBOLS: each directory links against the ones before it.
 HARDENED_SOPH_MEDIA_DIRS = sys base cif vcodec jpeg cvi_vc_drv vi vpss dwa rgn vo
