@@ -280,34 +280,24 @@ The init script also starts a local health watchdog. If `/api/health` fails
 repeatedly, it writes `/etc/kvm/h264_safe_mode`, forces `/kvmapp/kvm/type` to
 `mjpeg`, and restarts only `NanoKVM-Server`.
 
-## SD And Raw System Update Builds (local, older path)
+## SD And Raw System Update Builds
 
-The 0.4.0 image is built by CI from source. The local flow below patches an
-existing image and remains for raw-update bundle work:
+The SD image and its system-update archive are built by CI from source
+([CI image build](ci-image-build.md)). To make a raw boot/rootfs bundle from an image
+by hand:
 
 ```sh
-cargo test --manifest-path server-rust/Cargo.toml
-corepack pnpm --dir web build
-server-rust/scripts/build-linked-libkvm.sh
-RUST_TARGET=riscv64gc-unknown-linux-musl \
-  APP_VERSION="$(cat kvmapp/version)" \
-  scripts/package-rust-kvmapp.sh
-make sd-image HARDENED_RELEASE_VERSION="$(cat kvmapp/version)"
-make raw-system-update-images HARDENED_RELEASE_VERSION="$(cat kvmapp/version)"
-make raw-system-update-bundle \
-  HARDENED_RELEASE_VERSION="$(cat kvmapp/version)" \
-  SYSTEM_UPDATE_VERSION="<system-version>" \
-  RAW_IMAGE_COMPRESSION=gzip \
-  REQUIRED_FREE_BYTES=671088640
+scripts/extract-sd-raw-images.sh hardened-sg2002-6x.img.xz build/raw
+RAW_IMAGE_COMPRESSION=gzip REQUIRED_FREE_BYTES=671088640 \
+  scripts/create-raw-system-update-bundle.sh "<system-version>" sg2002-hnanokvm-sd \
+  build/raw/boot.vfat build/raw/rootfs.sd build/system-updates
 ```
 
 `scripts/extract-sd-raw-images.sh` accepts either `.img` or `.img.xz`; compressed
 images are decompressed to a temporary file before partition extraction.
 
-`make raw-system-update-bundle` must package boot/rootfs images extracted from
-the patched Hardened SD image. Do not point it at vendor SDK
-`rawimages/rootfs.sd`; that is a stock Buildroot rootfs without `/kvmapp`,
-`/etc/kvm`, NanoKVM init, or web assets.
+The bundle must package boot/rootfs images extracted from a Hardened SD image,
+not a stock rootfs without `/kvmapp`, `/etc/kvm`, NanoKVM init, or web assets.
 
 Raw partition updates overwrite boot and rootfs. The app updater used to launch
 them must preserve and restore user settings before reboot. Do not test or

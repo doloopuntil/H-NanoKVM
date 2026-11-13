@@ -21,19 +21,8 @@ SYSTEM_UPDATE_TARGET ?= sg2002-hnanokvm-sd
 SYSTEM_UPDATE_PAYLOAD ?= build/system-update-payload
 SYSTEM_UPDATE_OUT ?= build/system-updates
 SYSTEM_UPDATE_TAG ?= hardened-system-$(SYSTEM_UPDATE_VERSION)
-HARDENED_RELEASE_VERSION ?= $(shell cat kvmapp/version 2>/dev/null || printf alpha-0.1)
-HARDENED_RELEASE_VERSION_SAFE := $(shell printf '%s' '$(HARDENED_RELEASE_VERSION)' | sed 's/[^A-Za-z0-9]/_/g')
-SD_IMAGE_OUT ?= build/sd-image
-SD_IMAGE_BASENAME ?= Hardened_NanoKVM_$(HARDENED_RELEASE_VERSION_SAFE)_Rev1_4_2_rust
-RAW_SYSTEM_UPDATE_SD_IMAGE ?= $(SD_IMAGE_OUT)/$(SD_IMAGE_BASENAME).img
-RAW_SYSTEM_UPDATE_IMAGE_DIR ?= $(SD_IMAGE_OUT)/raw-system-update/$(SD_IMAGE_BASENAME)
-VENDOR_SDK_OUTPUT ?= build/vendor/LicheeRV-Nano-Build/install/soc_sg2002_licheervnano_sd
-VENDOR_SDK_UPGRADE ?= $(VENDOR_SDK_OUTPUT)/upgrade.zip
-VENDOR_SDK_INSPECTION ?= build/vendor-upgrade-inspection.json
-RAW_SYSTEM_UPDATE_BOOT ?= $(RAW_SYSTEM_UPDATE_IMAGE_DIR)/boot.vfat
-RAW_SYSTEM_UPDATE_ROOTFS ?= $(RAW_SYSTEM_UPDATE_IMAGE_DIR)/rootfs.sd
 
-.PHONY: help check-root builder-image rebuild-image check-image shell rust-app web-app rust-kvmapp sd-image raw-system-update-images vendor-sdk vendor-sdk-stock vendor-sdk-inspect latest-buildroot-bootstrap latest-buildroot-security-source latest-buildroot-config-probe latest-buildroot-sg2002-configure latest-buildroot-sg2002-rootfs system-update-bundle raw-system-update-bundle system-update-metadata test-system-update-v2 test-latest-buildroot-security-policy support all clean
+.PHONY: help check-root builder-image rebuild-image check-image shell rust-app web-app rust-kvmapp latest-buildroot-bootstrap latest-buildroot-security-source latest-buildroot-sg2002-configure latest-buildroot-sg2002-rootfs system-update-bundle system-update-metadata test-system-update-v2 test-latest-buildroot-security-policy support all clean
 
 # Default target
 all: rust-kvmapp support
@@ -51,18 +40,11 @@ help:
 	@echo "  rust-app      - Build Rust application server"
 	@echo "  web-app       - Build frontend into web/dist"
 	@echo "  rust-kvmapp   - Package Rust backend into build/kvmapp-rust"
-	@echo "  sd-image      - Build patched Hardened NanoKVM SD image from NANOKVM_BASE_IMAGE"
-	@echo "  raw-system-update-images - Extract boot/rootfs from patched Hardened SD image"
-	@echo "  vendor-sdk    - Bootstrap the pinned Sipeed LicheeRV Nano vendor SDK checkout"
-	@echo "  vendor-sdk-stock - Build the stock SDK image with a Buildroot-safe PATH"
-	@echo "  vendor-sdk-inspect - Validate vendor upgrade.zip and write JSON inspection"
 	@echo "  latest-buildroot-bootstrap - Fetch the isolated upstream Buildroot 2026.05.1 port probe"
-	@echo "  latest-buildroot-security-source - Prepare the pinned raw.11 security-backport source"
-	@echo "  latest-buildroot-config-probe - Convert the vendor Buildroot config without building or flashing"
+	@echo "  latest-buildroot-security-source - Prepare the pinned Buildroot security-patched source"
 	@echo "  latest-buildroot-sg2002-configure - Configure the tracked SG2002 BR2_EXTERNAL port skeleton"
 	@echo "  latest-buildroot-sg2002-rootfs - Build the SG2002 Buildroot 2026.05.1 rootfs candidate"
 	@echo "  system-update-bundle   - Package a staged system-update payload"
-	@echo "  raw-system-update-bundle - Package experimental raw boot/rootfs images"
 	@echo "  system-update-metadata - Generate GitHub latest JSON for the system bundle"
 	@echo "  test-system-update-v2 - Test metadata/manifest v2 and minimum-app enforcement artifacts"
 	@echo "  test-latest-buildroot-security-policy - Verify the tracked Buildroot security policy"
@@ -122,42 +104,12 @@ rust-kvmapp: rust-app
 	@echo "Packaging Rust kvmapp..."
 	@RUST_TARGET="$(RUST_TARGET)" scripts/package-rust-kvmapp.sh
 
-# Full boot/rootfs builds still require the external LicheeRV Nano SDK flow.
-# This target patches a trusted NanoKVM base image with the current Rust kvmapp.
-sd-image:
-	@OUT_DIR="$(SD_IMAGE_OUT)" \
-	  HARDENED_RELEASE_VERSION="$(HARDENED_RELEASE_VERSION)" \
-	  OUTPUT_BASENAME="$(SD_IMAGE_BASENAME)" \
-	  scripts/build-rust-sd-image.sh
-
-raw-system-update-images: sd-image
-	@scripts/extract-sd-raw-images.sh "$(RAW_SYSTEM_UPDATE_SD_IMAGE)" "$(RAW_SYSTEM_UPDATE_IMAGE_DIR)"
-
-# Bootstrap the external Sipeed SDK checkout used for reproducible stock image
-# work. The SDK itself stays under build/vendor and is not committed.
-vendor-sdk:
-	@scripts/bootstrap-vendor-sdk.sh
-
-# Build the unmodified stock SDK image. This intentionally sanitizes PATH
-# because Buildroot rejects WSL/Windows PATH entries containing spaces.
-vendor-sdk-stock:
-	@scripts/build-vendor-sdk-stock.sh
-
-# Validate the vendor OTA zip without extracting or flashing it. The JSON output
-# is a reproducible input for deciding future system-update bundle contents.
-vendor-sdk-inspect:
-	@scripts/inspect-vendor-upgrade.py "$(VENDOR_SDK_UPGRADE)" "$(VENDOR_SDK_INSPECTION)"
-
-# Experimental official-Buildroot port probe. It never changes the vendor SDK,
-# produces no release artifact, and must not be used to flash a device.
+# Fetch Buildroot 2026.05.1 and prepare it with the tracked security patches.
 latest-buildroot-bootstrap:
 	@scripts/bootstrap-latest-buildroot-probe.sh
 
 latest-buildroot-security-source: latest-buildroot-bootstrap
 	@scripts/prepare-buildroot-2026.05.1-security-source.sh
-
-latest-buildroot-config-probe: latest-buildroot-bootstrap
-	@scripts/probe-latest-buildroot-config.sh
 
 latest-buildroot-sg2002-configure: latest-buildroot-bootstrap
 	@scripts/configure-latest-buildroot-sg2002.sh
@@ -171,9 +123,6 @@ latest-buildroot-sg2002-rootfs:
 #   $(SYSTEM_UPDATE_PAYLOAD)/rootfs/<path>  -> /<path>
 system-update-bundle:
 	@scripts/create-system-update-bundle.sh "$(SYSTEM_UPDATE_VERSION)" "$(SYSTEM_UPDATE_TARGET)" "$(SYSTEM_UPDATE_PAYLOAD)" "$(SYSTEM_UPDATE_OUT)"
-
-raw-system-update-bundle: raw-system-update-images
-	@scripts/create-raw-system-update-bundle.sh "$(SYSTEM_UPDATE_VERSION)" "$(SYSTEM_UPDATE_TARGET)" "$(RAW_SYSTEM_UPDATE_BOOT)" "$(RAW_SYSTEM_UPDATE_ROOTFS)" "$(SYSTEM_UPDATE_OUT)"
 
 system-update-metadata:
 	@scripts/create-system-update-metadata.sh "$(SYSTEM_UPDATE_VERSION)" "$(SYSTEM_UPDATE_TAG)" "$(SYSTEM_UPDATE_OUT)/hardened-nanokvm-system-$(SYSTEM_UPDATE_VERSION).tar.gz" "$(SYSTEM_UPDATE_OUT)/system-latest.json"

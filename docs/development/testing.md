@@ -116,8 +116,8 @@ sh -n kvmapp/system/init.d/<script>
 ```
 
 For logic that builds firewall rules or parses config files, source the function
-with stubbed commands (`iptables() { echo "$*"; }`) and compare the output for a
-few inputs.
+with stubbed commands, or point the script at a fake `nft` that records its input, and
+compare the output for a few inputs.
 
 Three scripts already do this for the init scripts and need no device; run them
 with `bash` from the repository root:

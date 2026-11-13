@@ -1493,7 +1493,14 @@ that still apply (BusyBox mode, account locking, empty SSH passwords, the pinned
 UUID, required and forbidden packages, Avahi limits, T-Head builds without vector, packaged
 and installed init scripts); on the f589f80b image everything passes but BusyBox mode and the
 account locking. `test-latest-buildroot-security-policy.sh` now checks the 6.x defconfig.
-Left: `S40firewall`'s iptables fallback for older system images.
+Then (also 2026-11-13): `S40firewall` and `S30eth` lost their iptables fallbacks (nftables
+only; the generated rules, ACME commands and status line are byte-identical to before for every
+mode, HTTPS and USB-management combination, checked with a recording fake `nft`; on the Lite
+the new script reloads the same ruleset and opens and closes the ACME port), and the
+vendor-SDK stock build, the vendor upgrade and config probes, the pre-Buildroot
+`build-rust-sd-image.sh` path and the 5.10 hardening-batch device scripts went with their
+`Makefile` targets. Left: the server's and web UI's iptables tool status and rule views, unused
+on 6.x.
 
 **Remove `/dev/mem`** (added 2026-11-12). Root can read and write all physical memory,
 kernel included, through `/dev/mem`. That matters once root can no longer load unsigned

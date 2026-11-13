@@ -13,7 +13,6 @@ LOCAL_IPV6_LOOPBACK_CIDRS="::1/128"
 USB_MANAGEMENT=/etc/kvm/usb_management
 ICMPV6_CONTROL_TYPES="destination-unreachable packet-too-big time-exceeded parameter-problem router-solicitation router-advertisement neighbor-solicitation neighbor-advertisement"
 
-# nftables when the nft tool is present; older system images fall back to the iptables-nft tools.
 NFT=/usr/sbin/nft
 NFT_TABLE=kvm_firewall
 NFT_RULES=/run/kvm-firewall.nft
@@ -76,21 +75,6 @@ local_ipv4_admin_cidrs() {
 
 local_ipv6_admin_cidrs() {
     printf '%s\n' $LOCAL_IPV6_CIDRS
-}
-
-use_nft() {
-    [ -x "$NFT" ]
-}
-
-# Rules a previous firewall left in the legacy tables would still filter alongside the new ones.
-reset_legacy() {
-    for tool in iptables-legacy ip6tables-legacy; do
-        command -v "$tool" >/dev/null 2>&1 || continue
-        "$tool" -P INPUT ACCEPT 2>/dev/null || true
-        "$tool" -P FORWARD ACCEPT 2>/dev/null || true
-        "$tool" -P OUTPUT ACCEPT 2>/dev/null || true
-        "$tool" -F 2>/dev/null || true
-    done
 }
 
 # --- nftables -------------------------------------------------------------------------------
@@ -279,213 +263,6 @@ nft_apply() {
     "$NFT" -f "$NFT_RULES"
 }
 
-# --- iptables-nft fallback ------------------------------------------------------------------
-
-pick_tool() {
-    for tool in "$1-nft" "$1"; do
-        command -v "$tool" >/dev/null 2>&1 && echo "$tool" && return 0
-    done
-    return 1
-}
-
-IPT4="$(pick_tool iptables)" || IPT4=iptables
-IPT6="$(pick_tool ip6tables)" || IPT6=""
-
-allow_wg_ipv4_new() {
-    for cidr in $(wg_allowed_cidrs); do
-        $IPT4 -A INPUT -i "$WG_IFACE" -s "$cidr" -m state --state NEW -j ACCEPT
-    done
-}
-
-allow_wg_ipv4_tcp_port() {
-    port="$1"
-    for cidr in $(wg_allowed_cidrs); do
-        $IPT4 -A INPUT -i "$WG_IFACE" -s "$cidr" -p tcp --dport "$port" -m state --state NEW -j ACCEPT
-    done
-}
-
-allow_wg_endpoint() {
-    port="$(wg_get EndpointPort)"
-    [ -n "$port" ] || return 0
-    host="$(wg_get EndpointHost)"
-    dest=""
-    case "$host" in
-        *:*) [ "$1" = 6 ] || return 0; dest="$host" ;;
-        *[!0-9.]*) ;;
-        *) [ "$1" = 4 ] || return 0; dest="$host" ;;
-    esac
-    if [ "$1" = 6 ]; then tool="$IPT6"; else tool="$IPT4"; fi
-    $tool -A OUTPUT -p udp --sport "$WG_LISTEN_PORT" --dport "$port" ${dest:+-d "$dest"} -j ACCEPT
-}
-
-allow_local_ipv4_tcp_port() {
-    port="$1"
-    for cidr in $(local_ipv4_admin_cidrs); do
-        $IPT4 -A INPUT -s "$cidr" -p tcp --dport "$port" -m state --state NEW -j ACCEPT
-    done
-}
-
-allow_local_ipv4_new() {
-    for cidr in $(local_ipv4_admin_cidrs); do
-        $IPT4 -A INPUT -s "$cidr" -m state --state NEW -j ACCEPT
-    done
-}
-
-allow_local_ipv6_tcp_port() {
-    port="$1"
-    for cidr in $(local_ipv6_admin_cidrs); do
-        $IPT6 -A INPUT -s "$cidr" -p tcp --dport "$port" -m state --state NEW -j ACCEPT
-    done
-}
-
-allow_local_ipv6_new() {
-    for cidr in $(local_ipv6_admin_cidrs); do
-        $IPT6 -A INPUT -s "$cidr" -m state --state NEW -j ACCEPT
-    done
-}
-
-reset_ipv4() {
-    $IPT4 -P INPUT ACCEPT 2>/dev/null || true
-    $IPT4 -P FORWARD ACCEPT 2>/dev/null || true
-    $IPT4 -P OUTPUT ACCEPT 2>/dev/null || true
-    $IPT4 -F 2>/dev/null || true
-}
-
-reset_ipv6() {
-    [ -n "$IPT6" ] || return 0
-    $IPT6 -P INPUT ACCEPT 2>/dev/null || true
-    $IPT6 -P FORWARD ACCEPT 2>/dev/null || true
-    $IPT6 -P OUTPUT ACCEPT 2>/dev/null || true
-    $IPT6 -F 2>/dev/null || true
-}
-
-apply_baseline_ipv4() {
-    reset_ipv4
-}
-
-apply_baseline_ipv6() {
-    reset_ipv6
-}
-
-allow_ipv6_control() {
-    [ -n "$IPT6" ] || return 0
-    for type in $ICMPV6_CONTROL_TYPES; do
-        $IPT6 -A INPUT -p ipv6-icmp --icmpv6-type "$type" -j ACCEPT 2>/dev/null || true
-        $IPT6 -A OUTPUT -p ipv6-icmp --icmpv6-type "$type" -j ACCEPT 2>/dev/null || true
-    done
-}
-
-apply_moderate_ipv4() {
-    reset_ipv4
-    $IPT4 -A INPUT -i lo -j ACCEPT
-    $IPT4 -A OUTPUT -o lo -j ACCEPT
-    $IPT4 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-    allow_local_ipv4_new
-    wg_enabled && allow_wg_ipv4_new
-    $IPT4 -A INPUT -p udp --sport 67 --dport 68 -j ACCEPT 2>/dev/null || true
-    $IPT4 -P INPUT DROP
-    $IPT4 -P FORWARD DROP
-    $IPT4 -P OUTPUT ACCEPT
-}
-
-apply_moderate_ipv6() {
-    [ -n "$IPT6" ] || return 0
-    reset_ipv6
-    $IPT6 -A INPUT -i lo -j ACCEPT
-    $IPT6 -A OUTPUT -o lo -j ACCEPT
-    $IPT6 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-    allow_local_ipv6_new
-    $IPT6 -A INPUT -p udp --sport 547 --dport 546 -j ACCEPT 2>/dev/null || true
-    allow_ipv6_control
-    $IPT6 -P INPUT DROP
-    $IPT6 -P FORWARD DROP
-    $IPT6 -P OUTPUT ACCEPT
-}
-
-apply_paranoid_ipv4() {
-    port="$(https_port)"
-    reset_ipv4
-    $IPT4 -A INPUT -i lo -j ACCEPT
-    $IPT4 -A OUTPUT -o lo -j ACCEPT
-    $IPT4 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-    $IPT4 -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-    allow_local_ipv4_tcp_port "$port"
-    $IPT4 -A INPUT -p udp --sport 67 --dport 68 -j ACCEPT 2>/dev/null || true
-    $IPT4 -A OUTPUT -p udp --sport 68 --dport 67 -j ACCEPT 2>/dev/null || true
-    $IPT4 -P INPUT DROP
-    $IPT4 -P FORWARD DROP
-    $IPT4 -P OUTPUT DROP
-}
-
-apply_paranoid_ipv6() {
-    [ -n "$IPT6" ] || return 0
-    port="$(https_port)"
-    reset_ipv6
-    $IPT6 -A INPUT -i lo -j ACCEPT
-    $IPT6 -A OUTPUT -o lo -j ACCEPT
-    $IPT6 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-    $IPT6 -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-    allow_local_ipv6_tcp_port "$port"
-    $IPT6 -A INPUT -p udp --sport 547 --dport 546 -j ACCEPT 2>/dev/null || true
-    $IPT6 -A OUTPUT -p udp --sport 546 --dport 547 -j ACCEPT 2>/dev/null || true
-    allow_ipv6_control
-    $IPT6 -P INPUT DROP
-    $IPT6 -P FORWARD DROP
-    $IPT6 -P OUTPUT DROP
-}
-
-apply_restricted_ipv4() {
-    port="$(https_port)"
-    log_port="$(syslog_port)"
-    reset_ipv4
-    $IPT4 -A INPUT -i lo -j ACCEPT
-    $IPT4 -A OUTPUT -o lo -j ACCEPT
-    $IPT4 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-    $IPT4 -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-    allow_local_ipv4_tcp_port "$port"
-    $IPT4 -A OUTPUT -p tcp --dport 443 -m state --state NEW -j ACCEPT
-    allow_local_ipv4_tcp_port 22
-    if wg_enabled; then
-        allow_wg_ipv4_tcp_port "$port"
-        allow_wg_ipv4_tcp_port 22
-        allow_wg_endpoint 4
-    fi
-    $IPT4 -A OUTPUT -p udp --dport 53 -j ACCEPT
-    $IPT4 -A OUTPUT -p tcp --dport 53 -m state --state NEW -j ACCEPT
-    $IPT4 -A OUTPUT -p udp --dport 123 -j ACCEPT
-    $IPT4 -A OUTPUT -p udp --dport "$log_port" -j ACCEPT
-    $IPT4 -A INPUT -p udp --sport 67 --dport 68 -j ACCEPT 2>/dev/null || true
-    $IPT4 -A OUTPUT -p udp --sport 68 --dport 67 -j ACCEPT 2>/dev/null || true
-    $IPT4 -P INPUT DROP
-    $IPT4 -P FORWARD DROP
-    $IPT4 -P OUTPUT DROP
-}
-
-apply_restricted_ipv6() {
-    [ -n "$IPT6" ] || return 0
-    port="$(https_port)"
-    log_port="$(syslog_port)"
-    reset_ipv6
-    $IPT6 -A INPUT -i lo -j ACCEPT
-    $IPT6 -A OUTPUT -o lo -j ACCEPT
-    $IPT6 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-    $IPT6 -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-    allow_local_ipv6_tcp_port "$port"
-    $IPT6 -A OUTPUT -p tcp --dport 443 -m state --state NEW -j ACCEPT
-    allow_local_ipv6_tcp_port 22
-    wg_enabled && allow_wg_endpoint 6
-    $IPT6 -A OUTPUT -p udp --dport 53 -j ACCEPT
-    $IPT6 -A OUTPUT -p tcp --dport 53 -m state --state NEW -j ACCEPT
-    $IPT6 -A OUTPUT -p udp --dport 123 -j ACCEPT
-    $IPT6 -A OUTPUT -p udp --dport "$log_port" -j ACCEPT
-    $IPT6 -A INPUT -p udp --sport 547 --dport 546 -j ACCEPT 2>/dev/null || true
-    $IPT6 -A OUTPUT -p udp --sport 546 --dport 547 -j ACCEPT 2>/dev/null || true
-    allow_ipv6_control
-    $IPT6 -P INPUT DROP
-    $IPT6 -P FORWARD DROP
-    $IPT6 -P OUTPUT DROP
-}
-
 # --- modes ----------------------------------------------------------------------------------
 
 # usb0 leads to the computer under control. In every mode its new connections stop at the head of
@@ -493,14 +270,6 @@ apply_restricted_ipv6() {
 # management to it by creating $USB_MANAGEMENT.
 usb_management_open() {
     [ -e "$USB_MANAGEMENT" ]
-}
-
-close_usb_management_legacy() {
-    usb_management_open && return 0
-    $IPT4 -I INPUT 1 -i usb0 -m state --state NEW -j DROP 2>/dev/null || true
-    if [ -n "$IPT6" ]; then
-        $IPT6 -I INPUT 1 -i usb0 -m state --state NEW -j DROP 2>/dev/null || true
-    fi
 }
 
 # restricted and paranoid need HTTPS; without it they fall back to moderate.
@@ -513,15 +282,11 @@ effective_mode() {
 }
 
 apply_mode() {
-    if use_nft; then
-        reset_legacy
-        "nft_$1" && nft_apply
-        return
-    fi
-    [ "$IPT4" = iptables-nft ] && reset_legacy
-    "apply_${1}_ipv4"
-    "apply_${1}_ipv6"
-    close_usb_management_legacy
+    [ -x "$NFT" ] || {
+        echo "no $NFT" >&2
+        return 1
+    }
+    "nft_$1" && nft_apply
 }
 
 start() {
@@ -548,37 +313,13 @@ restart() {
 # The window lets any source reach that port while an order runs; close removes it, and
 # every start of the firewall clears it too.
 acme_close() {
-    if use_nft; then
-        "$NFT" flush set inet "$NFT_TABLE" acme 2>/dev/null || true
-        return 0
-    fi
-    port="$(https_port)"
-    while $IPT4 -D INPUT -p tcp --dport "$port" -m state --state NEW -j ACCEPT 2>/dev/null; do :; done
-    if [ -n "$IPT6" ]; then
-        while $IPT6 -D INPUT -p tcp --dport "$port" -m state --state NEW -j ACCEPT 2>/dev/null; do :; done
-    fi
+    "$NFT" flush set inet "$NFT_TABLE" acme 2>/dev/null || true
     return 0
 }
 
 acme_open() {
     acme_close
-    port="$(https_port)"
-    if use_nft; then
-        "$NFT" add element inet "$NFT_TABLE" acme "{ $port }"
-        return
-    fi
-    $IPT4 -I INPUT 1 -p tcp --dport "$port" -m state --state NEW -j ACCEPT || return 1
-    if [ -n "$IPT6" ]; then
-        $IPT6 -I INPUT 1 -p tcp --dport "$port" -m state --state NEW -j ACCEPT || return 1
-    fi
-}
-
-backend() {
-    if use_nft; then
-        echo nftables
-    else
-        echo "$IPT4"
-    fi
+    "$NFT" add element inet "$NFT_TABLE" acme "{ $(https_port) }"
 }
 
 status() {
@@ -591,7 +332,7 @@ status() {
     [ -n "$local_ipv6" ] || local_ipv6=none
 
     printf 'mode=%s effective=%s backend=%s https=%s port=%s syslog_port=%s local_ipv4="%s" local_ipv6="%s"\n' \
-        "$mode" "$effective" "$(backend)" "$(https_enabled && echo enabled || echo disabled)" "$(https_port)" "$(syslog_port)" "$local_ipv4" "$local_ipv6"
+        "$mode" "$effective" nftables "$(https_enabled && echo enabled || echo disabled)" "$(https_port)" "$(syslog_port)" "$local_ipv4" "$local_ipv6"
 }
 
 case "$1" in
