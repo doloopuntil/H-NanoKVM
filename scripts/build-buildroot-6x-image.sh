@@ -43,7 +43,7 @@ build_stage() {
 	: "${EXPECTED_SYSTEM_VERSION:?set EXPECTED_SYSTEM_VERSION}"
 	: "${EXPECTED_KVMAPP_VERSION:?set EXPECTED_KVMAPP_VERSION}"
 	: "${EXPECTED_SECURITY_PATCH_LEVEL:?set EXPECTED_SECURITY_PATCH_LEVEL}"
-	require_commands debugfs strings zstd
+	require_commands debugfs readelf strings zstd
 	[ -f "$LICHEERV_DIR/external.desc" ] || die "missing licheerv external: run scripts/fetch-licheerv-external.sh"
 	[ -e "$OUTPUT_DIR" ] && die "refusing to reuse Buildroot output: $OUTPUT_DIR"
 	[ -e "$REPORT_DIR" ] && die "refusing to reuse report directory: $REPORT_DIR"
@@ -142,6 +142,7 @@ build_stage() {
 		die "system-version.json kernel_version is not $EXPECTED_KERNEL_RELEASE"
 	EXPECTED_KVMAPP_VERSION="$EXPECTED_KVMAPP_VERSION" \
 		"$ROOT/scripts/validate-nanokvm-rootfs.sh" "$ROOTFS"
+	"$ROOT/scripts/validate-6x-rootfs.sh" "$ROOTFS" || die "rootfs checks failed"
 
 	# The date Buildroot stamps files with, so assembly matches a one-pass build
 	make -s -C "$BUILDROOT_SOURCE" O="$OUTPUT_DIR" printvars VARS=SOURCE_DATE_EPOCH \

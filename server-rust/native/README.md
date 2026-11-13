@@ -14,6 +14,10 @@ Known native lifecycle, VENC, bounds, and hardware-error findings are tracked in
 
 The Rust server is the only supported backend for these runtime assets.
 
+Sections below that name `system-image.yml`, `vendor-sdk-stock` or `support/sg2002/kernel/5.10.265`
+describe the 5.10 build, removed on 2026-11-13; git history keeps it. The 6.x workflow,
+`system-image-6x.yml`, keeps the `build-native-libkvm` job.
+
 ## libkvm.so: removed video NEEDED entry
 
 `dl_lib/libkvm.so` originally declared `DT_NEEDED` on
@@ -59,7 +63,7 @@ against vendor-sdk-stock's: byte-for-byte identical, same probe. `/mnt/system/us
 correctly patched, but nothing in the running process tree (`kvm_system`,
 `libkvm.so`, `libkvm_mmf.so`) loads it.
 
-`.github/workflows/system-image.yml`'s `build-native-libkvm` job
+`.github/workflows/system-image-6x.yml`'s `build-native-libkvm` job
 builds `libkvm.so`/`libkvm_mmf.so` from this repository's own
 `support/sg2002/additional/` sources via MaixCDK instead of reusing the
 prebuilt app 2.0.42 archive copies, applying the LT6911 patch to MaixCDK's

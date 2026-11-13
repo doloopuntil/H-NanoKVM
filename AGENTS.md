@@ -9,7 +9,7 @@ Firmware for the SG2002 NanoKVM: a Rust web server (`server-rust/`) that
 replaces upstream's Go server, the React UI (`web/`), the application package
 installed to `/kvmapp` (`kvmapp/`), a Buildroot external tree
 (`buildroot-external/`), and native video code (`support/sg2002/`). The whole SD
-image is built by `.github/workflows/system-image.yml`.
+image is built by `.github/workflows/system-image-6x.yml` (Linux 6.18).
 
 ## Commands
 
@@ -22,7 +22,7 @@ corepack pnpm --dir web test
 corepack pnpm --dir web lint
 corepack pnpm --dir web build
 sh -n kvmapp/system/init.d/<script>
-gh workflow run system-image.yml --ref <branch>   # multi-hour full image build
+gh workflow run system-image-6x.yml --ref <branch>   # full SD image build
 ```
 
 Details and known failures: [docs/development/testing.md](docs/development/testing.md).
@@ -76,7 +76,7 @@ Details and known failures: [docs/development/testing.md](docs/development/testi
 - User guides go in `docs/guide/`, facts to look up in `docs/reference/`,
   contributor material in `docs/development/`, release notes in `docs/releases/`.
 - `CHANGELOG.md` only lists the release pages. Write notes for a change in the release's
-  page (unreleased work: `docs/releases/0.4.0.md`), not in `CHANGELOG.md`.
+  page (unreleased work: `docs/releases/1.0.0.md`), not in `CHANGELOG.md`.
 - Current pages start with front matter: `status`, `applies-to`, `last-checked`.
   Update `last-checked` when you verify a page against the code.
 - `docs/archive/` holds historical records. Do not update them; link to them.

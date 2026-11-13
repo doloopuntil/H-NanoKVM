@@ -1,3 +1,0 @@
-sg2000_duo_sd.dtb
-sg2002_duo_sd.dtb
-sg2002_licheervnano_sd.dtb

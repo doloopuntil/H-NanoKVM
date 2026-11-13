@@ -1,7 +1,7 @@
 ---
 status: current
-applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-22
+applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
+last-checked: 2026-11-13
 ---
 
 # Install: flash an SD card
@@ -11,7 +11,7 @@ the device through its first boot. A fresh card is also the recovery path: there
 is no password reset, so lost credentials mean reflashing.
 
 Full SD-card images are `.img` or `.img.xz` files, for example
-`hardened-sg2002-port.img.xz` from the CI build or
+`hardened-sg2002-6x.img.xz` from the CI build or
 `Hardened_NanoKVM_*_rust.img.xz` from older releases.
 
 Application update archives such as `hardened-nanokvm-kvmapp-*.tar.gz` are not
@@ -20,11 +20,14 @@ SD-card images. Install those through the web GUI updater instead.
 ## Before You Start
 
 - Use a known-good microSD card, ideally 16 GB or larger.
-- Get an image. For system `0.4.0`, the image is the `sg2002-recovery-sd-image`
-  artifact of the **H-NanoKVM system image** workflow run on
-  `main` (see [CI image build](../development/ci-image-build.md));
-  its `_reports/SHA256SUMS` lists the image checksum. Published release downloads
-  for 0.4.0 are not set up yet. Older images (up to RC12, system `0.3.0-raw.12`)
+- Check your board. The image supports the NanoKVM Lite, the Full (Cube) and the PCIe
+  version; only the Lite has been tested on hardware so far. The early-access Full
+  ("alpha", OLED at I2C address `0x3d`) is not supported from system 1.0.0 on.
+- Get an image. For system `1.0.0`, the image is the `sg2002-6x-sd-image`
+  artifact of the **H-NanoKVM system image (Linux 6.18)** workflow (see
+  [CI image build](../development/ci-image-build.md)): `sd-image/hardened-sg2002-6x.img.xz`,
+  with its checksum in `sd-image/SHA256SUMS`. Published release downloads
+  for 1.0.0 are not set up yet. Older images (up to RC12, system `0.3.0-raw.12`)
   are on the woffko release page: <https://github.com/woffko/Hardened_NanoKVM/releases>.
 - Check the image against its SHA-256 before writing it.
 - If both `.img` and `.img.xz` are available, prefer `.img.xz`; the tools below

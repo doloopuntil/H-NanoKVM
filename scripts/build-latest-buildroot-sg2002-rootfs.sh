@@ -51,11 +51,11 @@ if grep -qx 'BR2_PACKAGE_HARDENED_NANOKVM_KVMAPP=y' "$OUTPUT_DIR/.config"; then
 fi
 
 if grep -qx 'BR2_PACKAGE_HARDENED_SG2002_VENDOR_RUNTIME=y' "$OUTPUT_DIR/.config"; then
-  # Staged by .github/workflows/system-image.yml; there is no local builder.
-  # 6.x builds its media modules in Buildroot, so system/ holds no ko/ there
+  # Staged by .github/workflows/system-image-6x.yml; there is no local builder.
+  # The media modules are built in Buildroot, so system/ holds no ko/
   [ -d "$VENDOR_RUNTIME_DIR/system" ] || {
     echo "missing vendor runtime staging: $VENDOR_RUNTIME_DIR" >&2
-    echo "stage it as system-image.yml does and set NANOKVM_VENDOR_RUNTIME_SOURCE_DIR" >&2
+    echo "stage it as system-image-6x.yml does and set NANOKVM_VENDOR_RUNTIME_SOURCE_DIR" >&2
     exit 1
   }
 fi

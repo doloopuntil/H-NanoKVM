@@ -322,17 +322,14 @@ jobs:
           path: build/downloads
           key: buildroot-${{ env.BUILDROOT_VERSION }}
 
-      # Same standalone path as system-image.yml, so both workflows share the package downloads.
       # Restored here and saved at the end even when the build fails, so a rerun downloads and
-      # compiles mostly from cache. The 5.10 workflow's download cache seeds the first run.
+      # compiles mostly from cache.
       - name: Restore the Buildroot package downloads
         uses: actions/cache/restore@v4
         with:
           path: build/buildroot-package-dl-cache
           key: buildroot-6x-dl-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            buildroot-6x-dl-
-            buildroot-dl-v2-${{ env.BUILDROOT_VERSION }}
+          restore-keys: buildroot-6x-dl-
 
       - name: Restore the Buildroot compiler cache
         uses: actions/cache/restore@v4

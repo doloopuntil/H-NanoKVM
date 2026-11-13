@@ -630,8 +630,8 @@ binaries would still carry musl 1.2.5 (R8), so keep everything dynamic.
 - The server's C code (`ring`, built by `cc`) gets the same set through
   `CFLAGS_riscv64gc_unknown_linux_musl` in `build-linked-libkvm.sh`; that needs clang
   17 or newer (CI has 18).
-- `validate-latest-buildroot-sg2002-rootfs.sh` checks that `/usr/lib/libc.so` carries
-  `xtheadmempair` in its architecture tag.
+- `validate-6x-rootfs.sh` (before 2026-11-13 the 5.10 rootfs validator) checks that
+  `/usr/lib/libc.so` carries `xtheadmempair` in its architecture tag.
 - Evidence recorded in the commit: under QEMU's `thead-c906` model, musl built by GCC
   14 runs 25-36% fewer instructions in `memcpy`/`memmove`/`memset` on buffers of 4 KB
   and up and 5-15% fewer in `malloc`, `qsort`, `strcmp`, `strlen`; `__clone` keeps its
@@ -1446,8 +1446,9 @@ hand). Tester checklist: [board-test-checklist.md](board-test-checklist.md).
 ### Phase 6: hardening and cleanup
 
 Confirm hardening parity in the final `.config`; remove the 5.10 kernel patches,
-configs and scripts only after the 6.18 channel is stable; update `CHANGELOG.md`,
-`docs/releases/`, and record the dropped hardware (alpha) in the install docs.
+configs and scripts; update `CHANGELOG.md`, `docs/releases/`, and record the dropped
+hardware (alpha) in the install docs. The stable update channel for 6.x is decided last,
+after everything else in this plan (decided 2026-11-13); nothing waits for it.
 
 **Hardening parity** (checked 2026-11-12). The 5.10 config, resolved from the vendor
 `sg2002_licheervnano_sd_defconfig` plus `phase4-01-no-ion.config` against 5.10.265's
@@ -1478,6 +1479,21 @@ No hardening report in the kernel log across MJPEG, H.264 and WebRTC. Left off: 
 (`RANDOMIZE_BASE`): nothing passes a seed (no RNG driver or node, no `kaslr-seed` from
 U-Boot), so the kernel would load at the same address every boot; `RANDOM_KMALLOC_CACHES`
 (16 copies of every kmalloc cache, too much for 161 MB); `ZERO_CALL_USED_REGS` (not measured).
+
+**Remove 5.10** (done 2026-11-13, not yet through CI). Gone: `system-image.yml`, the
+`hardened_sg2002_licheervnano_defconfig`, the 5.10 kernel, module, recovery-SD and raw-update
+scripts, `support/sg2002/kernel/5.10.265`. Kept because 6.x uses them: the osdrv patch named
+`linux-5.10.265-compat` (the 6.18 patch builds on it; a Phase 7 rename), `post-fakeroot.sh`,
+the shared overlay, `post-build.sh` and BusyBox fragment, and the SDK's `linux_5.10` ION
+headers the middleware build reads. Found on the way: the 6.x defconfig never ran
+`post-fakeroot.sh`, so the 6.x images so far had a setuid BusyBox and the system accounts
+unlocked (`*`, not `!`) while root has a hash, the condition for CVE-2026-123158. The 6.x
+defconfig now runs it, and `scripts/validate-6x-rootfs.sh` keeps the 5.10 validator's checks
+that still apply (BusyBox mode, account locking, empty SSH passwords, the pinned filesystem
+UUID, required and forbidden packages, Avahi limits, T-Head builds without vector, packaged
+and installed init scripts); on the f589f80b image everything passes but BusyBox mode and the
+account locking. `test-latest-buildroot-security-policy.sh` now checks the 6.x defconfig.
+Left: `S40firewall`'s iptables fallback for older system images.
 
 **Remove `/dev/mem`** (added 2026-11-12). Root can read and write all physical memory,
 kernel included, through `/dev/mem`. That matters once root can no longer load unsigned

@@ -9,7 +9,7 @@ EXTERNAL_DIR="${HARDENED_SG2002_EXTERNAL_DIR:-$ROOT/buildroot-external/hardened-
 # Further BR2_EXTERNAL trees, colon-separated (the 6.x build adds licheerv's)
 EXTRA_EXTERNALS="${HARDENED_SG2002_EXTRA_EXTERNALS:-}"
 OUTPUT_DIR="${HARDENED_SG2002_BUILDROOT_OUTPUT_DIR:-$PROBE_ROOT/sg2002-config-${BUILDROOT_VERSION}-raw11}"
-DEFCONFIG="${HARDENED_SG2002_DEFCONFIG:-hardened_sg2002_licheervnano_defconfig}"
+DEFCONFIG="${HARDENED_SG2002_DEFCONFIG:-hardened_sg2002_nanokvm_6x_defconfig}"
 
 [ -f "$UPSTREAM_DIR/Makefile" ] || {
   echo "missing Buildroot probe source: $UPSTREAM_DIR" >&2
