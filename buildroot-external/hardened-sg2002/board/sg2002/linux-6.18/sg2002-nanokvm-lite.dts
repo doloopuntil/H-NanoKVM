@@ -104,6 +104,12 @@
 	};
 };
 
+/* The C906 vector unit is pre-ratification XTheadVector, not RVV 1.0. */
+&cpu0 {
+	riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicntr", "zicsr",
+			       "zifencei", "zihpm", "xtheadvector";
+};
+
 &osc {
 	clock-frequency = <25000000>;
 };
