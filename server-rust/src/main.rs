@@ -48,6 +48,10 @@ const BOOT_INIT_SCRIPTS: &[&str] = &[
     "S80dnsmasq",
     "S95nanokvm",
 ];
+#[cfg(all(target_arch = "riscv64", target_env = "musl"))]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 const KVM_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(4);
 const BUNDLED_UPDATE_TRUST_DIR: &str = "/kvmapp/system/keys";
 

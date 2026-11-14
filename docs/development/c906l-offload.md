@@ -1,7 +1,7 @@
 ---
 status: current, decided (C906L parked; kTLS and vector ciphers instead)
 applies-to: system 1.0.0 (Linux 6.18) on the Lite
-last-checked: 2026-11-13
+last-checked: 2026-11-14
 ---
 
 # Offloading work to the C906L
@@ -97,6 +97,11 @@ near 43 fps where the vector path does not.
    upstream user-copy changes and NanoKVM-OS's `memcpy` and `memmove`). No measurable change: ~130 ms
    per MB on Wi-Fi with larger frames, not a like-for-like A/B. Kept; if they help, it is by a few
    percent at most.
+4. **mimalloc in the server** instead of musl's allocator. Same Lite, same picture, HTTPS on
+   Ethernet: 25.8 to 28.6 fps, ~133 to ~117 ms per MB, with the saving in kernel time (musl
+   returns memory to the kernel and maps it again, and the kernel zeroes each fresh page).
+   Booting with `init_on_free=0` in the same setup changed nothing measurable (under 1%), so
+   the kernel hardening stays as it is.
 
 ## Candidates next
 

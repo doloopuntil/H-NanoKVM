@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-19
+last-checked: 2026-11-14
 ---
 
 # Build and deploy the server
@@ -27,8 +27,8 @@ feature through:
 server-rust/scripts/build-linked-libkvm.sh
 ```
 
-That script sets the NanoKVM dynamic loader, RPATH, sysroot libraries, and the
-`linked-libkvm` feature expected by `server-rust/src/ffi/kvm.rs`.
+That script sets the NanoKVM dynamic loader, RPATH, sysroot libraries and headers,
+and the `linked-libkvm` feature expected by `server-rust/src/ffi/kvm.rs`.
 
 ## Toolchain
 
@@ -57,6 +57,13 @@ longer links with the non-PIC `crt1.o`.
   because the C906 has no AES instructions. Measured on the device with `ring`
   and 16 KiB records: AES-128-GCM 3.3 MB/s at `"z"` and 5.1 MB/s at `-O3` with
   the extensions, ChaCha20-Poly1305 9.3 and 22.6 MB/s.
+- **Allocator.** The device build uses mimalloc instead of musl's `malloc`, which
+  hands memory back to the kernel and asks for it again under the server's many
+  small allocations. On a Lite, MJPEG over HTTPS went from 25.8 to 28.6 fps and
+  from ~133 to ~117 ms of CPU per MB sent, almost all of it kernel time; the
+  binary grows by about 120 KB. mimalloc's C code needs the musl headers in
+  `server-rust/sysroot/include` (`NANOKVM_SYSROOT_INCLUDE`); CI copies them from
+  the MaixCDK toolchain. Host builds and tests keep the system allocator.
 
 ### Cross-building in Docker (macOS or Linux)
 
@@ -69,9 +76,12 @@ This matches CI closely and needs no RISC-V toolchain on the host:
    ```
 
    Put `libc.so` and `libgcc_s.so.1` into `server-rust/sysroot/lib/`.
+   For the headers, install Debian's `musl-dev:riscv64` in the container
+   (`dpkg --add-architecture riscv64`) and copy `/usr/include/riscv64-linux-musl`
+   to `server-rust/sysroot/include`.
 2. Build a clean tree, not the working copy, in a scratch directory:
    `git archive HEAD server-rust kvmapp/version | tar -x -C <scratch>`.
-3. In a `rust:1-bookworm` container with `clang` and `lld` installed,
+3. In a `rust:1-trixie` container with `clang` and `lld` installed,
    `rustup default 1.99.0 && rustup target add riscv64gc-unknown-linux-musl`,
    set `CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_LINKER=ld.lld`, and run
    `server-rust/scripts/build-linked-libkvm.sh`.
@@ -105,6 +115,10 @@ at an extracted NanoKVM sysroot explicitly:
 NANOKVM_SYSROOT_LIB=/path/to/nanokvm/sysroot/lib \
   server-rust/scripts/build-linked-libkvm.sh
 ```
+
+It also needs the musl C headers (for mimalloc) in `server-rust/sysroot/include`,
+or `NANOKVM_SYSROOT_INCLUDE` pointing at them; the script stops if `stdlib.h` is
+missing.
 
 Do not run `make rust-kvmapp` unless `RUST_TARGET` is explicitly set. Without
 that environment variable it can package an x86-64 host binary that installs

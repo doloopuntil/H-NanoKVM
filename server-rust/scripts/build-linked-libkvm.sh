@@ -9,6 +9,7 @@ case " $* " in
   *) set -- --locked "$@" ;;
 esac
 SYSROOT_LIB="${NANOKVM_SYSROOT_LIB:-$ROOT/sysroot/lib}"
+SYSROOT_INCLUDE="${NANOKVM_SYSROOT_INCLUDE:-$ROOT/sysroot/include}"
 
 if [[ ! -f "$SYSROOT_LIB/libc.so" ]]; then
   echo "missing $SYSROOT_LIB/libc.so" >&2
@@ -22,6 +23,13 @@ fi
 
 if [[ ! -e "$SYSROOT_LIB/libgcc_s.so" ]]; then
   echo "missing $SYSROOT_LIB/libgcc_s.so or libgcc_s.so.1" >&2
+  exit 1
+fi
+
+# mimalloc's C code needs the C library headers.
+if [[ ! -f "$SYSROOT_INCLUDE/stdlib.h" ]]; then
+  echo "missing $SYSROOT_INCLUDE/stdlib.h" >&2
+  echo "copy the musl headers into server-rust/sysroot/include or set NANOKVM_SYSROOT_INCLUDE" >&2
   exit 1
 fi
 
@@ -42,8 +50,8 @@ export CC_riscv64gc_unknown_linux_musl="${CC_riscv64gc_unknown_linux_musl:-clang
 # so they are enabled one by one (rustc warns that they are unstable).
 THEAD_FEATURES="+xtheadba,+xtheadbb,+xtheadbs,+xtheadcondmov,+xtheadmemidx,+xtheadmempair,+xtheadmac"
 THEAD_MARCH="rv64gc_xtheadba_xtheadbb_xtheadbs_xtheadcondmov_xtheadmemidx_xtheadmempair_xtheadmac"
-# C code built by cc (ring) gets the same extensions; needs clang 17 or newer.
-export CFLAGS_riscv64gc_unknown_linux_musl="${CFLAGS_riscv64gc_unknown_linux_musl:---target=riscv64-unknown-linux-musl -march=$THEAD_MARCH -mabi=lp64d}"
+# C code built by cc (ring, mimalloc) gets the same extensions; needs clang 17 or newer.
+export CFLAGS_riscv64gc_unknown_linux_musl="${CFLAGS_riscv64gc_unknown_linux_musl:---target=riscv64-unknown-linux-musl -march=$THEAD_MARCH -mabi=lp64d -isystem $SYSROOT_INCLUDE}"
 export RUSTFLAGS="-Z unstable-options \
 -C target-feature=-crt-static,$THEAD_FEATURES \
 -C link-self-contained=no \

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Stage the GCC runtime libraries libkvm loads, and the libc.so the server links
-# against, from MaixCDK's musl toolchain: the plain rv64gc lp64d build, stripped
-# as the stock vendor image ships them.
+# Stage the GCC runtime libraries libkvm loads, and the libc.so and headers the
+# server builds against, from MaixCDK's musl toolchain: the plain rv64gc lp64d
+# build, stripped as the stock vendor image ships them.
 # Usage: stage-maixcdk-runtime.sh TOOLCHAIN_BIN OUT_DIR
 set -euo pipefail
 
@@ -36,6 +36,13 @@ for lib in libstdc++.so.6.0.28 libgcc_s.so.1 libgomp.so.1.0.0 libatomic.so.1.2.0
 done
 stage libc.so "$OUT/sysroot"
 cp "$OUT/runtime/libgcc_s.so.1" "$OUT/sysroot/"
+include="$("$CC" "${FLAGS[@]}" -print-sysroot)/usr/include"
+[ -f "$include/stdlib.h" ] || {
+	echo "no C library headers in $include" >&2
+	exit 1
+}
+mkdir -p "$OUT/sysroot/include"
+cp -R "$include/." "$OUT/sysroot/include/"
 chmod 0644 "$OUT"/runtime/*
 
 # The runtime libraries are byte-identical to the stock image's (checked on a Lite).

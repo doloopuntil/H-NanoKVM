@@ -52,6 +52,10 @@ urlencoding = "2"
 webrtc = "=0.21.1"
 instant-acme = { version = "0.8.5", default-features = false, features = ["ring", "hyper-rustls"] }
 
+# musl's malloc is slow under the many small allocations of Tokio, hyper and rustls.
+[target.'cfg(all(target_arch = "riscv64", target_env = "musl"))'.dependencies]
+mimalloc = { version = "0.1", default-features = false }
+
 [dev-dependencies]
 tempfile = "3"
 # Already in Cargo.lock via axum; used to drive the real router in tests.
@@ -77,3 +81,5 @@ aes = { opt-level = 3 }
 ctr = { opt-level = 3 }
 hmac = { opt-level = 3 }
 sha1 = { opt-level = 3 }
+mimalloc = { opt-level = 3 }
+libmimalloc-sys = { opt-level = 3 }
