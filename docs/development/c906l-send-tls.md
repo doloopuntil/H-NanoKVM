@@ -368,6 +368,32 @@ echo 1 > $d/stop
 The seal runs are repeated with a browser streaming MJPEG over HTTPS, to see the round trip under
 load.
 
+## Step A: the firmware's cipher on the main core
+
+`bench/` built as a static binary (Rust 1.99.0, the server's T-Head flags, ring at `opt-level` 3,
+Monocypher at `-O2`), run on the Lite with nothing streaming, 400 records of 16,385 bytes, five
+runs. All three implementations produced the same ciphertext and tag. The Lite was on the
+overdrive FIP at the time: main core 1050 MHz, C906L 786 MHz.
+
+| Implementation | MB/s on the main core | µs per record |
+| --- | --- | --- |
+| ring (the server's) | 23.5-27.5 | 600-700 |
+| RustCrypto `chacha20poly1305` 0.10 | 23.4-24.5 | 670-700 |
+| Monocypher 4.0.2 (the firmware's) | 28.0-29.5 (one run 18.4) | 555-585 |
+| 16 KB copy, cache-hot | ~1,400 | ~11 |
+
+The idle counter in `/proc/stat` did not move during the runs, so nothing else had the core.
+
+What it changes in the model: the firmware's cipher is about 10% faster per clock than ring, not
+slower. If the C906L matches the main core per clock, it would seal at about 21 MB/s with the
+overdrive clocks (786 MHz) and about 16 MB/s with the standard ones (594 MHz), above the 15 MB/s
+assumed. Every record reaches it cold from DRAM, which this benchmark does not show; stage B
+measures that.
+
+The baseline needs care: the 148 ms per MB and 24.2 fps were measured this morning, when the Lite
+reported 850 MHz (standard FIP); it now runs the overdrive FIP. Stage B has to measure the rustls
+baseline again at the same clocks before comparing.
+
 ## Open questions
 
 - Is a spare SD card available, or must the test image go on the working card?
