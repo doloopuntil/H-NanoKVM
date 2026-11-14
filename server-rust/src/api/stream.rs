@@ -143,7 +143,7 @@ pub struct MjpegScreen {
 
 #[derive(Debug, Clone)]
 pub struct LatestMjpegFrame {
-    pub data: Vec<u8>,
+    pub data: Bytes,
     pub width: u16,
     pub height: u16,
     captured_at: Instant,
@@ -812,7 +812,9 @@ async fn run_mjpeg_producer() {
         if !MJPEG_FIRST_SUCCESS_LOGGED.swap(true, Ordering::Relaxed) {
             info!(result, bytes = data.len(), "read first mjpeg frame");
         }
-        set_latest_mjpeg_frame(&data, screen.width, screen.height);
+        // The screenshot cache shares the frame with the viewers.
+        let data = Bytes::from(data);
+        set_latest_mjpeg_frame(data.clone(), screen.width, screen.height);
 
         let header = Bytes::from(format!(
             "--frame\r\nContent-Type: image/jpeg\r\nContent-Length: {}\r\n\r\n",
@@ -821,7 +823,7 @@ async fn run_mjpeg_producer() {
         MJPEG_FANOUT.send(MjpegFrame {
             seq: MJPEG_DEMAND.next_seq(),
             header,
-            data: Bytes::from(data),
+            data,
         });
     }
 }
@@ -1392,7 +1394,7 @@ pub fn capture_mjpeg_frame_now() -> std::result::Result<LatestMjpegFrame, String
     if result < 0 || data.is_empty() {
         return Err(format!("no frame from the HDMI capture (code {result})"));
     }
-    set_latest_mjpeg_frame(&data, screen.width, screen.height);
+    set_latest_mjpeg_frame(Bytes::from(data), screen.width, screen.height);
     latest_mjpeg_frame(Duration::from_secs(1))
         .ok_or_else(|| "the captured frame is gone".to_string())
 }
@@ -1401,10 +1403,10 @@ pub fn h264_frame_duration(fps: u64) -> Duration {
     Duration::from_millis((1000 / fps.max(1)).max(1))
 }
 
-fn set_latest_mjpeg_frame(data: &[u8], width: u16, height: u16) {
+fn set_latest_mjpeg_frame(data: Bytes, width: u16, height: u16) {
     if let Ok(mut frame) = LATEST_MJPEG_FRAME.lock() {
         *frame = Some(LatestMjpegFrame {
-            data: data.to_vec(),
+            data,
             width,
             height,
             captured_at: Instant::now(),

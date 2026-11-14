@@ -1350,7 +1350,7 @@ fn capture_screenshot_blocking(
     };
 
     Ok((
-        frame.data,
+        frame.data.into(),
         ScreenshotMeta {
             image_base64: String::new(),
             source_width,
