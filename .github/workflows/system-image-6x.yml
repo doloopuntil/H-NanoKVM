@@ -70,11 +70,14 @@ jobs:
           ! grep -q "LT6911_CHIP_ID_ADDR_H)" "$LT6911_FILE"
 
       # Nothing we ship needs XTheadVector: build for the scalar xthead multilib and loader.
+      # libkvm and kvm_system run in root processes: add the stack protector.
       - name: Build MaixCDK projects without the vector extension
         run: |
           YAML="$HOME/MaixCDK/platforms/maixcam.yaml"
           sed -i 's/-mcpu=c906fdv -march=rv64imafdcv0p7xthead/-mcpu=c906fd -march=rv64imafdcxthead/g' "$YAML"
+          sed -i -E 's/^(    c(xx)?_flags: .*)$/\1 -fstack-protector-strong/' "$YAML"
           ! grep -q v0p7 "$YAML"
+          [ "$(grep -c '^    c\(xx\)\?_flags: .*-fstack-protector-strong$' "$YAML")" -eq 2 ]
 
       # The middleware, the uapi headers of the same Sophgo release, and our kernel's ION uapi.
       - name: Fetch the Sophgo middleware source
@@ -210,7 +213,7 @@ jobs:
       # rust-kvmapp.sh hard-fails on any RPATH/RUNPATH in these two libraries (a real portability/
       # security check, not something to work around by disabling it), so strip it here instead,
       # the same way the previously-published binaries must have been prepared.
-      - name: Strip build-host RPATH from libkvm.so + libkvm_mmf.so + kvm_system
+      - name: Strip build-host RPATH from libkvm.so + libkvm_mmf.so + kvm_system, check SSP
         run: |
           for lib in libkvm.so libkvm_mmf.so kvm_system; do
             LIB="$GITHUB_WORKSPACE/build/native-libkvm/$lib"
@@ -220,6 +223,10 @@ jobs:
             else
               echo "$lib has no RPATH; nothing to strip"
             fi
+            readelf --dyn-syms -W "$LIB" | grep -qw 'UND __stack_chk_fail' || {
+              echo "$lib: no stack protector" >&2
+              exit 1
+            }
           done
 
       # Matches server-rust/native/README.md's "libkvm.so: removed video NEEDED entry" finding

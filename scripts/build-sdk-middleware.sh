@@ -45,6 +45,7 @@ cp "$SDK_DIR"/linux_5.10/drivers/staging/android/uapi/ion*.h "$KINC/linux/"
 # No vector extension: nothing we ship needs XTheadVector.
 CFLAGS="$OPT_FLAGS -mcpu=c906fd -march=rv64imafdcxthead -mcmodel=medany -mabi=lp64d"
 CFLAGS="$CFLAGS -std=gnu11 -fPIC -ffunction-sections -fdata-sections -mno-ldd"
+CFLAGS="$CFLAGS -fstack-protector-strong"
 CFLAGS="$CFLAGS -DARCH_CV181X -D__CV181X__ -ffile-prefix-map=$MW=/usr/src/cvi_mpi"
 # cvi_mpi's include/ carries its own copy of the uapi headers (a cv180x cvi_defines.h among
 # them); leave it out so <linux/...> resolves to the osdrv headers above.
@@ -109,6 +110,10 @@ exports() {
 LIBS="libsys.so libvenc.so libvdec.so libvi.so libvpss.so libvo.so libgdc.so librgn.so libini.so"
 for lib in $LIBS; do
 	echo "$lib: $(exports "$OUTPUT_DIR/$lib" | wc -l) exports"
+	"${PREFIX}nm" -D --undefined-only "$OUTPUT_DIR/$lib" | grep -qw __stack_chk_fail || {
+		echo "$lib: no stack protector" >&2
+		exit 1
+	}
 done
 # Every export of the reference libraries must still exist; libvpu's moved to its split parts.
 # Removed upstream and unused by anything we ship (GDC affine/warp/fisheye, region colour
