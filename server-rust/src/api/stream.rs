@@ -21,7 +21,7 @@ use std::{
     time::{Duration, Instant},
 };
 use tokio::{
-    sync::{broadcast, oneshot},
+    sync::{Notify, broadcast, oneshot},
     time::{self, MissedTickBehavior},
 };
 use tracing::{debug, info, warn};
@@ -84,6 +84,9 @@ static LATEST_MJPEG_FRAME: LazyLock<Mutex<Option<LatestMjpegFrame>>> =
     LazyLock::new(|| Mutex::new(None));
 static MJPEG_FANOUT: LazyLock<StreamFanout<MjpegFrame>> =
     LazyLock::new(|| StreamFanout::new("mjpeg", 4));
+static MJPEG_DEMAND: FrameDemand = FrameDemand::new();
+/// How often a producer with no ready client checks whether its clients are gone.
+const MJPEG_DEMAND_RECHECK: Duration = Duration::from_secs(1);
 /// The single H.264 capture source. libkvm hands out each encoded frame once, so
 /// the direct stream and the WebRTC sender must share one reader.
 static H264_SOURCE: LazyLock<StreamFanout<H264Frame>> =
@@ -352,6 +355,48 @@ impl<T: Clone> StreamFanout<T> {
     }
 }
 
+/// Clients waiting for their next frame. A client whose socket is full stops polling
+/// its stream, so the producer reads frames only while some client can take one.
+struct FrameDemand {
+    waiting: AtomicUsize,
+    notify: Notify,
+}
+
+struct DemandGuard<'a>(&'a FrameDemand);
+
+impl FrameDemand {
+    const fn new() -> Self {
+        Self {
+            waiting: AtomicUsize::new(0),
+            notify: Notify::const_new(),
+        }
+    }
+
+    fn ready(&self) -> DemandGuard<'_> {
+        self.waiting.fetch_add(1, Ordering::AcqRel);
+        self.notify.notify_one();
+        DemandGuard(self)
+    }
+
+    /// Waits up to `limit` for a ready client; returns whether there is one.
+    async fn wait(&self, limit: Duration) -> bool {
+        let notified = self.notify.notified();
+        tokio::pin!(notified);
+        notified.as_mut().enable();
+        if self.waiting.load(Ordering::Acquire) > 0 {
+            return true;
+        }
+        let _ = time::timeout(limit, notified).await;
+        self.waiting.load(Ordering::Acquire) > 0
+    }
+}
+
+impl Drop for DemandGuard<'_> {
+    fn drop(&mut self) {
+        self.0.waiting.fetch_sub(1, Ordering::AcqRel);
+    }
+}
+
 impl Drop for ClientGuard {
     fn drop(&mut self) {
         let count = self.clients.fetch_sub(1, Ordering::AcqRel) - 1;
@@ -501,6 +546,7 @@ pub async fn mjpeg_stream(
         start_mjpeg_producer();
 
         loop {
+            let _ready = MJPEG_DEMAND.ready();
             let frame = tokio::select! {
                 biased;
                 _ = session.ended() => break,
@@ -510,6 +556,7 @@ pub async fn mjpeg_stream(
                     Err(broadcast::error::RecvError::Closed) => break,
                 },
             };
+            drop(_ready);
             yield Ok::<Bytes, io::Error>(frame.header);
             yield Ok::<Bytes, io::Error>(frame.data);
             yield Ok::<Bytes, io::Error>(Bytes::from_static(b"\r\n"));
@@ -670,6 +717,9 @@ async fn run_mjpeg_producer() {
         interval.tick().await;
         if MJPEG_FANOUT.client_count() == 0 {
             return;
+        }
+        if !MJPEG_DEMAND.wait(MJPEG_DEMAND_RECHECK).await {
+            continue;
         }
 
         let screen = current_screen();
@@ -1383,6 +1433,31 @@ fn h264_direct_packet(is_keyframe: bool, timestamp_micros: u64, data: &[u8]) -> 
 
 #[cfg(test)]
 mod tests {
+    #[tokio::test]
+    async fn frame_demand_waits_for_a_ready_client() {
+        use super::FrameDemand;
+        use std::time::Duration;
+        let demand: &'static FrameDemand = Box::leak(Box::new(FrameDemand::new()));
+
+        assert!(!demand.wait(Duration::from_millis(10)).await);
+        {
+            let _ready = demand.ready();
+            assert!(demand.wait(Duration::from_millis(10)).await);
+        }
+        assert!(!demand.wait(Duration::from_millis(10)).await);
+
+        // A client that becomes ready while the producer waits wakes it early.
+        let client = tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+            let _ready = demand.ready();
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        });
+        let started = std::time::Instant::now();
+        assert!(demand.wait(Duration::from_secs(5)).await);
+        assert!(started.elapsed() < Duration::from_secs(1));
+        client.abort();
+    }
+
     #[test]
     fn log_throttle_passes_one_message_per_interval_and_counts_the_rest() {
         use super::LogThrottle;
