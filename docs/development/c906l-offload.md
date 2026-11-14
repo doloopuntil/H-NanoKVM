@@ -121,7 +121,8 @@ With kernel TLS, the records of any client that finished a handshake, signed in 
 parsed by the kernel's `tls_sw.c` and the imported vector assembly instead of rustls. A memory
 bug there is a remote one in the kernel, below lockdown and module signing. The web server is
 back on rustls for every session (`CONFIG_TLS` is off), and HTTPS MJPEG and HTTPS uploads give up
-the vector gain measured in step 2. H.264 Direct sends too little for the cipher to matter. The
+the vector gain: on the same Lite and picture, HTTPS MJPEG runs at 24.2 fps and ~148 ms of CPU per
+MB with rustls, against 28.2 fps and ~126 ms with kernel TLS. H.264 Direct sends too little for the cipher to matter. The
 vector patches stay: WireGuard uses the same `lib/crypto` ChaCha20 and Poly1305.
 
 ## Candidates next
@@ -158,6 +159,9 @@ All on the main core or in fixed-function blocks; none needs the C906L.
   far below the 16 and 32 MB thresholds, with no I/O wait: the SD card keeps up and the upload is
   CPU-bound. Smaller dirty limits would change nothing.
 - **Zeroing on free** (`init_on_free=0`): under 1%, see above.
+- **More of the server at `opt-level = 3`.** With tokio, hyper, axum, bytes, the RTP crates and the
+  server's own code at 3, or with everything at 3, HTTPS MJPEG was 2-3% slower per MB than today's
+  profile (151 and 153 against 148 ms), for 2.4 and 3.0 MB more binary. The profile stays.
 
 ## When to reopen
 
