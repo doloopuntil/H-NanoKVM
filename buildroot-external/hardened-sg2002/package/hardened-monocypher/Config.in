@@ -1,0 +1,5 @@
+config BR2_PACKAGE_HARDENED_MONOCYPHER
+	bool
+	help
+	  Monocypher source for the C906L test firmware; nothing is
+	  installed.
