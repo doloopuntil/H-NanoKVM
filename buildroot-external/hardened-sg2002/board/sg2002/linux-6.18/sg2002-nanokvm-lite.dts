@@ -91,6 +91,8 @@
 		mboxes = <&mailbox 2 2>, <&mailbox 3 1>;
 		mbox-names = "req", "res";
 		resets = <&rst RST_CPUSYS2>;	/* C906L: 0x3003024 bit 6 */
+		/* outside the soc node, so not inherited: without it the DMA API skips cache upkeep */
+		dma-noncoherent;
 	};
 
 	/* OLED on the Full and PCIe; probed by kvm_system */
