@@ -59,6 +59,8 @@ pub async fn security_headers(req: Request<Body>, next: Next) -> Response {
     let path = req.uri().path().to_string();
     let is_api = path.starts_with("/api/");
     let is_html_shell = path == "/" || path.ends_with(".html");
+    // Vite names these files by their content hash.
+    let is_hashed_asset = path.starts_with("/assets/");
     let policy = content_security_policy(
         req.headers()
             .get(header::HOST)
@@ -89,6 +91,11 @@ pub async fn security_headers(req: Request<Body>, next: Next) -> Response {
         headers.insert(
             header::CACHE_CONTROL,
             HeaderValue::from_static("no-store, max-age=0"),
+        );
+    } else if is_hashed_asset && response.status().is_success() {
+        response.headers_mut().insert(
+            header::CACHE_CONTROL,
+            HeaderValue::from_static("public, max-age=31536000, immutable"),
         );
     }
 
@@ -158,5 +165,33 @@ mod tests {
         ] {
             assert!(STRICT_POLICY.contains(directive), "{directive}");
         }
+    }
+
+    #[tokio::test]
+    async fn hashed_assets_are_cached_and_pages_and_misses_are_not() {
+        use axum::{Router, http::StatusCode, middleware::from_fn, routing::get};
+        use tower::ServiceExt;
+
+        let app = Router::new()
+            .route("/assets/index-abc123.js", get(|| async { "js" }))
+            .route("/index.html", get(|| async { "html" }))
+            .layer(from_fn(security_headers));
+        let cache = |path: &'static str| {
+            let app = app.clone();
+            async move {
+                let req = Request::builder().uri(path).body(Body::empty()).unwrap();
+                let rsp = app.oneshot(req).await.unwrap();
+                let value = rsp.headers().get(header::CACHE_CONTROL).cloned();
+                (rsp.status(), value)
+            }
+        };
+
+        let (status, value) = cache("/assets/index-abc123.js").await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(value.unwrap(), "public, max-age=31536000, immutable");
+        assert_eq!(cache("/index.html").await.1.unwrap(), "no-store, max-age=0");
+        let (status, value) = cache("/assets/missing.js").await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert!(value.is_none());
     }
 }

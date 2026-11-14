@@ -169,6 +169,12 @@ done
 if [ -d "$WEB_DIST" ]; then
   mkdir -p "$KVMAPP_STAGE/server/web"
   cp -R "$WEB_DIST/." "$KVMAPP_STAGE/server/web/"
+  # MSW's worker is for `pnpm mocked` only.
+  rm -f "$KVMAPP_STAGE/server/web/mockServiceWorker.js"
+  # The server sends the .gz copy to a browser that accepts gzip.
+  find "$KVMAPP_STAGE/server/web" -type f \
+    \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' \) \
+    -exec gzip -9 -n -k {} +
 else
   echo "warning: frontend dist not found at $WEB_DIST; package has no server/web assets" >&2
 fi

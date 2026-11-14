@@ -324,7 +324,8 @@ pub fn build(state: AppState) -> Router {
         .merge(public_routes)
         .merge(picoclaw_loopback_routes())
         .merge(protected_routes)
-        .fallback_service(ServeDir::new(state.config.paths.web_root.clone()))
+        // The package carries a .gz next to each script, style sheet and page.
+        .fallback_service(ServeDir::new(state.config.paths.web_root.clone()).precompressed_gzip())
         .with_state(state)
         .layer(from_fn_with_state((), security_headers))
         .layer(TraceLayer::new_for_http())
