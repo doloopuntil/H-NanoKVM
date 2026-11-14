@@ -11,6 +11,9 @@ CONFIG_ERRATA_THEAD_CMO=y
 # CONFIG_PREEMPT_NONE is not set
 CONFIG_PREEMPT=y
 
+# One core runs Linux: no SMP locking, IPIs or CPU hotplug
+# CONFIG_SMP is not set
+
 # Flat memory model: SPARSEMEM_EXTREME allocates a 16 MiB section root table for 56-bit PAs
 CONFIG_FLATMEM_MANUAL=y
 # CONFIG_SPARSEMEM_MANUAL is not set
