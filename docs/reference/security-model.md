@@ -159,7 +159,6 @@ Known exceptions:
 ## File And Archive Risk Inventory
 
 - Account file: `/etc/kvm/pwd`, mode `0600`.
-- Session secret: `/etc/kvm/session_secret`, generated and written `0600`.
 - Update cache: `/data/.hardened-kvmcache`; application updates use
   `application-update`, system updates use `system-update`.
 - System-update archives are constrained to declared payload roots and reject
