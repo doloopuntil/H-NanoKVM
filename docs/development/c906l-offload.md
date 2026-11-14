@@ -102,10 +102,15 @@ near 43 fps where the vector path does not.
    returns memory to the kernel and maps it again, and the kernel zeroes each fresh page).
    Booting with `init_on_free=0` in the same setup changed nothing measurable (under 1%), so
    the kernel hardening stays as it is.
-5. **MJPEG frames on demand** (`server-rust/src/api/stream.rs`): the producer read and encoded a
-   frame on every timer tick while any viewer was connected, so a stalled viewer kept the Lite at
-   56% CPU with nothing sent. It now reads only while a viewer waits for a frame: 28.6 to 33.9 fps
-   and ~117 to ~97 ms per MB. An earlier stalled connection may have weighed on the 28.6 figure.
+5. **MJPEG frames paced to the viewers** (`server-rust/src/api/stream.rs`): the producer read and
+   encoded a frame on every timer tick while any viewer was connected, so a stalled viewer kept the
+   Lite at 56% CPU with nothing sent, and during an upload about half the encoded frames were
+   dropped. It now stays at most two frames ahead of the newest frame a viewer has taken. One frame
+   was not enough: every handoff waits for the single worker thread, and under an upload the video
+   fell to 7-8 fps. With two, an Ethernet upload leaves the video ~22 fps (the free-running
+   producer sent a similar 20-35 fps' worth) and every encoded frame is sent. No steady-state frame
+   rate gain is claimed: runs vary between 36 and 46 fps with the network path, and a stalled
+   connection was open during the baseline.
    The web UI also drops the stream after the page has been hidden for 5 s, because browsers keep
    loading MJPEG in a background tab (~93% CPU before, 7.8% after).
 
