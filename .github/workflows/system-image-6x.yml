@@ -371,9 +371,7 @@ jobs:
 
       - name: Build Hardened kvmapp bridge
         run: |
-          # the HTTPS round-trip tests then run through kernel TLS too
-          sudo modprobe tls
-          EXPECT_KERNEL_TLS=1 cargo test --manifest-path server-rust/Cargo.toml
+          cargo test --manifest-path server-rust/Cargo.toml
           corepack pnpm --dir web install --frozen-lockfile
           corepack pnpm --dir web build
           server-rust/scripts/build-linked-libkvm.sh

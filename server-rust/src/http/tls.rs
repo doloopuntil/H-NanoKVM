@@ -16,7 +16,11 @@ use axum::{
 use rcgen::{
     CertificateParams, CertifiedKey, CustomExtension, KeyPair, generate_simple_self_signed,
 };
-use tokio::{net::TcpListener, sync::mpsc, time};
+use tokio::{
+    net::{TcpListener, TcpStream},
+    sync::mpsc,
+    time,
+};
 use tokio_rustls::{
     TlsAcceptor,
     rustls::{
@@ -26,10 +30,10 @@ use tokio_rustls::{
         server::{ClientHello, ResolvesServerCert},
         sign::CertifiedKey as SignedKey,
     },
+    server::TlsStream,
 };
-use tracing::{info, warn};
+use tracing::warn;
 
-use super::ktls::{self, RecordReader, TlsIo};
 use crate::{AppError, Result};
 
 #[derive(Debug, Clone, Copy)]
@@ -44,7 +48,7 @@ const READY_QUEUE: usize = 16;
 
 pub struct TlsListener {
     local_addr: SocketAddr,
-    ready: mpsc::Receiver<(TlsIo, SocketAddr)>,
+    ready: mpsc::Receiver<(TlsStream<TcpStream>, SocketAddr)>,
 }
 
 impl Connected<IncomingStream<'_, TcpListener>> for ClientAddr {
@@ -59,10 +63,6 @@ impl TlsListener {
     pub fn new(listener: TcpListener, config: ServerConfig) -> io::Result<Self> {
         let local_addr = listener.local_addr()?;
         let (tx, ready) = mpsc::channel(READY_QUEUE);
-        info!(
-            kernel_tls = ktls::available(),
-            "TLS encryption for ChaCha20 sessions"
-        );
         tokio::spawn(accept_loop(
             listener,
             TlsAcceptor::from(Arc::new(config)),
@@ -75,7 +75,7 @@ impl TlsListener {
 async fn accept_loop(
     listener: TcpListener,
     acceptor: TlsAcceptor,
-    ready: mpsc::Sender<(TlsIo, SocketAddr)>,
+    ready: mpsc::Sender<(TlsStream<TcpStream>, SocketAddr)>,
 ) {
     while !ready.is_closed() {
         let (stream, addr) = match listener.accept().await {
@@ -90,19 +90,12 @@ async fn accept_loop(
         let acceptor = acceptor.clone();
         let ready = ready.clone();
         tokio::spawn(async move {
-            let accepted = time::timeout(TLS_HANDSHAKE_TIMEOUT, async {
-                let stream = acceptor.accept(RecordReader::new(stream)).await?;
+            match time::timeout(TLS_HANDSHAKE_TIMEOUT, acceptor.accept(stream)).await {
                 // A validation handshake carries no HTTP.
-                if stream.get_ref().1.alpn_protocol() == Some(ACME_ALPN) {
-                    return Ok(None);
-                }
-                ktls::take_over(stream).await.map(Some)
-            });
-            match accepted.await {
-                Ok(Ok(Some(stream))) => {
+                Ok(Ok(stream)) if stream.get_ref().1.alpn_protocol() == Some(ACME_ALPN) => {}
+                Ok(Ok(stream)) => {
                     let _ = ready.send((stream, addr)).await;
                 }
-                Ok(Ok(None)) => {}
                 Ok(Err(err)) => warn!(%addr, error = ?err, "failed to accept tls connection"),
                 Err(_) => warn!(%addr, "tls handshake timed out"),
             }
@@ -111,7 +104,7 @@ async fn accept_loop(
 }
 
 impl Listener for TlsListener {
-    type Io = TlsIo;
+    type Io = TlsStream<TcpStream>;
     type Addr = SocketAddr;
 
     async fn accept(&mut self) -> (Self::Io, Self::Addr) {
@@ -147,7 +140,7 @@ fn crypto_provider() -> CryptoProvider {
     provider
 }
 
-pub(super) fn is_chacha20(suite: CipherSuite) -> bool {
+fn is_chacha20(suite: CipherSuite) -> bool {
     matches!(
         suite,
         CipherSuite::TLS13_CHACHA20_POLY1305_SHA256
@@ -284,8 +277,6 @@ pub fn load_server_config(
     config.alpn_protocols = vec![b"http/1.1".to_vec(), ACME_ALPN.to_vec()];
     // Browsers with AES hardware list AES-GCM first; our suite order decides.
     config.ignore_client_order = true;
-    // the kernel takes the session keys after the handshake (ktls.rs)
-    config.enable_secret_extraction = true;
     Ok((config, resolver))
 }
 
@@ -329,8 +320,6 @@ fn write_file(path: &Path, data: &[u8], mode: u32) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use std::os::unix::fs::PermissionsExt;
-
-    use tokio::net::TcpStream;
 
     use super::*;
 
@@ -502,13 +491,12 @@ mod tests {
         assert_eq!(alpn.as_deref(), Some(&b"http/1.1"[..]));
 
         // Validation connections never reach the HTTP layer; the HTTP one does.
-        time::timeout(Duration::from_secs(5), listener.accept())
+        let accepted = time::timeout(Duration::from_secs(5), listener.accept())
             .await
             .unwrap();
-        assert!(
-            time::timeout(Duration::from_millis(200), listener.accept())
-                .await
-                .is_err()
+        assert_eq!(
+            accepted.0.get_ref().1.alpn_protocol(),
+            Some(&b"http/1.1"[..])
         );
 
         resolver.clear_challenge("kvm.example.org");
@@ -616,71 +604,5 @@ mod tests {
         let accepted = time::timeout(Duration::from_secs(5), listener.accept()).await;
         assert!(accepted.is_ok(), "the silent client blocked the handshake");
         handshake.await.unwrap();
-    }
-
-    /// The request sent right after the handshake, a reply, and a clean close_notify.
-    async fn round_trip(suite: CipherSuite) {
-        use tokio::io::{AsyncReadExt, AsyncWriteExt};
-        use tokio_rustls::{
-            TlsConnector,
-            rustls::{ClientConfig, RootCertStore, pki_types::ServerName},
-        };
-
-        install_crypto_provider();
-        let dir = tempfile::tempdir().unwrap();
-        let (cert, key) = (dir.path().join("a.crt"), dir.path().join("a.key"));
-        generate_self_signed_cert(&cert, &key).unwrap();
-        let tcp = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let addr = tcp.local_addr().unwrap();
-        let mut listener =
-            TlsListener::new(tcp, load_server_config(&cert, &key).unwrap().0).unwrap();
-
-        let mut roots = RootCertStore::empty();
-        for der in CertificateDer::pem_file_iter(&cert).unwrap() {
-            roots.add(der.unwrap()).unwrap();
-        }
-        let mut provider = ring::default_provider();
-        provider.cipher_suites.retain(|s| s.suite() == suite);
-        let client = ClientConfig::builder_with_provider(Arc::new(provider))
-            .with_safe_default_protocol_versions()
-            .unwrap()
-            .with_root_certificates(roots)
-            .with_no_client_auth();
-        let client = tokio::spawn(async move {
-            let stream = TcpStream::connect(addr).await.unwrap();
-            let mut tls = TlsConnector::from(Arc::new(client))
-                .connect(ServerName::try_from("localhost").unwrap(), stream)
-                .await
-                .unwrap();
-            tls.write_all(b"request").await.unwrap();
-            let mut reply = Vec::new();
-            tls.read_to_end(&mut reply).await.unwrap();
-            reply
-        });
-
-        let (mut io, _) = time::timeout(Duration::from_secs(5), listener.accept())
-            .await
-            .unwrap();
-        let mut request = [0; 7];
-        io.read_exact(&mut request).await.unwrap();
-        assert_eq!(&request, b"request");
-        let reply: Vec<u8> = (0..100_000u32).map(|i| i as u8).collect();
-        io.write_all(&reply).await.unwrap();
-        io.shutdown().await.unwrap();
-        assert_eq!(client.await.unwrap(), reply);
-    }
-
-    #[tokio::test]
-    async fn a_chacha20_connection_carries_data_both_ways() {
-        round_trip(CipherSuite::TLS13_CHACHA20_POLY1305_SHA256).await;
-        // CI loads the kernel's TLS module; elsewhere this may take the rustls path
-        if std::env::var_os("EXPECT_KERNEL_TLS").is_some() {
-            assert!(ktls::available(), "kernel TLS expected");
-        }
-    }
-
-    #[tokio::test]
-    async fn an_aes_gcm_connection_stays_with_rustls_and_works() {
-        round_trip(CipherSuite::TLS13_AES_128_GCM_SHA256).await;
     }
 }

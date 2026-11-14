@@ -91,9 +91,6 @@ CONFIG_NFT_LOG=y
 # CONFIG_NETFILTER_XTABLES is not set
 CONFIG_WIREGUARD=y
 CONFIG_TUN=y
-# Kernel TLS for the web server's ChaCha20-Poly1305 sessions (c906l-offload.md, stage 1)
-CONFIG_TLS=y
-CONFIG_CRYPTO_CHACHA20POLY1305=y
 
 # Ethernet built in: the rootfs carries no modules for it.
 # The CV1800B MAC binds through dwmac-generic; dwmac-sophgo only matches SG2042/SG2044.
