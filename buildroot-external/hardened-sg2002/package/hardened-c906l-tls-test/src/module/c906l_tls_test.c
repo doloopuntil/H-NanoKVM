@@ -156,10 +156,34 @@ static int c9_start(struct c9 *c)
 	}
 	c->running = i < 100;
 	scnprintf(c->start_info, sizeof(c->start_info),
-		  "in reset before: %d\nboot ctrl before: 0x%08x\nboot addr readback: 0x%08x%08x\n"
+		  "started by Linux; in reset before: %d\nboot ctrl before: 0x%08x\n"
+		  "boot addr readback: 0x%08x%08x\n"
 		  "answered: %s after %d ms\n",
 		  was_reset, ctrl, hi, lo, c->running ? "yes" : "no", (i + 1) * 10);
 	return c->running ? 0 : -ETIMEDOUT;
+}
+
+/* A core the FSBL started from the FIP has already written its status block. */
+static void c9_attach(struct c9 *c)
+{
+	struct c9_status *st = status_of(c);
+	int in_reset = reset_control_status(c->rst);
+
+	inval(c, C9_STATUS_OFF, sizeof(*st));
+	if (READ_ONCE(st->magic) != C9_STATUS_MAGIC) {
+		scnprintf(c->start_info, sizeof(c->start_info),
+			  "at probe: no firmware answer, in reset: %d\n", in_reset);
+		return;
+	}
+	/* The doorbell and result lines hold whatever DRAM held at power-on. */
+	memset(c->va + C9_BELL_OFF, 0, sizeof(struct c9_bell));
+	clean(c, C9_BELL_OFF, sizeof(struct c9_bell));
+	memset(slot(c, C9_RES_OFF), 0, sizeof(struct c9_res));
+	clean(c, C9_SLOT_OFF + C9_RES_OFF, sizeof(struct c9_res));
+	c->running = true;
+	scnprintf(c->start_info, sizeof(c->start_info),
+		  "at probe: firmware running (started by the FSBL), in reset: %d, cookie 0x%08x\n",
+		  in_reset, st->cookie);
 }
 
 static int c9_call(struct c9 *c, u8 op, bool poll, u64 *wait_ns)
@@ -325,6 +349,8 @@ static ssize_t stop_store(struct device *dev, struct device_attribute *attr, con
 
 	mutex_lock(&c->lock);
 	reset_control_assert(c->rst);
+	memset(status_of(c), 0, sizeof(struct c9_status));
+	clean(c, C9_STATUS_OFF, sizeof(struct c9_status));
 	c->running = false;
 	mutex_unlock(&c->lock);
 	return count;
@@ -473,6 +499,7 @@ static int c9_probe(struct platform_device *pdev)
 		goto unmap;
 	}
 
+	c9_attach(c);
 	platform_set_drvdata(pdev, c);
 	return 0;
 
@@ -486,6 +513,9 @@ static void c9_remove(struct platform_device *pdev)
 	struct c9 *c = platform_get_drvdata(pdev);
 
 	reset_control_assert(c->rst);
+	/* so that the next probe does not take a stopped core for a running one */
+	memset(status_of(c), 0, sizeof(struct c9_status));
+	clean(c, C9_STATUS_OFF, sizeof(struct c9_status));
 	mbox_free_channel(c->res);
 	mbox_free_channel(c->req);
 	dma_unmap_single(c->dev, c->dma, c->size, DMA_BIDIRECTIONAL);

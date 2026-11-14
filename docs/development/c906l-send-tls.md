@@ -72,6 +72,15 @@ would be overwritten while it runs, and a C906L executing garbage in machine mod
 in DRAM. The FIP route needs U-Boot to stay below the region first (a smaller memory node in
 U-Boot's device tree, or `CONFIG_SYS_MEM_TOP_HIDE`); that is a boot-chain change of its own.
 
+The test image takes `CONFIG_SYS_MEM_TOP_HIDE=0x200000` (in `uboot.fragment`). U-Boot then plans
+with 254 MiB, so its relocation and heap stay below the region, and its boot-time allocator (LMB)
+marks everything above that top as no-overwrite, so the copies of the device tree and initramfs
+that `bootm` makes stay below it too (read in U-Boot 2025.10's `common/board_f.c` and
+`lib/lmb.c`). U-Boot on RISC-V does not rewrite the kernel's memory node, so Linux still sees
+256 MiB and the reservation in our device tree remains what keeps Linux out. Without a serial
+console it cannot be watched directly; the module's status read at probe shows whether the
+firmware survived U-Boot.
+
 ### What Linux reserves today
 
 `sg2002-nanokvm-lite.dts` keeps `0x8fe00000`-`0x8fffffff` as a `no-map` region (`c906l_rtos`), and
@@ -90,7 +99,7 @@ from supervisor mode, which suggests the security-subsystem registers accept the
 6.18 has no driver for it, and it is **not verified** on this board. If it works, the firmware can
 live in the root filesystem and the FIP stays as it is, which removes the one step that can leave a
 card unbootable and sidesteps the U-Boot problem above. It also allows stopping and restarting the
-core. Stage 2 uses this route.
+core. The stage 2 image tests both routes.
 
 ## How Linux and the firmware exchange work
 
@@ -210,7 +219,9 @@ What is added:
   from the root filesystem with `request_firmware` is not checked, and on the C906L it can write
   any DRAM, so it reopens exactly that hole: whoever can replace the file owns the kernel. A product
   driver would have to carry the firmware inside the signed module, or check it against a hash
-  built into the module. The FIP route has the same gap one level down (the FIP is not signed).
+  built into the module. The FIP route does not open that hole: the FIP is not signed either, but
+  replacing it takes root and a reboot, exactly as replacing the kernel image in `/boot` does, so
+  the firmware is as trusted as the kernel. For a product the FIP route is the one to take.
 
 What is not added: a parser for network input anywhere, a second record layer, any change to
 receiving. This is the difference from kernel TLS, where any client's bytes were parsed in the
@@ -325,7 +336,11 @@ and the main core spends under ~200 us per record. Otherwise record the numbers 
 ## Stage 2: what was built
 
 All of it is in `buildroot-external/hardened-sg2002/package/hardened-c906l-tls-test/`, enabled in
-the 6.x defconfig of the experiment branch only.
+the 6.x defconfig of the experiment branch only. The image tests both routes: the same firmware
+binary is packed into the `BLCP_2ND` slot of both FIPs
+(`BR2_PACKAGE_HARDENED_SG2002_FIP_C906L_IMAGE`, with U-Boot kept below the region as above), so
+the FSBL starts it at power-on, and it is also installed to `/lib/firmware` for a restart from
+Linux.
 
 - **Firmware** (`src/firmware/`, C, about 3.8 KB): machine mode, caches enabled through the T-Head
   CSRs, ChaCha20-Poly1305 from Monocypher 4.0.2 (BSD-2-Clause or CC0, fetched by the package),
@@ -335,8 +350,10 @@ the 6.x defconfig of the experiment branch only.
   channel 3 to CPU 1, or only in the result line in poll mode. It reads only fixed addresses; the
   message carries an operation and a sequence number, no pointer.
 - **Kernel module** (`src/module/`): binds to a `hnanokvm,c906l-tls-test` node in the Lite device
-  tree (mailbox channels, `RST_CPUSYS2`, the region). It loads `/lib/firmware/c906l-tls-test.bin`,
-  writes the boot address and releases the core, and times N records: copy in and clean, the wait
+  tree (mailbox channels, `RST_CPUSYS2`, the region). At probe it looks for the status block a
+  FIP-started firmware writes and, if it is there, attaches without a reset. `start` loads
+  `/lib/firmware/c906l-tls-test.bin`, writes the boot address and releases the core from Linux
+  (the status then says "started by Linux" and shows a fresh cookie). It times N records: copy in and clean, the wait
   for the answer, invalidate and copy out. It checks every sealed record against the kernel's own
   ChaCha20-Poly1305 and also times that library on the main core. Control is through sysfs,
   because forced integrity lockdown blocks writable debugfs files.
@@ -356,14 +373,19 @@ Commands on the test image:
 ```sh
 modprobe c906l_tls_test
 d=/sys/bus/platform/drivers/c906l-tls-test/c906l-tls-test
-echo 1 > $d/start; cat $d/status
-echo 'ping mbox 1000 0' > $d/run; cat $d/result
+cat $d/status                     # FIP route: "firmware running (started by the FSBL)"
 echo 'ping poll 1000 0' > $d/run; cat $d/result
+echo 'ping mbox 1000 0' > $d/run; cat $d/result
 echo 'copy poll 200 16401' > $d/run; cat $d/result
 echo 'seal poll 200 16401' > $d/run; cat $d/result
 echo 'seal mbox 200 16401' > $d/run; cat $d/result
 echo 1 > $d/stop
+echo 1 > $d/start; cat $d/status  # Linux route: reload and release
+echo 'seal poll 200 16401' > $d/run; cat $d/result
 ```
+
+If the status at probe shows no answer, U-Boot most likely overwrote the firmware, or the FSBL
+did not start it; `start` then tests the Linux route on its own.
 
 The seal runs are repeated with a browser streaming MJPEG over HTTPS, to see the round trip under
 load.

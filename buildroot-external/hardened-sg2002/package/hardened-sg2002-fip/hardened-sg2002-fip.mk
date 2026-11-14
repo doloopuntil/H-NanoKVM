@@ -13,6 +13,9 @@ HARDENED_SG2002_FIP_LICENSE = PROPRIETARY
 HARDENED_SG2002_FIP_INSTALL_IMAGES = YES
 HARDENED_SG2002_FIP_INSTALL_TARGET = NO
 HARDENED_SG2002_FIP_DEPENDENCIES = host-python3 opensbi uboot
+ifeq ($(BR2_PACKAGE_HARDENED_C906L_TLS_TEST),y)
+HARDENED_SG2002_FIP_DEPENDENCIES += hardened-c906l-tls-test
+endif
 
 # Local sources are not patched by Buildroot; a rebuild re-syncs over an already patched tree.
 HARDENED_SG2002_FIP_PATCH_FILES = \

@@ -12,6 +12,8 @@ HARDENED_C906L_TLS_TEST_MONOCYPHER = monocypher-4.0.2.tar.gz
 HARDENED_C906L_TLS_TEST_EXTRA_DOWNLOADS = \
 	https://monocypher.org/download/$(HARDENED_C906L_TLS_TEST_MONOCYPHER)
 HARDENED_C906L_TLS_TEST_MODULE_SUBDIRS = module
+# The FIP package packs the same binary into the BLCP_2ND slot.
+HARDENED_C906L_TLS_TEST_INSTALL_IMAGES = YES
 
 define HARDENED_C906L_TLS_TEST_EXTRACT_MONOCYPHER
 	mkdir -p $(@D)/firmware/monocypher
@@ -29,6 +31,11 @@ endef
 define HARDENED_C906L_TLS_TEST_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0644 $(@D)/firmware/c906l-tls-test.bin \
 		$(TARGET_DIR)/lib/firmware/c906l-tls-test.bin
+endef
+
+define HARDENED_C906L_TLS_TEST_INSTALL_IMAGES_CMDS
+	$(INSTALL) -D -m 0644 $(@D)/firmware/c906l-tls-test.bin \
+		$(BINARIES_DIR)/c906l-tls-test.bin
 endef
 
 $(eval $(kernel-module))

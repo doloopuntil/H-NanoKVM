@@ -2,3 +2,6 @@
 
 # Boot at once (saves 2 s); a key already waiting on the serial console still stops autoboot.
 CONFIG_BOOTDELAY=0
+
+# Keep U-Boot's relocation, heap and boot-time copies below the C906L region (0x8fe00000, 2 MiB).
+CONFIG_SYS_MEM_TOP_HIDE=0x200000
