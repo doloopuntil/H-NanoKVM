@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fs, io,
-    sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicUsize, Ordering},
+    sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, AtomicUsize, Ordering},
     sync::{Arc, LazyLock, Mutex},
     time::{Duration, Instant},
 };
@@ -84,8 +84,9 @@ static LATEST_MJPEG_FRAME: LazyLock<Mutex<Option<LatestMjpegFrame>>> =
     LazyLock::new(|| Mutex::new(None));
 static MJPEG_FANOUT: LazyLock<StreamFanout<MjpegFrame>> =
     LazyLock::new(|| StreamFanout::new("mjpeg", 4));
-static MJPEG_DEMAND: FrameDemand = FrameDemand::new();
-/// How often a producer with no ready client checks whether its clients are gone.
+// Two frames: under load (an upload) every handoff waits for the one worker thread.
+static MJPEG_DEMAND: FrameDemand = FrameDemand::new(2);
+/// How often a producer whose last frame nobody took checks whether its clients are gone.
 const MJPEG_DEMAND_RECHECK: Duration = Duration::from_secs(1);
 /// The single H.264 capture source. libkvm hands out each encoded frame once, so
 /// the direct stream and the WebRTC sender must share one reader.
@@ -150,6 +151,7 @@ pub struct LatestMjpegFrame {
 
 #[derive(Debug, Clone)]
 struct MjpegFrame {
+    seq: u64,
     header: Bytes,
     data: Bytes,
 }
@@ -355,39 +357,63 @@ impl<T: Clone> StreamFanout<T> {
     }
 }
 
-/// Clients waiting for their next frame. A client whose socket is full stops polling
-/// its stream, so the producer reads frames only while some client can take one.
+/// Paces the producer to its viewers: it stays at most `ahead` frames past the newest
+/// frame a viewer has taken, so reading overlaps sending, a slow viewer slows the
+/// encoder, and a stalled one (its socket full) stops it.
 struct FrameDemand {
     waiting: AtomicUsize,
+    sent: AtomicU64,
+    taken: AtomicU64,
+    ahead: u64,
     notify: Notify,
 }
 
 struct DemandGuard<'a>(&'a FrameDemand);
 
 impl FrameDemand {
-    const fn new() -> Self {
+    const fn new(ahead: u64) -> Self {
         Self {
             waiting: AtomicUsize::new(0),
+            sent: AtomicU64::new(0),
+            taken: AtomicU64::new(0),
+            ahead,
             notify: Notify::const_new(),
         }
     }
 
+    /// A viewer waits for its next frame.
     fn ready(&self) -> DemandGuard<'_> {
         self.waiting.fetch_add(1, Ordering::AcqRel);
         self.notify.notify_one();
         DemandGuard(self)
     }
 
-    /// Waits up to `limit` for a ready client; returns whether there is one.
+    /// A viewer took frame `seq`.
+    fn took(&self, seq: u64) {
+        self.taken.fetch_max(seq, Ordering::AcqRel);
+        self.notify.notify_one();
+    }
+
+    fn wanted(&self) -> bool {
+        self.waiting.load(Ordering::Acquire) > 0
+            || self.sent.load(Ordering::Acquire) - self.taken.load(Ordering::Acquire) < self.ahead
+    }
+
+    /// Waits up to `limit` for a viewer that wants a frame; returns whether there is one.
     async fn wait(&self, limit: Duration) -> bool {
         let notified = self.notify.notified();
         tokio::pin!(notified);
         notified.as_mut().enable();
-        if self.waiting.load(Ordering::Acquire) > 0 {
+        if self.wanted() {
             return true;
         }
         let _ = time::timeout(limit, notified).await;
-        self.waiting.load(Ordering::Acquire) > 0
+        self.wanted()
+    }
+
+    /// Numbers the next frame to send.
+    fn next_seq(&self) -> u64 {
+        self.sent.fetch_add(1, Ordering::AcqRel) + 1
     }
 }
 
@@ -557,6 +583,7 @@ pub async fn mjpeg_stream(
                 },
             };
             drop(_ready);
+            MJPEG_DEMAND.took(frame.seq);
             yield Ok::<Bytes, io::Error>(frame.header);
             yield Ok::<Bytes, io::Error>(frame.data);
             yield Ok::<Bytes, io::Error>(Bytes::from_static(b"\r\n"));
@@ -792,6 +819,7 @@ async fn run_mjpeg_producer() {
             data.len()
         ));
         MJPEG_FANOUT.send(MjpegFrame {
+            seq: MJPEG_DEMAND.next_seq(),
             header,
             data: Bytes::from(data),
         });
@@ -1434,12 +1462,26 @@ fn h264_direct_packet(is_keyframe: bool, timestamp_micros: u64, data: &[u8]) -> 
 #[cfg(test)]
 mod tests {
     #[tokio::test]
-    async fn frame_demand_waits_for_a_ready_client() {
+    async fn frame_demand_reads_the_next_frame_once_the_last_is_taken() {
         use super::FrameDemand;
         use std::time::Duration;
-        let demand: &'static FrameDemand = Box::leak(Box::new(FrameDemand::new()));
+        let demand: &'static FrameDemand = Box::leak(Box::new(FrameDemand::new(2)));
 
+        // Up to two frames run ahead of the viewers, then reads stop until one is taken.
+        assert!(demand.wait(Duration::from_millis(10)).await);
+        assert_eq!(demand.next_seq(), 1);
+        assert!(demand.wait(Duration::from_millis(10)).await);
+        assert_eq!(demand.next_seq(), 2);
         assert!(!demand.wait(Duration::from_millis(10)).await);
+        // Taking the older frame leaves the newer one queued: one more read only.
+        demand.took(1);
+        assert!(demand.wait(Duration::from_millis(10)).await);
+        demand.next_seq();
+        assert!(!demand.wait(Duration::from_millis(10)).await);
+        demand.took(3);
+        demand.next_seq();
+        demand.next_seq();
+        // A viewer waiting for a frame always gets one read.
         {
             let _ready = demand.ready();
             assert!(demand.wait(Duration::from_millis(10)).await);
