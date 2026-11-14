@@ -4,7 +4,7 @@ use axum::{
     response::{IntoResponse, Redirect, Response},
 };
 use nanokvm_rust_server::{
-    api::{cpu_clock, monitor, picoclaw, system_firewall, tls_switch, vm},
+    api::{compatibility, cpu_clock, monitor, picoclaw, system_firewall, tls_switch, vm},
     config::Config,
     ffi::kvm,
     hdmi_idle,
@@ -288,6 +288,8 @@ async fn spawn_http_listener(
 
 fn https_redirect_app(state: AppState) -> axum::Router {
     routes::picoclaw_loopback_routes()
+        // The S95nanokvm watchdog asks every 10 s; over HTTP it costs no handshake.
+        .route("/api/health", axum::routing::get(compatibility::health))
         .fallback(redirect_to_https)
         .with_state(state)
 }

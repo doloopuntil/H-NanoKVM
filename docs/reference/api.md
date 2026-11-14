@@ -22,7 +22,8 @@ This document maps the current Rust backend surface in `server-rust/`.
 - Default HTTP bind: `host: ""`, port `80`, effectively all interfaces.
 - Optional HTTPS: `proto: https`, `port.https`, and configured cert/key.
 - HTTPS mode keeps a restricted loopback HTTP surface for PicoClaw internal
-  routes and redirects normal HTTP clients to HTTPS. The redirect target is
+  routes, answers `/api/health` over HTTP (the boot watchdog asks every 10 s and
+  saves a TLS handshake) and redirects normal HTTP clients to HTTPS. The redirect target is
   taken from `Host` only when it is a host name, an IPv4 address or a bracketed
   IPv6 address with an optional numeric port; any other value gets `400`.
 
