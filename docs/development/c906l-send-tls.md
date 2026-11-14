@@ -1,5 +1,5 @@
 ---
-status: experiment, stage 1 (feasibility on paper); nothing built, nothing changed on a device
+status: experiment, stage 2 built and compile-checked, not yet run on a device
 applies-to: system 1.0.0 (Linux 6.18) on the Lite
 last-checked: 2026-11-14
 ---
@@ -64,6 +64,14 @@ Failure modes: a FIP whose `BLCP_2ND` fails to load or fails its CRC makes the F
 stop, so the board does not boot. Firmware that loads and then crashes only leaves the small core
 hung; Linux boots normally.
 
+**The FIP route does not work with our U-Boot as it is** (found in stage 2). U-Boot 2025.10's
+`sipeed_licheerv_nano` configuration takes its RAM size from the upstream `sg2002.dtsi` memory node
+(256 MiB) and relocates itself to the top of RAM, with an 8 MiB heap below it: right over
+`0x8fe00000`. The vendor U-Boot avoided this by being told 254 MiB. Firmware started by the FSBL
+would be overwritten while it runs, and a C906L executing garbage in machine mode can write anywhere
+in DRAM. The FIP route needs U-Boot to stay below the region first (a smaller memory node in
+U-Boot's device tree, or `CONFIG_SYS_MEM_TOP_HIDE`); that is a boot-chain change of its own.
+
 ### What Linux reserves today
 
 `sg2002-nanokvm-lite.dts` keeps `0x8fe00000`-`0x8fffffff` as a `no-map` region (`c906l_rtos`), and
@@ -76,12 +84,13 @@ overdrive FIP the FSBL sets 786 MHz and 1050 MHz.
 ### From Linux, without touching the FIP
 
 Nothing in `reset_c906l` is specific to the FSBL: a kernel driver can copy the firmware into the
-reserved region, write the two address registers and pulse the reset line (line 294 of the mainline
-reset controller). The vendor kernel does this in `cvitek_remoteproc`; mainline 6.18 has no driver
-for it. Whether the security-subsystem registers accept the write from Linux (supervisor mode) is
-**not verified** on this board. If they do, the firmware can live in the root filesystem and the
-FIP stays as it is, which removes the one step that can leave a card unbootable. It also allows
-stopping and restarting the core.
+reserved region, write the two address registers and pulse the reset line (`RST_CPUSYS2`, line 294
+in mainline's `cv18xx-reset.h`, active low). The vendor kernel does this in `cvitek_remoteproc`,
+from supervisor mode, which suggests the security-subsystem registers accept the write; mainline
+6.18 has no driver for it, and it is **not verified** on this board. If it works, the firmware can
+live in the root filesystem and the FIP stays as it is, which removes the one step that can leave a
+card unbootable and sidesteps the U-Boot problem above. It also allows stopping and restarting the
+core. Stage 2 uses this route.
 
 ## How Linux and the firmware exchange work
 
@@ -196,7 +205,12 @@ What is added:
   implementation, for example the RustCrypto `chacha20poly1305` crate in a `no_std` Rust firmware.
 - **A kernel driver** of a few hundred lines (mailbox client, slot `mmap`, cache calls, a blocking
   ioctl), reachable only by the server process through a device node, not by network bytes.
-- **Unsigned firmware** in the FIP or the root filesystem; the FIP is not signed today either.
+- **Unsigned firmware below lockdown.** The kernel runs in integrity lockdown with forced module
+  signatures, so that root cannot put unsigned code below user space. Firmware that a driver loads
+  from the root filesystem with `request_firmware` is not checked, and on the C906L it can write
+  any DRAM, so it reopens exactly that hole: whoever can replace the file owns the kernel. A product
+  driver would have to carry the firmware inside the signed module, or check it against a hash
+  built into the module. The FIP route has the same gap one level down (the FIP is not signed).
 
 What is not added: a parser for network input anywhere, a second record layer, any change to
 receiving. This is the difference from kernel TLS, where any client's bytes were parsed in the
@@ -289,8 +303,8 @@ card**, so the working card and its FIP are never touched:
   ChaCha20-Poly1305 into the output slot, clean it, answer. It also times itself with `rdtime`
   and leaves the figure in the slot;
 - a test kernel module with a device tree node: load the firmware into the reserved region and
-  release the core from Linux (falling back to the FIP slot if the registers do not take the
-  write), then, on request, run N records of a chosen size and report through debugfs: time per
+  release the core from Linux (the FIP slot is no fallback while U-Boot relocates over the
+  region, see above), then, on request, run N records of a chosen size and report through debugfs: time per
   round trip for an empty message, time per 16 KB record, the main core's own time in clean,
   invalidate and copy, and the firmware's figure. It checks every answer against the kernel's own
   ChaCha20-Poly1305;
@@ -307,6 +321,52 @@ on the Lite. Nothing is written to the current card.
 Go or stop after step B: go on to the server part only if the small core does at least 12 MB/s
 and the main core spends under ~200 us per record. Otherwise record the numbers in
 [Offloading work to the C906L](c906l-offload.md) and stop.
+
+## Stage 2: what was built
+
+All of it is in `buildroot-external/hardened-sg2002/package/hardened-c906l-tls-test/`, enabled in
+the 6.x defconfig of the experiment branch only.
+
+- **Firmware** (`src/firmware/`, C, about 3.8 KB): machine mode, caches enabled through the T-Head
+  CSRs, ChaCha20-Poly1305 from Monocypher 4.0.2 (BSD-2-Clause or CC0, fetched by the package),
+  built with the target toolchain as a flat binary linked at `0x8fe00000`. It polls the mailbox
+  (channel 2, CPU 2) and a doorbell cache line, invalidates the request and input, seals into a
+  separate output buffer, cleans it, writes its own `mcycle` and `rdtime` counts and answers on
+  channel 3 to CPU 1, or only in the result line in poll mode. It reads only fixed addresses; the
+  message carries an operation and a sequence number, no pointer.
+- **Kernel module** (`src/module/`): binds to a `hnanokvm,c906l-tls-test` node in the Lite device
+  tree (mailbox channels, `RST_CPUSYS2`, the region). It loads `/lib/firmware/c906l-tls-test.bin`,
+  writes the boot address and releases the core, and times N records: copy in and clean, the wait
+  for the answer, invalidate and copy out. It checks every sealed record against the kernel's own
+  ChaCha20-Poly1305 and also times that library on the main core. Control is through sysfs,
+  because forced integrity lockdown blocks writable debugfs files.
+- **Device tree**: the region loses `no-map` so the module can use the cached linear mapping and
+  the DMA API's clean and invalidate; the region stays reserved.
+- **Step A benchmark** (`bench/`): ring, RustCrypto and Monocypher on 16 KB records on the main
+  core, checking that all three produce the same bytes.
+
+Two modes separate the costs: `mbox` is the real path (mainline mailbox driver, threaded interrupt,
+wake-up); `poll` uses neither the mailbox nor interrupts (doorbell line in, result line out, Linux
+spinning), which gives the cipher and cache costs alone. Poll mode also covers the case where the
+mainline driver's handling of the enable register (it re-enables every other channel when it
+acknowledges one) turns out to swallow requests.
+
+Commands on the test image:
+
+```sh
+modprobe c906l_tls_test
+d=/sys/bus/platform/drivers/c906l-tls-test/c906l-tls-test
+echo 1 > $d/start; cat $d/status
+echo 'ping mbox 1000 0' > $d/run; cat $d/result
+echo 'ping poll 1000 0' > $d/run; cat $d/result
+echo 'copy poll 200 16401' > $d/run; cat $d/result
+echo 'seal poll 200 16401' > $d/run; cat $d/result
+echo 'seal mbox 200 16401' > $d/run; cat $d/result
+echo 1 > $d/stop
+```
+
+The seal runs are repeated with a browser streaming MJPEG over HTTPS, to see the round trip under
+load.
 
 ## Open questions
 

@@ -1,0 +1,2 @@
+obj-m := c906l_tls_test.o
+ccflags-y += -I$(src)/../firmware

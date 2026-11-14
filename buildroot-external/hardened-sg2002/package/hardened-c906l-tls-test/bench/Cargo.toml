@@ -1,0 +1,18 @@
+[package]
+name = "c906l-cipher-bench"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "GPL-3.0-or-later"
+
+# Step A of docs/development/c906l-send-tls.md: the firmware's cipher on the main core.
+[dependencies]
+ring = "0.17.14"
+chacha20poly1305 = { version = "0.10", default-features = false }
+
+[build-dependencies]
+cc = "1"
+
+[profile.release]
+opt-level = 3
+panic = "abort"

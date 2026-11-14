@@ -46,10 +46,10 @@
 		#size-cells = <1>;
 		ranges;
 
-		/* C906L firmware, as in the vendor memmap; empty until the core gets a job */
+		/* C906L firmware, as in the vendor memmap. Mapped (no no-map) for the */
+		/* c906l-tls-test experiment, which shares cached buffers with the core. */
 		c906l_rtos: rtos@8fe00000 {
 			reg = <0x8fe00000 0x200000>;
-			no-map;
 		};
 
 		/* soph_sys carveout, mapped for cached access. Size only, as on 5.10: U-Boot may */
@@ -82,6 +82,15 @@
 			gpios = <&porta 14 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "activity";
 		};
+	};
+
+	/* Experiment: C906L send-side TLS measurement (package hardened-c906l-tls-test) */
+	c906l-tls-test {
+		compatible = "hnanokvm,c906l-tls-test";
+		memory-region = <&c906l_rtos>;
+		mboxes = <&mailbox 2 2>, <&mailbox 3 1>;
+		mbox-names = "req", "res";
+		resets = <&rst RST_CPUSYS2>;	/* C906L: 0x3003024 bit 6 */
 	};
 
 	/* OLED on the Full and PCIe; probed by kvm_system */

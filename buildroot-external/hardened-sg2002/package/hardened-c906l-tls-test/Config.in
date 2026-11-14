@@ -1,0 +1,10 @@
+config BR2_PACKAGE_HARDENED_C906L_TLS_TEST
+	bool "C906L send-side TLS measurement (experiment)"
+	depends on BR2_LINUX_KERNEL
+	depends on BR2_riscv
+	help
+	  Test firmware for the C906L (ChaCha20-Poly1305 with
+	  Monocypher on a shared buffer, requests over the mailbox)
+	  and a kernel module that loads it, releases the core and
+	  times records. Only for a measurement image; see
+	  docs/development/c906l-send-tls.md.
