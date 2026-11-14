@@ -3,6 +3,7 @@
  * Measurement module for the C906L send-side TLS experiment: loads the test firmware into the
  * C906L's reserved region, releases the core and times records over the mailbox.
  * Control through sysfs: start, stop, run ("seal|copy|ping mbox|poll count len"), result, status.
+ * /dev/c906l-tls seals one TLS record per ioctl for the server.
  */
 #include <crypto/chacha20poly1305.h>
 #include <linux/completion.h>
@@ -13,6 +14,7 @@
 #include <linux/io.h>
 #include <linux/ktime.h>
 #include <linux/mailbox_client.h>
+#include <linux/miscdevice.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/of.h>
@@ -21,6 +23,7 @@
 #include <linux/random.h>
 #include <linux/reset.h>
 #include <linux/slab.h>
+#include <linux/uaccess.h>
 #include <linux/unaligned.h>
 
 #include "shared.h"
@@ -32,6 +35,23 @@
 #define SEC_BOOT_ADDR_LO 0x20
 #define SEC_BOOT_ADDR_HI 0x24
 #define RESULT_MAX 3072
+
+/* One record for /dev/c906l-tls; the server mirrors this layout (http/c906l.rs). */
+struct c9_seal_ioc {
+	__u64 src; /* plaintext, len bytes */
+	__u64 dst; /* ciphertext and tag, len + 16 bytes; may equal src */
+	__u32 len;
+	__u32 aad_len;
+	__u8 key[32];
+	__u8 nonce[12];
+	__u8 aad[13];
+	__u8 pad[7];
+};
+#define C9_IOC_SEAL _IOWR('C', 0x90, struct c9_seal_ioc)
+
+static bool seal_poll;
+module_param(seal_poll, bool, 0644);
+MODULE_PARM_DESC(seal_poll, "server records: spin on the result line instead of the mailbox");
 
 struct c9 {
 	struct device *dev;
@@ -46,6 +66,7 @@ struct c9 {
 	u32 seq, got_seq, got_status;
 	atomic_t stray, late;
 	struct mutex lock;
+	struct miscdevice misc;
 	bool running;
 	u8 key[CHACHA20POLY1305_KEY_SIZE];
 	u8 *src, *dst, *ref;
@@ -230,6 +251,61 @@ static int c9_call(struct c9 *c, u8 op, bool poll, u64 *wait_ns)
 		return -EIO;
 	return res->status ? -EBADMSG : 0;
 }
+
+static long c9_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	struct c9 *c = container_of(file->private_data, struct c9, misc);
+	struct c9_req *req = slot(c, 0);
+	struct c9_seal_ioc r;
+	u64 w;
+	long ret;
+
+	if (cmd != C9_IOC_SEAL)
+		return -ENOTTY;
+	if (copy_from_user(&r, (void __user *)arg, sizeof(r)))
+		return -EFAULT;
+	if (!r.len || r.len > C9_MAX_LEN || r.aad_len > sizeof(r.aad)) {
+		ret = -EINVAL;
+		goto wipe;
+	}
+
+	mutex_lock(&c->lock);
+	if (!c->running) {
+		ret = -ENODEV;
+		goto unlock;
+	}
+	if (copy_from_user(slot(c, C9_IN_OFF), u64_to_user_ptr(r.src), r.len)) {
+		ret = -EFAULT;
+		goto unlock;
+	}
+	memcpy(req->key, r.key, sizeof(req->key));
+	memcpy(req->nonce, r.nonce, sizeof(req->nonce));
+	req->len = r.len;
+	memcpy(req->aad, r.aad, r.aad_len);
+	req->aad_len = r.aad_len;
+	clean(c, C9_SLOT_OFF, C9_REQ_SIZE);
+	clean(c, C9_SLOT_OFF + C9_IN_OFF, r.len);
+
+	ret = c9_call(c, C9_OP_SEAL, READ_ONCE(seal_poll), &w);
+	if (!ret) {
+		inval(c, C9_SLOT_OFF + C9_OUT_OFF, r.len + C9_TAG_LEN);
+		if (copy_to_user(u64_to_user_ptr(r.dst), slot(c, C9_OUT_OFF), r.len + C9_TAG_LEN))
+			ret = -EFAULT;
+	}
+	/* the key does not stay in the shared slot */
+	memzero_explicit(req->key, sizeof(req->key));
+	clean(c, C9_SLOT_OFF, C9_REQ_SIZE);
+unlock:
+	mutex_unlock(&c->lock);
+wipe:
+	memzero_explicit(r.key, sizeof(r.key));
+	return ret;
+}
+
+static const struct file_operations c9_fops = {
+	.owner = THIS_MODULE,
+	.unlocked_ioctl = c9_ioctl,
+};
 
 static int c9_run(struct c9 *c, u8 op, bool poll, u32 count, u32 len)
 {
@@ -501,6 +577,18 @@ static int c9_probe(struct platform_device *pdev)
 
 	c9_attach(c);
 	platform_set_drvdata(pdev, c);
+
+	c->misc.minor = MISC_DYNAMIC_MINOR;
+	c->misc.name = "c906l-tls";
+	c->misc.fops = &c9_fops;
+	c->misc.mode = 0600;
+	c->misc.parent = dev;
+	ret = misc_register(&c->misc);
+	if (ret) {
+		mbox_free_channel(c->res);
+		mbox_free_channel(c->req);
+		goto unmap;
+	}
 	return 0;
 
 unmap:
@@ -512,6 +600,7 @@ static void c9_remove(struct platform_device *pdev)
 {
 	struct c9 *c = platform_get_drvdata(pdev);
 
+	misc_deregister(&c->misc);
 	reset_control_assert(c->rst);
 	/* so that the next probe does not take a stopped core for a running one */
 	memset(status_of(c), 0, sizeof(struct c9_status));

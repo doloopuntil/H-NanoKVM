@@ -177,6 +177,9 @@ fn crypto_provider() -> CryptoProvider {
     provider
         .cipher_suites
         .sort_by_key(|suite| !is_chacha20(suite.suite()));
+    for suite in &mut provider.cipher_suites {
+        *suite = super::c906l::wrap(*suite);
+    }
     provider
 }
 

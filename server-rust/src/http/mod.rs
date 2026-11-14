@@ -1,4 +1,5 @@
 pub mod acme;
+pub mod c906l;
 pub mod cert_manager;
 pub mod cert_store;
 pub mod cookie;
