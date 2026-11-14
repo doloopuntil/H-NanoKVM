@@ -6,4 +6,5 @@ pub mod limits;
 pub mod middleware;
 pub mod proxy;
 pub mod routes;
+pub mod serve;
 pub mod tls;
