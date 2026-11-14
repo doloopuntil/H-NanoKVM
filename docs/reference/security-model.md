@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
-last-checked: 2026-11-13
+last-checked: 2026-11-14
 ---
 
 # Security model
@@ -158,6 +158,10 @@ Known exceptions:
   hardware initialization and factory-compatible control paths. The 2026-07-11
   audit of that code and its remediation are in
   [`native-code-audit.md`](../archive/native-code-audit.md).
+- The native code built in CI (the Sophgo middleware, `libkvm.so`, `libkvm_mmf.so`,
+  `kvm_system`) is compiled with `-fstack-protector-strong`, and the build fails if a library
+  or binary does not call the stack check. The four OpenCV libraries in the package are
+  prebuilt upstream binaries and are not covered.
 
 ## File And Archive Risk Inventory
 
