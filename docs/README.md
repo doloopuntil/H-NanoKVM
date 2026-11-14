@@ -39,6 +39,7 @@ For people running the device.
 - [Web UI layout rules](development/web-ui-layout-rules.md), including the copy rules
 - [CI image build](development/ci-image-build.md): rebuilding the SD image from source
 - [Kernel 6.x migration plan](development/kernel-6x-migration-plan.md): the move from the vendor 5.10 kernel to mainline 6.18 (phases, decisions, measurements)
+- [Offloading work to the C906L](development/c906l-offload.md): where the main core's time goes in video and uploads, and why the second core stays parked
 - [Kernel 6.x Phase 0 baseline](development/kernel-6x-phase0-baseline.md): what the 5.10 Lite uses and how fast it is, for comparison
 - [Testing](development/testing.md)
 - [Rust dependency audit](development/dependency-audit.md)
