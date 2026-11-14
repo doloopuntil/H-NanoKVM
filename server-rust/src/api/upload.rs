@@ -4,11 +4,17 @@
 //! Here a file field goes to disk in chunks, with a size cap, an optional SHA-256 and an fsync
 //! before it returns, and the checks that the browser can ask for before it sends anything.
 
-use axum::extract::multipart::Field;
+use axum::{
+    body::Body,
+    extract::{Request, multipart::Field},
+};
 use bytes::Bytes;
+use futures_util::Stream;
 use sha2::{Digest, Sha256};
 use std::{
     path::Path,
+    pin::Pin,
+    task::{Context, Poll},
     time::{Duration, Instant},
 };
 use tokio::io::{AsyncWriteExt, BufWriter};
@@ -22,6 +28,8 @@ pub const FREE_SPACE_MARGIN: u64 = 64 * 1024 * 1024;
 const WRITE_BUFFER: usize = 256 * 1024;
 const CHECKSUM_QUEUE_CHUNKS: usize = 8;
 const PROGRESS_INTERVAL: Duration = Duration::from_secs(1);
+// Body bytes decrypted in one turn of the worker before an upload gives way.
+const READ_SLICE: usize = 64 * 1024;
 
 /// What one kind of upload accepts.
 pub struct UploadLimits {
@@ -108,6 +116,8 @@ pub async fn receive_field(
             worker.feed(chunk.clone()).await?;
         }
         writer.write_all(&chunk).await?;
+        // lets the video stream have the worker between slices (see yield_between_reads)
+        tokio::task::yield_now().await;
         if reported.elapsed() >= PROGRESS_INTERVAL {
             progress(total)?;
             reported = Instant::now();
@@ -124,6 +134,45 @@ pub async fn receive_field(
         bytes: total,
         sha256,
     })
+}
+
+/// Route layer for uploads: multer reads the body until it would block, which on a fast link
+/// is ~128 TLS reads in one turn of the single worker, and the video stream stalls meanwhile.
+pub async fn yield_between_reads(request: Request) -> Request {
+    let (parts, body) = request.into_parts();
+    let body = Body::from_stream(ReadSlices {
+        inner: body.into_data_stream(),
+        since_pending: 0,
+    });
+    Request::from_parts(parts, body)
+}
+
+/// Pends, and wakes itself, after READ_SLICE bytes without pending.
+struct ReadSlices<S> {
+    inner: S,
+    since_pending: usize,
+}
+
+impl<S, E> Stream for ReadSlices<S>
+where
+    S: Stream<Item = std::result::Result<Bytes, E>> + Unpin,
+{
+    type Item = S::Item;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        if self.since_pending >= READ_SLICE {
+            self.since_pending = 0;
+            cx.waker().wake_by_ref();
+            return Poll::Pending;
+        }
+        let polled = Pin::new(&mut self.inner).poll_next(cx);
+        match &polled {
+            Poll::Ready(Some(Ok(chunk))) => self.since_pending += chunk.len(),
+            Poll::Pending => self.since_pending = 0,
+            _ => {}
+        }
+        polled
+    }
 }
 
 struct ChecksumWorker {
@@ -237,6 +286,67 @@ mod tests {
         let (received, written) = receive(b"", 1024, true).await;
         assert_eq!(received.unwrap().bytes, 0);
         assert!(written.is_empty());
+    }
+
+    #[tokio::test]
+    async fn an_upload_gives_way_to_other_tasks_between_read_slices() {
+        use std::sync::{
+            Arc,
+            atomic::{AtomicBool, AtomicUsize, Ordering},
+        };
+        const CHUNK: usize = 16 * 1024;
+        const CHUNKS: usize = 32;
+
+        let read = Arc::new(AtomicUsize::new(0));
+        let counted = read.clone();
+        let mut parts = vec![Bytes::from_static(
+            b"--B\r\nContent-Disposition: form-data; name=\"file\"; filename=\"f.bin\"\r\n\r\n",
+        )];
+        parts.extend((0..CHUNKS).map(|_| Bytes::from(vec![0x5a_u8; CHUNK])));
+        parts.push(Bytes::from_static(b"\r\n--B--\r\n"));
+        let body = futures_util::StreamExt::map(futures_util::stream::iter(parts), move |part| {
+            counted.fetch_add(1, Ordering::Relaxed);
+            Ok::<_, std::io::Error>(part)
+        });
+        let request = Request::builder()
+            .header(header::CONTENT_TYPE, "multipart/form-data; boundary=B")
+            .body(Body::from_stream(body))
+            .unwrap();
+
+        // the largest number of chunks read between two turns of another task
+        let done = Arc::new(AtomicBool::new(false));
+        let watcher = {
+            let (read, done) = (read.clone(), done.clone());
+            tokio::spawn(async move {
+                let (mut last, mut most) = (0, 0);
+                while !done.load(Ordering::Relaxed) {
+                    let now = read.load(Ordering::Relaxed);
+                    most = most.max(now - last);
+                    last = now;
+                    tokio::task::yield_now().await;
+                }
+                most
+            })
+        };
+
+        let request = yield_between_reads(request).await;
+        let mut multipart = Multipart::from_request(request, &()).await.unwrap();
+        let mut field = multipart.next_field().await.unwrap().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let file = tokio::fs::File::create(dir.path().join("out"))
+            .await
+            .unwrap();
+        let received = receive_field(&mut field, file, u64::MAX, false, |_| Ok(()))
+            .await
+            .unwrap();
+        done.store(true, Ordering::Relaxed);
+
+        assert_eq!(received.bytes, (CHUNK * CHUNKS) as u64);
+        let most = watcher.await.unwrap();
+        assert!(
+            most <= READ_SLICE / CHUNK + 2,
+            "{most} chunks read in one turn"
+        );
     }
 
     #[tokio::test]

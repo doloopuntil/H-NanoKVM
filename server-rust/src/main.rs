@@ -51,8 +51,20 @@ const BOOT_INIT_SCRIPTS: &[&str] = &[
 const KVM_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(4);
 const BUNDLED_UPDATE_TRUST_DIR: &str = "/kvmapp/system/keys";
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+// One worker on the one core. Timers and sockets are otherwise checked only every 61 task
+// turns while tasks stay ready, so a busy upload held the video's frame timer for seconds.
+const RUNTIME_EVENT_INTERVAL: u32 = 2;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(1)
+        .event_interval(RUNTIME_EVENT_INTERVAL)
+        .enable_all()
+        .build()?
+        .block_on(run())
+}
+
+async fn run() -> Result<(), Box<dyn std::error::Error>> {
     init_tracing();
     tls::install_crypto_provider();
 
