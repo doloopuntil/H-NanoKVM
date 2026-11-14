@@ -356,6 +356,7 @@ jobs:
           mkdir -p server-rust/sysroot/lib
           cp build/native-libkvm/sysroot/libc.so build/native-libkvm/sysroot/libgcc_s.so.1 \
             server-rust/sysroot/lib/
+          cp -R build/native-libkvm/sysroot/include server-rust/sysroot/include
 
       # This run's libkvm.so, libkvm_mmf.so and middleware replace the checked-in copies.
       - name: Use freshly-built libkvm.so, libkvm_mmf.so and middleware
