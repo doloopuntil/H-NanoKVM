@@ -1,7 +1,7 @@
 ---
-status: experiment, stage 2 built and compile-checked, not yet run on a device
+status: experiment finished, measured on a Lite; recommendation: stop, C906L stays parked
 applies-to: system 1.0.0 (Linux 6.18) on the Lite
-last-checked: 2026-11-14
+last-checked: 2026-11-15
 ---
 
 # Send-side TLS encryption on the C906L
@@ -33,6 +33,10 @@ replace the two estimates everything rests on.
   product after it. Before building anything for the product, compare against a vector
   ChaCha20-Poly1305 inside the server ([below](#the-alternative-to-weigh-it-against)), which
   reaches most of the same gain with no firmware, driver or shared key.
+- **Stage 2 outcome:** the C906L seals 16 KB records at 15.7 MB/s, the main core's added work is
+  about 40 µs per record, and the FIP route works with a U-Boot change. Expected gain about
+  22 to 26-31 fps on HTTPS MJPEG. **Recommendation: stop**, keep the C906L parked
+  ([results](#stage-2-results)).
 
 ## How the firmware gets loaded
 
@@ -416,12 +420,99 @@ The baseline needs care: the 148 ms per MB and 24.2 fps were measured this morni
 reported 850 MHz (standard FIP); it now runs the overdrive FIP. Stage B has to measure the rustls
 baseline again at the same clocks before comparing.
 
+## Stage 2 results
+
+Image of build 43645039407 (commit `73a41203`) on a spare card, standard clocks (main core
+850 MHz, C906L 594 MHz), Ethernet, 2026-11-15. The device tree then got `dma-noncoherent` on the
+test node (see below), repacked into `boot.itb` on the card; the source has it from `f8f8c803`.
+
+**A first card did not boot** (boot loop, watchdog resets). The same image, written with an older
+balenaEtcher to another card, booted; the FIP and kernel were not the cause. Emptying the C906L
+slot and swapping in the base image's FIP on the first card changed nothing, which fits.
+
+**Both start routes work.** The FSBL starts the firmware from the FIP and it survives U-Boot with
+`CONFIG_SYS_MEM_TOP_HIDE`: the module found it running at probe. Linux can also stop the core
+through `RST_CPUSYS2` and release it again with a freshly loaded image (answer after 10 ms). The
+boot-address writes from Linux did not fault, but they wrote the value the FSBL had set, so a
+different address from Linux is not proven. The C906L comes up with `mhcr` 0x13f: caches on, but
+bit 12 of the 0x103f written did not stick.
+
+**`dma-noncoherent` is required on the node.** RISC-V device trees are DMA-coherent by default; the
+SoC's devices inherit the property from the `soc` node, but the test node sits at the root. Without
+it the DMA API skipped every clean and invalidate: poll round trips took 0.2-18 ms (lines crossed
+only when evicted) and mailbox runs read a stale result line.
+
+Measured with the module, 16,401-byte records (a full TLS 1.3 record), nothing streaming:
+
+| | Poll mode | Mailbox |
+| --- | --- | --- |
+| Empty round trip, average (min-max) | 1.1 µs (0.7-4.3) | 33 µs (28-573) |
+| Seal on the C906L | 1.05 ms, 622,000 cycles | the same |
+| Wait for a sealed record | 1.06 ms | 1.12 ms |
+| Main core: copy in and clean | 19 µs | 20 µs |
+| Main core: invalidate and copy out | 16 µs | 21 µs |
+
+- Every sealed record matched the kernel's ChaCha20-Poly1305 byte for byte (over 700 records).
+- **The C906L seals at 15.7 MB/s**, 38 cycles per byte against 37 for the same code on the main
+  core: cold input costs about 4%. The 15 MB/s estimate of stage 1 holds.
+- The main core's added work is about 40 µs per record plus the mailbox interrupt, roughly
+  3-4 ms per MB, below the 5-12 ms estimated.
+- The mainline mailbox driver hands Linux its own requests too (one stray message per request,
+  from how it rewrites the enable register on receipt). Harmless here, but it costs an interrupt
+  pass per record; a product driver would want the mailbox handled differently.
+
+Under load (one browser streaming MJPEG over HTTPS, 1080p, quality 80, about 285 KB frames):
+
+| | Value |
+| --- | --- |
+| rustls baseline, three 10 s windows | 22.2 fps, 6.3 MB/s, 150 ms of CPU per MB, CPU 95-96% busy (usr 34-37%, sys 23-27%, interrupts 34-36%) |
+| Seal on the C906L | unchanged, 627,000 cycles |
+| Wait for a sealed record | 1.63 ms average, 8.2 ms worst (1.12 ms idle) |
+| Empty mailbox round trip | 77 µs average, 4.0 ms worst (33 µs idle) |
+
+The extra wait under load is the woken thread waiting for the saturated main core; the main core
+spends that time on other work, so it costs latency, not CPU.
+
+### What it would give
+
+Per MB of video (61 records), at the standard clocks:
+
+- **CPU-bound limit:** 150 ms, minus the cipher (ring at about 21.5 MB/s on this core: about
+  46 ms), plus about 4 ms of copies, cache upkeep and interrupts: **about 108 ms per MB**, which
+  at the same CPU load is about 8.8 MB/s or **31 fps**.
+- **Chain limit:** rustls seals one record at a time inside the worker's write, so the worker
+  waits 61 times per MB: 68 ms with the idle latency, 99 ms with the loaded one, plus its own
+  sending in series (about 35 ms, estimated from the CPU split): 103-134 ms per MB, **26-34 fps**.
+
+Expected result: **about 26-31 fps against 22.2**, a gain of roughly 20-40%, with the loaded
+latency pulling it toward the lower end. Not measured: the server part was not built, so the
+overlap of waiting with network work is still a model, and so is the 35 ms of serial sending.
+Overdrive clocks would move both sides (C906L 786 MHz, about 20 MB/s).
+
+### Recommendation: stop here
+
+The experiment answered its questions: the small core is as fast as estimated and the round trip
+is cheap. But the gain, about 4-9 fps on HTTPS MJPEG only, needs all of this in the product:
+
+- firmware in the FIP with full access to DRAM, trusted like the kernel, and a U-Boot change to
+  keep it alive;
+- a kernel driver (the module here is test code; a product one needs its own mailbox handling,
+  firmware checks and a device node for the server);
+- a cipher hook in the server that hands the video connection's send key to that core, with a
+  ring fallback;
+- the latency of a second core inside the worker's write, which is the main reason the realistic
+  gain is the lower half of the range.
+
+Plain HTTP MJPEG is already at the link rate and H.264 sends too little for the cipher to matter,
+so only HTTPS MJPEG benefits. Against the owner's priorities (security first, no more architecture
+than the gain justifies), that is not enough: we recommend recording these numbers and leaving the
+C906L parked, as [Offloading work to the C906L](c906l-offload.md) already does. If HTTPS MJPEG
+speed becomes important later, the next step is the server's cipher hook on this test image, which
+would replace the chain-limit estimate with a measurement.
+
 ## Open questions
 
-- Is a spare SD card available, or must the test image go on the working card?
-- Can Linux release the C906L (security-subsystem registers writable from supervisor mode)? If
-  not, the experiment needs the FIP slot.
 - Which interrupt the mailbox raises on the C906L, for a firmware that sleeps instead of polling.
   A polling firmware keeps the core busy; its power draw and heat on the Lite are unmeasured.
-- Should the vector cipher in user space be studied first, since it may make this unnecessary?
-- Standard or overdrive clocks for the product comparison.
+- Whether a boot address other than the FSBL's can be set from Linux.
+- Why the first card looped: the card or the flashing tool; not investigated further.
