@@ -35,7 +35,7 @@ are still accepted.
 | Field | Default | Meaning |
 | --- | --- | --- |
 | `authentication` | `enable` | `disable` turns sign-in off, but only together with `security.allow_auth_disable: true`. For local web UI development only. |
-| `jwt.secret_key` | empty | Upstream field; the session secret lives in `/etc/kvm/session_secret`, generated on first start. |
+| `jwt.secret_key` | empty | Upstream field, unused: sessions are opaque random tokens kept in memory. |
 | `jwt.refresh_token_duration` | `2678400` | Seconds. |
 | `jwt.revoke_tokens_on_logout` | `true` | |
 | `security.login_max_failures` | `5` | Failed sign-ins per address and user before a lockout; an address is also locked after four times as many failures across all users. |
@@ -65,7 +65,7 @@ are still accepted.
 | Field | Default |
 | --- | --- |
 | `paths.account_file` | `/etc/kvm/pwd` |
-| `paths.session_secret_file` | `/etc/kvm/session_secret` |
+| `paths.session_secret_file` | `/etc/kvm/session_secret` (unused, no longer created) |
 | `paths.web_root` | `/kvmapp/server/web` |
 | `paths.image_directory` | `/data` |
 | `paths.update_cache_dir` | `/data/.hardened-kvmcache` |

@@ -1,16 +1,13 @@
 use std::{
     fs,
     net::{IpAddr, SocketAddr},
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
-use crate::{
-    AppError, Result, auth::token::random_token, fsutil::write_0600_atomic,
-    http::proxy::TrustedProxies,
-};
+use crate::{AppError, Result, fsutil::write_0600_atomic, http::proxy::TrustedProxies};
 
 const DEFAULT_CONFIG_PATH: &str = "/etc/kvm/server.yaml";
 const DEFAULT_SECRET_PATH: &str = "/etc/kvm/session_secret";
@@ -218,9 +215,7 @@ impl Default for Paths {
 
 impl Config {
     pub fn load() -> Result<Self> {
-        let mut config = Self::read()?;
-        config.ensure_session_secret()?;
-        Ok(config)
+        Self::read()
     }
 
     pub fn read() -> Result<Self> {
@@ -330,35 +325,6 @@ impl Config {
             self.paths.update_cache_dir = PathBuf::from("/data/.hardened-kvmcache");
         }
     }
-
-    fn ensure_session_secret(&mut self) -> Result<()> {
-        if !self.jwt.secret_key.is_empty() {
-            return Ok(());
-        }
-
-        if let Ok(secret) = fs::read_to_string(&self.paths.session_secret_file) {
-            let secret = secret.trim().to_string();
-            if !secret.is_empty() {
-                self.jwt.secret_key = secret;
-                return Ok(());
-            }
-        }
-
-        let secret = generate_secret();
-        write_secret_0600(&self.paths.session_secret_file, &secret)?;
-        self.jwt.secret_key = secret;
-        Ok(())
-    }
-}
-
-fn generate_secret() -> String {
-    random_token(64)
-}
-
-fn write_secret_0600(path: &Path, secret: &str) -> Result<()> {
-    let mut data = secret.as_bytes().to_vec();
-    data.push(b'\n');
-    write_0600_atomic(path, &data)
 }
 
 #[cfg(test)]

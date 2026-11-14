@@ -36,7 +36,7 @@ The boot files:
 | --- | --- |
 | `server.yaml` | Server configuration ([reference](config.md)). |
 | `pwd` | The account: user name, password hash, TOTP secret and backup-code hashes. |
-| `session_secret` | Per-device session signing secret, generated on first start. |
+| `session_secret` | Left by older versions; nothing reads it and new systems do not create it. |
 | `server.crt`, `server.key` | TLS certificate and key. |
 | `tls-pending.json` | The settings to put back while a switch between HTTP and HTTPS, or a change of certificate, waits for confirmation; removed once confirmed or reverted. |
 | `certs/settings.json` | The certificate source, domain and email. |
