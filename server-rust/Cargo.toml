@@ -24,6 +24,9 @@ cipher = "0.4"
 data-encoding = "2.11"
 flate2 = "1"
 hmac = "0.12"
+# Already in Cargo.lock via axum; used directly to set a header timeout.
+hyper = { version = "1", features = ["http1", "server"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
 getrandom = "0.4"
 futures-util = { version = "0.3.32", features = ["sink"] }
 md-5 = "0.10"
@@ -44,6 +47,7 @@ time = { version = "0.3.51", features = ["formatting", "parsing"] }
 tokio = { version = "1", features = ["fs", "macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
 tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
 tokio-tungstenite = "0.29.0"
+tower = { version = "0.5", features = ["util"] }
 tower-http = { version = "0.7", features = ["fs", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
@@ -58,8 +62,6 @@ mimalloc = { version = "0.1", default-features = false }
 
 [dev-dependencies]
 tempfile = "3"
-# Already in Cargo.lock via axum; used to drive the real router in tests.
-tower = { version = "0.5", features = ["util"] }
 
 [profile.release]
 opt-level = "z"

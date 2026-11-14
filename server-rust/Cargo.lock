@@ -1486,6 +1486,8 @@ dependencies = [
  "futures-util",
  "getrandom 0.4.3",
  "hmac",
+ "hyper",
+ "hyper-util",
  "instant-acme",
  "md-5",
  "mimalloc",

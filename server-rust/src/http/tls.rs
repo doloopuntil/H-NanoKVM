@@ -160,12 +160,6 @@ impl Listener for TlsListener {
     }
 }
 
-impl Connected<IncomingStream<'_, TlsListener>> for ClientAddr {
-    fn connect_info(stream: IncomingStream<'_, TlsListener>) -> Self {
-        Self(*stream.remote_addr())
-    }
-}
-
 pub fn install_crypto_provider() {
     let _ = crypto_provider().install_default();
 }

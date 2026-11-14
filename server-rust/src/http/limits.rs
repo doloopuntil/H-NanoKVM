@@ -10,17 +10,13 @@ use std::{
     time::{Duration, Instant},
 };
 
-use axum::{
-    extract::connect_info::Connected,
-    serve::{IncomingStream, Listener},
-};
+use axum::serve::Listener;
 use tokio::{
     io::{AsyncRead, AsyncWrite, ReadBuf},
     net::{TcpListener, TcpStream},
 };
 use tracing::warn;
 
-use super::tls::ClientAddr;
 use crate::api::stream::LogThrottle;
 
 /// Open connections on all listeners together. Each costs a task and its buffers.
@@ -213,12 +209,6 @@ impl Listener for LimitedListener {
 
     fn local_addr(&self) -> io::Result<Self::Addr> {
         self.inner.local_addr()
-    }
-}
-
-impl Connected<IncomingStream<'_, LimitedListener>> for ClientAddr {
-    fn connect_info(stream: IncomingStream<'_, LimitedListener>) -> Self {
-        Self(*stream.remote_addr())
     }
 }
 

@@ -11,8 +11,7 @@ use nanokvm_rust_server::{
     http::{
         cert_manager,
         limits::{ConnLimiter, LimitedListener},
-        routes,
-        tls::{self, ClientAddr},
+        routes, serve, tls,
     },
     state::AppState,
     update::keys::install_bundled_update_trust,
@@ -236,10 +235,9 @@ async fn run_http(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     }
 
-    let app = routes::build(state).into_make_service_with_connect_info::<ClientAddr>();
     let listener = LimitedListener::new(TcpListener::bind(addr).await?, limiter);
     info!(%addr, "starting NanoKVM Rust backend");
-    axum::serve(listener, app).await?;
+    serve::serve(listener, routes::build(state)).await;
     Ok(())
 }
 
@@ -269,11 +267,10 @@ async fn run_https(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     )
     .await?;
 
-    let app = routes::build(state).into_make_service_with_connect_info::<ClientAddr>();
     let listener = TcpListener::bind(https_addr).await?;
     let tls_listener = tls::TlsListener::new(listener, tls_config, limiter)?;
     info!(addr = %https_addr, "starting NanoKVM Rust HTTPS backend");
-    axum::serve(tls_listener, app).await?;
+    serve::serve(tls_listener, routes::build(state)).await;
     Ok(())
 }
 
@@ -284,13 +281,8 @@ async fn spawn_http_listener(
     message: &'static str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let listener = LimitedListener::new(TcpListener::bind(addr).await?, limiter);
-    tokio::spawn(async move {
-        let service = app.into_make_service_with_connect_info::<ClientAddr>();
-        info!(%addr, "{message}");
-        if let Err(err) = axum::serve(listener, service).await {
-            warn!(%addr, error = ?err, "HTTP listener stopped");
-        }
-    });
+    info!(%addr, "{message}");
+    tokio::spawn(serve::serve(listener, app));
     Ok(())
 }
 
