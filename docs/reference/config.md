@@ -26,7 +26,7 @@ are still accepted.
 | `cert.crt`, `cert.key` | `server.crt`, `server.key` | TLS certificate and key, normally `/etc/kvm/server.crt` and `/etc/kvm/server.key`. A Tailscale or Let's Encrypt certificate sets both to `/etc/kvm/certs/managed.pem`, one file with chain and key; if it does not load at startup, the self-signed pair serves instead. |
 | `logger.level` | `info` | |
 | `logger.file` | `stdout` | |
-| `stun` | `stun.l.google.com:19302` | STUN server for H.264 WebRTC. |
+| `stun` | empty | STUN server (`host:port`) for H.264 WebRTC. Empty or `disable`: none, and the device contacts no outside server; a viewer on the same network, WireGuard or Tailscale needs none. Set one only for viewers behind another NAT. |
 | `turn.turn_addr`, `turn.turn_user`, `turn.turn_cred` | empty | Optional TURN server for WebRTC. |
 | `compatibility_mode` | `false` | |
 

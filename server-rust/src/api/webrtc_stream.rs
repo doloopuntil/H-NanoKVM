@@ -787,10 +787,16 @@ mod tests {
 
     #[test]
     fn ice_servers_match_frontend_shape() {
-        let config = Config::default();
+        // No server unless one is configured: the device contacts nobody by default.
+        assert!(client_ice_servers(&Config::default()).is_empty());
+
+        let config = Config {
+            stun: "stun.example.org:3478".to_string(),
+            ..Config::default()
+        };
         let data = serde_json::to_value(client_ice_servers(&config)).unwrap();
 
-        assert_eq!(data[0]["urls"][0], "stun:stun.l.google.com:19302");
+        assert_eq!(data[0]["urls"][0], "stun:stun.example.org:3478");
         assert!(data[0].get("username").is_none());
         assert!(data[0].get("credential").is_none());
     }

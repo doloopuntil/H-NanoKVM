@@ -129,7 +129,8 @@ impl Default for Config {
             logger: Logger::default(),
             authentication: "enable".to_string(),
             jwt: Jwt::default(),
-            stun: "stun.l.google.com:19302".to_string(),
+            // None: a STUN server sees the device's address at every WebRTC session.
+            stun: String::new(),
             turn: Turn::default(),
             security: Security::default(),
             paths: Paths::default(),
