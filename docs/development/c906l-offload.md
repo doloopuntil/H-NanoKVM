@@ -129,8 +129,25 @@ All on the main core or in fixed-function blocks; none needs the C906L.
   already builds `interdrv/ive`. A feature of its own: the browser has to assemble the picture.
 - **Upload scheduling**: the upload on a lower-priority thread so the video keeps its turns. A second
   core does not fix starvation on the first.
-- **Splice uploads to the file** with kTLS receive, to skip the copy through the server. Only if the
-  upload is still CPU-bound after the cipher work.
+- **Splice uploads to the file** with kTLS receive, to skip the copy through the server. The upload
+  is still CPU-bound (2-5 MB/s next to a streaming viewer), but a copy costs ~1.6 ms per MB here, so
+  this saves a few percent at most.
+
+## Measured and left alone
+
+- **Ethernet interrupt coalescing.** The MAC (`st_gmac`, 100 Mbit) already offloads checksums and
+  scatter-gather; TSO is fixed off in hardware. NAPI batching (`gro_flush_timeout` 200 us,
+  `napi_defer_hard_irqs` 2) cut receive interrupts from ~2150 to ~170 a second and changed neither
+  the frame rate nor the CPU: the softirq time is per-packet TCP work (~2200 ACKs in, ~5700
+  segments out a second), not interrupt entry. `rx-usecs` above 136 is rejected by the driver. The
+  batching stays opt-in.
+- **Zero-copy sends for plain HTTP** (`MSG_ZEROCOPY`). A kernel copy runs at ~640 MB/s here, so the
+  copy it saves costs under 2% of the CPU at the 100 Mbit link rate, before its own page pinning and
+  completion handling, and it would need the MJPEG response written around hyper.
+- **Upload write-back.** During a 90 s upload `Dirty` stayed at 4-9 MB and `Writeback` at 0-4 MB,
+  far below the 16 and 32 MB thresholds, with no I/O wait: the SD card keeps up and the upload is
+  CPU-bound. Smaller dirty limits would change nothing.
+- **Zeroing on free** (`init_on_free=0`): under 1%, see above.
 
 ## When to reopen
 
