@@ -109,6 +109,9 @@ build_stage() {
 	uboot_config="$(find "$OUTPUT_DIR/build" -maxdepth 2 -path '*/uboot-*/.config' | head -n 1)"
 	[ -n "$uboot_config" ] || die "missing U-Boot .config"
 	grep -qx 'CONFIG_BOOTDELAY=0' "$uboot_config" || die "U-Boot BOOTDELAY is not 0"
+	for option in CONFIG_RNG_CV181X CONFIG_BOARD_RNG_SEED; do
+		grep -qx "$option=y" "$uboot_config" || die "U-Boot lacks $option"
+	done
 
 	# Rootfs: the media and Wi-Fi modules, libkvm's GCC runtime and the update metadata
 	ROOTFS="$IMAGES/rootfs.ext4"

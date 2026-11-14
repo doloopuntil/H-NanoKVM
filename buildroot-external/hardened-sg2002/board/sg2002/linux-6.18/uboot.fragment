@@ -2,3 +2,8 @@
 
 # Boot at once (saves 2 s); a key already waiting on the serial console still stops autoboot.
 CONFIG_BOOTDELAY=0
+
+# /chosen/rng-seed (and kaslr-seed) from the SoC's TRNG: the kernel's random pool is ready at boot.
+CONFIG_DM_RNG=y
+CONFIG_RNG_CV181X=y
+CONFIG_BOARD_RNG_SEED=y
