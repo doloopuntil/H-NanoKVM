@@ -186,7 +186,7 @@ start_kvm_system_runtime() {
     }
     : > "$KVM_SYSTEM_LOG" 2>/dev/null || KVM_SYSTEM_LOG=/dev/null
     nohup "$NANOKVM_LOADER" --library-path "$NANOKVM_NATIVE_LIBRARY_PATH" \
-        "$KVM_SYSTEM_RUNTIME_DIR/kvm_system" >"$KVM_SYSTEM_LOG" 2>&1 &
+        "$KVM_SYSTEM_RUNTIME_DIR/kvm_system" >>"$KVM_SYSTEM_LOG" 2>&1 &
     launched_pid=$!
     rm -f "$KVM_SYSTEM_PID_FILE"
     for _ in 1 2 3 4 5; do
@@ -228,6 +228,21 @@ reboot_after_unrecoverable_server() {
     sync
     reboot
     exit 1
+}
+
+# The logs are in RAM (/tmp) and are appended to, so cutting one down is safe while its
+# writer runs. Over 1 MiB a log keeps its last 200 lines.
+trim_log() {
+    [ -f "$1" ] || return 0
+    [ "$(wc -c < "$1" 2>/dev/null || echo 0)" -gt 1048576 ] || return 0
+    tail -n 200 "$1" > "$1.tail" 2>/dev/null && cat "$1.tail" > "$1"
+    rm -f "$1.tail"
+}
+
+trim_runtime_logs() {
+    trim_log "$SERVER_LOG"
+    trim_log "$KVM_SYSTEM_LOG"
+    trim_log /tmp/nanokvm-watchdog.log
 }
 
 tmp_available_kb() {
@@ -409,7 +424,7 @@ start_server_runtime() {
     : > "$SERVER_LOG" 2>/dev/null || SERVER_LOG=/dev/null
     runtime_log "starting NanoKVM-Server from $server_bin"
     nohup "$NANOKVM_LOADER" --library-path "$NANOKVM_NATIVE_LIBRARY_PATH" \
-        "$server_bin" >"$SERVER_LOG" 2>&1 &
+        "$server_bin" >>"$SERVER_LOG" 2>&1 &
     echo $! > "$SERVER_PID_FILE"
 }
 
@@ -469,6 +484,7 @@ start_watchdog() {
         in_transfer=0
         sleep 20
         while true; do
+            trim_runtime_logs
             if ! kvm_system_is_running; then
                 if adopt_single_kvm_system_process; then
                     runtime_log "adopted live kvm_system pid $(cat "$KVM_SYSTEM_PID_FILE")"

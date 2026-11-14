@@ -1180,13 +1180,14 @@ pub fn request_h264_keyframe(reason: &'static str) {
 }
 
 /// Lets one message through per interval and counts the ones it holds back.
-struct LogThrottle {
+#[derive(Debug)]
+pub(crate) struct LogThrottle {
     last: Option<Instant>,
     suppressed: usize,
 }
 
 impl LogThrottle {
-    const fn new() -> Self {
+    pub(crate) const fn new() -> Self {
         Self {
             last: None,
             suppressed: 0,
@@ -1194,7 +1195,7 @@ impl LogThrottle {
     }
 
     /// The number held back since the last message, or `None` if this one is held back too.
-    fn due(&mut self, now: Instant, interval: Duration) -> Option<usize> {
+    pub(crate) fn due(&mut self, now: Instant, interval: Duration) -> Option<usize> {
         if self
             .last
             .is_some_and(|last| now.saturating_duration_since(last) < interval)
