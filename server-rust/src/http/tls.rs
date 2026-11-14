@@ -18,7 +18,7 @@ use rcgen::{
 };
 use tokio::{
     net::{TcpListener, TcpStream},
-    sync::mpsc,
+    sync::{Semaphore, mpsc},
     time,
 };
 use tokio_rustls::{
@@ -34,7 +34,8 @@ use tokio_rustls::{
 };
 use tracing::warn;
 
-use crate::{AppError, Result};
+use super::limits::{ConnLimiter, Guarded};
+use crate::{AppError, Result, api::stream::LogThrottle};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ClientAddr(pub SocketAddr);
@@ -45,10 +46,18 @@ const ACME_ALPN: &[u8] = b"acme-tls/1";
 /// A client gets this long to finish its handshake before the connection is dropped.
 const TLS_HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(10);
 const READY_QUEUE: usize = 16;
+/// Handshakes in progress at once; each is a signature and a key exchange on the one core.
+const MAX_HANDSHAKES: usize = 16;
+/// Failed handshakes cost a client nothing, so their log lines are spaced out.
+const HANDSHAKE_LOG_INTERVAL: Duration = Duration::from_secs(10);
+static HANDSHAKE_LOG: std::sync::Mutex<LogThrottle> = std::sync::Mutex::new(LogThrottle::new());
+
+/// A served HTTPS connection.
+pub type TlsIo = Guarded<TlsStream<TcpStream>>;
 
 pub struct TlsListener {
     local_addr: SocketAddr,
-    ready: mpsc::Receiver<(TlsStream<TcpStream>, SocketAddr)>,
+    ready: mpsc::Receiver<(TlsIo, SocketAddr)>,
 }
 
 impl Connected<IncomingStream<'_, TcpListener>> for ClientAddr {
@@ -60,12 +69,17 @@ impl Connected<IncomingStream<'_, TcpListener>> for ClientAddr {
 impl TlsListener {
     /// Handshakes run in their own tasks, so a slow or silent client does not hold
     /// up the connections behind it.
-    pub fn new(listener: TcpListener, config: ServerConfig) -> io::Result<Self> {
+    pub fn new(
+        listener: TcpListener,
+        config: ServerConfig,
+        limiter: Arc<ConnLimiter>,
+    ) -> io::Result<Self> {
         let local_addr = listener.local_addr()?;
         let (tx, ready) = mpsc::channel(READY_QUEUE);
         tokio::spawn(accept_loop(
             listener,
             TlsAcceptor::from(Arc::new(config)),
+            limiter,
             tx,
         ));
         Ok(Self { local_addr, ready })
@@ -75,8 +89,10 @@ impl TlsListener {
 async fn accept_loop(
     listener: TcpListener,
     acceptor: TlsAcceptor,
-    ready: mpsc::Sender<(TlsStream<TcpStream>, SocketAddr)>,
+    limiter: Arc<ConnLimiter>,
+    ready: mpsc::Sender<(TlsIo, SocketAddr)>,
 ) {
+    let handshakes = Arc::new(Semaphore::new(MAX_HANDSHAKES));
     while !ready.is_closed() {
         let (stream, addr) = match listener.accept().await {
             Ok(stream) => stream,
@@ -87,24 +103,48 @@ async fn accept_loop(
             }
         };
 
+        // Over a cap the connection is closed at once, before any handshake work.
+        let Some(guard) = limiter.admit(addr) else {
+            continue;
+        };
+        let Ok(permit) = handshakes.clone().try_acquire_owned() else {
+            log_handshake(addr, "too many tls handshakes at once");
+            continue;
+        };
+
         let acceptor = acceptor.clone();
         let ready = ready.clone();
         tokio::spawn(async move {
-            match time::timeout(TLS_HANDSHAKE_TIMEOUT, acceptor.accept(stream)).await {
+            let accepted = time::timeout(TLS_HANDSHAKE_TIMEOUT, acceptor.accept(stream)).await;
+            drop(permit);
+            match accepted {
                 // A validation handshake carries no HTTP.
                 Ok(Ok(stream)) if stream.get_ref().1.alpn_protocol() == Some(ACME_ALPN) => {}
                 Ok(Ok(stream)) => {
-                    let _ = ready.send((stream, addr)).await;
+                    let _ = ready.send((Guarded::new(stream, guard), addr)).await;
                 }
-                Ok(Err(err)) => warn!(%addr, error = ?err, "failed to accept tls connection"),
-                Err(_) => warn!(%addr, "tls handshake timed out"),
+                Ok(Err(err)) => {
+                    log_handshake(addr, &format!("failed to accept tls connection: {err}"))
+                }
+                Err(_) => log_handshake(addr, "tls handshake timed out"),
             }
         });
     }
 }
 
+/// One line per interval; the rest are counted.
+fn log_handshake(addr: SocketAddr, message: &str) {
+    let due = HANDSHAKE_LOG
+        .lock()
+        .unwrap_or_else(|err| err.into_inner())
+        .due(std::time::Instant::now(), HANDSHAKE_LOG_INTERVAL);
+    if let Some(suppressed) = due {
+        warn!(%addr, suppressed, "{message}");
+    }
+}
+
 impl Listener for TlsListener {
-    type Io = TlsStream<TcpStream>;
+    type Io = TlsIo;
     type Addr = SocketAddr;
 
     async fn accept(&mut self) -> (Self::Io, Self::Addr) {
@@ -450,7 +490,7 @@ mod tests {
         let (config, resolver) = load_server_config(&cert, &key).unwrap();
         let tcp = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = tcp.local_addr().unwrap();
-        let mut listener = TlsListener::new(tcp, config).unwrap();
+        let mut listener = TlsListener::new(tcp, config, ConnLimiter::new()).unwrap();
         resolver
             .set_challenge("kvm.example.org", &[7u8; 32])
             .unwrap();
@@ -495,7 +535,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(
-            accepted.0.get_ref().1.alpn_protocol(),
+            accepted.0.get_ref().get_ref().1.alpn_protocol(),
             Some(&b"http/1.1"[..])
         );
 
@@ -580,8 +620,12 @@ mod tests {
         generate_self_signed_cert(&cert, &key).unwrap();
         let tcp = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = tcp.local_addr().unwrap();
-        let mut listener =
-            TlsListener::new(tcp, load_server_config(&cert, &key).unwrap().0).unwrap();
+        let mut listener = TlsListener::new(
+            tcp,
+            load_server_config(&cert, &key).unwrap().0,
+            ConnLimiter::new(),
+        )
+        .unwrap();
 
         let mut roots = RootCertStore::empty();
         for der in CertificateDer::pem_file_iter(&cert).unwrap() {

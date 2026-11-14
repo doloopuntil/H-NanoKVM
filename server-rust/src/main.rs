@@ -9,7 +9,9 @@ use nanokvm_rust_server::{
     ffi::kvm,
     hdmi_idle,
     http::{
-        cert_manager, routes,
+        cert_manager,
+        limits::{ConnLimiter, LimitedListener},
+        routes,
         tls::{self, ClientAddr},
     },
     state::AppState,
@@ -222,18 +224,20 @@ fn initialize_kvm() {
 async fn run_http(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let addr = config.listen_addr()?;
     let state = AppState::new(config).await?;
+    let limiter = ConnLimiter::new();
 
     if state.config.needs_dedicated_loopback_listener() {
         spawn_http_listener(
             state.config.loopback_listen_addr(),
             routes::build(state.clone()),
+            limiter.clone(),
             "starting dedicated loopback HTTP listener",
         )
         .await?;
     }
 
     let app = routes::build(state).into_make_service_with_connect_info::<ClientAddr>();
-    let listener = TcpListener::bind(addr).await?;
+    let listener = LimitedListener::new(TcpListener::bind(addr).await?, limiter);
     info!(%addr, "starting NanoKVM Rust backend");
     axum::serve(listener, app).await?;
     Ok(())
@@ -245,11 +249,13 @@ async fn run_https(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let (tls_config, cert_resolver) = cert_manager::load_server_config(&config)?;
     let state = AppState::new(config).await?;
     cert_manager::spawn(cert_resolver);
+    let limiter = ConnLimiter::new();
 
     if state.config.needs_dedicated_loopback_listener() {
         spawn_http_listener(
             state.config.loopback_listen_addr(),
             https_redirect_app(state.clone()),
+            limiter.clone(),
             "starting dedicated loopback HTTP to HTTPS redirect listener",
         )
         .await?;
@@ -258,13 +264,14 @@ async fn run_https(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     spawn_http_listener(
         http_addr,
         https_redirect_app(state.clone()),
+        limiter.clone(),
         "starting HTTP to HTTPS redirect listener",
     )
     .await?;
 
     let app = routes::build(state).into_make_service_with_connect_info::<ClientAddr>();
     let listener = TcpListener::bind(https_addr).await?;
-    let tls_listener = tls::TlsListener::new(listener, tls_config)?;
+    let tls_listener = tls::TlsListener::new(listener, tls_config, limiter)?;
     info!(addr = %https_addr, "starting NanoKVM Rust HTTPS backend");
     axum::serve(tls_listener, app).await?;
     Ok(())
@@ -273,9 +280,10 @@ async fn run_https(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 async fn spawn_http_listener(
     addr: std::net::SocketAddr,
     app: axum::Router,
+    limiter: std::sync::Arc<ConnLimiter>,
     message: &'static str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let listener = TcpListener::bind(addr).await?;
+    let listener = LimitedListener::new(TcpListener::bind(addr).await?, limiter);
     tokio::spawn(async move {
         let service = app.into_make_service_with_connect_info::<ClientAddr>();
         info!(%addr, "{message}");
