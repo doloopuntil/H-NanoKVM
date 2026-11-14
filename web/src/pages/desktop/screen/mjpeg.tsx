@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { useAtom, useAtomValue } from 'jotai';
 
@@ -11,14 +11,19 @@ import { resolutionAtom, videoScaleAtom } from '@/jotai/screen.ts';
 
 import { useScreenFit } from './use-screen-fit.ts';
 
+// Browsers keep loading an MJPEG image in a background tab; the device encodes every frame.
+const HIDDEN_PAUSE_MS = 5000;
+
 export const Mjpeg = () => {
   const resolution = useAtomValue(resolutionAtom);
   const mouseStyle = useAtomValue(mouseStyleAtom);
   const [videoScale, setVideoScale] = useAtom(videoScaleAtom);
   const [hasError, setHasError] = useState(false);
   const [streamNonce, setStreamNonce] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const pausedRef = useRef(false);
   const streamURL = `${getBaseUrl('http')}/api/stream/mjpeg`;
-  const streamSrc = hasError ? undefined : `${streamURL}?v=${streamNonce}`;
+  const streamSrc = hasError || paused ? undefined : `${streamURL}?v=${streamNonce}`;
   const { containerRef, mediaStyle } = useScreenFit(resolution, videoScale, {
     maxWidth: '100%',
     maxHeight: '100%',
@@ -42,6 +47,31 @@ export const Mjpeg = () => {
   }
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onVisibilityChange = () => {
+      clearTimeout(timer);
+      if (document.hidden) {
+        timer = setTimeout(() => {
+          pausedRef.current = true;
+          setPaused(true);
+        }, HIDDEN_PAUSE_MS);
+        return;
+      }
+      if (pausedRef.current) {
+        pausedRef.current = false;
+        setPaused(false);
+        setHasError(false);
+        setStreamNonce((current) => current + 1);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
     const scale = storage.getVideoScale();
     if (scale) {
       setVideoScale(scale);
@@ -62,7 +92,10 @@ export const Mjpeg = () => {
           visibility: hasError ? 'hidden' : 'visible'
         }}
         src={streamSrc}
-        onError={() => setHasError(true)}
+        // removing the source to pause also fires an error
+        onError={() => {
+          if (!pausedRef.current) setHasError(true);
+        }}
         alt="screen"
       />
     </div>
