@@ -1,7 +1,7 @@
 use axum::{
     Router,
     extract::DefaultBodyLimit,
-    middleware::{from_fn, from_fn_with_state},
+    middleware::{from_fn, from_fn_with_state, map_request},
     routing::{delete, get, post},
 };
 use tower_http::{services::ServeDir, trace::TraceLayer};
@@ -10,7 +10,7 @@ use crate::{
     api::{
         account, account_totp, application, autostart, compatibility, cpu_clock, download, hid,
         https_cert, monitor, network, picoclaw, script, storage, stream, system_firewall,
-        system_log, system_time, system_update, tailscale, tls_switch, trusted_proxies, vm,
+        system_log, system_time, system_update, tailscale, tls_switch, trusted_proxies, upload, vm,
         watchdog, webrtc_stream, wireguard,
     },
     http::middleware::{conceal_internal_errors, picoclaw_internal, protected},
@@ -47,7 +47,9 @@ pub fn build(state: AppState) -> Router {
         )
         .route(
             "/api/application/upload",
-            post(application::upload::upload).layer(DefaultBodyLimit::max(130 * 1024 * 1024)),
+            post(application::upload::upload)
+                .layer(DefaultBodyLimit::max(130 * 1024 * 1024))
+                .layer(map_request(upload::yield_between_reads)),
         )
         .route(
             "/api/application/staged",
@@ -73,7 +75,8 @@ pub fn build(state: AppState) -> Router {
         .route(
             "/api/system-update/upload",
             post(system_update::local::upload)
-                .layer(DefaultBodyLimit::max(2 * 1024 * 1024 * 1024 + 1024 * 1024)),
+                .layer(DefaultBodyLimit::max(2 * 1024 * 1024 * 1024 + 1024 * 1024))
+                .layer(map_request(upload::yield_between_reads)),
         )
         .route(
             "/api/system-update/local-key",
@@ -290,9 +293,11 @@ pub fn build(state: AppState) -> Router {
         .route("/api/hid/paste", post(hid::paste))
         .route(
             "/api/download/file",
-            post(download::upload_image_file).layer(DefaultBodyLimit::max(
-                download::MAX_UPLOAD_BYTES + 1024 * 1024,
-            )),
+            post(download::upload_image_file)
+                .layer(DefaultBodyLimit::max(
+                    download::MAX_UPLOAD_BYTES + 1024 * 1024,
+                ))
+                .layer(map_request(upload::yield_between_reads)),
         )
         .merge(compatibility_routes())
         .route_layer(from_fn_with_state(state.clone(), protected));
