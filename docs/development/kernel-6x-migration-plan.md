@@ -1582,6 +1582,11 @@ modules, so measure module signing and lockdown alongside. Remaining users, in o
    an unsigned module is refused (`Key was rejected by service`), a signed one loads,
    debugfs reads still work, 60 fps capture. The media modules finish loading 0.4 s later
    (3.14 s against 2.72 s); the video pipeline opens 0.2 s later (18.26 s against 18.03 s).
+5. Open: `S95nanokvm` still puts `/mnt/system/usr/lib` and `/mnt/system/usr/lib/3rd` on
+   `NANOKVM_NATIVE_LIBRARY_PATH`, but the 6.18 image installs nothing there (the
+   vendor-runtime package that filled it left on 2026-11-15). Drop both, so only `dl_lib` and
+   the loader's defaults remain, and change the line `test-latest-buildroot-security-policy.sh`
+   requires to match.
 
 ### Phase 7: naming sweep
 
