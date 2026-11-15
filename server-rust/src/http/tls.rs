@@ -17,7 +17,7 @@ use rcgen::{
     CertificateParams, CertifiedKey, CustomExtension, KeyPair, generate_simple_self_signed,
 };
 use tokio::{
-    net::{TcpListener, TcpStream},
+    net::TcpListener,
     sync::{Semaphore, mpsc},
     time,
 };
@@ -34,7 +34,10 @@ use tokio_rustls::{
 };
 use tracing::warn;
 
-use super::limits::{ConnLimiter, Guarded};
+use super::{
+    limits::{ConnLimiter, Guarded},
+    pipe::PipeIo,
+};
 use crate::{AppError, Result, api::stream::LogThrottle};
 
 #[derive(Debug, Clone, Copy)]
@@ -53,7 +56,7 @@ const HANDSHAKE_LOG_INTERVAL: Duration = Duration::from_secs(10);
 static HANDSHAKE_LOG: std::sync::Mutex<LogThrottle> = std::sync::Mutex::new(LogThrottle::new());
 
 /// A served HTTPS connection.
-pub type TlsIo = Guarded<TlsStream<TcpStream>>;
+pub type TlsIo = Guarded<TlsStream<PipeIo>>;
 
 pub struct TlsListener {
     local_addr: SocketAddr,
@@ -115,7 +118,8 @@ async fn accept_loop(
         let acceptor = acceptor.clone();
         let ready = ready.clone();
         tokio::spawn(async move {
-            let accepted = time::timeout(TLS_HANDSHAKE_TIMEOUT, acceptor.accept(stream)).await;
+            let accepted =
+                time::timeout(TLS_HANDSHAKE_TIMEOUT, acceptor.accept(PipeIo::new(stream))).await;
             drop(permit);
             match accepted {
                 // A validation handshake carries no HTTP.
@@ -363,6 +367,8 @@ fn write_file(path: &Path, data: &[u8], mode: u32) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use std::os::unix::fs::PermissionsExt;
+
+    use tokio::net::TcpStream;
 
     use super::*;
 

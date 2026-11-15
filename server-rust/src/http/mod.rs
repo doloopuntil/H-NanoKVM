@@ -5,6 +5,7 @@ pub mod cert_store;
 pub mod cookie;
 pub mod limits;
 pub mod middleware;
+pub mod pipe;
 pub mod proxy;
 pub mod routes;
 pub mod tls;

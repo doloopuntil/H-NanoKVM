@@ -53,6 +53,11 @@ fn device() -> Option<&'static File> {
         .as_ref()
 }
 
+/// Whether records are being sealed on the C906L.
+pub fn active() -> bool {
+    device().is_some() && !DISABLED.load(Ordering::Relaxed)
+}
+
 /// ring's TLS 1.3 ChaCha20 suite with the C906L encrypter, when the device is there.
 pub fn wrap(suite: SupportedCipherSuite) -> SupportedCipherSuite {
     static WRAPPED: OnceLock<Option<&'static Tls13CipherSuite>> = OnceLock::new();
