@@ -67,7 +67,8 @@ const SYSTEM_BOOT_GOOD_FILE: &str = "/etc/kvm/system-update-boot-good.json";
 const SYSTEM_ROLLBACK_SCRIPT_FILE: &str = "/etc/kvm/system-update-rollback.sh";
 const SYSTEM_ROLLBACK_ATTEMPT_FILE: &str = "/etc/kvm/system-update-rollback-attempted";
 const SYSTEM_RAW_INSTALL_MARKER: &str = "/data/hardened-system-raw-update-pending.json";
-const SYSTEM_RAW_INSTALL_RUN_DIR: &str = "/tmp/hardened-system-raw-update";
+// Runs the copied loader and BusyBox while the root file system is rewritten: /tmp is noexec.
+const SYSTEM_RAW_INSTALL_RUN_DIR: &str = "/run/hardened-system-raw-update";
 const SYSTEM_RAW_INSTALL_LOG: &str = "/data/hardened-system-raw-update.log";
 const SYSTEM_RAW_RUNTIME_LOADER: &str = "ld-musl-system-update.so.1";
 const SYSTEM_RAW_RUNTIME_LIBC: &str = "libc.so";
@@ -1683,7 +1684,6 @@ stop_update_runtime() {{\n\
       *'/etc/init.d/S95nanokvm start'*) $BB kill -9 \"$PID\" >/dev/null 2>&1 || true ;;\n\
     esac\n\
   done\n\
-  $BB rm -rf /tmp/kvm_system /tmp/server >/dev/null 2>&1 || true\n\
   # an active swap file on / is held open for writing by the kernel, which keeps / from going read-only\n\
   log 'turning swap off'\n\
   $BB swapoff -a >> \"$LOG\" 2>&1 || log 'swapoff failed'\n\

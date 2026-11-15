@@ -40,6 +40,7 @@ behaviour is in the guides ([sign-in](../guide/sign-in.md),
 | Public routes | The routes that need no session (health, version, sign-in, setup, AP-mode Wi-Fi) answer an internal error with `internal error` and log the detail. The HTTP to HTTPS redirect uses the `Host` header only when it is a host name, an IPv4 address or a bracketed IPv6 address with an optional port, and answers 400 otherwise. |
 | Online app update | Moves forward only: signed metadata for an older or equal version is refused before the download. A manual import is the way to install an older release. Metadata has no expiry or sequence number, so withholding newer releases is not detected. |
 | Browser | Security headers on every response; the CSP allows scripts and images only from the device (images also from `data:`), so chat output cannot load external content; `base-uri` is `none`, forms post to the device only, and the device cannot be framed. |
+| Writable directories | `/tmp` and `/dev/shm`, which every account can write, are mounted `noexec,nosuid,nodev`. `NanoKVM-Server` and `kvm_system` run in place from `/kvmapp`; the raw system updater stages its loader and BusyBox in root-only `/run`. The image build fails if the fstab loses `noexec`. |
 | Commands | Privileged commands go through an argv-only allowlist (`system/command.rs`) with timeouts and bounded output; no shell strings. |
 | Files and archives | Atomic `0600` writes for secrets, symlink and traversal checks, bounded archive extraction. |
 | Updates | Signed metadata and payload hashes for application and system updates; raw partition writes happen only after the install confirmation; boot watchdog rollback. An optional local key, set with the password and logged, signs bundles uploaded from the browser only. |
@@ -85,9 +86,6 @@ unprivileged user.
 - The server runs as root. Splitting privileged operations into a smaller
   helper is future work.
 - The login lockout is per address and user, plus a budget per address across all names; there is no counter across addresses.
-- `/tmp` and `/dev/shm` are mounted with the tmpfs defaults. Mounting them `noexec` (woffko's
-  4f541063) would stop the server: S95nanokvm runs `NanoKVM-Server` and `kvm_system` from copies in
-  `/tmp`. Moving those copies is the prerequisite.
 - Remote ISO download has no allowlist of sources, only the public-host check; it stays off by default.
 - Retained vendor components with `NOASSERTION` licence metadata remain a
   documented limitation.

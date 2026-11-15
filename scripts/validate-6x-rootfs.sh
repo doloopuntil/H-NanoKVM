@@ -40,6 +40,15 @@ fi
 dump /etc/ssh/sshd_config sshd_config && grep -qx 'PermitEmptyPasswords no' "$TMP_DIR/sshd_config" || \
 	fail "sshd_config does not refuse empty passwords"
 
+if dump /etc/fstab fstab; then
+	for mnt in /tmp /dev/shm; do
+		awk -v m="$mnt" '$2 == m && $4 ~ /(^|,)noexec(,|$)/ { ok = 1 } END { exit !ok }' \
+			"$TMP_DIR/fstab" || fail "$mnt is not mounted noexec"
+	done
+else
+	fail "could not read /etc/fstab"
+fi
+
 # Reproducible filesystem identity (BR2_TARGET_ROOTFS_EXT2_MKFS_OPTIONS)
 stats="$(LC_ALL=C debugfs -R stats "$IMAGE" 2>/dev/null || true)"
 printf '%s\n' "$stats" | grep -Eq "^Filesystem UUID:[[:space:]]+$EXPECTED_ROOTFS_UUID$" || fail "rootfs UUID is not pinned"

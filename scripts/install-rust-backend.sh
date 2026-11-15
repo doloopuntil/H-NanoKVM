@@ -24,8 +24,10 @@ rm -f "$BACKUP_DIR/NanoKVM-Server.go" \
   /etc/kvm/scripts/switch-backend-go.sh \
   /etc/kvm/scripts/switch-backend-rust.sh 2>/dev/null || true
 
-cp "$SRC" "$DEST"
-chmod 0755 "$DEST"
+# The server runs from $DEST: replace it by renaming, as writing into it fails.
+cp "$SRC" "$DEST.new"
+chmod 0755 "$DEST.new"
+mv "$DEST.new" "$DEST"
 cp "$SRC" "$RUST_BACKUP"
 chmod 0755 "$RUST_BACKUP"
 /etc/init.d/S95nanokvm restart
