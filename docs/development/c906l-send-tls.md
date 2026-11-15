@@ -1,5 +1,5 @@
 ---
-status: experiment finished, server hook measured on a Lite (+4% fps); stopped, C906L stays parked
+status: experiment finished, measured on a Lite (25.4 to 30 fps with hand-off); recommendation: stop, C906L stays parked
 applies-to: system 1.0.0 (Linux 6.18) on the Lite
 last-checked: 2026-11-15
 ---
@@ -39,7 +39,11 @@ replace the two estimates everything rests on.
   ([results](#stage-2-results)).
 - **Server hook, measured on overdrive:** 25.4 fps without, 26.5 fps with the C906L sealing
   (+4%). CPU per MB fell from 133 to 111 ms as modelled, but the worker waits for each record, so
-  the freed CPU sits idle (84% busy). Stopped ([measurement](#server-hook-on-overdrive)).
+  the freed CPU sits idle (84% busy) ([measurement](#server-hook-on-overdrive)).
+- **With the wait off the runtime thread:** 30.0 fps (+18%), 96% busy, close to the CPU-bound
+  limit. The MJPEG producer shares the one Tokio thread, which slept through every seal; handing
+  the runtime to another thread for the wait (`block_in_place`) fixed that, and a socket writer
+  thread added only 0.6 fps on top. **Recommendation: still stop** ([pipelining](#pipelining)).
 
 ## How the firmware gets loaded
 
@@ -541,15 +545,51 @@ the second "on" run shows no sealing error, so ring never took over.
   and it is the one that applies.
 - Overdrive alone moved the ring baseline from 22.2 to 25.4 fps, more than the offload adds on top.
 
-To turn the freed CPU into frames, the server would have to keep several records in flight
-(seal ahead of the socket, or a second worker), which means its own buffering of the TLS stream or
-a pipelined record layer: more architecture again, for at most the ~15% the CPU-bound limit allows.
+## Pipelining
+
+The owner asked why the C906L could not seal one batch while the main core works on the previous
+one. Two changes were tried on the same card and clocks, each selectable per connection through
+`/tmp/c906l-offload`, `/tmp/c906l-pipe` and `/tmp/c906l-yield` (`on`/`off`) so one binary covers
+every run:
+
+- **Socket writer thread** (`server-rust/src/http/pipe.rs`): once a TLS connection has sent 1 MiB,
+  its socket writes go through a 128 KiB queue to a thread of their own, a double buffer under
+  rustls. rustls itself is not split.
+- **Runtime hand-off**: each seal runs inside `tokio::task::block_in_place`, so the runtime moves
+  to another thread while this one waits for the C906L.
+
+| | fps | CPU busy | CPU per MB |
+| --- | --- | --- | --- |
+| Ring only (from above) | 25.4 | 97% | 133 ms |
+| C906L, no pipelining (from above) | 26.5 | 84% | 111 ms |
+| C906L + writer thread | 26.6 | 88% | 116 ms |
+| C906L + writer thread + hand-off | 30.0 (29.6-30.1) | 96% | 111 ms |
+| C906L + hand-off only | 29.4 (29.1-29.6) | 92% | 109 ms |
+
+Two 40 s runs each, one browser, after it reconnected.
+
+- **The writer thread alone did nothing.** Thread sampling showed it asleep about 80% of the time;
+  the main Tokio thread spent about 30% in the C906L wait and 16% idle in epoll.
+- **The real serialisation was the runtime.** The MJPEG producer (`run_mjpeg_producer`) runs on
+  the same single Tokio thread. While hyper writes a frame, rustls seals its ~18 records in a row
+  and the thread sleeps through each, so the producer starts its next read late. Its 60 fps ticker
+  skips missed ticks, so frames land on 33 or 50 ms boundaries and averaged 26.5 fps.
+- **Hand-off is what helps**: with it the CPU is busy again and the rate reaches the CPU-bound
+  limit of the model (111 ms per MB at ~100% is about 9 MB/s, 31 fps). The writer thread adds
+  about 0.6 fps on top; without it the design is a single `block_in_place` around the ioctl.
+- Each hand-off costs a thread switch per record (~460 per second here); it is inside the
+  measured CPU per MB.
 
 ### Final recommendation: stop
 
-+1 fps (4%) on HTTPS MJPEG does not pay for firmware in the FIP, a U-Boot change, a kernel driver and
-a send key on a core without memory protection. The C906L stays parked. The experiment branch keeps
-the firmware, module, packages and server hook as a record; none of it is meant for `main`.
+The pipelined version gives 25.4 to about 30 fps on HTTPS MJPEG (+18%), and nothing anywhere else:
+plain HTTP is at the link rate and H.264 sends too little. The server part is now small, but the
+rest of the cost is unchanged: firmware in the FIP with full access to DRAM, a U-Boot change to keep
+it alive, a kernel driver, and the video connection's send key on a core without memory protection,
+outside kernel lockdown. Against security first and no more architecture than the gain justifies,
+we still recommend leaving the C906L parked. If HTTPS MJPEG speed ever outweighs that, this branch
+holds a working stack (firmware, module, packages, cipher hook, hand-off) to start from; none of it
+is meant for `main` as it is.
 
 ## Open questions
 
