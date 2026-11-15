@@ -27,7 +27,8 @@ class four OpenCV modules (`core`, `imgcodecs`, `imgproc`, `highgui`; `libgomp` 
 been dropped as unused. `libkvm` itself never called OpenCV. It now drives the VI channel
 and the JPEG encoder through `libkvm_mmf.so` directly (`src/kvm_capture.cpp`) and talks to
 the LT6911 over i2c-dev, and the image ships no OpenCV library. The checked-in `libkvm.so`
-in `dl_lib/` is an old MaixCDK build that still lists OpenCV; CI replaces it.
+and `libkvm_mmf.so` in `dl_lib/` are CI builds of this source, kept so the server links
+locally; CI replaces them with fresh builds.
 
 ## libkvm_mmf.so statically embeds its own copy of the LT6911 driver
 
@@ -128,9 +129,9 @@ bridge -- this device's one real sensor -- has no copy anywhere in
 along with the rest would have risked the one thing this device actually
 does (HDMI capture), for no size benefit worth that risk.
 
-`hardened-sg2002-vendor-runtime.mk` now removes `/mnt/system/usr/bin`
-entirely and prunes `/mnt/system/usr/lib` (including the `3rd/`
-subdirectory) down to exactly `libsns_lt6911.so`. Everything *removed* is
+`hardened-sg2002-vendor-runtime.mk` (removed on 2026-11-15 with the T-Head toolchain)
+removed `/mnt/system/usr/bin` entirely and pruned `/mnt/system/usr/lib` (including the `3rd/`
+subdirectory) down to exactly `libsns_lt6911.so`. The 6.18 image has neither. Everything *removed* is
 either proven redundant (shadowed by `dl_lib` in the library search order)
 or has no reference anywhere in this repo's tracked source. The retained
 file's own provenance is now fully resolved too -- see "libc.so, GCC
@@ -149,9 +150,6 @@ The 8 closed ISP/3A libraries (`libisp.so`, `libisp_algo.so`, `libae.so`,
 `libcvi_ispd2.so`) are no longer shipped. Checked on hardware on 2026-10-20:
 capture at 1080p in Direct and MJPEG, resolution changes, replug and a cold
 boot, with none of them on the library path.
-
-The checked-in `libkvm.so` still lists them as `NEEDED`; CI replaces both
-`libkvm*.so` files with fresh builds that do not.
 
 ## Middleware built from source
 
@@ -228,7 +226,7 @@ diagnostic that discovered these paths, this is production extraction).
 Update 2026-11-11 (Linux 6.18 image): the four GCC runtime libraries come from the
 T-Head musl toolchain that builds libkvm, its plain `lib64/lp64d` build stripped with
 `--strip-all -R .comment`. That output is byte-identical to the stock image's copies (checked
-against a running Lite), and `scripts/stage-thead-runtime.sh` pins the hashes. `libgomp`
+against a running Lite), and `scripts/stage-thead-runtime.sh` pinned the hashes. `libgomp`
 left with OpenCV; three remain. The 6.18
 image no longer ships `libsns_lt6911.so`: no process on the Lite maps it. The 5.10 pipeline
 still takes all of these from `vendor-sdk-stock`.

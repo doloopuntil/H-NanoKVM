@@ -8,7 +8,7 @@ last-checked: 2026-11-07
 
 The Rust backend lives in `server-rust/`. It replaces upstream's Go `server/`
 and runs as `NanoKVM-Server`, keeping the rest of the NanoKVM runtime:
-`kvm_system`, `libkvm.so`, the USB gadget scripts, the Maix multimedia stack and
+`kvm_system`, `libkvm.so`, the USB gadget scripts, the Sophgo multimedia stack and
 the React frontend. Its routes are listed in [Backend API](../reference/api.md)
 and its configuration in [Server configuration](../reference/config.md).
 

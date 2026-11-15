@@ -1608,6 +1608,12 @@ and externals, scripts and variables, CI, image and archive names, server consta
 docs), keeping anything a deployed device reads (update target, `/kvmapp`, `/etc/kvm`
 files) stable or migrated on purpose.
 
+MaixCDK left the build on 2026-11-15, but `libkvm_mmf` still carries its names: the
+"maix multi-media" log messages and `mmf_invert_format_to_maix()` in
+`support/sg2002/additional/kvm_mmf/`. Rename them to what they are (the Sophgo media stack, a
+`kvm_mmf` pixel format) in the same sweep; `scripts/build-sg2002-native.sh` greps the build's
+headers for `maix`, so keep that check meaningful.
+
 ## 8. File-level work list
 
 This repo (`Hardened_NanoKVM`):
