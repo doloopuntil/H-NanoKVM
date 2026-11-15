@@ -161,8 +161,9 @@ Known exceptions:
   or binary does not call the stack check. `libkvm.so`, `libkvm_mmf.so` and `kvm_system` are
   also linked with full RELRO (`-z relro -z now`), `kvm_system` is position-independent, and
   `libkvm.so` exports only its C API (`libkvm.map`). They are built with plain CMake from
-  this repository and the Sophgo middleware; no MaixCDK or OpenCV code is linked in or
-  shipped.
+  this repository and the Sophgo middleware by Buildroot's GCC, the toolchain that builds the
+  rest of the rootfs, so they load the `libstdc++` and musl Buildroot maintains; no MaixCDK or
+  OpenCV code is linked in or shipped, and `dl_lib` carries no GCC runtime of its own.
 - The web server's heap is mimalloc in secure mode: guard pages between its pages, encoded and
   randomised free lists, and a check for double frees, so a heap overflow or use after free in the
   server is harder to turn into control of it.

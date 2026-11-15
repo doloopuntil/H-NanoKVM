@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Builds the Linux 6.18 SD image (hardened_sg2002_nanokvm_6x_defconfig) and checks what it holds.
+#   toolchain configure and build only Buildroot's cross-compiler and musl, which then build
+#             the native code and link the server; build continues in the same output
 #   build     Buildroot make without the post-image step, kernel and rootfs checks, and
 #             HNANOKVM_6X_HANDOFF (a tar.zst of what assemble needs)
 #   assemble  post-image.sh (boot.vfat with the FIT, the SD image) and the boot checks
@@ -38,27 +40,43 @@ require_commands() {
 	done
 }
 
-build_stage() {
-	: "${NANOKVM_VENDOR_RUNTIME_SOURCE_DIR:?set NANOKVM_VENDOR_RUNTIME_SOURCE_DIR}"
-	: "${EXPECTED_SYSTEM_VERSION:?set EXPECTED_SYSTEM_VERSION}"
-	: "${EXPECTED_KVMAPP_VERSION:?set EXPECTED_KVMAPP_VERSION}"
-	: "${EXPECTED_SECURITY_PATCH_LEVEL:?set EXPECTED_SECURITY_PATCH_LEVEL}"
-	require_commands debugfs readelf strings zstd
+configure() {
 	[ -f "$LICHEERV_DIR/external.desc" ] || die "missing licheerv external: run scripts/fetch-licheerv-external.sh"
 	[ -e "$OUTPUT_DIR" ] && die "refusing to reuse Buildroot output: $OUTPUT_DIR"
-	[ -e "$REPORT_DIR" ] && die "refusing to reuse report directory: $REPORT_DIR"
-	mkdir -p "$REPORT_DIR"
-
 	LATEST_BUILDROOT_SOURCE_DIR="$BUILDROOT_SOURCE" \
 	HARDENED_SG2002_BUILDROOT_OUTPUT_DIR="$OUTPUT_DIR" \
 	HARDENED_SG2002_DEFCONFIG=hardened_sg2002_nanokvm_6x_defconfig \
 	HARDENED_SG2002_EXTRA_EXTERNALS="$LICHEERV_DIR" \
 		"$ROOT/scripts/configure-latest-buildroot-sg2002.sh"
+}
+
+toolchain_stage() {
+	configure
+	LATEST_BUILDROOT_SOURCE_DIR="$BUILDROOT_SOURCE" \
+	HARDENED_SG2002_BUILDROOT_OUTPUT_DIR="$OUTPUT_DIR" \
+	BUILDROOT_PORT_TOOLCHAIN_ONLY=1 \
+		"$ROOT/scripts/build-latest-buildroot-sg2002-rootfs.sh"
+	"$OUTPUT_DIR/host/bin/riscv64-buildroot-linux-musl-gcc" --version | head -n 1
+	touch "$OUTPUT_DIR/.toolchain-stage"
+}
+
+build_stage() {
+	: "${EXPECTED_SYSTEM_VERSION:?set EXPECTED_SYSTEM_VERSION}"
+	: "${EXPECTED_KVMAPP_VERSION:?set EXPECTED_KVMAPP_VERSION}"
+	: "${EXPECTED_SECURITY_PATCH_LEVEL:?set EXPECTED_SECURITY_PATCH_LEVEL}"
+	require_commands debugfs readelf strings zstd
+	[ -e "$REPORT_DIR" ] && die "refusing to reuse report directory: $REPORT_DIR"
+	# Continue after the toolchain stage, or configure a new output
+	if [ -f "$OUTPUT_DIR/.toolchain-stage" ]; then
+		rm "$OUTPUT_DIR/.toolchain-stage"
+	else
+		configure
+	fi
+	mkdir -p "$REPORT_DIR"
 
 	# post-image.sh runs in the assemble stage
 	LATEST_BUILDROOT_SOURCE_DIR="$BUILDROOT_SOURCE" \
 	HARDENED_SG2002_BUILDROOT_OUTPUT_DIR="$OUTPUT_DIR" \
-	NANOKVM_VENDOR_RUNTIME_SOURCE_DIR="$NANOKVM_VENDOR_RUNTIME_SOURCE_DIR" \
 	NANOKVM_KVMAPP_SOURCE_DIR="$KVMAPP_DIR" \
 	HARDENED_SG2002_RUNTIME_SYSTEM_VERSION="$EXPECTED_SYSTEM_VERSION" \
 	HARDENED_SG2002_RUNTIME_KERNEL_VERSION="$EXPECTED_KERNEL_RELEASE" \
@@ -129,12 +147,14 @@ build_stage() {
 	for file in /etc/modprobe.d/aic8800.conf /lib/firmware/regulatory.db /lib/firmware/regulatory.db.p7s; do
 		debugfs -R "stat $file" "$ROOTFS" 2>/dev/null | grep -q "Type: regular" || die "rootfs lacks $file"
 	done
-	for lib in libstdc++.so.6.0.28 libgcc_s.so.1 libatomic.so.1.2.0; do
-		debugfs -R "stat /kvmapp/server/dl_lib/$lib" "$ROOTFS" 2>/dev/null | \
-			grep -q "Type: regular" || die "rootfs lacks $lib"
+	# libkvm's GCC runtime is Buildroot's, from the compiler that built it; dl_lib must not shadow it
+	for lib in libstdc++.so.6 libgcc_s.so.1; do
+		debugfs -R "stat /usr/lib/$lib" "$ROOTFS" 2>/dev/null | grep -q "Type: symlink\|Type: regular" || \
+			die "rootfs lacks /usr/lib/$lib"
 	done
-	debugfs -R "ls /kvmapp/server/dl_lib" "$ROOTFS" 2>/dev/null | grep -Eq 'libopencv|libgomp' && \
-		die "rootfs still ships OpenCV or libgomp"
+	debugfs -R "ls /kvmapp/server/dl_lib" "$ROOTFS" 2>/dev/null | \
+		grep -Eq 'libstdc\+\+|libgcc_s|libatomic|libgomp|libopencv' && \
+		die "dl_lib ships a GCC runtime library or OpenCV"
 	# libsys maps media buffers through /dev/cvi-sys, never /dev/mem
 	debugfs -R "dump /kvmapp/server/dl_lib/libsys.so $REPORT_DIR/libsys.so" "$ROOTFS" >/dev/null 2>&1
 	grep -aq '/dev/cvi-sys' "$REPORT_DIR/libsys.so" || die "libsys.so does not map through /dev/cvi-sys"
@@ -218,11 +238,12 @@ EOF
 }
 
 case "$STAGE" in
+toolchain) toolchain_stage ;;
 build) build_stage ;;
 assemble) assemble_stage ;;
 all)
 	build_stage
 	assemble_stage
 	;;
-*) die "usage: $0 [build|assemble]" ;;
+*) die "usage: $0 [toolchain|build|assemble]" ;;
 esac

@@ -17,7 +17,7 @@ The Rust server is the only supported backend for these runtime assets.
 
 Sections below that name `system-image.yml`, `vendor-sdk-stock` or `support/sg2002/kernel/5.10.265`
 describe the 5.10 build, removed on 2026-11-13; git history keeps it. The 6.x workflow,
-`system-image-6x.yml`, keeps the `build-native-libkvm` job.
+`system-image-6x.yml`, builds the native code in its `build-buildroot` job with Buildroot's GCC.
 
 ## No OpenCV
 
@@ -47,7 +47,7 @@ against vendor-sdk-stock's: byte-for-byte identical, same probe. `/mnt/system/us
 correctly patched, but nothing in the running process tree (`kvm_system`,
 `libkvm.so`, `libkvm_mmf.so`) loads it.
 
-`.github/workflows/system-image-6x.yml`'s `build-native-libkvm` job
+`.github/workflows/system-image-6x.yml`'s `build-buildroot` job
 builds `libkvm.so`/`libkvm_mmf.so` from this repository's own
 `support/sg2002/additional/` sources instead of reusing the
 prebuilt app 2.0.42 archive copies. Since MaixCDK left the build,
@@ -232,6 +232,10 @@ against a running Lite), and `scripts/stage-thead-runtime.sh` pins the hashes. `
 left with OpenCV; three remain. The 6.18
 image no longer ships `libsns_lt6911.so`: no process on the Lite maps it. The 5.10 pipeline
 still takes all of these from `vendor-sdk-stock`.
+
+Update 2026-11-15: the three GCC runtime libraries no longer ship in `dl_lib`. Buildroot's
+GCC now builds the native code, and Buildroot installs its own `libstdc++` and `libgcc_s` in
+`/usr/lib`; GCC 14 inlines the byte-sized atomics, so nothing needs `libatomic`.
 
 Update 2026-11: `libc.so` and the T-Head loader are no longer extracted or shipped.
 The loader's riscv64 `__clone` misaligns thread stacks, so the server, `nanokvm-hwmon`

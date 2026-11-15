@@ -5,11 +5,10 @@ ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 DEFCONFIG="$ROOT/buildroot-external/hardened-sg2002/configs/hardened_sg2002_nanokvm_6x_defconfig"
 PATCH_ROOT="$ROOT/buildroot-external/hardened-sg2002/board/sg2002/patches"
 PREPARE="$ROOT/scripts/prepare-buildroot-2026.05.1-security-source.sh"
-VENDOR_MK="$ROOT/buildroot-external/hardened-sg2002/package/hardened-sg2002-vendor-runtime/hardened-sg2002-vendor-runtime.mk"
 PACKAGE_SCRIPT="$ROOT/scripts/package-rust-kvmapp.sh"
 AVAHI_CONFIG="$ROOT/buildroot-external/hardened-sg2002/board/sg2002/overlay/etc/avahi/avahi-daemon.conf"
 POST_BUILD="$ROOT/buildroot-external/hardened-sg2002/board/sg2002/post-build.sh"
-KVM_CMAKE="$ROOT/support/sg2002/additional/kvm/CMakeLists.txt"
+NATIVE_CMAKE="$ROOT/support/sg2002/CMakeLists.txt"
 
 require_line() {
 	line=$1
@@ -99,13 +98,7 @@ done
 grep -Fq 'patch -d "$SOURCE" -p1 --forward --batch -F 0' "$PREPARE"
 grep -Fq 'rm -f "$KVMAPP_STAGE/server/dl_lib/libz.so"' "$PACKAGE_SCRIPT"
 grep -Fq 'must not contain a build-host RPATH/RUNPATH' "$PACKAGE_SCRIPT"
-grep -Fq 'set_target_properties(kvm PROPERTIES SKIP_BUILD_RPATH TRUE)' "$KVM_CMAKE"
-reject_text 'ln -sf libz.so.1.3' "$VENDOR_MK"
-grep -Fq '$(NANOKVM_KVMAPP_SOURCE_DIR)/server/dl_lib/libkvm.so' "$VENDOR_MK"
-grep -Fq '$(NANOKVM_KVMAPP_SOURCE_DIR)/server/dl_lib/libkvm_mmf.so' "$VENDOR_MK"
-grep -Fq 'vendor-runtime-source-media-v1' "$VENDOR_MK"
-grep -Fq 'vendor-runtime-source-media-v1' \
-	"$ROOT/scripts/build-latest-buildroot-sg2002-rootfs.sh"
+grep -Fqx 'set(CMAKE_SKIP_RPATH ON)' "$NATIVE_CMAKE"
 grep -Fq 'SYSTEM_UPDATE_KEY_POLICY=/etc/kvm/update-key-policy' \
 	"$ROOT/kvmapp/system/init.d/S95nanokvm"
 

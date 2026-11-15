@@ -7,7 +7,6 @@ PROBE_ROOT="${LATEST_BUILDROOT_PROBE_ROOT:-$ROOT/build/latestbuildroot}"
 UPSTREAM_DIR="${LATEST_BUILDROOT_SOURCE_DIR:-$PROBE_ROOT/buildroot-${BUILDROOT_VERSION}-raw11-security}"
 OUTPUT_DIR="${HARDENED_SG2002_BUILDROOT_OUTPUT_DIR:-$PROBE_ROOT/sg2002-config-${BUILDROOT_VERSION}-raw11}"
 HOST_DEPS_ROOT="${BUILDROOT_PORT_HOST_DEPS:-$ROOT/build/host-deps}"
-VENDOR_RUNTIME_DIR="${NANOKVM_VENDOR_RUNTIME_SOURCE_DIR:-$ROOT/build/latestbuildroot/vendor-runtime-source-media-v1}"
 KVMAPP_DIR="${NANOKVM_KVMAPP_SOURCE_DIR:-$ROOT/build/kvmapp-rust/kvmapp}"
 USER_HOME="$HOME"
 HOST_DEPS_PATH="$HOST_DEPS_ROOT/usr/sbin:$HOST_DEPS_ROOT/usr/bin"
@@ -18,6 +17,8 @@ RUNTIME_SECURITY_PATCH_LEVEL="${HARDENED_SG2002_RUNTIME_SECURITY_PATCH_LEVEL:-}"
 RUNTIME_SYSTEM_VERSION="${HARDENED_SG2002_RUNTIME_SYSTEM_VERSION:-}"
 # Extra make arguments, word-split (the 6.x CI passes BR2_ROOTFS_POST_IMAGE_SCRIPT= to run it later)
 EXTRA_MAKE_ARGS="${BUILDROOT_PORT_MAKE_ARGS:-}"
+# 1: build only the cross-compiler and musl (no application payload needed yet)
+TOOLCHAIN_ONLY="${BUILDROOT_PORT_TOOLCHAIN_ONLY:-}"
 
 [ -f "$UPSTREAM_DIR/Makefile" ] || {
   echo "missing Buildroot source: $UPSTREAM_DIR" >&2
@@ -43,19 +44,11 @@ if ! PATH="$CLEAN_PATH" command -v cpio >/dev/null 2>&1; then
   exit 1
 fi
 
-if grep -qx 'BR2_PACKAGE_HARDENED_NANOKVM_KVMAPP=y' "$OUTPUT_DIR/.config"; then
+if [ "$TOOLCHAIN_ONLY" = 1 ]; then
+  EXTRA_MAKE_ARGS="$EXTRA_MAKE_ARGS toolchain"
+elif grep -qx 'BR2_PACKAGE_HARDENED_NANOKVM_KVMAPP=y' "$OUTPUT_DIR/.config"; then
   [ -x "$KVMAPP_DIR/server/NanoKVM-Server" ] || {
     echo "missing built Hardened NanoKVM payload: $KVMAPP_DIR" >&2
-    exit 1
-  }
-fi
-
-if grep -qx 'BR2_PACKAGE_HARDENED_SG2002_VENDOR_RUNTIME=y' "$OUTPUT_DIR/.config"; then
-  # Staged by .github/workflows/system-image-6x.yml; there is no local builder.
-  # The media modules are built in Buildroot, so system/ holds no ko/
-  [ -d "$VENDOR_RUNTIME_DIR/system" ] || {
-    echo "missing vendor runtime staging: $VENDOR_RUNTIME_DIR" >&2
-    echo "stage it as system-image-6x.yml does and set NANOKVM_VENDOR_RUNTIME_SOURCE_DIR" >&2
     exit 1
   }
 fi
@@ -66,7 +59,6 @@ exec env -i \
   LOGNAME="${LOGNAME:-${USER:-$(id -un)}}" \
   SHELL=/bin/bash \
   PATH="$CLEAN_PATH" \
-  NANOKVM_VENDOR_RUNTIME_SOURCE_DIR="$VENDOR_RUNTIME_DIR" \
   NANOKVM_KVMAPP_SOURCE_DIR="$KVMAPP_DIR" \
   HARDENED_SG2002_RUNTIME_SYSTEM_VERSION="$RUNTIME_SYSTEM_VERSION" \
   HARDENED_SG2002_RUNTIME_KERNEL_VERSION="$RUNTIME_KERNEL_VERSION" \

@@ -65,7 +65,7 @@ longer links with the non-PIC `crt1.o`.
   randomised free lists, freed memory checked for double frees), which measured under 1%
   more CPU per MB on MJPEG over HTTPS. mimalloc's C code needs the musl headers in
   `server-rust/sysroot/include` (`NANOKVM_SYSROOT_INCLUDE`); CI copies them from
-  the T-Head toolchain. Host builds and tests keep the system allocator.
+  Buildroot's sysroot. Host builds and tests keep the system allocator.
 
 ### Cross-building in Docker (macOS or Linux)
 
@@ -110,8 +110,10 @@ libc.so
 libgcc_s.so or libgcc_s.so.1
 ```
 
-If the active checkout does not have `server-rust/sysroot/lib`, point the build
-at an extracted NanoKVM sysroot explicitly:
+CI copies `libc.so`, `libgcc_s.so.1` and the headers from the sysroot of Buildroot's
+compiler (`riscv64-buildroot-linux-musl-gcc -print-sysroot`): the musl the server runs on. If the active
+checkout does not have `server-rust/sysroot/lib`, point the build at such a
+sysroot explicitly:
 
 ```sh
 NANOKVM_SYSROOT_LIB=/path/to/nanokvm/sysroot/lib \
@@ -129,36 +131,39 @@ successfully but fails on the device with `Exec format error`.
 ## Rebuild Native libkvm Or kvm_system
 
 Native video changes are not rebuilt by Cargo. `libkvm.so`, `libkvm_mmf.so` and
-`kvm_system` are plain CMake targets in `support/sg2002/CMakeLists.txt`, built
-with the T-Head musl GCC. CI's `build-native-libkvm` job is the reference build;
-locally, run the same scripts on an x86-64 Linux host or in an amd64 container
-(`docker run --platform linux/amd64 ubuntu:24.04`, with `build-essential cmake
-patch curl`):
+`kvm_system` are plain CMake targets in `support/sg2002/CMakeLists.txt`
+(`cmake/buildroot-musl.cmake`), built with Buildroot's own GCC, the toolchain
+that builds the rootfs. CI's `build-buildroot` job is the reference build;
+locally, run the same scripts on a Linux host or in a Linux container (on macOS,
+keep the Buildroot output on a Docker volume, not a bind mount):
 
-1. Fetch the sources the job fetches, at the SHAs in the workflow's `env`:
+1. Build Buildroot's cross-compiler and musl. This needs the security-patched
+   Buildroot source and the licheerv external tree, as in the workflow:
+
+   ```sh
+   make latest-buildroot-bootstrap latest-buildroot-security-source
+   LICHEERV_EXTERNAL_SHA=<from the workflow> scripts/fetch-licheerv-external.sh
+   HARDENED_SG2002_6X_OUTPUT_DIR=/work/br scripts/build-buildroot-6x-image.sh toolchain
+   CROSS=/work/br/host/bin/riscv64-buildroot-linux-musl-
+   ```
+
+   `scripts/build-buildroot-6x-image.sh build` later continues in the same output.
+2. Fetch the sources the job fetches, at the SHAs in the workflow's `env`:
    `sophgo/cvi_mpi`, `sophgo/osdrv` (`interdrv/include`),
    `sophgo/SensorSupportList` (`common`) and `sipeed/LicheeRV-Nano-Build`
    (the ION uapi and `middleware/v2/component/isp/sensor/cv182x/lontium_lt6911`).
    Apply the two patches in `support/sg2002/middleware-patches/` to cvi_mpi.
-2. Fetch the toolchain; the script prints its `bin` directory:
-
-   ```sh
-   TC=$(scripts/fetch-thead-toolchain.sh /opt/thead)
-   ```
-
-   On macOS, keep the toolchain on a Docker volume: extracting it onto a bind
-   mount fails.
 3. Build the middleware, stage the SDK directory, then build and check the
    three outputs:
 
    ```sh
-   SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh cvi_mpi osdrv sdk mw "$TC"
+   SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh cvi_mpi osdrv sdk mw "$CROSS"
    scripts/stage-sg2002-sdk.sh cvi_mpi osdrv sensor-list sdk mw sg2002-sdk
-   scripts/build-sg2002-native.sh "$TC" sg2002-sdk build/native-libkvm
+   scripts/build-sg2002-native.sh "$CROSS" sg2002-sdk build/native-libkvm
    ```
 
-`build-sg2002-native.sh` stops if an output lacks the stack protector or full
-RELRO, has an RPATH or vector code, if `kvm_system` has the wrong loader or
+`build-sg2002-native.sh` stops if an output lacks the stack protector, full
+RELRO or the T-Head extensions, has an RPATH or vector code, if `kvm_system` has the wrong loader or
 an unexpected library, or if `libkvm.so` exports anything other than the
 functions in `support/sg2002/additional/kvm/libkvm.map`.
 

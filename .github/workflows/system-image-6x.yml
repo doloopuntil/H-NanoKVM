@@ -1,8 +1,8 @@
 name: H-NanoKVM system image (Linux 6.18)
 
-# Manual only: builds libkvm, its middleware and runtime libraries, and one Buildroot tree with
-# Linux 6.18, the Sophgo media modules, the FIPs, U-Boot and the rootfs, then the SD image and an
-# unsigned system-update archive. Multi-hour; do not run it on every push.
+# Manual only: builds one Buildroot tree with Linux 6.18, the Sophgo media modules, the FIPs,
+# U-Boot and the rootfs, and with its toolchain the middleware, libkvm and kvm_system; then the SD
+# image and an unsigned system-update archive. Multi-hour; do not run it on every push.
 on:
   workflow_dispatch: {}
 
@@ -22,115 +22,10 @@ env:
   LICHEERV_EXTERNAL_SHA: 019ffc864bb9353f823afc98f7dd9fdacfa935cb
 
 jobs:
-  # One toolchain (T-Head's musl gcc, scripts/fetch-thead-toolchain.sh) builds the SDK
-  # middleware, libkvm.so/libkvm_mmf.so and kvm_system from source, and supplies their GCC
-  # runtime libraries.
-  build-native-libkvm:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 180
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install host build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential cmake git curl patch file
-
-      # The middleware, the uapi headers of the same Sophgo release, the sensor list, and from
-      # the vendor SDK our kernel's ION uapi and the LT6911 sensor driver.
-      - name: Fetch the Sophgo middleware source
-        run: |
-          sparse_fetch() {
-            dir="$1" url="$2" sha="$3"
-            shift 3
-            git init -q "$dir"
-            git -C "$dir" remote add origin "$url"
-            git -C "$dir" sparse-checkout set --no-cone "$@"
-            git -C "$dir" fetch -q --depth 1 --filter=blob:none origin "$sha"
-            git -C "$dir" checkout -q FETCH_HEAD
-            [ "$(git -C "$dir" rev-parse HEAD)" = "$sha" ]
-          }
-          sparse_fetch "$RUNNER_TEMP/cvi_mpi" https://github.com/sophgo/cvi_mpi.git \
-            "$SOPHGO_CVI_MPI_SHA" \
-            /Makefile.param /include/ /sample/common/ /component/panel/cv181x/ \
-            /modules/sys/ /modules/venc/ /modules/vdec/ /modules/vi/ /modules/vpss/ /modules/vo/ \
-            /modules/gdc/ /modules/rgn/ /modules/bin/include/ /modules/isp/include/cv181x/ \
-            /modules/ive/include/ /3rdparty/inih/
-          sparse_fetch "$RUNNER_TEMP/osdrv-uapi" https://github.com/sophgo/osdrv.git \
-            "$SOPHGO_OSDRV_SHA" /interdrv/include/
-          sparse_fetch "$RUNNER_TEMP/sensor-list" https://github.com/sophgo/SensorSupportList.git \
-            "$SOPHGO_SENSOR_LIST_SHA" /common/
-          sparse_fetch "$RUNNER_TEMP/sdk" https://github.com/sipeed/LicheeRV-Nano-Build.git \
-            "$LICHEERV_NANO_SDK_SHA" /linux_5.10/drivers/staging/android/uapi/ \
-            /middleware/v2/component/isp/sensor/cv182x/lontium_lt6911/
-          patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
-            < support/sg2002/middleware-patches/cvi-mpi-693a72a-no-vi-dbg-thread.patch
-          ! grep -q vi_dbg_handler "$RUNNER_TEMP/cvi_mpi/modules/vi/src/cvi_vi.c"
-          patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
-            < support/sg2002/middleware-patches/cvi-mpi-693a72a-map-through-cvi-sys.patch
-          ! grep -q '"/dev/mem"' "$RUNNER_TEMP/cvi_mpi/modules/sys/src/devmem.c"
-
-      - name: Fetch the T-Head musl toolchain
-        run: |
-          echo "TOOLCHAIN_BIN=$(scripts/fetch-thead-toolchain.sh "$RUNNER_TEMP/thead-toolchain")" \
-            >> "$GITHUB_ENV"
-
-      # libsys/libvenc/libvdec/libvi/libvpss/libvo/libgdc/librgn/libini: libkvm_mmf.so links
-      # against these and the image ships them. Together they must keep every export of the
-      # old prebuilts (libvpu was split into libvi/libvpss/libvo/libgdc/librgn).
-      - name: Build the Sophgo middleware from source
-        run: |
-          SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh "$RUNNER_TEMP/cvi_mpi" \
-            "$RUNNER_TEMP/osdrv-uapi" "$RUNNER_TEMP/sdk" \
-            "$GITHUB_WORKSPACE/build/native-libkvm/middleware" "$TOOLCHAIN_BIN" \
-            server-rust/native/dl_lib
-
-      # kvm_mmf compiles against these headers and sample code, so they match the libraries above.
-      - name: Stage the headers, sample code and LT6911 driver for libkvm_mmf
-        run: |
-          scripts/stage-sg2002-sdk.sh "$RUNNER_TEMP/cvi_mpi" "$RUNNER_TEMP/osdrv-uapi" \
-            "$RUNNER_TEMP/sensor-list" "$RUNNER_TEMP/sdk" \
-            "$GITHUB_WORKSPACE/build/native-libkvm/middleware" "$RUNNER_TEMP/sg2002-sdk"
-
-      # Plain CMake (support/sg2002/CMakeLists.txt): scalar xthead, stack protector, full RELRO.
-      # The script also checks SSP, RPATH, the loader, NEEDED entries and libkvm's exports.
-      - name: Build libkvm.so, libkvm_mmf.so and kvm_system
-        run: |
-          # The sources must carry the native changes this image relies on.
-          grep -q "no stale sys state to release" support/sg2002/additional/kvm_mmf/src/kvm_mmf.cpp
-          grep -q "mmf_vi_frame_release" support/sg2002/additional/kvm_mmf/src/kvm_mmf.cpp
-          grep -q "kvmv_hdmi_signal_active" support/sg2002/additional/kvm/src/kvm_vision.cpp
-          grep -q "fresh_frame_count" support/sg2002/additional/kvm/src/kvm_vision.cpp
-          grep -q "vi_state_shared::read_state" \
-            support/sg2002/kvm_system/main/lib/system_state/system_state.cpp
-          scripts/build-sg2002-native.sh "$TOOLCHAIN_BIN" "$RUNNER_TEMP/sg2002-sdk" \
-            "$GITHUB_WORKSPACE/build/native-libkvm"
-          file build/native-libkvm/libkvm.so build/native-libkvm/libkvm_mmf.so \
-            build/native-libkvm/kvm_system
-
-      # The same files as the stock vendor image, from the toolchain that built libkvm.
-      - name: Stage the GCC runtime libraries and the link-time libc.so
-        run: |
-          scripts/stage-thead-runtime.sh "$TOOLCHAIN_BIN" "$GITHUB_WORKSPACE/build/native-libkvm"
-
-      # The build-image job downloads this by name -- this is the actual handoff, not just a
-      # diagnostic copy (kept separate from actions/cache deliberately; see that job's download
-      # step for why).
-      - name: Upload native libkvm build
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: native-libkvm-build
-          path: build/native-libkvm/**
-          retention-days: 14
-          if-no-files-found: warn
-
   # The long part: Buildroot without its post-image step. Its handoff artifact lets
-  # assemble-image be rerun on its own in minutes.
+  # assemble-image be rerun on its own in minutes. Buildroot's toolchain is built first: the
+  # same GCC and musl build the Sophgo middleware, libkvm, kvm_system and link the server.
   build-buildroot:
-    needs: [build-native-libkvm]
     runs-on: ubuntu-24.04
     # 360 minutes is the hard cap on GitHub-hosted runners.
     timeout-minutes: 360
@@ -152,7 +47,7 @@ jobs:
             build-essential git wget curl unzip rsync bc cpio \
             libncurses-dev python3 perl bison flex device-tree-compiler \
             dosfstools mtools file libssl-dev pkg-config e2fsprogs \
-            u-boot-tools zstd xz-utils util-linux
+            u-boot-tools zstd xz-utils util-linux cmake patch
 
       # Pinned: the runner's moving `stable` changed the link behaviour once already.
       - name: Install Rust ${{ env.RUST_VERSION }} with the riscv64gc-unknown-linux-musl target
@@ -164,13 +59,6 @@ jobs:
 
       - name: Enable Corepack
         run: corepack enable
-
-      # Artifact, not actions/cache: cache entries can be evicted between jobs of the same run.
-      - name: Download native libkvm build
-        uses: actions/download-artifact@v4
-        with:
-          name: native-libkvm-build
-          path: build/native-libkvm
 
       - name: Cache Buildroot source download
         uses: actions/cache@v4
@@ -207,12 +95,87 @@ jobs:
           LICHEERV_EXTERNAL_SHA="$LICHEERV_EXTERNAL_SHA" scripts/fetch-licheerv-external.sh
           LICHEERV_NANO_SDK_SHA="$LICHEERV_NANO_SDK_SHA" scripts/fetch-sg2002-boot-source.sh
 
-      - name: Stage NanoKVM runtime sysroot for linked libkvm build
+      # The middleware, the uapi headers of the same Sophgo release, the sensor list, and from
+      # the vendor SDK our kernel's ION uapi and the LT6911 sensor driver.
+      - name: Fetch the Sophgo middleware source
         run: |
+          sparse_fetch() {
+            dir="$1" url="$2" sha="$3"
+            shift 3
+            git init -q "$dir"
+            git -C "$dir" remote add origin "$url"
+            git -C "$dir" sparse-checkout set --no-cone "$@"
+            git -C "$dir" fetch -q --depth 1 --filter=blob:none origin "$sha"
+            git -C "$dir" checkout -q FETCH_HEAD
+            [ "$(git -C "$dir" rev-parse HEAD)" = "$sha" ]
+          }
+          sparse_fetch "$RUNNER_TEMP/cvi_mpi" https://github.com/sophgo/cvi_mpi.git \
+            "$SOPHGO_CVI_MPI_SHA" \
+            /Makefile.param /include/ /sample/common/ /component/panel/cv181x/ \
+            /modules/sys/ /modules/venc/ /modules/vdec/ /modules/vi/ /modules/vpss/ /modules/vo/ \
+            /modules/gdc/ /modules/rgn/ /modules/bin/include/ /modules/isp/include/cv181x/ \
+            /modules/ive/include/ /3rdparty/inih/
+          sparse_fetch "$RUNNER_TEMP/osdrv-uapi" https://github.com/sophgo/osdrv.git \
+            "$SOPHGO_OSDRV_SHA" /interdrv/include/
+          sparse_fetch "$RUNNER_TEMP/sensor-list" https://github.com/sophgo/SensorSupportList.git \
+            "$SOPHGO_SENSOR_LIST_SHA" /common/
+          sparse_fetch "$RUNNER_TEMP/sdk" https://github.com/sipeed/LicheeRV-Nano-Build.git \
+            "$LICHEERV_NANO_SDK_SHA" /linux_5.10/drivers/staging/android/uapi/ \
+            /middleware/v2/component/isp/sensor/cv182x/lontium_lt6911/
+          patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
+            < support/sg2002/middleware-patches/cvi-mpi-693a72a-no-vi-dbg-thread.patch
+          ! grep -q vi_dbg_handler "$RUNNER_TEMP/cvi_mpi/modules/vi/src/cvi_vi.c"
+          patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
+            < support/sg2002/middleware-patches/cvi-mpi-693a72a-map-through-cvi-sys.patch
+          ! grep -q '"/dev/mem"' "$RUNNER_TEMP/cvi_mpi/modules/sys/src/devmem.c"
+
+      - name: Build Buildroot's cross-compiler and musl
+        run: |
+          HARDENED_SG2002_6X_OUTPUT_DIR="$RUN_ROOT/buildroot" \
+            scripts/build-buildroot-6x-image.sh toolchain
+          echo "CROSS_PREFIX=$RUN_ROOT/buildroot/host/bin/riscv64-buildroot-linux-musl-" >> "$GITHUB_ENV"
+
+      # libsys/libvenc/libvdec/libvi/libvpss/libvo/libgdc/librgn/libini: libkvm_mmf.so links
+      # against these and the image ships them. Together they must keep every export of the
+      # old prebuilts (libvpu was split into libvi/libvpss/libvo/libgdc/librgn).
+      - name: Build the Sophgo middleware from source
+        run: |
+          SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh "$RUNNER_TEMP/cvi_mpi" \
+            "$RUNNER_TEMP/osdrv-uapi" "$RUNNER_TEMP/sdk" \
+            "$GITHUB_WORKSPACE/build/native-libkvm/middleware" "$CROSS_PREFIX" \
+            server-rust/native/dl_lib
+
+      # kvm_mmf compiles against these headers and sample code, so they match the libraries above.
+      - name: Stage the headers, sample code and LT6911 driver for libkvm_mmf
+        run: |
+          scripts/stage-sg2002-sdk.sh "$RUNNER_TEMP/cvi_mpi" "$RUNNER_TEMP/osdrv-uapi" \
+            "$RUNNER_TEMP/sensor-list" "$RUNNER_TEMP/sdk" \
+            "$GITHUB_WORKSPACE/build/native-libkvm/middleware" "$RUNNER_TEMP/sg2002-sdk"
+
+      # Plain CMake (support/sg2002/CMakeLists.txt) with Buildroot's GCC: scalar xthead, stack
+      # protector, full RELRO.
+      # The script also checks SSP, RPATH, the loader, NEEDED entries and libkvm's exports.
+      - name: Build libkvm.so, libkvm_mmf.so and kvm_system
+        run: |
+          # The sources must carry the native changes this image relies on.
+          grep -q "no stale sys state to release" support/sg2002/additional/kvm_mmf/src/kvm_mmf.cpp
+          grep -q "mmf_vi_frame_release" support/sg2002/additional/kvm_mmf/src/kvm_mmf.cpp
+          grep -q "kvmv_hdmi_signal_active" support/sg2002/additional/kvm/src/kvm_vision.cpp
+          grep -q "fresh_frame_count" support/sg2002/additional/kvm/src/kvm_vision.cpp
+          grep -q "vi_state_shared::read_state" \
+            support/sg2002/kvm_system/main/lib/system_state/system_state.cpp
+          scripts/build-sg2002-native.sh "$CROSS_PREFIX" "$RUNNER_TEMP/sg2002-sdk" \
+            "$GITHUB_WORKSPACE/build/native-libkvm"
+          file build/native-libkvm/libkvm.so build/native-libkvm/libkvm_mmf.so \
+            build/native-libkvm/kvm_system
+
+      # The server links against the same musl it runs on.
+      - name: Stage the server's link-time sysroot from Buildroot
+        run: |
+          SYSROOT=$("${CROSS_PREFIX}gcc" -print-sysroot)
           mkdir -p server-rust/sysroot/lib
-          cp build/native-libkvm/sysroot/libc.so build/native-libkvm/sysroot/libgcc_s.so.1 \
-            server-rust/sysroot/lib/
-          cp -R build/native-libkvm/sysroot/include server-rust/sysroot/include
+          cp "$SYSROOT/lib/libc.so" "$SYSROOT/lib/libgcc_s.so.1" server-rust/sysroot/lib/
+          cp -R "$SYSROOT/usr/include" server-rust/sysroot/include
 
       # This run's libkvm.so, libkvm_mmf.so and middleware replace the checked-in copies.
       - name: Use freshly-built libkvm.so, libkvm_mmf.so and middleware
@@ -236,22 +199,22 @@ jobs:
             KVM_SYSTEM_SOURCE="$GITHUB_WORKSPACE/build/native-libkvm/kvm_system" \
             scripts/package-rust-kvmapp.sh
 
-      # The GCC runtime libraries from the libkvm job; the media modules come from Buildroot
-      # (hardened-soph-media). Nothing goes to /mnt/system: libsns_lt6911.so is never loaded.
-      - name: Stage the GCC runtime libraries
-        run: |
-          RUNTIME_DIR="$RUN_ROOT/runtime"
-          mkdir -p "$RUNTIME_DIR/kvmapp-dl-lib" "$RUNTIME_DIR/system"
-          cp -p build/native-libkvm/runtime/* "$RUNTIME_DIR/kvmapp-dl-lib/"
-
       - name: Build the kernel, media modules, FIPs and rootfs with Buildroot
         run: |
           HARDENED_SG2002_6X_OUTPUT_DIR="$RUN_ROOT/buildroot" \
           HARDENED_SG2002_6X_REPORT_DIR="$RUN_ROOT/_reports/build" \
           HNANOKVM_6X_HANDOFF="$RUN_ROOT/buildroot-6x-handoff.tar.zst" \
-          NANOKVM_VENDOR_RUNTIME_SOURCE_DIR="$RUN_ROOT/runtime" \
             scripts/build-buildroot-6x-image.sh build
           df -h /
+
+      - name: Upload the native build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-libkvm-build
+          path: build/native-libkvm/**
+          retention-days: 14
+          if-no-files-found: warn
 
       - name: Upload the Buildroot handoff for assemble-image
         uses: actions/upload-artifact@v4

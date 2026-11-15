@@ -55,36 +55,35 @@ an ext4 root partition).
 
 ## Pipeline shape
 
-Three jobs. Jobs hand each other files as workflow artifacts (tarred, since artifacts drop
+Two jobs. They hand each other files as workflow artifacts (tarred, since artifacts drop
 permissions and symlinks), so "re-run failed jobs" reuses everything that already
 succeeded. The vendor SDK is not built: nothing in the 6.18 image comes from its stock
 image.
 
-- **`build-native-libkvm`**: fetches the T-Head musl toolchain (Xuantie GCC 10.2,
-  `scripts/fetch-thead-toolchain.sh`, pinned by SHA-256), builds the Sophgo middleware
-  (`scripts/build-sdk-middleware.sh`), stages its headers, sample code and the patched LT6911
-  driver (`scripts/stage-sg2002-sdk.sh`), and builds `libkvm.so`, `libkvm_mmf.so` and
-  `kvm_system` with plain CMake (`support/sg2002/CMakeLists.txt`,
-  `scripts/build-sg2002-native.sh`). That script checks the stack protector, full RELRO,
-  no RPATH and no vector code in all three, `kvm_system`'s loader and libraries, and that
-  `libkvm.so` exports exactly the C API the server links. `scripts/stage-thead-runtime.sh`
-  then takes the three GCC runtime libraries and the link-time `libc.so` from the same
-  toolchain (plain `rv64gc` `lp64d`, stripped). The runtime libraries are pinned by hash to
-  the stock vendor image's copies, which they match byte for byte.
-- **`build-buildroot`** (`needs: build-native-libkvm`): builds the Rust server
-  against the fresh `libkvm`, then runs `scripts/build-buildroot-6x-image.sh build`:
-  Buildroot without the post-image step, followed by checks on the result (the kernel
+- **`build-buildroot`**: runs `scripts/build-buildroot-6x-image.sh toolchain` first, which
+  configures Buildroot and builds only its cross-compiler (GCC 14.4) and musl 1.2.6. That one
+  toolchain then builds the Sophgo middleware (`scripts/build-sdk-middleware.sh`), and, after
+  `scripts/stage-sg2002-sdk.sh` has staged its headers, sample code and the patched LT6911
+  driver, `libkvm.so`, `libkvm_mmf.so` and `kvm_system` with plain CMake
+  (`support/sg2002/CMakeLists.txt`, `scripts/build-sg2002-native.sh`). That script checks the
+  stack protector, full RELRO, no RPATH, the T-Head scalar extensions and no vector code in all
+  three, `kvm_system`'s loader and libraries, and that `libkvm.so` exports exactly the C API the
+  server links. The Rust server links against the fresh `libkvm` and against `libc.so` and the
+  headers from the sysroot of Buildroot's compiler, the same musl it runs on. The job then runs
+  `scripts/build-buildroot-6x-image.sh build` in the same output directory: Buildroot without
+  the post-image step, followed by checks on the result (the kernel
   release string and patches 0001-0007, `DEVMEM` off, signed modules only, lockdown and the memory-safety
   options in the kernel `.config`, a signature on every `.ko`, no `devmem` in BusyBox, U-Boot's `BOOTDELAY=0` and its TRNG seed options,
   the 11 modules in
-  `/lib/modules/6.18.29/extra`, the GCC runtime and no OpenCV or `libgomp` in `dl_lib`, a `libsys.so` that maps through
+  `/lib/modules/6.18.29/extra`, Buildroot's `libstdc++` and `libgcc_s` in `/usr/lib` and no
+  GCC runtime, OpenCV or `libgomp` in `dl_lib`, a `libsys.so` that maps through
   `/dev/cvi-sys` and not `/dev/mem`, the `sg2002-hnanokvm-sd` target and
   kernel version in `system-version.json`, `scripts/validate-nanokvm-rootfs.sh`, and
   `scripts/validate-6x-rootfs.sh`: BusyBox not setuid, every account but root locked and root
   locked until the first setup, no empty SSH passwords, the pinned filesystem UUID, required and
   forbidden packages, the Avahi limits, musl and `kvm_system` built for the T-Head extensions
   without vector, and the installed init scripts matching the packaged ones). It
-  uploads a handoff for the next job: the images, the host tools without the cross
+  uploads the native build for inspection and a handoff for the next job: the images, the host tools without the cross
   toolchain, `gen_init_cpio`, the initramfs binaries and `SOURCE_DATE_EPOCH`. The compiler
   cache (2 GB) and the download cache are saved even when the build fails.
 - **`assemble-image`** (`needs: build-buildroot`): runs `post-image.sh` from the handoff
@@ -105,8 +104,8 @@ All jobs run in the `sg2002-image-build-6x` concurrency group
 | Kernel modules | 57 in-tree, external and media modules into the `/mnt/system/ko` skeleton | built in except the 11 media modules (`hardened-soph-media`) and the Wi-Fi/BT modules |
 | FSBL, OpenSBI, U-Boot | vendor SDK stock build (U-Boot 2021.10) | FSBL from the SDK source, OpenSBI 1.8.1 and U-Boot 2025.10 from Buildroot |
 | Boot payload | `boot.sd` | `boot.scr` and the verified FIT `boot.itb` |
-| Media middleware and `libkvm` | `build-native-libkvm` | same job |
-| GCC runtime | `vendor-sdk-stock` | the T-Head toolchain (same bytes) |
+| Media middleware and `libkvm` | `build-native-libkvm`, T-Head GCC 10.2 | Buildroot's GCC 14.4, in `build-buildroot` |
+| GCC runtime | `vendor-sdk-stock` | Buildroot's, in `/usr/lib` |
 | `libsns_lt6911.so` | `vendor-sdk-stock` | not shipped: nothing loads it |
 
 `ddr_param.bin` is the one vendor blob inside the FIPs: no source exists for it anywhere,
@@ -154,13 +153,13 @@ scope" below). **The pipeline no longer fetches this archive at all.**
 | Content | How it's sourced now | Evidence |
 | --- | --- | --- |
 | All kernel modules (in-tree, external and media; the manifests list them and `scripts/expected-module-count.sh` adds them up) | Rebuilt from source: in-tree modules from this pipeline's own kernel build; the video, codec and other `interdrv` modules (including the media modules) from public `sophgo/osdrv` at `SOPHGO_OSDRV_SHA` with the `sophgo-osdrv-1b3a496-*.patch` set; WiFi/BT/touch (`3rd/`) from the vendor SDK's `osdrv/extdrv` | `support/sg2002/kernel/5.10.265/manifests/external-modules.txt`; workflow steps "Fetch public sophgo/osdrv source" through "Substitute freshly-built modules into the runtime staging dir" |
-| `libkvm.so` / `libkvm_mmf.so` | Built from source by the `build-native-libkvm` job: `support/sg2002` with plain CMake and the T-Head musl toolchain, at `-O2` (`kvm_system` at `-Os`). `libkvm_mmf.so` compiles in the vendor SDK's LT6911 driver with the chip-ID probe removed, starts capture without the ISP and links no ISP/3A library. `libkvm.so` talks to `libkvm_mmf.so` directly; MaixCDK's camera, image and I2C layers are gone. The Rust backend links against the result. Never depended on raw.12 either way | job `build-native-libkvm`; `server-rust/scripts/build-linked-libkvm.sh` |
+| `libkvm.so` / `libkvm_mmf.so` | Built from source in the `build-buildroot` job: `support/sg2002` with plain CMake and Buildroot's own GCC 14.4 (the toolchain that builds the rootfs), at `-O2` (`kvm_system` at `-Os`). `libkvm_mmf.so` compiles in the vendor SDK's LT6911 driver with the chip-ID probe removed, starts capture without the ISP and links no ISP/3A library. `libkvm.so` talks to `libkvm_mmf.so` directly; MaixCDK's camera, image and I2C layers are gone. The Rust backend links against the result. Never depended on raw.12 either way | `scripts/build-sg2002-native.sh`; `server-rust/scripts/build-linked-libkvm.sh` |
 | OpenCV (`core`/`highgui`/`imgcodecs`/`imgproc`, and `video`/`dnn`/`calib3d`/`features2d`/`flann`/`protobuf` before them) | No longer shipped: only MaixCDK's image class used OpenCV, and `libkvm.so` no longer links it. `libgomp` went with them (only `opencv_core` needed it) | `support/sg2002/CMakeLists.txt` |
 | `/mnt/system/usr/bin` (49 CVITEK sample/test binaries) | Deleted entirely -- no static or `dlopen()` reference anywhere in tracked source | `server-rust/native/README.md` ("/mnt/system/usr") |
 | `/mnt/system/usr/lib` minus one file (32 files incl. `3rd/`) | Deleted entirely -- proven redundant against `dl_lib`'s search-path priority | same |
-| `libsys.so`, `libvenc.so`, `libvdec.so`, `libvi.so`, `libvpss.so`, `libvo.so`, `libgdc.so`, `librgn.so`, `libini.so` | Built from source in `build-native-libkvm`: public `sophgo/cvi_mpi` at `SOPHGO_CVI_MPI_SHA` (the same Sophgo release as the kernel modules), with its own flags but `-O2` instead of `-Os` and `support/sg2002/middleware-patches/`, by `scripts/build-sdk-middleware.sh`. The old `libvpu.so` is split into `libvi`/`libvpss`/`libvo`/`libgdc`/`librgn` and no longer ships. Together they must keep every export of the checked-in prebuilts, except 13 listed in the script that were removed upstream and that nothing we ship uses. The sensor enum and names come from `sophgo/SensorSupportList` at `SOPHGO_SENSOR_LIST_SHA`. `libkvm_mmf.so` links against them, compiles against the same release's headers and sample code, and the image ships them | workflow steps "Fetch the Sophgo middleware source" through "Stage the headers, sample code and LT6911 driver for libkvm_mmf" |
+| `libsys.so`, `libvenc.so`, `libvdec.so`, `libvi.so`, `libvpss.so`, `libvo.so`, `libgdc.so`, `librgn.so`, `libini.so` | Built from source in `build-buildroot` with Buildroot's GCC: public `sophgo/cvi_mpi` at `SOPHGO_CVI_MPI_SHA` (the same Sophgo release as the kernel modules), with its own flags but `-O2` instead of `-Os` and the T-Head scalar extensions and `support/sg2002/middleware-patches/`, by `scripts/build-sdk-middleware.sh`. The old `libvpu.so` is split into `libvi`/`libvpss`/`libvo`/`libgdc`/`librgn` and no longer ships. Together they must keep every export of the checked-in prebuilts, except 13 listed in the script that were removed upstream and that nothing we ship uses. The sensor enum and names come from `sophgo/SensorSupportList` at `SOPHGO_SENSOR_LIST_SHA`. `libkvm_mmf.so` links against them, compiles against the same release's headers and sample code, and the image ships them | workflow steps "Fetch the Sophgo middleware source" through "Stage the headers, sample code and LT6911 driver for libkvm_mmf" |
 | ~19 other CVI/audio middleware libraries in `dl_lib` (`libcvi_*`, `libaac*`, `libcli.so`, etc.). The 8 closed ISP/3A libraries (`libisp*`, `libae`/`af`/`awb`, `libcvi_bin*`, `libcvi_ispd2`) are removed | Already checked into `server-rust/native/dl_lib` since before this fork tracked raw.12 at all; diffed byte-for-byte against raw.12 and confirmed identical; the CI pipeline no longer extracts them from raw.12 | `server-rust/native/README.md` ("dl_lib's CVI/ISP/audio middleware") |
-| 3 GCC runtime libs (`libstdc++.so.6.0.28`, `libgcc_s.so.1`, `libatomic.so.1.2.0`; `libgomp.so.1.0.0` left with OpenCV) | Sourced from this pipeline's own `vendor-sdk-stock` build instead -- verified byte-identical on a real run. The vendor `libc.so` is no longer shipped: musl's loader serves `libc.so` itself | workflow step "Source the remaining runtime files from our own vendor-sdk-stock build"; `server-rust/native/README.md` |
+| GCC runtime libs (`libstdc++`, `libgcc_s`) | Buildroot installs its own into `/usr/lib`, from the GCC that builds `libkvm`, `kvm_system` and the middleware. The T-Head GCC 10.2 copies (`libstdc++.so.6.0.28`, `libgcc_s.so.1`, `libatomic.so.1.2.0`) that `dl_lib` carried are gone, and the build fails if `dl_lib` ships any GCC runtime library. The vendor `libc.so` is no longer shipped: musl's loader serves `libc.so` itself | `scripts/build-buildroot-6x-image.sh` |
 | T-Head musl loader (`ld-musl-riscv64xthead.so.1`) | No longer shipped: its riscv64 `__clone` misaligns thread stacks, so everything runs on Buildroot's musl 1.2.6 loader ([riscv64 thread stack alignment](riscv-musl-stack-alignment.md)) | same |
 | `libsns_lt6911.so` (LT6911 HDMI sensor plugin) | Sourced from `vendor-sdk-stock` too, from real checked-in C source in the pinned vendor SDK commit (`middleware/v2/component/isp/sensor/cv182x/lontium_lt6911/`, `sg200x` symlinked to `cv182x`). No longer byte-identical to an unmodified vendor build, deliberately: `vendor-sdk-patches/lt6911-sensor-id-probe-removed.patch` removes the chip-ID probe, which never succeeds on this board while HDMI capture works without it. The other files `vendor-sdk-stock` produces are untouched, except `fip.bin` (next row) | `server-rust/native/README.md` ("libc.so, GCC runtime, loaders, and libsns_lt6911.so"); `buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/lt6911-sensor-id-probe-removed.patch` |
 | `fip.bin`, `fip.std.bin`, `fip.od.bin` (FSBL, OpenSBI, U-Boot) | `vendor-sdk-stock` builds with `vendor-sdk-patches/fsbl-overdrive-clocks.patch`, which sets `CONFIG_OD_CLK_SEL=y` in the board defconfig: the FSBL's overdrive table runs the C906 at 1050 MHz instead of 850 MHz, the video encoder at 515 MHz instead of 396 MHz, and raises VDDC from 0.96 V to 1.00 V. That build is kept as `fip.od.bin`; `build-vendor-sdk-stock.sh` then rebuilds only the FSBL with `CONFIG_OD_CLK_SEL=n` for the standard-clock `fip.bin`. The boot partition carries both, plus `fip.std.bin` as the standard copy; the server copies one over `fip.bin` (Settings > System > Performance). New images boot with standard clocks. System updates ship all three | `fsbl/plat/cv181x/platform.c` (`sys_pll_od`) in the pinned vendor SDK; `scripts/build-vendor-sdk-stock.sh`; `buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/fsbl-overdrive-clocks.patch` |
@@ -182,9 +181,10 @@ Buildroot's musl 1.2.6 loader `/lib/ld-musl-riscv64.so.1`. The build checks that
 has no `v0p7` in its architecture tag and needs only `libstdc++`, `libgcc_s` and `libc`.
 
 Nothing we build uses the vector extension (XTheadVector). The native code
-and the middleware are compiled with `-mcpu=c906fd -march=rv64imafdcxthead`
-instead of `c906fdv`/`v0p7`, and link against the scalar `lib64xthead`
-multilib. Buildroot builds musl with the same T-Head scalar extensions as the
+and the middleware are compiled by Buildroot's GCC 14.4 with the same
+`-march` as musl (`rv64gc` plus `xtheadba`, `xtheadbb`, `xtheadbs`,
+`xtheadcondmov`, `xtheadmemidx`, `xtheadmempair`, `xtheadmac`) and
+`-mtune=thead-c906`. Buildroot builds musl with the same T-Head scalar extensions as the
 Rust server (`MUSL_EXTRA_CFLAGS` in `buildroot-external/hardened-sg2002/external.mk`),
 and the rootfs validator checks `/usr/lib/libc.so`'s architecture tag; the rest of
 Buildroot's userspace is plain `rv64gc`. Under QEMU's C906 model this musl runs
@@ -260,7 +260,6 @@ supplied the same content instead:
 | External source | What it provides | Redundant with the vendor SDK? |
 | --- | --- | --- |
 | `sophgo/host-tools` | The actual riscv64 cross-compiler toolchain, used to build the kernel and every kernel module | No -- this is the compiler itself; a prebuilt rootfs can't substitute for a toolchain. Confirmed by grepping every script that references it: all of them use `TOOLCHAIN_BIN=.../host-tools/gcc/riscv64-linux-musl-x86_64/bin` to invoke `gcc`/`ld`/`strip` directly. |
-| `sipeed/MaixCDK` release asset `host-tools-2025.7.28.tar.xz` | The T-Head musl GCC for the native code and its GCC runtime libraries (SHA-256 pinned; MaixCDK itself is not fetched) | No -- the 6.18 pipeline does not build the vendor SDK; this is the same compiler the stock image's runtime libraries came from. |
 | `sophgo/osdrv` and `sophgo/cvi_mpi` (public, one dated release) | Every `interdrv` kernel module and the five middleware libraries | No -- one release for both keeps the user/kernel structs and the shared `struct cvi_buffer` consistent; the vendor SDK's copies are an older snapshot of the same tree. |
 | `git.kernel.org` stable tree | Real upstream Linux 5.10.265 fixes for the kernel rehydration | Not applicable -- the whole point is pulling genuine upstream fixes the vendor's own kernel snapshot doesn't have. |
 | `buildroot.org` | The Buildroot release tarball itself | Not applicable -- an unrelated upstream project, not vendor SDK content. |
