@@ -1566,6 +1566,10 @@ modules, so measure module signing and lockdown alongside. Remaining users, in o
    go through `/dev/cvi-sys`, mapping kernel RAM, a register block or free carveout fails
    with `EPERM`, MJPEG, H.264 and WebRTC all stream, no `mmap failed` in the log. The image
    build checks that `libsys.so` names `/dev/cvi-sys` and not `/dev/mem`.
+   Later (2026-11-16), osdrv patch `sys-cache-ops-in-buffers`: the `SYS_CACHE_INVLD` and
+   `SYS_CACHE_FLUSH` ioctls took any physical range, and an invalidate drops dirty lines, so
+   they could corrupt kernel memory. They now take the `mmap` check, under the allocator lock,
+   and refuse other ranges with `EPERM` (logged, rate-limited).
 4. Done 2026-11-12: `DEVMEM` off, with module signing and lockdown. `nanokvm.fragment`
    turns `DEVMEM` off (`STRICT_DEVMEM` alone would not have done: the carveout is reserved
    RAM, section 6.1 option a), enforces signed modules (`MODULE_SIG_FORCE`, `MODULE_SIG_ALL`,

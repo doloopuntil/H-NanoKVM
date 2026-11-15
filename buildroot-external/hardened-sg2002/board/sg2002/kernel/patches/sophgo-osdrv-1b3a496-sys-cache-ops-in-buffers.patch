@@ -1,0 +1,78 @@
+diff --git a/interdrv/sys/common/sys.c b/interdrv/sys/common/sys.c
+index 01bb5c8..0b9a06b 100644
+--- a/interdrv/sys/common/sys.c
++++ b/interdrv/sys/common/sys.c
+@@ -66,6 +66,19 @@ static struct list_head sys_mem_bufs = LIST_HEAD_INIT(sys_mem_bufs);
+ static DEFINE_MUTEX(sys_mem_lock);
+ static struct device *sys_mem_dev;
+ 
++/* Whether [pa, pa + len) lies inside one allocated buffer. Caller holds sys_mem_lock. */
++static bool sys_mem_range_allocated(phys_addr_t pa, u64 len)
++{
++	struct sys_mem_buf *buf;
++
++	lockdep_assert_held(&sys_mem_lock);
++	list_for_each_entry(buf, &sys_mem_bufs, list) {
++		if (pa >= buf->paddr && len <= buf->size && pa - buf->paddr <= buf->size - len)
++			return true;
++	}
++	return false;
++}
++
+ /* Cache maintenance by physical address; the soc bus is not DMA-coherent. */
+ static void sys_cache_sync(phys_addr_t pa, size_t len, enum dma_data_direction dir)
+ {
+@@ -426,19 +439,24 @@ EXPORT_SYMBOL_GPL(sys_cache_flush);
+ 
+ static CVI_S32 sys_cache_op_userv(unsigned long arg, enum enum_cache_op op_code)
+ {
+-	int ret = 0;
+ 	struct sys_cache_op ioctl_arg;
+ 
+-	ret = copy_from_user(&ioctl_arg, (struct sys_cache_op __user *)arg, sizeof(struct sys_cache_op));
+-	if (ret) {
+-		pr_err("copy_from_user faile, sys_cache_op_userv\n");
+-		return ret;
+-	}
++	if (copy_from_user(&ioctl_arg, (struct sys_cache_op __user *)arg, sizeof(struct sys_cache_op)))
++		return -EFAULT;
+ 
++	/* An invalidate drops dirty lines: only inside a buffer userspace was given. */
++	mutex_lock(&sys_mem_lock);
++	if (!sys_mem_range_allocated(ioctl_arg.addr_p, ioctl_arg.size)) {
++		mutex_unlock(&sys_mem_lock);
++		pr_warn_ratelimited("cache op outside a buffer: 0x%llx+0x%llx (%s)\n",
++				    ioctl_arg.addr_p, ioctl_arg.size, current->comm);
++		return -EPERM;
++	}
+ 	if (op_code == enum_cache_op_invalid)
+ 		sys_cache_sync(ioctl_arg.addr_p, ioctl_arg.size, DMA_FROM_DEVICE);
+ 	else if (op_code == enum_cache_op_flush)
+ 		sys_cache_sync(ioctl_arg.addr_p, ioctl_arg.size, DMA_TO_DEVICE);
++	mutex_unlock(&sys_mem_lock);
+ 
+ 	/*	*/
+ 	smp_mb();
+@@ -889,20 +907,13 @@ static int cvi_sys_mmap(struct file *filp, struct vm_area_struct *vma)
+ {
+ 	size_t len = vma->vm_end - vma->vm_start;
+ 	phys_addr_t pa = (phys_addr_t)vma->vm_pgoff << PAGE_SHIFT;
+-	struct sys_mem_buf *buf;
+-	bool found = false;
++	bool found;
+ 
+ 	if (!(vma->vm_flags & VM_SHARED))
+ 		return -EINVAL;
+ 
+ 	mutex_lock(&sys_mem_lock);
+-	list_for_each_entry(buf, &sys_mem_bufs, list) {
+-		if (pa >= buf->paddr && len <= buf->size &&
+-		    pa - buf->paddr <= buf->size - len) {
+-			found = true;
+-			break;
+-		}
+-	}
++	found = sys_mem_range_allocated(pa, len);
+ 	mutex_unlock(&sys_mem_lock);
+ 
+ 	if (!found)
