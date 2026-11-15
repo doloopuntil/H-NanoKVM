@@ -62,6 +62,8 @@ const MJPEG_FAILURE_COOLDOWN: Duration = Duration::from_secs(5);
 /// libkvm's MJPEG result when frame detection found the screen unchanged.
 const MJPEG_FRAME_UNCHANGED: i32 = 5;
 const H264_READ_TIMEOUT: Duration = Duration::from_secs(5);
+/// Direct-stream packet header: keyframe flag, then the timestamp in microseconds (LE).
+const H264_DIRECT_HEADER: usize = 1 + 8;
 const H264_FAILURE_LIMIT: usize = 3;
 const H264_LAG_KEYFRAME_INTERVAL: Duration = Duration::from_secs(1);
 /// A direct stream socket that cannot take a frame in this long is closed, so one
@@ -158,22 +160,26 @@ struct MjpegFrame {
 
 #[derive(Debug, Clone)]
 pub struct H264Frame {
+    /// The encoded frame; shares `packet`'s buffer.
     pub data: Bytes,
     pub keyframe: bool,
     timestamp_micros: u64,
-    /// Wire packet of the direct stream, built only while a direct client is connected.
-    packet: Option<Bytes>,
+    /// Wire packet of the direct stream: the header, then `data`.
+    packet: Bytes,
 }
 
 impl H264Frame {
-    fn direct_packet(&self) -> Bytes {
-        self.packet.clone().unwrap_or_else(|| {
-            Bytes::from(h264_direct_packet(
-                self.keyframe,
-                self.timestamp_micros,
-                &self.data,
-            ))
-        })
+    /// `frame` starts with `H264_DIRECT_HEADER` bytes of room, filled here.
+    fn new(mut frame: Vec<u8>, keyframe: bool, timestamp_micros: u64) -> Self {
+        frame[0] = u8::from(keyframe);
+        frame[1..H264_DIRECT_HEADER].copy_from_slice(&timestamp_micros.to_le_bytes());
+        let packet = Bytes::from(frame);
+        Self {
+            data: packet.slice(H264_DIRECT_HEADER..),
+            keyframe,
+            timestamp_micros,
+            packet,
+        }
     }
 }
 
@@ -586,7 +592,6 @@ pub async fn mjpeg_stream(
             MJPEG_DEMAND.took(frame.seq);
             yield Ok::<Bytes, io::Error>(frame.header);
             yield Ok::<Bytes, io::Error>(frame.data);
-            yield Ok::<Bytes, io::Error>(Bytes::from_static(b"\r\n"));
         }
     };
 
@@ -689,7 +694,7 @@ async fn serve_h264_direct(
                         }
                         continue;
                     }
-                    Message::Binary(frame.direct_packet())
+                    Message::Binary(frame.packet)
                 }
                 _ = ping.tick() => Message::Ping(Bytes::new()),
             };
@@ -816,8 +821,9 @@ async fn run_mjpeg_producer() {
         let data = Bytes::from(data);
         set_latest_mjpeg_frame(data.clone(), screen.width, screen.height);
 
+        // The CRLF before each boundary ends the previous part (before the first, it is preamble).
         let header = Bytes::from(format!(
-            "--frame\r\nContent-Type: image/jpeg\r\nContent-Length: {}\r\n\r\n",
+            "\r\n--frame\r\nContent-Type: image/jpeg\r\nContent-Length: {}\r\n\r\n",
             data.len()
         ));
         MJPEG_FANOUT.send(MjpegFrame {
@@ -921,23 +927,17 @@ async fn run_h264_source() {
             continue;
         };
 
+        let bytes = data.len() - H264_DIRECT_HEADER;
         if !H264_DIRECT_FIRST_SUCCESS_LOGGED.swap(true, Ordering::Relaxed) {
-            info!(result, bytes = data.len(), "read first h264 direct frame");
+            info!(result, bytes, "read first h264 direct frame");
         }
 
         let timestamp = start.elapsed().as_micros().min(u128::from(u64::MAX)) as u64;
         let keyframe = result == 3;
         if keyframe {
-            debug!(bytes = data.len(), "h264 keyframe");
+            debug!(bytes, "h264 keyframe");
         }
-        let packet = (H264_DIRECT_CONSUMERS.load(Ordering::Acquire) > 0)
-            .then(|| Bytes::from(h264_direct_packet(keyframe, timestamp, &data)));
-        H264_SOURCE.send(H264Frame {
-            data: Bytes::from(data),
-            keyframe,
-            timestamp_micros: timestamp,
-            packet,
-        });
+        H264_SOURCE.send(H264Frame::new(data, keyframe, timestamp));
     }
 }
 
@@ -1223,7 +1223,13 @@ pub async fn read_h264_capture_frame(
 
     let task = tokio::task::spawn_blocking(move || {
         let fps = u8::try_from(screen.fps).unwrap_or(u8::MAX);
-        kvm::read_h264(screen.width, screen.height, fps, screen.bit_rate)
+        kvm::read_h264(
+            screen.width,
+            screen.height,
+            fps,
+            screen.bit_rate,
+            H264_DIRECT_HEADER,
+        )
     });
 
     let frame = match time::timeout(H264_READ_TIMEOUT, task).await {
@@ -1454,14 +1460,6 @@ fn validate_fps(fps: i32) -> u64 {
     fps.clamp(10, 60) as u64
 }
 
-fn h264_direct_packet(is_keyframe: bool, timestamp_micros: u64, data: &[u8]) -> Vec<u8> {
-    let mut packet = Vec::with_capacity(1 + 8 + data.len());
-    packet.push(u8::from(is_keyframe));
-    packet.extend_from_slice(&timestamp_micros.to_le_bytes());
-    packet.extend_from_slice(data);
-    packet
-}
-
 #[cfg(test)]
 mod tests {
     #[tokio::test]
@@ -1607,12 +1605,11 @@ mod tests {
 
     use super::{
         H264_SOURCE, H264_WEBRTC_CONSUMERS, H264ConsumerKind, H264DirectProducerAction, H264Frame,
-        H264Subscription, KeyframeGate, Screen, StreamMode, h264_direct_packet,
-        h264_direct_producer_action, normalize_screen, serve_h264_direct, source_capture_size,
+        H264Subscription, KeyframeGate, Screen, StreamMode, h264_direct_producer_action,
+        normalize_screen, serve_h264_direct, source_capture_size,
     };
     use crate::api::direct_flow::MAX_CONTROL_BYTES;
     use axum::extract::ws::WebSocketUpgrade;
-    use bytes::Bytes;
     use futures_util::{SinkExt, StreamExt};
     use std::{
         sync::{Arc, Mutex, atomic::Ordering},
@@ -1621,12 +1618,9 @@ mod tests {
     use tokio::{sync::broadcast, time};
 
     fn frame(keyframe: bool, tag: &'static [u8]) -> H264Frame {
-        H264Frame {
-            data: Bytes::from_static(tag),
-            keyframe,
-            timestamp_micros: 7,
-            packet: None,
-        }
+        let mut data = vec![0; super::H264_DIRECT_HEADER];
+        data.extend_from_slice(tag);
+        H264Frame::new(data, keyframe, 7)
     }
 
     #[test]
@@ -1654,16 +1648,6 @@ mod tests {
         assert!(gate.on_gap(start));
         assert!(!gate.on_gap(start + Duration::from_millis(200)));
         assert!(gate.on_gap(start + Duration::from_secs(2)));
-    }
-
-    #[test]
-    fn direct_packet_is_built_on_demand_when_not_prebuilt() {
-        let built = frame(true, b"\xaa\xbb").direct_packet();
-        assert_eq!(built.as_ref(), h264_direct_packet(true, 7, &[0xaa, 0xbb]));
-
-        let mut prebuilt = frame(false, b"x");
-        prebuilt.packet = Some(Bytes::from_static(b"ready"));
-        assert_eq!(prebuilt.direct_packet().as_ref(), b"ready");
     }
 
     #[tokio::test]
@@ -1756,8 +1740,14 @@ mod tests {
 
     #[test]
     fn h264_direct_packet_matches_frontend_format() {
-        let packet = h264_direct_packet(true, 0x0102_0304_0506_0708, &[0xaa, 0xbb]);
+        let frame = H264Frame::new(
+            vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0xaa, 0xbb],
+            true,
+            0x0102_0304_0506_0708,
+        );
+        let packet = frame.packet;
 
+        assert_eq!(frame.data.as_ref(), &[0xaa, 0xbb]);
         assert_eq!(packet[0], 1);
         assert_eq!(
             &packet[1..9],
@@ -1782,12 +1772,9 @@ mod tests {
         );
     }
     fn direct_frame(keyframe: bool, timestamp_micros: u64) -> H264Frame {
-        H264Frame {
-            data: Bytes::from_static(b"\x00\x00\x00\x01"),
-            keyframe,
-            timestamp_micros,
-            packet: None,
-        }
+        let mut data = vec![0; super::H264_DIRECT_HEADER];
+        data.extend_from_slice(b"\x00\x00\x00\x01");
+        H264Frame::new(data, keyframe, timestamp_micros)
     }
 
     /// The timestamp of the next frame the client receives, or `None` if none arrives soon.

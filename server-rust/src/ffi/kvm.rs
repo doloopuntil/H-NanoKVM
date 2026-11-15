@@ -67,14 +67,21 @@ pub fn read_mjpeg(width: u16, height: u16, quality: u16) -> Result<(Vec<u8>, i32
     vision()?
         .lock()
         .map_err(lock_error)?
-        .read_img(width, height, 0, quality)
+        .read_img(width, height, 0, quality, 0)
 }
 
-/// libkvm rebuilds the encoder when `fps` differs from the running channel's.
-pub fn read_h264(width: u16, height: u16, fps: u8, bit_rate: u16) -> Result<(Vec<u8>, i32)> {
+/// libkvm rebuilds the encoder when `fps` differs from the running channel's. A frame starts with
+/// `headroom` zero bytes for the caller's header.
+pub fn read_h264(
+    width: u16,
+    height: u16,
+    fps: u8,
+    bit_rate: u16,
+    headroom: usize,
+) -> Result<(Vec<u8>, i32)> {
     let mut vision = vision()?.lock().map_err(lock_error)?;
     vision.set_h264_fps(fps);
-    vision.read_img(width, height, 1, bit_rate)
+    vision.read_img(width, height, 1, bit_rate, headroom)
 }
 
 pub fn set_frame_detect(frame: u8) -> Result<()> {
@@ -247,6 +254,7 @@ impl KvmVision {
         height: u16,
         kind: u8,
         quality_or_rate: u16,
+        headroom: usize,
     ) -> Result<(Vec<u8>, i32)> {
         let mut ptr: *mut u8 = std::ptr::null_mut();
         let mut len: u32 = 0;
@@ -263,9 +271,12 @@ impl KvmVision {
         let data = if ptr.is_null() || len == 0 {
             Vec::new()
         } else {
+            let mut data = Vec::with_capacity(headroom + len as usize);
+            data.resize(headroom, 0);
             // SAFETY: ptr/len come from libkvm for this call and remain valid
             // until free_kvmv_data is invoked below.
-            unsafe { slice::from_raw_parts(ptr, len as usize).to_vec() }
+            data.extend_from_slice(unsafe { slice::from_raw_parts(ptr, len as usize) });
+            data
         };
         // SAFETY: Mirrors the Go backend: release libkvm's output buffer for
         // all non-negative results, including empty/no-change frames.
@@ -393,6 +404,7 @@ impl KvmVision {
         height: u16,
         kind: u8,
         quality_or_rate: u16,
+        headroom: usize,
     ) -> Result<(Vec<u8>, i32)> {
         let mut ptr: *mut u8 = std::ptr::null_mut();
         let mut len: u32 = 0;
@@ -409,9 +421,12 @@ impl KvmVision {
         let data = if ptr.is_null() || len == 0 {
             Vec::new()
         } else {
+            let mut data = Vec::with_capacity(headroom + len as usize);
+            data.resize(headroom, 0);
             // SAFETY: ptr/len come from libkvm for this call and remain valid
             // until free_kvmv_data is invoked below.
-            unsafe { slice::from_raw_parts(ptr, len as usize).to_vec() }
+            data.extend_from_slice(unsafe { slice::from_raw_parts(ptr, len as usize) });
+            data
         };
         // SAFETY: Mirrors the Go backend: release libkvm's output buffer for
         // all non-negative results, including empty/no-change frames.
