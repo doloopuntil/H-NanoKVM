@@ -12,20 +12,22 @@ use bytes::Bytes;
 use futures_util::Stream;
 use sha2::{Digest, Sha256};
 use std::{
+    io::{IoSlice, Write},
     path::Path,
     pin::Pin,
     task::{Context, Poll},
     time::{Duration, Instant},
 };
-use tokio::io::{AsyncWriteExt, BufWriter};
 
 use crate::{AppError, Result};
 
 /// Free space kept besides what an upload needs.
 pub const FREE_SPACE_MARGIN: u64 = 64 * 1024 * 1024;
 
-// Batches the ~16 KiB request chunks into fewer blocking-pool writes.
-const WRITE_BUFFER: usize = 256 * 1024;
+// The writer gathers request chunks up to this much, or this many, for one writev.
+const WRITE_BATCH: usize = 256 * 1024;
+const WRITE_BATCH_CHUNKS: usize = 64;
+const WRITE_QUEUE_CHUNKS: usize = 2 * WRITE_BATCH_CHUNKS;
 const CHECKSUM_QUEUE_CHUNKS: usize = 8;
 const PROGRESS_INTERVAL: Duration = Duration::from_secs(1);
 // Body bytes decrypted in one turn of the worker before an upload gives way.
@@ -98,7 +100,7 @@ pub async fn receive_field(
     with_checksum: bool,
     mut progress: impl FnMut(u64) -> Result<()>,
 ) -> Result<Received> {
-    let mut writer = BufWriter::with_capacity(WRITE_BUFFER, file);
+    let writer = FileWriter::spawn(file.into_std().await);
     let checksum = with_checksum.then(ChecksumWorker::spawn);
     let mut total = 0_u64;
     let mut reported = Instant::now();
@@ -115,7 +117,10 @@ pub async fn receive_field(
         if let Some(worker) = &checksum {
             worker.feed(chunk.clone()).await?;
         }
-        writer.write_all(&chunk).await?;
+        if !writer.write(chunk).await {
+            writer.finish().await?;
+            return Err(AppError::Internal("upload writer stopped".to_string()));
+        }
         // lets the video stream have the worker between slices (see yield_between_reads)
         tokio::task::yield_now().await;
         if reported.elapsed() >= PROGRESS_INTERVAL {
@@ -123,8 +128,7 @@ pub async fn receive_field(
             reported = Instant::now();
         }
     }
-    writer.flush().await?;
-    writer.get_mut().sync_all().await?;
+    writer.finish().await?;
 
     let sha256 = match checksum {
         Some(worker) => Some(worker.finish().await?),
@@ -173,6 +177,72 @@ where
         }
         polled
     }
+}
+
+/// Writes the field's chunks on a blocking thread, as they are: no copy into a buffer.
+struct FileWriter {
+    tx: tokio::sync::mpsc::Sender<Bytes>,
+    task: tokio::task::JoinHandle<std::io::Result<std::fs::File>>,
+}
+
+impl FileWriter {
+    fn spawn(file: std::fs::File) -> Self {
+        let (tx, rx) = tokio::sync::mpsc::channel::<Bytes>(WRITE_QUEUE_CHUNKS);
+        let task = tokio::task::spawn_blocking(move || write_chunks(file, rx));
+        Self { tx, task }
+    }
+
+    /// Queues a chunk, waiting while the disk is behind; false once the writer has failed.
+    async fn write(&self, chunk: Bytes) -> bool {
+        self.tx.send(chunk).await.is_ok()
+    }
+
+    /// Writes what is queued and syncs the file; the first write error otherwise.
+    async fn finish(self) -> Result<()> {
+        drop(self.tx);
+        let file = self
+            .task
+            .await
+            .map_err(|err| AppError::Internal(format!("upload writer failed: {err}")))??;
+        tokio::task::spawn_blocking(move || file.sync_all())
+            .await
+            .map_err(|err| AppError::Internal(format!("upload sync failed: {err}")))??;
+        Ok(())
+    }
+}
+
+fn write_chunks(
+    mut file: std::fs::File,
+    mut rx: tokio::sync::mpsc::Receiver<Bytes>,
+) -> std::io::Result<std::fs::File> {
+    let mut batch = Vec::with_capacity(WRITE_BATCH_CHUNKS);
+    let mut len = 0;
+    while let Some(chunk) = rx.blocking_recv() {
+        len += chunk.len();
+        batch.push(chunk);
+        if len >= WRITE_BATCH || batch.len() == WRITE_BATCH_CHUNKS {
+            write_all_vectored(&mut file, &batch)?;
+            batch.clear();
+            len = 0;
+        }
+    }
+    write_all_vectored(&mut file, &batch)?;
+    Ok(file)
+}
+
+fn write_all_vectored(file: &mut std::fs::File, chunks: &[Bytes]) -> std::io::Result<()> {
+    let mut slices: Vec<IoSlice<'_>> = chunks.iter().map(|c| IoSlice::new(c)).collect();
+    let mut slices = &mut slices[..];
+    IoSlice::advance_slices(&mut slices, 0);
+    while !slices.is_empty() {
+        match file.write_vectored(slices) {
+            Ok(0) => return Err(std::io::ErrorKind::WriteZero.into()),
+            Ok(n) => IoSlice::advance_slices(&mut slices, n),
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => {}
+            Err(err) => return Err(err),
+        }
+    }
+    Ok(())
 }
 
 struct ChecksumWorker {
@@ -347,6 +417,22 @@ mod tests {
             most <= READ_SLICE / CHUNK + 2,
             "{most} chunks read in one turn"
         );
+    }
+
+    #[tokio::test]
+    async fn the_file_writer_writes_chunks_in_order_across_batches() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("out");
+        let file = tokio::fs::File::create(&path).await.unwrap();
+        let writer = FileWriter::spawn(file.into_std().await);
+        let mut expected = Vec::new();
+        for i in 0..(3 * WRITE_BATCH_CHUNKS + 5) {
+            let chunk: Vec<u8> = (0..(i % 7) * 1000).map(|b| (b + i) as u8).collect();
+            expected.extend_from_slice(&chunk);
+            assert!(writer.write(Bytes::from(chunk)).await);
+        }
+        writer.finish().await.unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), expected);
     }
 
     #[tokio::test]
