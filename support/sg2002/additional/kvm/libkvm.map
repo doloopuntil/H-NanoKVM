@@ -4,6 +4,7 @@
 		kvmv_init;
 		kvmv_deinit;
 		kvmv_read_img;
+		kvmv_read_img_alloc;
 		kvmv_set_h264_fps;
 		kvmv_request_keyframe;
 		kvmv_hdmi_control;

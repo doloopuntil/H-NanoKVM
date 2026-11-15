@@ -45,8 +45,10 @@ private:
 
 void kvm_frame_release(KvmFrame *frame);
 
-// Encodes an NV21 frame; on success *out is a malloc'd copy of the JPEG.
-bool kvm_encode_jpeg(const KvmFrame &frame, int quality, uint8_t **out, size_t *out_size);
+// Encodes an NV21 frame; on success *out is a copy of the JPEG in memory from alloc(ctx, size),
+// or from malloc when alloc is NULL.
+bool kvm_encode_jpeg(const KvmFrame &frame, int quality, uint8_t *(*alloc)(void *, uint32_t),
+		     void *ctx, uint8_t **out, size_t *out_size);
 
 // libkvm_mmf's pixel format code for NV21.
 int kvm_nv21_format();

@@ -1,17 +1,19 @@
 use std::{
     path::Path,
-    slice,
     sync::{LazyLock, Mutex, OnceLock},
     thread,
     time::Duration,
 };
 
+#[cfg(all(target_arch = "riscv64", feature = "linked-libkvm"))]
+use std::os::raw::c_void;
 #[cfg(not(all(target_arch = "riscv64", feature = "linked-libkvm")))]
 use std::{
     env,
     ffi::{CStr, CString},
     os::raw::{c_char, c_int, c_void},
     path::PathBuf,
+    slice,
 };
 
 use crate::{AppError, Result};
@@ -132,15 +134,15 @@ fn lock_error<T>(_: T) -> AppError {
 #[link(name = "kvm")]
 unsafe extern "C" {
     fn kvmv_init(debug_info_en: u8);
-    fn kvmv_read_img(
+    fn kvmv_read_img_alloc(
         width: u16,
         height: u16,
         kind: u8,
         quality_or_rate: u16,
-        data: *mut *mut u8,
+        alloc: unsafe extern "C" fn(ctx: *mut c_void, size: u32) -> *mut u8,
+        ctx: *mut c_void,
         data_size: *mut u32,
     ) -> i32;
-    fn free_kvmv_data(data: *mut *mut u8) -> i32;
     #[link_name = "set_frame_detact"]
     fn kvm_set_frame_detect(frame: u8);
     fn kvmv_deinit();
@@ -256,36 +258,58 @@ impl KvmVision {
         quality_or_rate: u16,
         headroom: usize,
     ) -> Result<(Vec<u8>, i32)> {
-        let mut ptr: *mut u8 = std::ptr::null_mut();
-        let mut len: u32 = 0;
-
-        // SAFETY: libkvm writes an owned buffer pointer and size on success. The
-        // pointer is copied into a Vec and released through free_kvmv_data below.
-        let result =
-            unsafe { kvmv_read_img(width, height, kind, quality_or_rate, &mut ptr, &mut len) };
-
-        if result < 0 {
-            return Ok((Vec::new(), result));
-        }
-
-        let data = if ptr.is_null() || len == 0 {
-            Vec::new()
-        } else {
-            let mut data = Vec::with_capacity(headroom + len as usize);
-            data.resize(headroom, 0);
-            // SAFETY: ptr/len come from libkvm for this call and remain valid
-            // until free_kvmv_data is invoked below.
-            data.extend_from_slice(unsafe { slice::from_raw_parts(ptr, len as usize) });
-            data
+        let mut out = FrameOut {
+            data: Vec::new(),
+            headroom,
+            given: None,
         };
-        // SAFETY: Mirrors the Go backend: release libkvm's output buffer for
-        // all non-negative results, including empty/no-change frames.
-        unsafe {
-            free_kvmv_data(&mut ptr);
+        let mut len: u32 = 0;
+        // SAFETY: alloc_frame matches kvmv_alloc_fn; libkvm calls it at most once, during this
+        // call, with ctx = &mut out, and writes `size` bytes into what it returns.
+        let result = unsafe {
+            kvmv_read_img_alloc(
+                width,
+                height,
+                kind,
+                quality_or_rate,
+                alloc_frame,
+                (&raw mut out).cast(),
+                &mut len,
+            )
+        };
+        let mut data = out.data;
+        if result >= 0 && len > 0 && out.given == Some(len as usize) {
+            // SAFETY: alloc_frame reserved headroom + len bytes and zeroed the headroom; libkvm
+            // copied the len-byte frame after it before returning.
+            unsafe { data.set_len(headroom + len as usize) };
+        } else {
+            data = Vec::new();
         }
-
         Ok((data, result))
     }
+}
+
+/// Where libkvm copies a frame: `headroom` zero bytes for the caller's header, then the frame.
+#[cfg(all(target_arch = "riscv64", feature = "linked-libkvm"))]
+struct FrameOut {
+    data: Vec<u8>,
+    headroom: usize,
+    given: Option<usize>,
+}
+
+/// kvmv_alloc_fn: memory for a `size`-byte frame after the headroom, or null to drop it.
+#[cfg(all(target_arch = "riscv64", feature = "linked-libkvm"))]
+unsafe extern "C" fn alloc_frame(ctx: *mut c_void, size: u32) -> *mut u8 {
+    // SAFETY: ctx is the FrameOut that read_img passes for the duration of the call.
+    let out = unsafe { &mut *ctx.cast::<FrameOut>() };
+    let size = size as usize;
+    if out.given.is_some() || out.data.try_reserve_exact(out.headroom + size).is_err() {
+        return std::ptr::null_mut();
+    }
+    out.data.resize(out.headroom, 0);
+    out.given = Some(size);
+    // SAFETY: the capacity covers headroom + size bytes.
+    unsafe { out.data.as_mut_ptr().add(out.headroom) }
 }
 
 #[cfg(all(target_arch = "riscv64", feature = "linked-libkvm"))]

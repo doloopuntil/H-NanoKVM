@@ -157,7 +157,8 @@ void kvm_frame_release(KvmFrame *frame)
 	*frame = KvmFrame();
 }
 
-bool kvm_encode_jpeg(const KvmFrame &frame, int quality, uint8_t **out, size_t *out_size)
+bool kvm_encode_jpeg(const KvmFrame &frame, int quality, uint8_t *(*alloc)(void *, uint32_t),
+		     void *ctx, uint8_t **out, size_t *out_size)
 {
 	*out = NULL;
 	*out_size = 0;
@@ -170,7 +171,7 @@ bool kvm_encode_jpeg(const KvmFrame &frame, int quality, uint8_t **out, size_t *
 		return false;
 	bool ok = false;
 	if (data != NULL && size > 0) {
-		*out = (uint8_t *)malloc((size_t)size);
+		*out = alloc ? alloc(ctx, (uint32_t)size) : (uint8_t *)malloc((size_t)size);
 		if (*out != NULL) {
 			memcpy(*out, data, (size_t)size);
 			*out_size = (size_t)size;
