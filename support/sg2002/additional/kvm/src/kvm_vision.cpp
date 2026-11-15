@@ -1681,7 +1681,14 @@ void init_venc_h264(uint16_t _width, uint16_t _height, uint16_t _qlty, int _fps)
 	// init_h264_stream_struct(&kvm_h264_stream);
 }
 
-int h264_stream_dump(kvmv_data_t* dump_to, mmf_stream_t* dump_from)
+// Output memory: the caller's allocator when one is given (kvmv_read_img_alloc), else malloc.
+static uint8_t *out_alloc(kvmv_alloc_fn alloc, void *ctx, size_t size)
+{
+    if (size == 0 || size > UINT32_MAX) return NULL;
+    return alloc ? alloc(ctx, static_cast<uint32_t>(size)) : static_cast<uint8_t *>(malloc(size));
+}
+
+int h264_stream_dump(kvmv_data_t* dump_to, mmf_stream_t* dump_from, kvmv_alloc_fn alloc, void *ctx)
 {
     if (!dump_to || !dump_from) {
 		return IMG_VENC_ERROR;
@@ -1696,7 +1703,7 @@ int h264_stream_dump(kvmv_data_t* dump_to, mmf_stream_t* dump_from)
 			}
 			total_size += static_cast<size_t>(dump_from->data_size[i]);
 		}
-		uint8_t *output = static_cast<uint8_t *>(malloc(total_size));
+		uint8_t *output = out_alloc(alloc, ctx, total_size);
 		if (!output) {
 			return IMG_VENC_ERROR;
 		}
@@ -1719,7 +1726,7 @@ int h264_stream_dump(kvmv_data_t* dump_to, mmf_stream_t* dump_from)
 		if (!dump_from->data[0] || dump_from->data_size[0] <= 0) {
 			return IMG_VENC_ERROR;
 		}
-		uint8_t *output = static_cast<uint8_t *>(malloc(dump_from->data_size[0]));
+		uint8_t *output = out_alloc(alloc, ctx, static_cast<size_t>(dump_from->data_size[0]));
 		if (!output) {
 			return IMG_VENC_ERROR;
 		}
@@ -1767,7 +1774,8 @@ void set_frame_detact(uint8_t _frame_detact)
     kvmv_cfg.stream_stop = 0;
 }
 
-int8_t raw_to_h264(const KvmFrame *raw, kvmv_data_t* ret_stream, uint16_t _qlty)
+int8_t raw_to_h264(const KvmFrame *raw, kvmv_data_t* ret_stream, uint16_t _qlty,
+                   kvmv_alloc_fn alloc, void *ctx)
 {
 	uint64_t __attribute__((unused)) start_time;
 	uint64_t __attribute__((unused)) frame_time;
@@ -1816,7 +1824,7 @@ int8_t raw_to_h264(const KvmFrame *raw, kvmv_data_t* ret_stream, uint16_t _qlty)
         return -1;
     }
 	// log::info("pop(): %d \r\n", (int)(time::time_ms() - start_time));
-    ret = h264_stream_dump(ret_stream, &_stream);
+    ret = h264_stream_dump(ret_stream, &_stream, alloc, ctx);
     mmf_venc_free(kvm_venc.mmf_venc_chn);
 	// log::info("dump(): %d \r\n", (int)(time::time_ms() - start_time));
 
@@ -1975,7 +1983,28 @@ void set_venc_auto_recyc(uint8_t _enable)
          4: Acquire H264 encoded images(P)
          5: IMG not changed
  **********************************************************************************/
+static int read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _qlty,
+                    kvmv_alloc_fn alloc, void *ctx, uint8_t** _pp_kvm_data, uint32_t* _p_kvmv_data_size);
+
 int kvmv_read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _qlty, uint8_t** _pp_kvm_data, uint32_t* _p_kvmv_data_size)
+{
+    return read_img(_width, _height, _type, _qlty, NULL, NULL, _pp_kvm_data, _p_kvmv_data_size);
+}
+
+int kvmv_read_img_alloc(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _qlty,
+                        kvmv_alloc_fn alloc, void *ctx, uint32_t* _p_kvmv_data_size)
+{
+    uint8_t *data = NULL;
+    if (alloc == NULL) {
+        *_p_kvmv_data_size = 0;
+        return IMG_VENC_ERROR;
+    }
+    return read_img(_width, _height, _type, _qlty, alloc, ctx, &data, _p_kvmv_data_size);
+}
+
+// With alloc, frames go to the caller's memory and never into the kvmv_data_buffer slots.
+static int read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _qlty,
+                    kvmv_alloc_fn alloc, void *ctx, uint8_t** _pp_kvm_data, uint32_t* _p_kvmv_data_size)
 {
     *_pp_kvm_data = NULL;
     *_p_kvmv_data_size = 0;
@@ -2098,12 +2127,19 @@ int kvmv_read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _ql
         if(kvmv_cfg.venc_type == VENC_MJPEG){
             uint8_t *jpg = NULL;
             size_t jpg_size = 0;
-            bool encoded = kvm_encode_jpeg(frame, maxmin_data(99, 51, (int)_qlty), &jpg, &jpg_size);
+            bool encoded = kvm_encode_jpeg(frame, maxmin_data(99, 51, (int)_qlty), alloc, ctx,
+                                           &jpg, &jpg_size);
             kvm_frame_release(&frame);
 			if (!encoded) {
 				pthread_mutex_unlock(&vi_mutex);
 				return IMG_VENC_ERROR;
 			}
+            if (alloc != NULL) {
+                *_pp_kvm_data = jpg;
+                *_p_kvmv_data_size = static_cast<uint32_t>(jpg_size);
+                pthread_mutex_unlock(&vi_mutex);
+                return IMG_MJPEG_TYPE;
+            }
             kvmv_data_t* p_kvmv_data = get_save_buffer();
             if(p_kvmv_data == NULL){
                 // buffer full
@@ -2121,7 +2157,8 @@ int kvmv_read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _ql
             return IMG_MJPEG_TYPE;
         } else if (kvmv_cfg.venc_type == VENC_H264){
             int ret;
-            kvmv_data_t* p_kvmv_data = get_save_buffer();
+            kvmv_data_t caller_data;
+            kvmv_data_t* p_kvmv_data = alloc != NULL ? &caller_data : get_save_buffer();
             if(p_kvmv_data == NULL){
                 // buffer full
                 kvm_frame_release(&frame);
@@ -2129,7 +2166,7 @@ int kvmv_read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _ql
                 pthread_mutex_unlock(&vi_mutex);
                 return IMG_BUFFER_FULL;
             }
-            ret = raw_to_h264(&frame, p_kvmv_data, maxmin_data(10000, 500, (int)_qlty));
+            ret = raw_to_h264(&frame, p_kvmv_data, maxmin_data(10000, 500, (int)_qlty), alloc, ctx);
             kvm_frame_release(&frame);
 			if (ret < 0 || !p_kvmv_data->p_img_data || p_kvmv_data->img_data_size == 0) {
 				*_pp_kvm_data = NULL;
