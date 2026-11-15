@@ -43,8 +43,9 @@ server-rust/scripts/build-linked-libkvm.sh
 That script builds with feature `linked-libkvm`, uses Buildroot's musl 1.2.6 loader
 `/lib/ld-musl-riscv64.so.1` (not the vendor T-Head loader; see
 [thread stack alignment](riscv-musl-stack-alignment.md)), and sets RUNPATH only to the root-owned
-`/kvmapp/server/dl_lib`. S95 may stage the executable itself in a root-created
-`/tmp/server`, but never copies or loads shared libraries from `/tmp`.
+`/kvmapp/server/dl_lib`. S95 runs the executable in place; `/tmp` is `noexec`. To replace it on
+a running device, copy it next to the old one and rename it over (`install-rust-backend.sh` does
+this): writing into a running executable fails with "text file busy".
 
 Package a deployable `kvmapp` layout with:
 

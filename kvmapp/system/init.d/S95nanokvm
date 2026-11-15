@@ -12,7 +12,6 @@ WATCHDOG_PID_FILE=/tmp/nanokvm-watchdog.pid
 TRANSFER_MARKER=/tmp/.download_in_progress
 H264_SAFE_MODE_FILE=/etc/kvm/h264_safe_mode
 SERVER_SOURCE_DIR=/kvmapp/server
-SERVER_RUNTIME_DIR=/tmp/server
 SERVER_LOG=/tmp/nanokvm-server.log
 SERVER_PID_FILE=/tmp/nanokvm-server.pid
 INIT_SELF="$0"
@@ -20,7 +19,6 @@ NANOKVM_NATIVE_LIBRARY_PATH=/kvmapp/server/dl_lib:/mnt/system/usr/lib:/mnt/syste
 # Buildroot's musl 1.2.6 (the vendor T-Head loader misaligned thread stacks).
 NANOKVM_LOADER=/lib/ld-musl-riscv64.so.1
 KVM_SYSTEM_SOURCE_DIR=/kvmapp/kvm_system
-KVM_SYSTEM_RUNTIME_DIR=/tmp/kvm_system
 KVM_SYSTEM_LOG=/tmp/kvm_system.log
 KVM_SYSTEM_PID_FILE=/tmp/kvm-system.pid
 HWMON_SOURCE=/kvmapp/hwmon/nanokvm-hwmon
@@ -120,7 +118,7 @@ find_kvm_system_pids() {
     for proc in /proc/[0-9]*; do
         cmdline="$(tr '\0' ' ' < "$proc/cmdline" 2>/dev/null || true)"
         case "$cmdline" in
-            /lib/ld-musl-riscv64.so.1*'/tmp/kvm_system/kvm_system'*)
+            /lib/ld-musl-riscv64.so.1*'/kvmapp/kvm_system/kvm_system'*)
                 printf '%s\n' "${proc##*/}"
                 ;;
         esac
@@ -132,7 +130,7 @@ kvm_system_pid_matches() {
     [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null || return 1
     cmdline="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)"
     case "$cmdline" in
-        /lib/ld-musl-riscv64.so.1*'/tmp/kvm_system/kvm_system'*) return 0 ;;
+        /lib/ld-musl-riscv64.so.1*'/kvmapp/kvm_system/kvm_system'*) return 0 ;;
     esac
     return 1
 }
@@ -179,14 +177,9 @@ start_kvm_system_runtime() {
         runtime_log "kvm_system source is missing or not executable"
         return 1
     }
-    rm -rf "$KVM_SYSTEM_RUNTIME_DIR"
-    cp -r "$KVM_SYSTEM_SOURCE_DIR" "$KVM_SYSTEM_RUNTIME_DIR" || {
-        runtime_log "failed to stage kvm_system in /tmp"
-        return 1
-    }
     : > "$KVM_SYSTEM_LOG" 2>/dev/null || KVM_SYSTEM_LOG=/dev/null
     nohup "$NANOKVM_LOADER" --library-path "$NANOKVM_NATIVE_LIBRARY_PATH" \
-        "$KVM_SYSTEM_RUNTIME_DIR/kvm_system" >>"$KVM_SYSTEM_LOG" 2>&1 &
+        "$KVM_SYSTEM_SOURCE_DIR/kvm_system" >>"$KVM_SYSTEM_LOG" 2>&1 &
     launched_pid=$!
     rm -f "$KVM_SYSTEM_PID_FILE"
     for _ in 1 2 3 4 5; do
@@ -243,10 +236,6 @@ trim_runtime_logs() {
     trim_log "$SERVER_LOG"
     trim_log "$KVM_SYSTEM_LOG"
     trim_log /tmp/nanokvm-watchdog.log
-}
-
-tmp_available_kb() {
-    df -k /tmp 2>/dev/null | awk 'NR == 2 { print $4 + 0 }'
 }
 
 # A PID file in /tmp counts only if root wrote it: any account can create one
@@ -402,24 +391,8 @@ restore_sensor_configs() {
 }
 
 start_server_runtime() {
+    # Runs in place: /tmp is noexec. Updates replace /kvmapp by renaming, never in place.
     server_bin="$SERVER_SOURCE_DIR/NanoKVM-Server"
-    tmp_free="$(tmp_available_kb)"
-
-    if [ -z "$tmp_free" ] || [ "$tmp_free" -gt 20480 ]; then
-        runtime_new="$(mktemp -d /tmp/nanokvm-server.XXXXXX 2>/dev/null || true)"
-        if [ -n "$runtime_new" ] && \
-           install -m 0755 "$server_bin" "$runtime_new/NanoKVM-Server" \
-               2>/tmp/nanokvm-server-copy.err; then
-            rm -rf "$SERVER_RUNTIME_DIR" 2>/dev/null
-            mv "$runtime_new" "$SERVER_RUNTIME_DIR"
-            server_bin="$SERVER_RUNTIME_DIR/NanoKVM-Server"
-        else
-            runtime_log "failed to stage NanoKVM-Server in /tmp; running from $SERVER_SOURCE_DIR"
-            [ -z "$runtime_new" ] || rm -rf "$runtime_new" 2>/dev/null
-        fi
-    else
-        runtime_log "/tmp has only ${tmp_free} KiB free; running NanoKVM-Server from $SERVER_SOURCE_DIR"
-    fi
 
     : > "$SERVER_LOG" 2>/dev/null || SERVER_LOG=/dev/null
     runtime_log "starting NanoKVM-Server from $server_bin"
@@ -749,7 +722,6 @@ stop_runtime() {
     stop_hwmon_shadow
     stop_server_process || reboot_after_unrecoverable_server "runtime stop"
     stop_kvm_system_process || true
-    rm -rf /tmp/kvm_system /tmp/server 2>/dev/null
 }
 
 start_runtime() {
