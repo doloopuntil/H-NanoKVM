@@ -252,30 +252,19 @@ re-attempted.
 
 ## External dependency audit
 
-Closing raw.12 could have quietly traded one external dependency for
-another unnecessary one. Auditing every non-raw.12 external fetch this
-pipeline makes, against whether the already-cloned vendor SDK could have
-supplied the same content instead:
+Every external source the 6.18 build fetches, all pinned to a commit or a release:
 
-| External source | What it provides | Redundant with the vendor SDK? |
-| --- | --- | --- |
-| `sophgo/host-tools` | The actual riscv64 cross-compiler toolchain, used to build the kernel and every kernel module | No -- this is the compiler itself; a prebuilt rootfs can't substitute for a toolchain. Confirmed by grepping every script that references it: all of them use `TOOLCHAIN_BIN=.../host-tools/gcc/riscv64-linux-musl-x86_64/bin` to invoke `gcc`/`ld`/`strip` directly. |
-| `sophgo/osdrv` and `sophgo/cvi_mpi` (public, one dated release) | Every `interdrv` kernel module and the five middleware libraries | No -- one release for both keeps the user/kernel structs and the shared `struct cvi_buffer` consistent; the vendor SDK's copies are an older snapshot of the same tree. |
-| `git.kernel.org` stable tree | Real upstream Linux 5.10.265 fixes for the kernel rehydration | Not applicable -- the whole point is pulling genuine upstream fixes the vendor's own kernel snapshot doesn't have. |
-| `buildroot.org` | The Buildroot release tarball itself | Not applicable -- an unrelated upstream project, not vendor SDK content. |
+| External source | What it provides |
+| --- | --- |
+| `buildroot.org` | The Buildroot release, and through it the cross-compiler (GCC 14.4, musl 1.2.6) that builds the whole image, native code included, and the Linux 6.18 source from kernel.org |
+| `lone0/buildroot-external-licheervnano` | The licheerv patch series and board files for Linux 6.18 |
+| `sipeed/LicheeRV-Nano-Build` | The FSBL source and the LT6911 sensor driver `libkvm_mmf.so` compiles in |
+| `sophgo/osdrv` and `sophgo/cvi_mpi` (one dated release) | The media kernel modules and the middleware libraries; one release for both keeps the user/kernel structs consistent |
+| `sophgo/SensorSupportList` | The sensor list the middleware build needs |
 
-One narrower finding, since fixed: `build-linked-libkvm.sh` used to link
-`libkvm.so` against `sophgo/host-tools`' own `libc.so`/`libgcc_s.so.1`
-sysroot copies -- the same files independently confirmed elsewhere in this
-pipeline to *not* be the on-device runtime build. It worked in practice
-(linking only needs matching symbol tables, not byte-identical content),
-but meant linking and runtime used two different sources for the same
-files. `vendor-sdk-stock`'s rootfs.sd is available from the start of the
-`build-image` job (the same cache restored early on), so no reordering was
-actually needed -- `scripts/extract-vendor-sdk-stock-file.sh` now extracts
-the sysroot copies the same way the runtime files are extracted later,
-and both steps share that one script instead of duplicating the
-probe-multiple-candidate-paths logic.
+No toolchain is downloaded on its own: `sophgo/host-tools`, MaixCDK and the T-Head GCC are
+gone (2026-11-15). The 5.10 pipeline's audit, with `host-tools` and the `git.kernel.org` 5.10
+rehydration, is in git history.
 
 ## Related documents
 
