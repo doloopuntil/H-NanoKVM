@@ -188,12 +188,15 @@ jobs:
           done
           rm server-rust/native/dl_lib/libvpu.so
 
+      # build.rs assembles the XTheadVector TLS code with Buildroot's GNU binutils.
       - name: Build Hardened kvmapp bridge
         run: |
           cargo test --manifest-path server-rust/Cargo.toml
           corepack pnpm --dir web install --frozen-lockfile
           corepack pnpm --dir web build
-          server-rust/scripts/build-linked-libkvm.sh
+          NANOKVM_XTHEADVECTOR_PREFIX="$CROSS_PREFIX" server-rust/scripts/build-linked-libkvm.sh
+          grep -q "Poly1305 for RISC-V, CRYPTOGAMS" \
+            server-rust/target/riscv64gc-unknown-linux-musl/release/nanokvm-rust-server
           RUST_TARGET=riscv64gc-unknown-linux-musl \
             APP_VERSION="$(cat kvmapp/version)" \
             KVM_SYSTEM_SOURCE="$GITHUB_WORKSPACE/build/native-libkvm/kvm_system" \

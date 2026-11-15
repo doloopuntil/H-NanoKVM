@@ -165,12 +165,17 @@ pub fn install_crypto_provider() {
 }
 
 /// ring's provider with ChaCha20-Poly1305 first: the C906 has no AES instructions,
-/// and ChaCha20 seals video several times faster there than AES-GCM.
+/// and ChaCha20 seals video several times faster there than AES-GCM. On the device the
+/// TLS 1.3 ChaCha20-Poly1305 records use the XTheadVector code.
 fn crypto_provider() -> CryptoProvider {
     let mut provider = ring::default_provider();
     provider
         .cipher_suites
         .sort_by_key(|suite| !is_chacha20(suite.suite()));
+    #[cfg(hnk_xtheadvector)]
+    for suite in &mut provider.cipher_suites {
+        *suite = super::vector_aead::wrap(*suite);
+    }
     provider
 }
 

@@ -66,6 +66,12 @@ longer links with the non-PIC `crt1.o`.
   more CPU per MB on MJPEG over HTTPS. mimalloc's C code needs the musl headers in
   `server-rust/sysroot/include` (`NANOKVM_SYSROOT_INCLUDE`); CI copies them from
   Buildroot's sysroot. Host builds and tests keep the system allocator.
+- **Vector TLS code.** The device build assembles the XTheadVector ChaCha20 and the
+  CRYPTOGAMS Poly1305 in `server-rust/native/` with GNU binutils (LLVM has no XTheadVector)
+  and generates the scalar Poly1305 from its perlasm. `build.rs` runs
+  `${NANOKVM_XTHEADVECTOR_PREFIX}gcc` (default `riscv64-linux-gnu-`; CI passes Buildroot's
+  prefix) and `perl`, and stops if either is missing. Debian trixie's binutils 2.44 works.
+  Host builds and tests use RustCrypto stand-ins for the assembly.
 
 ### Cross-building in Docker (macOS or Linux)
 
@@ -83,7 +89,7 @@ This matches CI closely and needs no RISC-V toolchain on the host:
    to `server-rust/sysroot/include`.
 2. Build a clean tree, not the working copy, in a scratch directory:
    `git archive HEAD server-rust kvmapp/version | tar -x -C <scratch>`.
-3. In a `rust:1-trixie` container with `clang` and `lld` installed,
+3. In a `rust:1-trixie` container with `clang`, `lld` and `gcc-riscv64-linux-gnu` installed,
    `rustup default 1.99.0 && rustup target add riscv64gc-unknown-linux-musl`,
    set `CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_LINKER=ld.lld`, and run
    `server-rust/scripts/build-linked-libkvm.sh`.
