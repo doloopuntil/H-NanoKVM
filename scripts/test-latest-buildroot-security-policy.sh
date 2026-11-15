@@ -38,6 +38,7 @@ verify_prepare_hash() {
 }
 
 require_line 'BR2_REPRODUCIBLE=y' "$DEFCONFIG"
+require_line 'BR2_PACKAGE_HARDENED_NANOKVM_KVMAPP=y' "$DEFCONFIG"
 # Links, files and FIFOs in shared directories are protected from the first boot.
 SYSCTL_FS="$ROOT/buildroot-external/hardened-sg2002/board/sg2002/overlay/etc/sysctl.d/10-hardened-fs.conf"
 for setting in 'fs.protected_symlinks = 1' 'fs.protected_hardlinks = 1' 'fs.protected_regular = 2' 'fs.protected_fifos = 2'; do
