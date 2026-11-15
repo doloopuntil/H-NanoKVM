@@ -1605,7 +1605,8 @@ uint8_t frame_changed(const KvmFrame *raw)
     static size_t raw_size = 0;
     static uint8_t Farame_sample[Farame_sample_size] = {0};
     uint8_t ret = 0;
-    if (!raw || !raw->data || raw->size == 0) {
+    const uint8_t *raw_data = raw ? kvm_frame_pixels(*raw) : NULL;
+    if (!raw_data || raw->size == 0) {
 		return 1;
 	}
     if(raw->size != raw_size){
@@ -1615,7 +1616,6 @@ uint8_t frame_changed(const KvmFrame *raw)
 	size_t current_size = raw_size;
 	size_t sample_count = current_size < Farame_sample_size ? current_size : Farame_sample_size;
 	size_t interval = current_size / sample_count;
-	const uint8_t *raw_data = raw->data;
 	for(size_t i = 0; i < sample_count; i ++){
 		size_t offset = i * interval;
 		if (offset >= current_size) {

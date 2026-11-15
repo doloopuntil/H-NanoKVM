@@ -47,7 +47,10 @@ void mmf_get_vi_hmirror(int ch, bool *en);
 void mmf_get_vi_vflip(int ch, bool *en);
 
 // get vi frame
-int mmf_vi_frame_pop(int ch, void **data, int *len, int *width, int *height, int *format);
+// Leases the next VI frame without mapping it; the encoders take it with data NULL.
+int mmf_vi_frame_pop(int ch, int *len, int *width, int *height, int *format);
+// Maps the leased frame for the CPU (cached, invalidated) on first use; NULL on failure.
+void *mmf_vi_frame_map(int ch);
 void mmf_vi_frame_free(int ch);
 // Release the current VI frame immediately. mmf_vi_frame_free() defers
 // release so the frame can be sent directly to VENC without a second copy.

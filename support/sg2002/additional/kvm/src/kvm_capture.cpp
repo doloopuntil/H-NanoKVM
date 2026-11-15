@@ -106,20 +106,15 @@ bool KvmCamera::read(KvmFrame *frame)
 	if (!is_open())
 		return false;
 
-	void *buffer = NULL;
 	int len = 0, width = 0, height = 0, format = 0;
-	if (mmf_vi_frame_pop(ch_, &buffer, &len, &width, &height, &format) != 0)
+	if (mmf_vi_frame_pop(ch_, &len, &width, &height, &format) != 0)
 		return false;
-	if (buffer == NULL) {
-		mmf_vi_frame_release(ch_);
-		return false;
-	}
 
 	const size_t size = (size_t)width_ * (size_t)height_ * 3 / 2;
 	if (!align_need_ && width == width_ && height == height_ && format == kvm_nv21_format() &&
 	    (size_t)len >= size) {
-		// Zero copy: the encoders take this frame straight from VPSS.
-		frame->data = (uint8_t *)buffer;
+		// Zero copy: the encoders take this frame straight from VPSS, unmapped.
+		frame->vi_ch = ch_;
 		frame->size = size;
 		frame->width = width_;
 		frame->height = height_;
@@ -127,7 +122,8 @@ bool KvmCamera::read(KvmFrame *frame)
 		return true;
 	}
 
-	uint8_t *copy = (uint8_t *)malloc(size);
+	const uint8_t *buffer = (const uint8_t *)mmf_vi_frame_map(ch_);
+	uint8_t *copy = buffer ? (uint8_t *)malloc(size) : NULL;
 	if (copy == NULL) {
 		mmf_vi_frame_release(ch_);
 		return false;
@@ -137,7 +133,7 @@ bool KvmCamera::read(KvmFrame *frame)
 		const int align = mmf_vi_aligned_width(ch_);
 		const size_t pitch = (size_t)((width + align - 1) / align * align);
 		for (int row = 0; row < height_ * 3 / 2; row++)
-			memcpy(copy + (size_t)row * width_, (uint8_t *)buffer + row * pitch, width_);
+			memcpy(copy + (size_t)row * width_, buffer + row * pitch, width_);
 	} else {
 		memcpy(copy, buffer, size);
 	}
@@ -148,6 +144,13 @@ bool KvmCamera::read(KvmFrame *frame)
 	frame->height = height_;
 	frame->owned = true;
 	return true;
+}
+
+const uint8_t *kvm_frame_pixels(const KvmFrame &frame)
+{
+	if (frame.data != NULL)
+		return frame.data;
+	return frame.vi_ch >= 0 ? (const uint8_t *)mmf_vi_frame_map(frame.vi_ch) : NULL;
 }
 
 void kvm_frame_release(KvmFrame *frame)

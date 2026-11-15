@@ -6,12 +6,15 @@
 #include <stdint.h>
 
 struct KvmFrame {
+	// A copy (padded rows packed), or NULL for the VPSS frame itself, held unmapped until the
+	// next read; the encoders take that with data NULL.
 	uint8_t *data = nullptr;
 	size_t size = 0;
 	int width = 0;
 	int height = 0;
-	// A copy (padded rows packed). Otherwise the VPSS frame itself, held until the next read.
 	bool owned = false;
+	// The VI channel of a frame held from VPSS, else -1.
+	int vi_ch = -1;
 };
 
 class KvmCamera {
@@ -44,6 +47,8 @@ private:
 };
 
 void kvm_frame_release(KvmFrame *frame);
+// The frame's pixels for the CPU: the copy, or the VPSS frame mapped on first use. NULL on failure.
+const uint8_t *kvm_frame_pixels(const KvmFrame &frame);
 
 // Encodes an NV21 frame; on success *out is a copy of the JPEG in memory from alloc(ctx, size),
 // or from malloc when alloc is NULL.
