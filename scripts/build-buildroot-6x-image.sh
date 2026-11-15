@@ -104,6 +104,13 @@ build_stage() {
 		grep -q "/$patch\$" "$applied" || die "kernel patch not applied: $patch"
 	done
 
+	# musl: our riscv64 memcpy and memmove (the patch directory is per musl version)
+	musl_dir="$(find "$OUTPUT_DIR/build" -maxdepth 1 -type d -name 'musl-*' | head -n 1)"
+	[ -n "$musl_dir" ] || die "missing the musl build directory"
+	for source in memcpy.S memmove.S; do
+		[ -f "$musl_dir/src/string/riscv64/$source" ] || die "musl lacks src/string/riscv64/$source"
+	done
+
 	# Kernel: no /dev/mem, signed modules only, lockdown (integrity), memory-safety hardening, KASLR
 	kconfig="$OUTPUT_DIR/build/linux-$EXPECTED_KERNEL_RELEASE/.config"
 	[ -f "$kconfig" ] || die "missing $kconfig"

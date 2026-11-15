@@ -1,0 +1,241 @@
+From: H-NanoKVM
+Date: Sun, 15 Nov 2026 21:30:00 +0100
+Subject: [PATCH] riscv64: memcpy and memmove without misaligned accesses
+
+The generic C memcpy copies 32-bit words and drops to half speed when source
+and destination are aligned differently; the generic memmove copies byte by
+byte when overlapping regions are aligned differently. These replacements use
+aligned 64-bit words, shifting and merging loads when the alignments differ,
+and never make a misaligned access, so they stay safe on strongly-ordered
+(device) mappings, where a misaligned access faults on T-Head cores.
+
+On the SG2002's C906 at 1050 MHz (MB/s, stock -> patched): memcpy 16 KB with
+differing alignment 674 -> 1226, aligned 1380 -> 2529; memmove 16 KB
+overlapping with differing alignment 195 -> 1237 (163 -> 1236 backward).
+395,280 sizes, offsets and overlaps checked against byte loops.
+
+diff --git a/src/string/riscv64/memcpy.S b/src/string/riscv64/memcpy.S
+new file mode 100644
+--- /dev/null
++++ b/src/string/riscv64/memcpy.S
+@@ -0,0 +1,106 @@
++/* SPDX-License-Identifier: MIT
++ * memcpy for riscv64 that never makes a misaligned access, so it is safe on strongly-ordered
++ * (device) mappings: bytes until dst is 8-aligned, then aligned 64-bit words, or aligned
++ * loads shifted and merged when src is aligned differently. Loads stay inside the 8-byte
++ * words that hold source bytes. __memcpy_fwd is the same code for memmove. */
++
++.global memcpy
++.type memcpy,@function
++.global __memcpy_fwd
++.hidden __memcpy_fwd
++.type __memcpy_fwd,@function
++.p2align 2
++memcpy:
++__memcpy_fwd:
++	mv	t6, a0
++	li	t0, 32
++	bltu	a2, t0, 9f
++
++	/* bytes until dst is 8-aligned */
++0:	andi	t1, t6, 7
++	beqz	t1, 1f
++	lbu	t1, 0(a1)
++	sb	t1, 0(t6)
++	addi	a1, a1, 1
++	addi	t6, t6, 1
++	addi	a2, a2, -1
++	j	0b
++
++1:	andi	t1, a1, 7
++	bnez	t1, 5f
++	li	t0, 32
++	bltu	a2, t0, 9f
++
++	/* src and dst both 8-aligned */
++2:	ld	t2, 0(a1)
++	ld	t3, 8(a1)
++	ld	t4, 16(a1)
++	ld	t5, 24(a1)
++	sd	t2, 0(t6)
++	sd	t3, 8(t6)
++	sd	t4, 16(t6)
++	sd	t5, 24(t6)
++	addi	a1, a1, 32
++	addi	t6, t6, 32
++	addi	a2, a2, -32
++	bgeu	a2, t0, 2b
++	j	9f
++
++	/* src off by t1 bytes: aligned loads, shifted and merged (little-endian) */
++5:	slli	t2, t1, 3
++	neg	t3, t2
++	andi	a1, a1, -8
++	ld	t4, 0(a1)
++	li	t0, 40
++	bltu	a2, t0, 7f
++6:	ld	a3, 8(a1)
++	ld	a4, 16(a1)
++	ld	a5, 24(a1)
++	ld	a6, 32(a1)
++	srl	t4, t4, t2
++	sll	t5, a3, t3
++	or	t4, t4, t5
++	sd	t4, 0(t6)
++	srl	a3, a3, t2
++	sll	t5, a4, t3
++	or	a3, a3, t5
++	sd	a3, 8(t6)
++	srl	a4, a4, t2
++	sll	t5, a5, t3
++	or	a4, a4, t5
++	sd	a4, 16(t6)
++	srl	a5, a5, t2
++	sll	t5, a6, t3
++	or	a5, a5, t5
++	sd	a5, 24(t6)
++	mv	t4, a6
++	addi	a1, a1, 32
++	addi	t6, t6, 32
++	addi	a2, a2, -32
++	bgeu	a2, t0, 6b
++7:	li	t0, 16
++	bltu	a2, t0, 8f
++	ld	a3, 8(a1)
++	srl	t4, t4, t2
++	sll	t5, a3, t3
++	or	t4, t4, t5
++	sd	t4, 0(t6)
++	mv	t4, a3
++	addi	a1, a1, 8
++	addi	t6, t6, 8
++	addi	a2, a2, -8
++	j	7b
++8:	add	a1, a1, t1
++
++	/* the remaining bytes */
++9:	beqz	a2, 11f
++10:	lbu	t1, 0(a1)
++	sb	t1, 0(t6)
++	addi	a1, a1, 1
++	addi	t6, t6, 1
++	addi	a2, a2, -1
++	bnez	a2, 10b
++11:	ret
++
++.size memcpy, . - memcpy
++.size __memcpy_fwd, . - __memcpy_fwd
+diff --git a/src/string/riscv64/memmove.S b/src/string/riscv64/memmove.S
+new file mode 100644
+--- /dev/null
++++ b/src/string/riscv64/memmove.S
+@@ -0,0 +1,107 @@
++/* SPDX-License-Identifier: MIT
++ * memmove for riscv64 that never makes a misaligned access (see memcpy.S). Forward through
++ * __memcpy_fwd unless dst lies above an overlapping src; then backward: bytes until the dst
++ * end is 8-aligned, then aligned 64-bit words, or aligned loads shifted and merged. */
++
++.global memmove
++.type memmove,@function
++.hidden __memcpy_fwd
++.p2align 2
++memmove:
++	beq	a0, a1, 11f
++	sub	t0, a0, a1
++	bltu	t0, a2, 12f
++	tail	__memcpy_fwd		/* dst - src >= n, unsigned: forward is safe */
++
++12:	add	t6, a0, a2
++	add	a1, a1, a2
++	li	t0, 32
++	bltu	a2, t0, 9f
++
++	/* bytes until the dst end is 8-aligned */
++0:	andi	t1, t6, 7
++	beqz	t1, 1f
++	addi	a1, a1, -1
++	addi	t6, t6, -1
++	lbu	t1, 0(a1)
++	sb	t1, 0(t6)
++	addi	a2, a2, -1
++	j	0b
++
++1:	andi	t1, a1, 7
++	bnez	t1, 5f
++	li	t0, 32
++	bltu	a2, t0, 9f
++
++	/* both ends 8-aligned */
++2:	ld	t2, -8(a1)
++	ld	t3, -16(a1)
++	ld	t4, -24(a1)
++	ld	t5, -32(a1)
++	sd	t2, -8(t6)
++	sd	t3, -16(t6)
++	sd	t4, -24(t6)
++	sd	t5, -32(t6)
++	addi	a1, a1, -32
++	addi	t6, t6, -32
++	addi	a2, a2, -32
++	bgeu	a2, t0, 2b
++	j	9f
++
++	/* src end off by t1 bytes: aligned loads, shifted and merged (little-endian) */
++5:	slli	t2, t1, 3
++	neg	t3, t2
++	sub	a1, a1, t1
++	ld	t4, 0(a1)
++	li	t0, 40
++	bltu	a2, t0, 7f
++6:	ld	a3, -8(a1)
++	ld	a4, -16(a1)
++	ld	a5, -24(a1)
++	ld	a6, -32(a1)
++	sll	t4, t4, t3
++	srl	t5, a3, t2
++	or	t4, t4, t5
++	sd	t4, -8(t6)
++	sll	a3, a3, t3
++	srl	t5, a4, t2
++	or	a3, a3, t5
++	sd	a3, -16(t6)
++	sll	a4, a4, t3
++	srl	t5, a5, t2
++	or	a4, a4, t5
++	sd	a4, -24(t6)
++	sll	a5, a5, t3
++	srl	t5, a6, t2
++	or	a5, a5, t5
++	sd	a5, -32(t6)
++	mv	t4, a6
++	addi	a1, a1, -32
++	addi	t6, t6, -32
++	addi	a2, a2, -32
++	bgeu	a2, t0, 6b
++7:	li	t0, 16
++	bltu	a2, t0, 8f
++	ld	a3, -8(a1)
++	sll	t4, t4, t3
++	srl	t5, a3, t2
++	or	t4, t4, t5
++	sd	t4, -8(t6)
++	mv	t4, a3
++	addi	a1, a1, -8
++	addi	t6, t6, -8
++	addi	a2, a2, -8
++	j	7b
++8:	add	a1, a1, t1
++
++	/* the remaining bytes */
++9:	beqz	a2, 11f
++10:	addi	a1, a1, -1
++	addi	t6, t6, -1
++	lbu	t1, 0(a1)
++	sb	t1, 0(t6)
++	addi	a2, a2, -1
++	bnez	a2, 10b
++11:	ret
++
++.size memmove, . - memmove
+--
+2.47.0
