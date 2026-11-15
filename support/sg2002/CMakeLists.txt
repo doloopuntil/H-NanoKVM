@@ -1,6 +1,6 @@
 # libkvm_mmf.so, libkvm.so and kvm_system for the SG2002.
-# cmake -S support/sg2002 -B build -DCMAKE_TOOLCHAIN_FILE=support/sg2002/cmake/thead-musl.cmake \
-#   -DSG2002_TOOLCHAIN_BIN=... -DSG2002_SDK_DIR=...   (scripts/stage-sg2002-sdk.sh makes the SDK dir)
+# cmake -S support/sg2002 -B build -DCMAKE_TOOLCHAIN_FILE=support/sg2002/cmake/buildroot-musl.cmake \
+#   -DSG2002_CROSS_PREFIX=... -DSG2002_SDK_DIR=...   (scripts/stage-sg2002-sdk.sh makes the SDK dir)
 cmake_minimum_required(VERSION 3.16)
 project(hnanokvm_native C CXX)
 
@@ -65,8 +65,7 @@ target_link_options(kvm PRIVATE
 	-Wl,--as-needed
 	-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/additional/kvm/libkvm.map)
 set_target_properties(kvm PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/additional/kvm/libkvm.map)
-# Byte-sized atomics are libatomic calls on RV64 with GCC 10.
-target_link_libraries(kvm PRIVATE kvm_mmf pthread atomic)
+target_link_libraries(kvm PRIVATE kvm_mmf pthread)
 
 # kvm_system: status, keys and the OLED (Full and PCIe boards).
 set(ks kvm_system/main)

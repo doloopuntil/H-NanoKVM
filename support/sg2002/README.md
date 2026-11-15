@@ -10,6 +10,6 @@
 - `middleware-patches`: patches to `sophgo/cvi_mpi`.
 
 All three are plain CMake targets (`CMakeLists.txt`, toolchain file
-`cmake/thead-musl.cmake`) built with the T-Head musl GCC. CI's `build-native-libkvm` job is
-the reference build; [Build and deploy the server](../../docs/development/cross-build.md)
+`cmake/buildroot-musl.cmake`) built with Buildroot's musl GCC, the toolchain that builds the
+rootfs. CI's `build-buildroot` job is the reference build; [Build and deploy the server](../../docs/development/cross-build.md)
 shows how to run the same scripts locally.

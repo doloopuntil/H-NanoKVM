@@ -16,7 +16,6 @@ BASE_ROOTFS_IMAGE="${BASE_ROOTFS_IMAGE:-$BUILD_DIR/sd-image/rootfs.ext}"
 KVM_SYSTEM_SOURCE="${KVM_SYSTEM_SOURCE:-}"
 KVM_SYSTEM_BUILD_SOURCE="${KVM_SYSTEM_BUILD_SOURCE:-$BUILD_DIR/native-libkvm/kvm_system}"
 NATIVE_LIB_DIR="${NATIVE_LIB_DIR:-$ROOT_DIR/server-rust/native/dl_lib}"
-EXTRA_NATIVE_LIB_DIR="${EXTRA_NATIVE_LIB_DIR:-}"
 SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1782723554}"
 
 case "$SOURCE_DATE_EPOCH" in
@@ -136,15 +135,6 @@ rm -f "$KVMAPP_STAGE/backends/NanoKVM-Server.go" \
 
 mkdir -p "$KVMAPP_STAGE/server/dl_lib"
 cp -R "$NATIVE_LIB_DIR/." "$KVMAPP_STAGE/server/dl_lib/"
-if [ -n "$EXTRA_NATIVE_LIB_DIR" ]; then
-  [ -d "$EXTRA_NATIVE_LIB_DIR" ] || {
-    echo "missing extra native runtime directory: $EXTRA_NATIVE_LIB_DIR" >&2
-    exit 1
-  }
-  cp -R "$EXTRA_NATIVE_LIB_DIR/." "$KVMAPP_STAGE/server/dl_lib/"
-  ln -sf libstdc++.so.6.0.28 "$KVMAPP_STAGE/server/dl_lib/libstdc++.so.6"
-  ln -sf libatomic.so.1.2.0 "$KVMAPP_STAGE/server/dl_lib/libatomic.so.1"
-fi
 
 # zlib is provided and maintained by Buildroot. Never shadow it with the
 # older vendor copy in the application's private RPATH directory.
@@ -183,11 +173,6 @@ fi
   printf 'web_dist: kvmapp/server/web\n'
   printf 'app_version: %s\n' "$(cat "$KVMAPP_STAGE/version")"
   printf 'native_lib_dir: kvmapp/server/dl_lib\n'
-  if [ -n "$EXTRA_NATIVE_LIB_DIR" ]; then
-    printf 'extra_native_libs: merged\n'
-  else
-    printf 'extra_native_libs: none\n'
-  fi
   printf 'kvm_system_helper: kvmapp/kvm_system/kvm_system\n'
   printf 'kvm_system_sha256: %s\n' "$(sha256sum "$KVMAPP_STAGE/kvm_system/kvm_system" | awk '{print $1}')"
   printf 'source_date_epoch: %s\n' "$SOURCE_DATE_EPOCH"

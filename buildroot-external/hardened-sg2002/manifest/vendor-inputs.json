@@ -78,18 +78,6 @@
       "role": "Rust backend, web assets, native runtime, kvm_system, init scripts, and update key",
       "license": "GPL-3.0-only source plus non-redistributable vendor ABI payload",
       "status": "local Buildroot package added; native ABI closure validated, redistribution disabled"
-    },
-    {
-      "name": "sg2002-vendor-runtime",
-      "source": "pinned vendor rootfs /mnt/system plus three SHA-256-pinned runtime files",
-      "role": "MMF/tuning assets, hardware-accepted source-built media modules, and libkvm's GCC runtime",
-      "license": "NOASSERTION; staged binary inputs have no repository-level redistribution grant",
-      "runtime_files": {
-        "libstdc++.so.6.0.28": "9ebc8352014fbb7499194fdca56eb496c51c119b50d08d7b70b96058d3c5be17",
-        "libgcc_s.so.1": "4b483b84f730b5e127ee8441cc143d5d90f1a31f0bfb999f94ef834eefa3da8c",
-        "libatomic.so.1.2.0": "2421e827d033c3a055b973e6fbcf5a78fe987b50dd21e82a422a3728f4d3da3d"
-      },
-      "status": "local non-redistributable Buildroot package added for recoverable-media tests"
     }
   ]
 }
