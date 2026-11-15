@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-14
+last-checked: 2026-11-15
 ---
 
 # Build and deploy the server
@@ -61,7 +61,9 @@ longer links with the non-PIC `crt1.o`.
   hands memory back to the kernel and asks for it again under the server's many
   small allocations. On a Lite, MJPEG over HTTPS went from 25.8 to 28.6 fps and
   from ~133 to ~117 ms of CPU per MB sent, almost all of it kernel time; the
-  binary grows by about 120 KB. mimalloc's C code needs the musl headers in
+  binary grows by about 120 KB. It is built in secure mode (guard pages, encoded and
+  randomised free lists, freed memory checked for double frees), which measured under 1%
+  more CPU per MB on MJPEG over HTTPS. mimalloc's C code needs the musl headers in
   `server-rust/sysroot/include` (`NANOKVM_SYSROOT_INCLUDE`); CI copies them from
   the MaixCDK toolchain. Host builds and tests keep the system allocator.
 

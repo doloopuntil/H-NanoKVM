@@ -160,6 +160,9 @@ Known exceptions:
   `kvm_system`) is compiled with `-fstack-protector-strong`, and the build fails if a library
   or binary does not call the stack check. The four OpenCV libraries in the package are
   prebuilt upstream binaries and are not covered.
+- The web server's heap is mimalloc in secure mode: guard pages between its pages, encoded and
+  randomised free lists, and a check for double frees, so a heap overflow or use after free in the
+  server is harder to turn into control of it.
 
 ## File And Archive Risk Inventory
 
