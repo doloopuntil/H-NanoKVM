@@ -53,6 +53,18 @@ fn device() -> Option<&'static File> {
         .as_ref()
 }
 
+/// `/tmp/c906l-<name>` holding "on" or "off" overrides a default, for A/B runs per connection.
+pub fn switch(name: &str) -> Option<bool> {
+    match std::fs::read_to_string(format!("/tmp/c906l-{name}"))
+        .ok()?
+        .trim()
+    {
+        "on" => Some(true),
+        "off" => Some(false),
+        _ => None,
+    }
+}
+
 /// Whether records are being sealed on the C906L.
 pub fn active() -> bool {
     device().is_some() && !DISABLED.load(Ordering::Relaxed)
@@ -92,12 +104,16 @@ struct OffloadAead(&'static dyn Tls13AeadAlgorithm);
 
 impl Tls13AeadAlgorithm for OffloadAead {
     fn encrypter(&self, key: AeadKey, iv: Iv) -> Box<dyn MessageEncrypter> {
+        if switch("offload") == Some(false) {
+            return self.0.encrypter(key, iv);
+        }
         let mut bytes = [0u8; 32];
         bytes.copy_from_slice(key.as_ref());
         let iv_copy = Iv::copy(iv.as_ref());
         Box::new(OffloadEncrypter {
             key: bytes,
             iv: iv_copy,
+            hand_off: switch("yield") != Some(false),
             ring: self.0.encrypter(key, iv),
         })
     }
@@ -122,6 +138,8 @@ impl Tls13AeadAlgorithm for OffloadAead {
 struct OffloadEncrypter {
     key: [u8; 32],
     iv: Iv,
+    /// Let the runtime run on another thread while this one waits for the C906L.
+    hand_off: bool,
     ring: Box<dyn MessageEncrypter>,
 }
 
@@ -152,13 +170,14 @@ impl MessageEncrypter for OffloadEncrypter {
         payload.extend_from_slice(&[u8::from(msg.typ)]);
         payload.extend_from_slice(&[0; TAG_LEN]);
         let nonce = Nonce::new(&self.iv, seq).0;
-        match seal(
-            payload.as_mut(),
-            len,
-            &self.key,
-            &nonce,
-            &make_tls13_aad(total),
-        ) {
+        let aad = make_tls13_aad(total);
+        let mut call = || seal(payload.as_mut(), len, &self.key, &nonce, &aad);
+        let res = if self.hand_off && multi_thread() {
+            tokio::task::block_in_place(call)
+        } else {
+            call()
+        };
+        match res {
             Ok(()) => {
                 if OFFLOADED.fetch_add(1, Ordering::Relaxed) == 0 {
                     info!("first TLS record sealed on the C906L");
@@ -180,6 +199,11 @@ impl MessageEncrypter for OffloadEncrypter {
     fn encrypted_payload_len(&self, payload_len: usize) -> usize {
         self.ring.encrypted_payload_len(payload_len)
     }
+}
+
+fn multi_thread() -> bool {
+    tokio::runtime::Handle::try_current()
+        .is_ok_and(|h| h.runtime_flavor() == tokio::runtime::RuntimeFlavor::MultiThread)
 }
 
 /// Seals `buf[..len]` in place and writes the tag after it; blocks until the C906L answers.

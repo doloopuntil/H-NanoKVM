@@ -3,7 +3,7 @@
 //! thread waits for the C906L to seal the next.
 
 use std::{
-    fs, io,
+    io,
     os::fd::{AsFd, OwnedFd},
     pin::Pin,
     sync::{Arc, Condvar, Mutex},
@@ -25,15 +25,9 @@ use tracing::{info, warn};
 const THRESHOLD: u64 = 1 << 20;
 /// Bytes queued behind the one batch the thread is writing: the second half of a double buffer.
 const CAP: usize = 128 * 1024;
-/// "on" or "off" forces the pipe; without it the pipe follows the C906L offload.
-const SWITCH: &str = "/tmp/c906l-pipe";
-
+/// `/tmp/c906l-pipe` forces it on or off; by default it follows the C906L offload.
 fn enabled() -> bool {
-    match fs::read_to_string(SWITCH) {
-        Ok(s) if s.trim() == "on" => true,
-        Ok(s) if s.trim() == "off" => false,
-        _ => super::c906l::active(),
-    }
+    super::c906l::switch("pipe").unwrap_or_else(super::c906l::active)
 }
 
 pub struct PipeIo {
