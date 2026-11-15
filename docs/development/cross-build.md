@@ -65,7 +65,7 @@ longer links with the non-PIC `crt1.o`.
   randomised free lists, freed memory checked for double frees), which measured under 1%
   more CPU per MB on MJPEG over HTTPS. mimalloc's C code needs the musl headers in
   `server-rust/sysroot/include` (`NANOKVM_SYSROOT_INCLUDE`); CI copies them from
-  the MaixCDK toolchain. Host builds and tests keep the system allocator.
+  the T-Head toolchain. Host builds and tests keep the system allocator.
 
 ### Cross-building in Docker (macOS or Linux)
 
@@ -128,48 +128,44 @@ successfully but fails on the device with `Exec format error`.
 
 ## Rebuild Native libkvm Or kvm_system
 
-Native video changes are not rebuilt by Cargo. CI's `build-native-libkvm` job
-builds `libkvm.so` and `libkvm_mmf.so` from `support/sg2002` with a pinned
-MaixCDK; that is the reference build. To build them locally, set the two paths
-that `support/sg2002/build` defines internally for your checkout:
+Native video changes are not rebuilt by Cargo. `libkvm.so`, `libkvm_mmf.so` and
+`kvm_system` are plain CMake targets in `support/sg2002/CMakeLists.txt`, built
+with the T-Head musl GCC. CI's `build-native-libkvm` job is the reference build;
+locally, run the same scripts on an x86-64 Linux host or in an amd64 container
+(`docker run --platform linux/amd64 ubuntu:24.04`, with `build-essential cmake
+patch curl`):
 
-```sh
-export MAIXCDK_PATH=~/MaixCDK
-export NanoKVM_PATH=/path/to/this/checkout
-```
+1. Fetch the sources the job fetches, at the SHAs in the workflow's `env`:
+   `sophgo/cvi_mpi`, `sophgo/osdrv` (`interdrv/include`),
+   `sophgo/SensorSupportList` (`common`) and `sipeed/LicheeRV-Nano-Build`
+   (the ION uapi and `middleware/v2/component/isp/sensor/cv182x/lontium_lt6911`).
+   Apply the two patches in `support/sg2002/middleware-patches/` to cvi_mpi.
+2. Fetch the toolchain; the script prints its `bin` directory:
 
-Rebuild the video libraries through MaixCDK:
+   ```sh
+   TC=$(scripts/fetch-thead-toolchain.sh /opt/thead)
+   ```
 
-```sh
-cd support/sg2002
-./build update_lib
-./build kvm_vision
-```
+   On macOS, keep the toolchain on a Docker volume: extracting it onto a bind
+   mount fails.
+3. Build the middleware, stage the SDK directory, then build and check the
+   three outputs:
 
-`./build update_lib` currently exits with status `1` after printing success;
-verify the copied component files instead of treating that status alone as a
-copy failure. The generated libraries are expected under:
+   ```sh
+   SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh cvi_mpi osdrv sdk mw "$TC"
+   scripts/stage-sg2002-sdk.sh cvi_mpi osdrv sensor-list sdk mw sg2002-sdk
+   scripts/build-sg2002-native.sh "$TC" sg2002-sdk build/native-libkvm
+   ```
 
-```text
-support/sg2002/kvm_vision_test/dist/kvm_vision_test_release/dl_lib/
-```
+`build-sg2002-native.sh` stops if an output lacks the stack protector or full
+RELRO, has an RPATH or vector code, if `kvm_system` has the wrong loader or
+an unexpected library, or if `libkvm.so` exports anything other than the
+functions in `support/sg2002/additional/kvm/libkvm.map`.
 
-Copy the reviewed output into `server-rust/native/dl_lib/` before running the
-linked Rust build and packaging. `scripts/package-rust-kvmapp.sh` packages that
-directory as `/kvmapp/server/dl_lib`.
-
-For `kvm_system` changes, build it the way CI does:
-
-```sh
-cd support/sg2002
-./build kvm_system
-```
-
-The binary is `support/sg2002/kvm_system/dist/kvm_system_release/kvm_system`;
-pass it to the package script as `KVM_SYSTEM_SOURCE`.
-
-The package script consumes
-`support/sg2002/kvm_system/build/kvm_system` by default. Never let packaging
+Copy `libkvm.so` and `libkvm_mmf.so` into `server-rust/native/dl_lib/` before
+running the linked Rust build and packaging. `scripts/package-rust-kvmapp.sh`
+packages that directory as `/kvmapp/server/dl_lib`, and takes `kvm_system` from
+`build/native-libkvm/kvm_system` or `KVM_SYSTEM_SOURCE`. Never let packaging
 silently reuse an older native helper or old `libkvm` after changing source.
 
 Review [`native-code-audit.md`](../archive/native-code-audit.md) before modifying either

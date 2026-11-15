@@ -129,10 +129,12 @@ build_stage() {
 	for file in /etc/modprobe.d/aic8800.conf /lib/firmware/regulatory.db /lib/firmware/regulatory.db.p7s; do
 		debugfs -R "stat $file" "$ROOTFS" 2>/dev/null | grep -q "Type: regular" || die "rootfs lacks $file"
 	done
-	for lib in libstdc++.so.6.0.28 libgcc_s.so.1 libgomp.so.1.0.0 libatomic.so.1.2.0; do
+	for lib in libstdc++.so.6.0.28 libgcc_s.so.1 libatomic.so.1.2.0; do
 		debugfs -R "stat /kvmapp/server/dl_lib/$lib" "$ROOTFS" 2>/dev/null | \
 			grep -q "Type: regular" || die "rootfs lacks $lib"
 	done
+	debugfs -R "ls /kvmapp/server/dl_lib" "$ROOTFS" 2>/dev/null | grep -Eq 'libopencv|libgomp' && \
+		die "rootfs still ships OpenCV or libgomp"
 	# libsys maps media buffers through /dev/cvi-sys, never /dev/mem
 	debugfs -R "dump /kvmapp/server/dl_lib/libsys.so $REPORT_DIR/libsys.so" "$ROOTFS" >/dev/null 2>&1
 	grep -aq '/dev/cvi-sys' "$REPORT_DIR/libsys.so" || die "libsys.so does not map through /dev/cvi-sys"

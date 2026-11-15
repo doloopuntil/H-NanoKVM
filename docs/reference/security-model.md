@@ -158,8 +158,11 @@ Known exceptions:
   [`native-code-audit.md`](../archive/native-code-audit.md).
 - The native code built in CI (the Sophgo middleware, `libkvm.so`, `libkvm_mmf.so`,
   `kvm_system`) is compiled with `-fstack-protector-strong`, and the build fails if a library
-  or binary does not call the stack check. The four OpenCV libraries in the package are
-  prebuilt upstream binaries and are not covered.
+  or binary does not call the stack check. `libkvm.so`, `libkvm_mmf.so` and `kvm_system` are
+  also linked with full RELRO (`-z relro -z now`), `kvm_system` is position-independent, and
+  `libkvm.so` exports only its C API (`libkvm.map`). They are built with plain CMake from
+  this repository and the Sophgo middleware; no MaixCDK or OpenCV code is linked in or
+  shipped.
 - The web server's heap is mimalloc in secure mode: guard pages between its pages, encoded and
   randomised free lists, and a check for double frees, so a heap overflow or use after free in the
   server is harder to turn into control of it.

@@ -87,7 +87,6 @@ kvmapp/             The application package installed to /kvmapp: init scripts, 
 buildroot-external/ Buildroot external tree for the SG2002 image
 support/sg2002/     Native code: libkvm, kvm_mmf, kvm_system, kernel patches
 scripts/            Build, packaging and release scripts
-docker/             Builder container
 tools/              EDID and logo utilities
 docs/               Documentation
 .github/workflows/  The SD image build

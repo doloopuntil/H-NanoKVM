@@ -27,7 +27,6 @@
 #include <linux/sys_uapi.h>
 #include "sample_comm.h"
 #include "kvm_mmf.hpp"
-#include "global_config.h"
 
 #define MMF_VI_MAX_CHN 			2		// manually limit the max channel number of vi
 #define MMF_RGN_MAX_NUM			16

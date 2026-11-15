@@ -1,9 +1,7 @@
 #include "config.h"
 #include <errno.h>
+#include <signal.h>
 
-using namespace maix;
-using namespace maix::sys;
-using namespace maix::peripheral;
 
 kvm_sys_state_t kvm_sys_state;
 kvm_oled_state_t kvm_oled_state;
@@ -57,7 +55,7 @@ void* thread_oled_handle(void * arg)
 				OLED_Clear();
 		}
 		pthread_mutex_unlock(&state_mutex);
-		time::sleep_ms(OLED_DELAY);
+		kvm::sleep_ms(OLED_DELAY);
     }
 	OLED_Clear();
 	kvm_sys_state.oled_thread_running = -1;
@@ -90,7 +88,7 @@ void* thread_key_handle(void * arg)
 		if (event.type == EV_KEY) {
 			if (event.value == 1){
 				// printf ("[kvmk]按键按下\n");
-				press_time = time::time_ms();
+				press_time = kvm::time_ms();
 				press_active = true;
 			} else if (event.value == 0){
 				if (!press_active) continue;
@@ -98,7 +96,7 @@ void* thread_key_handle(void * arg)
 				pthread_mutex_lock(&state_mutex);
 				oled_auto_sleep_time_update();
 				// printf ("[kvmk]按键抬起\n");
-				press_cycle = time::time_ms() - press_time;
+				press_cycle = kvm::time_ms() - press_time;
 				if (press_cycle >= KEY_LONG_PRESS){
 					// long
 					// printf ("[kvmk]按键长按\n");
@@ -186,7 +184,7 @@ void* thread_sys_handle(void * arg)
 		}
 		pthread_mutex_unlock(&state_mutex);
 
-		time::sleep_ms(STATE_DELAY);
+		kvm::sleep_ms(STATE_DELAY);
     }
 	kvm_sys_state.sys_thread_running = 0;
 	return NULL;

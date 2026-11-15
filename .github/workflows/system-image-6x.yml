@@ -19,21 +19,12 @@ env:
   SOPHGO_OSDRV_SHA: 1b3a49649d18488ecf54fb4fcb6c27599e433fdc
   SOPHGO_CVI_MPI_SHA: 693a72a1d52f2e08ea767e0a72905e81f10572a5
   SOPHGO_SENSOR_LIST_SHA: e2824e1d07f516c41238e123fefbab71a34843bc
-  # Real upstream (GPL-3.0, sipeed/NanoKVM): source for the 4 OpenCV modules libkvm.so needs
-  # (verified near-byte-identical; see server-rust/native/README.md).
-  NANOKVM_UPSTREAM_COMMIT: bd070b2f5ce27d22618e8a1c8d2bdca543429882
-  NANOKVM_UPSTREAM_OPENCV_CORE_SHA256: fc4ffdd709d2241e7392bb0f6f7ade1a5b1dbbefe5b5551dd2f5ae5ec11ff566
-  NANOKVM_UPSTREAM_OPENCV_HIGHGUI_SHA256: 77ac57b3f652d3df598f89dcbebabb61a31a5794933d4fe703e2875fa83f261f
-  NANOKVM_UPSTREAM_OPENCV_IMGCODECS_SHA256: 4ffc0253a75c47374ba5400d5ba3687c072943c99f83774150b4b800f00029c0
-  NANOKVM_UPSTREAM_OPENCV_IMGPROC_SHA256: b01ee9a078c25fbe80aae6ebc5d3da52eebbbef2cb51362808d1d5fe139abff1
-  # libkvm.so/libkvm_mmf.so build inputs. libkvm_mmf.so compiles in its own copy of the LT6911
-  # sensor driver; see server-rust/native/README.md.
-  MAIXCDK_SHA: 5b0aa5b1a8c91d213433189cfab8c999775fa13a
   LICHEERV_EXTERNAL_SHA: 019ffc864bb9353f823afc98f7dd9fdacfa935cb
 
 jobs:
-  # One toolchain (MaixCDK's pinned Xuantie musl gcc) builds the SDK middleware,
-  # libkvm.so/libkvm_mmf.so and kvm_system from source, and supplies their GCC runtime libraries.
+  # One toolchain (T-Head's musl gcc, scripts/fetch-thead-toolchain.sh) builds the SDK
+  # middleware, libkvm.so/libkvm_mmf.so and kvm_system from source, and supplies their GCC
+  # runtime libraries.
   build-native-libkvm:
     runs-on: ubuntu-24.04
     timeout-minutes: 180
@@ -45,41 +36,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential cmake git curl python3 python3-venv python3-pip \
-            autoconf automake libtool patchelf patch file
+            build-essential cmake git curl patch file
 
-      - name: Fetch MaixCDK
-        run: |
-          mkdir -p "$HOME/MaixCDK"
-          git -C "$HOME/MaixCDK" init -q
-          git -C "$HOME/MaixCDK" remote add origin https://github.com/sipeed/MaixCDK.git
-          git -C "$HOME/MaixCDK" fetch --depth 1 origin "$MAIXCDK_SHA"
-          git -C "$HOME/MaixCDK" checkout -q FETCH_HEAD
-          python3 -m venv "$HOME/MaixCDK"
-          "$HOME/MaixCDK/bin/pip" install -U -r "$HOME/MaixCDK/requirements.txt"
-          echo "$HOME/MaixCDK/bin" >> "$GITHUB_PATH"
-
-      # The patch is written against the vendor SDK tree; paths differ, so `patch` targets the
-      # file directly.
-      - name: Apply the LT6911 sensor-id-probe-removed patch to MaixCDK's vendored copy
-        run: |
-          LT6911_FILE="$HOME/MaixCDK/components/3rd_party/sophgo-middleware/sophgo-middleware/v2/component/isp/sensor/sg200x/lontium_lt6911/lt6911_sensor_ctl.c"
-          patch --fuzz=0 --forward -p1 -o /tmp/lt6911_sensor_ctl.c.patched "$LT6911_FILE" \
-            < "$GITHUB_WORKSPACE/buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/lt6911-sensor-id-probe-removed.patch"
-          cp /tmp/lt6911_sensor_ctl.c.patched "$LT6911_FILE"
-          ! grep -q "LT6911_CHIP_ID_ADDR_H)" "$LT6911_FILE"
-
-      # Nothing we ship needs XTheadVector: build for the scalar xthead multilib and loader.
-      # libkvm and kvm_system run in root processes: add the stack protector.
-      - name: Build MaixCDK projects without the vector extension
-        run: |
-          YAML="$HOME/MaixCDK/platforms/maixcam.yaml"
-          sed -i 's/-mcpu=c906fdv -march=rv64imafdcv0p7xthead/-mcpu=c906fd -march=rv64imafdcxthead/g' "$YAML"
-          sed -i -E 's/^(    c(xx)?_flags: .*)$/\1 -fstack-protector-strong/' "$YAML"
-          ! grep -q v0p7 "$YAML"
-          [ "$(grep -c '^    c\(xx\)\?_flags: .*-fstack-protector-strong$' "$YAML")" -eq 2 ]
-
-      # The middleware, the uapi headers of the same Sophgo release, and our kernel's ION uapi.
+      # The middleware, the uapi headers of the same Sophgo release, the sensor list, and from
+      # the vendor SDK our kernel's ION uapi and the LT6911 sensor driver.
       - name: Fetch the Sophgo middleware source
         run: |
           sparse_fetch() {
@@ -102,8 +62,9 @@ jobs:
             "$SOPHGO_OSDRV_SHA" /interdrv/include/
           sparse_fetch "$RUNNER_TEMP/sensor-list" https://github.com/sophgo/SensorSupportList.git \
             "$SOPHGO_SENSOR_LIST_SHA" /common/
-          sparse_fetch "$RUNNER_TEMP/sdk-ion" https://github.com/sipeed/LicheeRV-Nano-Build.git \
-            "$LICHEERV_NANO_SDK_SHA" /linux_5.10/drivers/staging/android/uapi/
+          sparse_fetch "$RUNNER_TEMP/sdk" https://github.com/sipeed/LicheeRV-Nano-Build.git \
+            "$LICHEERV_NANO_SDK_SHA" /linux_5.10/drivers/staging/android/uapi/ \
+            /middleware/v2/component/isp/sensor/cv182x/lontium_lt6911/
           patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
             < support/sg2002/middleware-patches/cvi-mpi-693a72a-no-vi-dbg-thread.patch
           ! grep -q vi_dbg_handler "$RUNNER_TEMP/cvi_mpi/modules/vi/src/cvi_vi.c"
@@ -111,160 +72,48 @@ jobs:
             < support/sg2002/middleware-patches/cvi-mpi-693a72a-map-through-cvi-sys.patch
           ! grep -q '"/dev/mem"' "$RUNNER_TEMP/cvi_mpi/modules/sys/src/devmem.c"
 
-      # Replaces MaixCDK's prebuilt libsys/libvenc/libvdec/libvpu/libini, so libkvm_mmf.so links
-      # against these and the image ships them. libvpu is split into libvi/libvpss/libvo/libgdc/
-      # librgn; together they must keep every export of the old prebuilts.
-      # Same toolchain as the MaixCDK build below, which reuses the fetched copy.
+      - name: Fetch the T-Head musl toolchain
+        run: |
+          echo "TOOLCHAIN_BIN=$(scripts/fetch-thead-toolchain.sh "$RUNNER_TEMP/thead-toolchain")" \
+            >> "$GITHUB_ENV"
+
+      # libsys/libvenc/libvdec/libvi/libvpss/libvo/libgdc/librgn/libini: libkvm_mmf.so links
+      # against these and the image ships them. Together they must keep every export of the
+      # old prebuilts (libvpu was split into libvi/libvpss/libvo/libgdc/librgn).
       - name: Build the Sophgo middleware from source
         run: |
-          OUT="$GITHUB_WORKSPACE/build/native-libkvm/middleware"
-          TOOLCHAIN_BIN="$(scripts/fetch-maixcdk-toolchain.sh "$HOME/MaixCDK")"
           SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh "$RUNNER_TEMP/cvi_mpi" \
-            "$RUNNER_TEMP/osdrv-uapi" "$RUNNER_TEMP/sdk-ion" "$OUT" \
-            "$TOOLCHAIN_BIN" server-rust/native/dl_lib
-          MW_LIB="$HOME/MaixCDK/components/3rd_party/sophgo-middleware/sophgo-middleware/v2/lib"
-          cp "$OUT/libsys.so" "$OUT/libvenc.so" "$OUT/libvdec.so" "$OUT/libvi.so" "$OUT/libvpss.so" \
-            "$OUT/libvo.so" "$OUT/libgdc.so" "$OUT/librgn.so" "$MW_LIB/"
-          cp "$OUT/libini.so" "$MW_LIB/3rd/"
+            "$RUNNER_TEMP/osdrv-uapi" "$RUNNER_TEMP/sdk" \
+            "$GITHUB_WORKSPACE/build/native-libkvm/middleware" "$TOOLCHAIN_BIN" \
+            server-rust/native/dl_lib
 
-      # kvm_mmf compiles against these headers and sample code, so they must match the libraries
-      # above. The LT6911 sensor headers stay MaixCDK's; ./build adds our sample_common_sensor.c.
-      - name: Replace MaixCDK's middleware headers with the cvi_mpi ones
+      # kvm_mmf compiles against these headers and sample code, so they match the libraries above.
+      - name: Stage the headers, sample code and LT6911 driver for libkvm_mmf
         run: |
-          MPI="$RUNNER_TEMP/cvi_mpi"
-          UAPI="$RUNNER_TEMP/osdrv-uapi/interdrv/include"
-          MW="$HOME/MaixCDK/components/3rd_party/sophgo-middleware/sophgo-middleware/v2"
-          rm -rf "$MW/include" "$MW/sample/common" "$MW/uapi" "$MW/modules/ive/include" \
-            "$MW/component/panel/cv181x"
-          cp -r "$MPI/include" "$MW/include"
-          # cvi_mpi's own uapi copy (cv180x cvi_defines.h): <linux/...> must come from osdrv.
-          rm -rf "$MW/include/linux"
-          mkdir -p "$MW/include/isp/cv181x" "$MW/uapi/linux" "$MW/modules/ive"
-          cp "$MPI"/modules/isp/include/cv181x/*.h "$MW/include/isp/cv181x/"
-          cp -r "$MPI/sample/common" "$MW/sample/common"
-          cp "$UAPI"/common/uapi/linux/*.h "$UAPI"/chip/cv181x/uapi/linux/*.h "$MW/uapi/linux/"
-          cp -r "$MPI/modules/ive/include" "$MW/modules/ive/include"
-          cp -r "$MPI/component/panel/cv181x" "$MW/component/panel/cv181x"
-          grep -q "define MO_TBL_SIZE 2048" "$MW/uapi/linux/vi_uapi.h"
-          mkdir -p "$MW/component/isp/common"
-          cp "$RUNNER_TEMP"/sensor-list/common/sensor_list.[ch] "$MW/component/isp/common/"
-          # Sensor names come from sensor_list.c, indexed by its own enum: the override must not
-          # carry a table of its own.
-          ! grep -q "snsr_type_name\[SAMPLE_SNS_TYPE_BUTT\] =" \
-            support/sg2002/additional/sophgo-middleware/v2/sample/common/sample_common_sensor.c
-          # Sophgo's name table has drifted from its enum before: check LT6911's slot.
-          cat > "$RUNNER_TEMP/lt6911.c" <<'EOF'
-          #include <string.h>
-          #include "sensor_list.h"
-          int main(void)
-          {
-          	const char *n = snsr_type_name[LONTIUM_LT6911_2M_60FPS_8BIT];
+          scripts/stage-sg2002-sdk.sh "$RUNNER_TEMP/cvi_mpi" "$RUNNER_TEMP/osdrv-uapi" \
+            "$RUNNER_TEMP/sensor-list" "$RUNNER_TEMP/sdk" \
+            "$GITHUB_WORKSPACE/build/native-libkvm/middleware" "$RUNNER_TEMP/sg2002-sdk"
 
-          	return !n || strcmp(n, "LONTIUM_LT6911_2M_60FPS_8BIT") != 0;
-          }
-          EOF
-          gcc -DARCH_CV181X -D__CV181X__ -I"$MW/include" -I"$MW/include/isp/cv181x" -I"$MW/uapi" \
-            -I"$MW/component/isp/common" "$RUNNER_TEMP/lt6911.c" \
-            "$MW/component/isp/common/sensor_list.c" -o "$RUNNER_TEMP/lt6911"
-          "$RUNNER_TEMP/lt6911"
-
-      # ./build's own first-time logic (no $MAIXCDK_PATH/components/kvm yet, always true on this
-      # fresh clone) copies support/sg2002/additional/{kvm,kvm_mmf,vision,peripheral bits} into
-      # MaixCDK and answers its interactive platform prompt with "2" (maixcam) via heredoc -- the
-      # exact sequence upstream's own docker/Dockerfile uses for `./build kvm_system`.
-      - name: Build libkvm.so + libkvm_mmf.so via MaixCDK
+      # Plain CMake (support/sg2002/CMakeLists.txt): scalar xthead, stack protector, full RELRO.
+      # The script also checks SSP, RPATH, the loader, NEEDED entries and libkvm's exports.
+      - name: Build libkvm.so, libkvm_mmf.so and kvm_system
         run: |
-          cd "$GITHUB_WORKSPACE/support/sg2002"
-
           # The sources must carry the native changes this image relies on.
-          grep -q "no stale sys state to release" additional/kvm_mmf/src/kvm_mmf.cpp
-          grep -q "mmf_vi_frame_release" additional/kvm_mmf/src/kvm_mmf.cpp
-          grep -q "kvmv_hdmi_signal_active" additional/kvm/src/kvm_vision.cpp
-          grep -q "fresh_frame_count" additional/kvm/src/kvm_vision.cpp
-
-          ./build kvm_vision
-
-          DL_LIB="$GITHUB_WORKSPACE/support/sg2002/kvm_vision_test/dist/kvm_vision_test_release/dl_lib"
-          test -s "$DL_LIB/libkvm.so"
-          test -s "$DL_LIB/libkvm_mmf.so"
-          file "$DL_LIB/libkvm.so" "$DL_LIB/libkvm_mmf.so"
-
-          mkdir -p "$GITHUB_WORKSPACE/build/native-libkvm"
-          cp "$DL_LIB/libkvm.so" "$DL_LIB/libkvm_mmf.so" "$GITHUB_WORKSPACE/build/native-libkvm/"
-
-      # Reuses the MaixCDK components the libkvm build just installed.
-      - name: Build kvm_system via MaixCDK
-        run: |
-          cd "$GITHUB_WORKSPACE/support/sg2002"
-
-          # The VI state reader that pairs with libkvm's shared state writer.
-          grep -q "vi_state_shared::read_state" kvm_system/main/lib/system_state/system_state.cpp
-
-          ./build kvm_system
-
-          BIN="$GITHUB_WORKSPACE/support/sg2002/kvm_system/dist/kvm_system_release/kvm_system"
-          test -s "$BIN"
-          file "$BIN"
-          cp "$BIN" "$GITHUB_WORKSPACE/build/native-libkvm/kvm_system"
-
-      # MaixCDK's CMake build embeds a build-host RPATH (e.g.
-      # /home/runner/NanoKVM/support/sg2002/kvm_vision_test/build/kvm_mmf) into libkvm.so by
-      # default -- register_component(DYNAMIC) doesn't set CMAKE_SKIP_RPATH. scripts/package-
-      # rust-kvmapp.sh hard-fails on any RPATH/RUNPATH in these two libraries (a real portability/
-      # security check, not something to work around by disabling it), so strip it here instead,
-      # the same way the previously-published binaries must have been prepared.
-      - name: Strip build-host RPATH from libkvm.so + libkvm_mmf.so + kvm_system, check SSP
-        run: |
-          for lib in libkvm.so libkvm_mmf.so kvm_system; do
-            LIB="$GITHUB_WORKSPACE/build/native-libkvm/$lib"
-            if patchelf --print-rpath "$LIB" | grep -q .; then
-              patchelf --remove-rpath "$LIB"
-              echo "removed RPATH from $lib"
-            else
-              echo "$lib has no RPATH; nothing to strip"
-            fi
-            readelf --dyn-syms -W "$LIB" | grep -qw 'UND __stack_chk_fail' || {
-              echo "$lib: no stack protector" >&2
-              exit 1
-            }
-          done
-
-      # Matches server-rust/native/README.md's "libkvm.so: removed video NEEDED entry" finding
-      # (symbol-table analysis found zero real call path into video/dnn/calib3d/features2d/flann;
-      # this fresh build is a different compile of the same MaixCDK link-everything convention, not
-      # a different call graph) -- but re-checked, not assumed, since this build's dependency set
-      # could legitimately differ. Skips cleanly if the NEEDED entry isn't there at all.
-      - name: Re-trim libkvm.so's unused OpenCV NEEDED entries
-        run: |
-          LIBKVM="$GITHUB_WORKSPACE/build/native-libkvm/libkvm.so"
-          if patchelf --print-needed "$LIBKVM" | grep -q '^libopencv_video\.so\.409$'; then
-            patchelf --remove-needed libopencv_video.so.409 "$LIBKVM"
-            echo "removed libopencv_video.so.409 NEEDED entry"
-          else
-            echo "libopencv_video.so.409 not NEEDED by this build; nothing to trim"
-          fi
-
-      # kvm_system must run with only what the image already has. MaixCDK links it for the vendor
-      # T-Head loader, whose __clone misaligns thread stacks; the image runs musl 1.2.6 instead
-      # (docs/development/riscv-musl-stack-alignment.md).
-      - name: Set and check kvm_system's loader and libraries
-        run: |
-          BIN="$GITHUB_WORKSPACE/build/native-libkvm/kvm_system"
-          patchelf --set-interpreter /lib/ld-musl-riscv64.so.1 "$BIN"
-          readelf -l "$BIN" | grep -q "interpreter: /lib/ld-musl-riscv64.so.1"
-          ! readelf -A "$BIN" | grep -q v0p7
-          for lib in $(patchelf --print-needed "$BIN"); do
-            case "$lib" in
-              libstdc++.so.6|libgcc_s.so.1|libc.so) ;;
-              *) echo "unexpected NEEDED entry in kvm_system: $lib" >&2; exit 1 ;;
-            esac
-          done
+          grep -q "no stale sys state to release" support/sg2002/additional/kvm_mmf/src/kvm_mmf.cpp
+          grep -q "mmf_vi_frame_release" support/sg2002/additional/kvm_mmf/src/kvm_mmf.cpp
+          grep -q "kvmv_hdmi_signal_active" support/sg2002/additional/kvm/src/kvm_vision.cpp
+          grep -q "fresh_frame_count" support/sg2002/additional/kvm/src/kvm_vision.cpp
+          grep -q "vi_state_shared::read_state" \
+            support/sg2002/kvm_system/main/lib/system_state/system_state.cpp
+          scripts/build-sg2002-native.sh "$TOOLCHAIN_BIN" "$RUNNER_TEMP/sg2002-sdk" \
+            "$GITHUB_WORKSPACE/build/native-libkvm"
+          file build/native-libkvm/libkvm.so build/native-libkvm/libkvm_mmf.so \
+            build/native-libkvm/kvm_system
 
       # The same files as the stock vendor image, from the toolchain that built libkvm.
       - name: Stage the GCC runtime libraries and the link-time libc.so
         run: |
-          TOOLCHAIN_BIN="$(scripts/fetch-maixcdk-toolchain.sh "$HOME/MaixCDK")"
-          scripts/stage-maixcdk-runtime.sh "$TOOLCHAIN_BIN" "$GITHUB_WORKSPACE/build/native-libkvm"
+          scripts/stage-thead-runtime.sh "$TOOLCHAIN_BIN" "$GITHUB_WORKSPACE/build/native-libkvm"
 
       # The build-image job downloads this by name -- this is the actual handoff, not just a
       # diagnostic copy (kept separate from actions/cache deliberately; see that job's download
@@ -394,23 +243,6 @@ jobs:
           RUNTIME_DIR="$RUN_ROOT/runtime"
           mkdir -p "$RUNTIME_DIR/kvmapp-dl-lib" "$RUNTIME_DIR/system"
           cp -p build/native-libkvm/runtime/* "$RUNTIME_DIR/kvmapp-dl-lib/"
-
-      - name: Source OpenCV core/highgui/imgcodecs/imgproc from upstream
-        run: |
-          DL_LIB="$RUN_ROOT/runtime/kvmapp-dl-lib"
-          verify_and_replace() {
-            name="$1"
-            expected_sha256="$2"
-            curl --fail --location --retry 2 \
-              --output "/tmp/$name" \
-              "https://raw.githubusercontent.com/sipeed/NanoKVM/$NANOKVM_UPSTREAM_COMMIT/server/dl_lib/$name"
-            echo "$expected_sha256  /tmp/$name" | sha256sum -c -
-            cp "/tmp/$name" "$DL_LIB/$name"
-          }
-          verify_and_replace libopencv_core.so.409 "$NANOKVM_UPSTREAM_OPENCV_CORE_SHA256"
-          verify_and_replace libopencv_highgui.so.409 "$NANOKVM_UPSTREAM_OPENCV_HIGHGUI_SHA256"
-          verify_and_replace libopencv_imgcodecs.so.409 "$NANOKVM_UPSTREAM_OPENCV_IMGCODECS_SHA256"
-          verify_and_replace libopencv_imgproc.so.409 "$NANOKVM_UPSTREAM_OPENCV_IMGPROC_SHA256"
 
       - name: Build the kernel, media modules, FIPs and rootfs with Buildroot
         run: |

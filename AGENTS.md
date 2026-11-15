@@ -22,6 +22,7 @@ corepack pnpm --dir web test
 corepack pnpm --dir web lint
 corepack pnpm --dir web build
 sh -n kvmapp/system/init.d/<script>
+scripts/build-sg2002-native.sh <toolchain-bin> <sdk-dir> <out>   # libkvm, kvm_system
 gh workflow run system-image-6x.yml --ref <branch>   # full SD image build
 ```
 

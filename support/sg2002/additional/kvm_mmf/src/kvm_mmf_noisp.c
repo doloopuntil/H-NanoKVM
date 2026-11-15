@@ -1,5 +1,4 @@
 // Replacements for the closed libisp pieces the LT6911 path needs.
-#include "global_config.h"
 
 #include <errno.h>
 #include <fcntl.h>

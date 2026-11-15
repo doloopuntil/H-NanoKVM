@@ -1,7 +1,5 @@
 #include "oled_ui.h"
 
-using namespace maix;
-using namespace maix::sys;
 
 extern kvm_sys_state_t kvm_sys_state;
 extern kvm_oled_state_t kvm_oled_state;
@@ -492,7 +490,7 @@ void kvm_wifi_config_ui_disp(uint8_t first_disp, uint8_t subpage_changed)
 
 void oled_auto_sleep_time_update(void)
 {
-	kvm_oled_state.oled_sleep_start = time::time_ms();
+	kvm_oled_state.oled_sleep_start = kvm::time_ms();
 }
 
 void oled_auto_sleep(void)
@@ -544,7 +542,7 @@ void oled_auto_sleep(void)
 				kvm_sys_state.sub_page = 0;
 			}
 		} else {
-			if((time::time_ms() - kvm_oled_state.oled_sleep_start)/1000 >= kvm_oled_state.oled_sleep_param){
+			if((kvm::time_ms() - kvm_oled_state.oled_sleep_start)/1000 >= kvm_oled_state.oled_sleep_param){
 				// kvm_oled_state.oled_sleep_state = 1;
 				kvm_sys_state.sub_page = 1;
 			} else {

@@ -14,7 +14,7 @@ APP_VERSION="${APP_VERSION:-}"
 ARTIFACT_NAME="${ARTIFACT_NAME:-nanokvm-kvmapp-rust.tar.gz}"
 BASE_ROOTFS_IMAGE="${BASE_ROOTFS_IMAGE:-$BUILD_DIR/sd-image/rootfs.ext}"
 KVM_SYSTEM_SOURCE="${KVM_SYSTEM_SOURCE:-}"
-KVM_SYSTEM_BUILD_SOURCE="${KVM_SYSTEM_BUILD_SOURCE:-$ROOT_DIR/support/sg2002/kvm_system/build/kvm_system}"
+KVM_SYSTEM_BUILD_SOURCE="${KVM_SYSTEM_BUILD_SOURCE:-$BUILD_DIR/native-libkvm/kvm_system}"
 NATIVE_LIB_DIR="${NATIVE_LIB_DIR:-$ROOT_DIR/server-rust/native/dl_lib}"
 EXTRA_NATIVE_LIB_DIR="${EXTRA_NATIVE_LIB_DIR:-}"
 SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1782723554}"
@@ -51,7 +51,7 @@ restore_kvm_system_helper() {
 
   if [ -d "$ROOT_DIR/support/sg2002/kvm_system/main" ]; then
     echo "missing built NanoKVM helper: $KVM_SYSTEM_BUILD_SOURCE" >&2
-    echo "run: PATH=/tmp/codex-bin:\$PATH make -C support/sg2002/kvm_system/build -j16" >&2
+    echo "build it with scripts/build-sg2002-native.sh (docs/development/cross-build.md)" >&2
     echo "or set KVM_SYSTEM_SOURCE=<path>" >&2
     exit 1
   fi
@@ -142,14 +142,7 @@ if [ -n "$EXTRA_NATIVE_LIB_DIR" ]; then
     exit 1
   }
   cp -R "$EXTRA_NATIVE_LIB_DIR/." "$KVMAPP_STAGE/server/dl_lib/"
-  ln -sf libopencv_video.so.4.9.0 "$KVMAPP_STAGE/server/dl_lib/libopencv_video.so.409"
-  ln -sf libopencv_dnn.so.4.9.0 "$KVMAPP_STAGE/server/dl_lib/libopencv_dnn.so.409"
-  ln -sf libopencv_calib3d.so.4.9.0 "$KVMAPP_STAGE/server/dl_lib/libopencv_calib3d.so.409"
-  ln -sf libopencv_features2d.so.4.9.0 "$KVMAPP_STAGE/server/dl_lib/libopencv_features2d.so.409"
-  ln -sf libopencv_flann.so.4.9.0 "$KVMAPP_STAGE/server/dl_lib/libopencv_flann.so.409"
-  ln -sf libprotobuf.so.32.0.12 "$KVMAPP_STAGE/server/dl_lib/libprotobuf.so.32"
   ln -sf libstdc++.so.6.0.28 "$KVMAPP_STAGE/server/dl_lib/libstdc++.so.6"
-  ln -sf libgomp.so.1.0.0 "$KVMAPP_STAGE/server/dl_lib/libgomp.so.1"
   ln -sf libatomic.so.1.2.0 "$KVMAPP_STAGE/server/dl_lib/libatomic.so.1"
 fi
 

@@ -81,19 +81,12 @@
     },
     {
       "name": "sg2002-vendor-runtime",
-      "source": "pinned vendor rootfs /mnt/system plus thirteen SHA-256-pinned runtime files",
-      "role": "MMF/tuning assets, hardware-accepted source-built media modules, and libkvm OpenCV/protobuf dependency closure",
+      "source": "pinned vendor rootfs /mnt/system plus three SHA-256-pinned runtime files",
+      "role": "MMF/tuning assets, hardware-accepted source-built media modules, and libkvm's GCC runtime",
       "license": "NOASSERTION; staged binary inputs have no repository-level redistribution grant",
       "runtime_files": {
-        "libopencv_video.so.4.9.0": "4bda8c165e9e53090cdc783a826c8c61a81ccff3a022bef5f7243a95596f52c7",
-        "libopencv_dnn.so.4.9.0": "3d2ae102eb4a2d2eb2e109ba23015d761ad43cf9299fdbc427e02c52377bfc79",
-        "libopencv_calib3d.so.4.9.0": "119f69d7bb3c5fd033689e87faeaa37c75547a226dde150fadf01ded04e85466",
-        "libopencv_features2d.so.4.9.0": "f620d5466f0bd241ce70ed34d3bca07a4dc666a2addf624a2f52902e3c6ec015",
-        "libopencv_flann.so.4.9.0": "1dadc13c42828b3fef7b3c20026b3a0263fcbcd882bfb904105de0bea1a0c991",
-        "libprotobuf.so.32.0.12": "096d35f5f085b74d6654d30bdfa91c69398093fc47548979d5c8ed4e5caebd27",
         "libstdc++.so.6.0.28": "9ebc8352014fbb7499194fdca56eb496c51c119b50d08d7b70b96058d3c5be17",
         "libgcc_s.so.1": "4b483b84f730b5e127ee8441cc143d5d90f1a31f0bfb999f94ef834eefa3da8c",
-        "libgomp.so.1.0.0": "986f21b24574f0e58672c865b34d9eba102ba45c05f18a608bf612816b84c901",
         "libatomic.so.1.2.0": "2421e827d033c3a055b973e6fbcf5a78fe987b50dd21e82a422a3728f4d3da3d"
       },
       "status": "local non-redistributable Buildroot package added for recoverable-media tests"
