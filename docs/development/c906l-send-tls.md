@@ -1,5 +1,5 @@
 ---
-status: experiment finished, measured on a Lite; recommendation: stop, C906L stays parked
+status: experiment finished, server hook measured on a Lite (+4% fps); stopped, C906L stays parked
 applies-to: system 1.0.0 (Linux 6.18) on the Lite
 last-checked: 2026-11-15
 ---
@@ -37,6 +37,9 @@ replace the two estimates everything rests on.
   about 40 µs per record, and the FIP route works with a U-Boot change. Expected gain about
   22 to 26-31 fps on HTTPS MJPEG. **Recommendation: stop**, keep the C906L parked
   ([results](#stage-2-results)).
+- **Server hook, measured on overdrive:** 25.4 fps without, 26.5 fps with the C906L sealing
+  (+4%). CPU per MB fell from 133 to 111 ms as modelled, but the worker waits for each record, so
+  the freed CPU sits idle (84% busy). Stopped ([measurement](#server-hook-on-overdrive)).
 
 ## How the firmware gets loaded
 
@@ -506,9 +509,47 @@ is cheap. But the gain, about 4-9 fps on HTTPS MJPEG only, needs all of this in 
 Plain HTTP MJPEG is already at the link rate and H.264 sends too little for the cipher to matter,
 so only HTTPS MJPEG benefits. Against the owner's priorities (security first, no more architecture
 than the gain justifies), that is not enough: we recommend recording these numbers and leaving the
-C906L parked, as [Offloading work to the C906L](c906l-offload.md) already does. If HTTPS MJPEG
-speed becomes important later, the next step is the server's cipher hook on this test image, which
-would replace the chain-limit estimate with a measurement.
+C906L parked, as [Offloading work to the C906L](c906l-offload.md) already does. The owner asked
+for the server's cipher hook to be measured as a last check before stopping; see below.
+
+## Server hook on overdrive
+
+The hook as described [above](#what-works-replace-the-cipher-of-one-suite) went into
+`server-rust/src/http/c906l.rs`: when `/dev/c906l-tls` exists, the encrypter of ring's
+ChaCha20-Poly1305 suite sends application-data records of 4-16 KB to the C906L through one ioctl
+(copy in, mailbox, wait, copy out) and keeps ring for everything else and after any error. Image of
+build 43655874451 (commit `acb3984f`), overdrive clocks (main core 1050 MHz, C906L 786 MHz),
+Ethernet, one browser streaming MJPEG over HTTPS (1080p, quality 80, about 286 KB frames),
+2026-11-15. "Off" means the module unloaded and the server restarted, so ring seals everything.
+
+| | fps | MB/s | CPU busy | usr / sys / interrupts | CPU per MB |
+| --- | --- | --- | --- | --- | --- |
+| Offload on, 16 × 10 s | 26.4 (24.9-26.9) | 7.55 | 84% | 10 / 34 / 40% | 111 ms |
+| Offload off, 11 × 10 s | 25.4 (25.2-25.6) | 7.28 | 97% | 35 / 24 / 38% | 133 ms |
+| Offload on again, 10 × 10 s | 26.5 (26.3-26.9) | 7.58 | 84% | 10 / 34 / 40% | 111 ms |
+
+Windows where the browser was reconnecting after a server restart are left out. The server log of
+the second "on" run shows no sealing error, so ring never took over.
+
+- **The CPU side matches the model.** 133 to 111 ms per MB (the model said 150 to about 108 at
+  standard clocks): the cipher leaves the main core, user time drops from 35% to 10%, and system time
+  rises by the copies, cache upkeep and mailbox interrupts.
+- **The frame rate does not follow.** rustls seals inside the worker's write, one record at a time,
+  and the single worker thread waits for each answer. At 786 MHz a record takes about 0.8 ms on
+  the C906L; at 61 records per MB that is roughly 370 ms of every second spent waiting, which is
+  the 13% of CPU that went idle instead of into more frames. This is the chain limit of the model,
+  and it is the one that applies.
+- Overdrive alone moved the ring baseline from 22.2 to 25.4 fps, more than the offload adds on top.
+
+To turn the freed CPU into frames, the server would have to keep several records in flight
+(seal ahead of the socket, or a second worker), which means its own buffering of the TLS stream or
+a pipelined record layer: more architecture again, for at most the ~15% the CPU-bound limit allows.
+
+### Final recommendation: stop
+
++1 fps (4%) on HTTPS MJPEG does not pay for firmware in the FIP, a U-Boot change, a kernel driver and
+a send key on a core without memory protection. The C906L stays parked. The experiment branch keeps
+the firmware, module, packages and server hook as a record; none of it is meant for `main`.
 
 ## Open questions
 
