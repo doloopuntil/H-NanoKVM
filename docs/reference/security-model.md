@@ -167,6 +167,15 @@ Known exceptions:
 - The web server's heap is mimalloc in secure mode: guard pages between its pages, encoded and
   randomised free lists, and a check for double frees, so a heap overflow or use after free in the
   server is harder to turn into control of it.
+- TLS 1.3 ChaCha20-Poly1305 records are sealed and opened by XTheadVector assembly
+  (`src/http/vector_aead.rs`): a ChaCha20 written for this project and the CRYPTOGAMS Poly1305
+  (the scalar code Linux ships, plus a port of its vector code). ring still does the handshake,
+  the key schedule and every other suite. At start the server seals records with both and
+  compares them, opens ring's records, and checks that a record with one bit changed is refused;
+  if anything differs, or the CPU lacks XTheadVector, ring handles all records. An incoming
+  record's tag is compared in constant time before any of it is decrypted, a refused record is
+  left untouched, and keys and keystream are wiped after use. If the vector code ever refuses a
+  record, ring handles every record after it.
 
 ## File And Archive Risk Inventory
 

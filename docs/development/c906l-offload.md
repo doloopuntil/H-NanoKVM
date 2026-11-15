@@ -1,7 +1,7 @@
 ---
 status: current, decided (C906L parked; kernel TLS tried and removed, vector ciphers kept for WireGuard)
 applies-to: system 1.0.0 (Linux 6.18) on the Lite
-last-checked: 2026-11-14
+last-checked: 2026-11-15
 ---
 
 # Offloading work to the C906L
@@ -51,8 +51,8 @@ self-contained arithmetic on a buffer.
 
 | Work | Share | C906L | What we do instead |
 | --- | --- | --- | --- |
-| TLS encryption of the video | ~40% of an HTTPS MJPEG frame | yes, ~15 MB/s (estimate) | tried: kTLS plus XTheadVector ChaCha20-Poly1305 on the main core; now rustls |
-| TLS decryption of uploads | ~40% of the CPU at 9 MB/s | yes | the same |
+| TLS encryption of the video | ~40% of an HTTPS MJPEG frame | yes, ~15 MB/s (estimate) | XTheadVector ChaCha20-Poly1305 inside rustls, on the main core ([below](#vector-tls-in-the-server)) |
+| TLS decryption of uploads | ~40% of the CPU at 9 MB/s | yes | the same, in user space |
 | SHA-256 of an upload (optional) | ~35% of the CPU at 9 MB/s | yes, keeps up at 700 MHz | the CryptoDMA engine (below) |
 | MJPEG frame fetch, encoder calls, JPEG copies | ~13 ms a frame, ~7.5 ms after zero-copy | no: Linux driver calls on Linux buffers | zero-copy done; VENC driver patches (below) |
 | MJPEG change detection (tiles) | not done today | too slow for 3.1 MB frames at 60 fps | the IVE block (below) |
@@ -124,6 +124,16 @@ back on rustls for every session (`CONFIG_TLS` is off), and HTTPS MJPEG and HTTP
 the vector gain: on the same Lite and picture, HTTPS MJPEG runs at 24.2 fps and ~148 ms of CPU per
 MB with rustls, against 28.2 fps and ~126 ms with kernel TLS. H.264 Direct sends too little for the cipher to matter. The
 vector patches stay: WireGuard uses the same `lib/crypto` ChaCha20 and Poly1305.
+
+## Vector TLS in the server
+
+The vector gain came back in user space, where a bug stays in the server process:
+`server-rust/src/http/vector_aead.rs` replaces ring's TLS 1.3 ChaCha20-Poly1305 encrypter and
+decrypter with XTheadVector assembly (a ChaCha20 written for the project, the CRYPTOGAMS
+Poly1305 and a port of its vector code). Lite at 1050 MHz, Wi-Fi: HTTPS MJPEG from 89.8 to
+65.5 ms of CPU per MB (36.7 to 43.1 fps, link-bound); during an ISO upload the stream from 11.8
+to 15.2 fps and the upload from 5.8 to 7.1 MB/s. The C906L route reached +18% at best and
+moved the key out of the process.
 
 ## Candidates next
 

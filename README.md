@@ -116,4 +116,6 @@ this repository's issue tracker, not to Sipeed support.
 
 Based on [sipeed/NanoKVM](https://github.com/sipeed/NanoKVM) by Sipeed and on
 [woffko/Hardened_NanoKVM](https://github.com/woffko/Hardened_NanoKVM) by woffko.
-Licensed under the GPL-3.0; see [LICENSE](LICENSE).
+Licensed under the GPL-3.0; see [LICENSE](LICENSE). The Poly1305 code in
+`server-rust/native/` is from Andy Polyakov's CRYPTOGAMS, under its own licence
+([LICENSE.cryptogams](server-rust/native/LICENSE.cryptogams)).
