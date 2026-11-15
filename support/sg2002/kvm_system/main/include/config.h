@@ -1,12 +1,7 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
-#include "maix_basic.hpp"
-#include "maix_time.hpp"
-#include "maix_gpio.hpp"
-#include "maix_pinmap.hpp"
-#include "maix_i2c.hpp"
-#include "maix_uart.hpp"
+#include "kvm_platform.hpp"
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
@@ -23,7 +18,6 @@
 #include "system_state.h"
 #include "oled_ctrl.h"
 #include "oled_ui.h"
-#include "hdmi.h"
 #include "ap_key.h"
 
 #define IP_Change_time 				5000

@@ -1,7 +1,5 @@
 #include "system_ctrl.h"
 
-using namespace maix;
-using namespace maix::sys;
 
 extern kvm_sys_state_t kvm_sys_state;
 extern kvm_oled_state_t kvm_oled_state;
@@ -87,7 +85,7 @@ void kvm_wifi_web_config_process()
 		kvm_sys_state.wifi_config_process = 3;
 		// 尝试连接wifi
 		if(kvm_sys_state.wifi_config_process == 3){
-			// time::sleep_ms(WIFI_CONNECTION_DELAY);
+			// kvm::sleep_ms(WIFI_CONNECTION_DELAY);
 			if(wifi_connected()){
 				// 连上了
 				kvm_sys_state.wifi_config_process = -1;
@@ -142,7 +140,7 @@ void kvm_wifi_config_process()
 			}
 			break;
 		case 3: // 尝试连接wifi
-			time::sleep_ms(WIFI_CONNECTION_DELAY);
+			kvm::sleep_ms(WIFI_CONNECTION_DELAY);
 			if(wifi_connected()){
 				// 连上了
 				kvm_sys_state.wifi_config_process = -1;

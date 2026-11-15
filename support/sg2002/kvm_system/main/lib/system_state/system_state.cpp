@@ -7,9 +7,10 @@
 #include <ctype.h>
 #include <time.h>
 #include <string>
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <netinet/in.h>
 
-using namespace maix;
-using namespace maix::sys;
 
 extern kvm_sys_state_t kvm_sys_state;
 extern kvm_oled_state_t kvm_oled_state;
@@ -20,6 +21,23 @@ extern kvm_oled_state_t kvm_oled_state;
 #define RUST_HWMON_MAX_BYTES 8192
 
 static int rust_hwmon_mode_reported = -1;
+
+// The interface's IPv4 address (the last one listed), or "" if it has none.
+static std::string interface_ipv4(const char *name)
+{
+	std::string addr;
+	struct ifaddrs *list;
+	if (getifaddrs(&list) != 0) return addr;
+	for (struct ifaddrs *ifa = list; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_INET) continue;
+		if (strcmp(ifa->ifa_name, name) != 0) continue;
+		char host[INET_ADDRSTRLEN];
+		const struct sockaddr_in *sin = (const struct sockaddr_in *)ifa->ifa_addr;
+		if (inet_ntop(AF_INET, &sin->sin_addr, host, sizeof(host)) != NULL) addr = host;
+	}
+	freeifaddrs(list);
+	return addr;
+}
 
 static void rust_hwmon_report_mode(int active)
 {
@@ -299,7 +317,7 @@ static int state_string_is_ipv4(const uint8_t *value)
 
 static int copy_interface_ip(const char *interface_name, uint8_t *dst, size_t dst_len)
 {
-	std::string addr = ip_address()[interface_name];
+	std::string addr = interface_ipv4(interface_name);
 	if(addr.empty()){
 		printf("can`t get ip addr\r\n");
 		copy_state_string(dst, dst_len, NULL);
@@ -693,7 +711,7 @@ void kvm_update_eth_state(void)
 
 	if(nic_state == NIC_STATE_RUNNING){
 		// Get IP
-		if(strcmp(ip_address()["eth0"].c_str(), (char*)kvm_sys_state.eth_addr) != 0){
+		if(strcmp(interface_ipv4("eth0").c_str(), (char*)kvm_sys_state.eth_addr) != 0){
 			if(get_ip_addr(ETH_IP)){
 				kvm_sys_state.eth_state = 2;
 			} else {

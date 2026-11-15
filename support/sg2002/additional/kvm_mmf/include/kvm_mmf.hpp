@@ -53,7 +53,8 @@ void mmf_vi_frame_free(int ch);
 // release so the frame can be sent directly to VENC without a second copy.
 void mmf_vi_frame_release(int ch);
 
-// invert format
+// invert format; mmf_invert_format_to_mmf() takes these input codes
+#define MMF_INPUT_FMT_NV21 8
 int mmf_invert_format_to_maix(int mmf_format);
 int mmf_invert_format_to_mmf(int maix_format);
 

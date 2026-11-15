@@ -1,20 +1,11 @@
 # Makefile for NanoKVM Project
 
 # Configuration
-IMAGE_NAME := nanokvm-builder
-UID := $(shell id -u)
-GID := $(shell id -g)
-PWD := $(shell pwd)
-
-# Docker run common parameters
-DOCKER_RUN_BASE := docker run -e UID=$(UID) -e GID=$(GID) -v $(PWD):/home/build/NanoKVM --rm
 RUST_TARGET ?=
 RUST_BUILD_ARGS := --manifest-path server-rust/Cargo.toml --release --locked
 ifneq ($(strip $(RUST_TARGET)),)
 RUST_BUILD_ARGS += --target $(RUST_TARGET)
 endif
-
-SUPPORT_BUILD_CMD := . ./home/build/MaixCDK/bin/activate && cd /home/build/NanoKVM/support/sg2002 && ./build kvm_system && ./build kvm_system add_to_kvmapp
 
 SYSTEM_UPDATE_VERSION ?= 0.0.0-dev
 SYSTEM_UPDATE_TARGET ?= sg2002-hnanokvm-sd
@@ -22,10 +13,10 @@ SYSTEM_UPDATE_PAYLOAD ?= build/system-update-payload
 SYSTEM_UPDATE_OUT ?= build/system-updates
 SYSTEM_UPDATE_TAG ?= hardened-system-$(SYSTEM_UPDATE_VERSION)
 
-.PHONY: help check-root builder-image rebuild-image check-image shell rust-app web-app rust-kvmapp latest-buildroot-bootstrap latest-buildroot-security-source latest-buildroot-sg2002-configure latest-buildroot-sg2002-rootfs system-update-bundle system-update-metadata test-system-update-v2 test-latest-buildroot-security-policy support all clean
+.PHONY: help rust-app web-app rust-kvmapp latest-buildroot-bootstrap latest-buildroot-security-source latest-buildroot-sg2002-configure latest-buildroot-sg2002-rootfs system-update-bundle system-update-metadata test-system-update-v2 test-latest-buildroot-security-policy all clean
 
 # Default target
-all: rust-kvmapp support
+all: rust-kvmapp
 
 # Help target
 help:
@@ -33,10 +24,6 @@ help:
 	@echo ""
 	@echo "Available targets:"
 	@echo "  help          - Show this help message"
-	@echo "  check-image   - Check builder Docker image and show versions"
-	@echo "  builder-image - Build Docker image if not exists"
-	@echo "  rebuild-image - Force rebuild Docker image"
-	@echo "  shell         - Enter interactive builder environment"
 	@echo "  rust-app      - Build Rust application server"
 	@echo "  web-app       - Build frontend into web/dist"
 	@echo "  rust-kvmapp   - Package Rust backend into build/kvmapp-rust"
@@ -48,46 +35,10 @@ help:
 	@echo "  system-update-metadata - Generate GitHub latest JSON for the system bundle"
 	@echo "  test-system-update-v2 - Test metadata/manifest v2 and minimum-app enforcement artifacts"
 	@echo "  test-latest-buildroot-security-policy - Verify the tracked Buildroot security policy"
-	@echo "  support       - Build hardware support libraries"
-	@echo "  all           - Build Rust kvmapp and support (default)"
+	@echo "  all           - Build Rust kvmapp (default)"
 	@echo "  clean         - Clean build artifacts"
 	@echo ""
-	@echo "Prerequisites:"
-	@echo "  - Docker must be installed and running"
-	@echo "  - Must not run as root user"
-
-# Security check - prevent running as root
-check-root:
-	@if [ "$$(id -u)" -eq 0 ]; then \
-		echo "Can't run as root"; \
-		exit 1; \
-	fi
-
-# Check if builder image exists and show versions
-check-image: check-root
-	@echo "Checking builder image..."
-	@echo "Host-tools version:" && \
-		docker run --rm -i $(IMAGE_NAME) riscv64-unknown-linux-musl-gcc -v && \
-		echo ""
-
-# Build Docker image if it doesn't exist
-builder-image: check-root
-	@if ! docker image inspect $(IMAGE_NAME) >/dev/null 2>&1; then \
-		echo "Building Docker image..."; \
-		docker build -t $(IMAGE_NAME) -f docker/Dockerfile ./; \
-	else \
-		echo "Docker image $(IMAGE_NAME) already exists."; \
-	fi
-
-# Force rebuild Docker image
-rebuild-image: check-root
-	@echo "Force rebuilding Docker image..."
-	@docker build --no-cache -t $(IMAGE_NAME) -f docker/Dockerfile ./
-
-# Enter interactive shell (equivalent to build.sh with no arguments)
-shell: check-root builder-image
-	@echo "Switching into builder..."
-	@$(DOCKER_RUN_BASE) -it $(IMAGE_NAME) /bin/bash -c ". ./home/build/MaixCDK/bin/activate && cd /home/build/NanoKVM ; exec bash"
+	@echo "The SG2002 native code (libkvm, kvm_system): docs/development/cross-build.md"
 
 # Build Rust application locally
 rust-app:
@@ -133,18 +84,9 @@ test-system-update-v2:
 test-latest-buildroot-security-policy:
 	@scripts/test-latest-buildroot-security-policy.sh
 
-# Build hardware support libraries
-support: check-root builder-image
-	@echo "Building support..."
-	@$(DOCKER_RUN_BASE) -it $(IMAGE_NAME) /bin/bash -c '$(SUPPORT_BUILD_CMD)'
-
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
-	@if [ -d support/sg2002/build ]; then \
-		rm -rf support/sg2002/build; \
-		echo "Removed support/sg2002/build"; \
-	fi
 	@if [ -d build/kvmapp-rust ]; then \
 		rm -rf build/kvmapp-rust; \
 		echo "Removed build/kvmapp-rust"; \

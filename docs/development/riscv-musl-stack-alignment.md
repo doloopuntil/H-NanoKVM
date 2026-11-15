@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-04
+last-checked: 2026-11-15
 ---
 
 # riscv64 thread stack alignment
@@ -9,8 +9,9 @@ last-checked: 2026-11-04
 The server, `nanokvm-hwmon` and `kvm_system` run on Buildroot's musl 1.2.6 loader,
 `/lib/ld-musl-riscv64.so.1`. The image no longer ships the vendor T-Head loader
 `/lib/ld-musl-riscv64xthead.so.1` or the vendor `libc.so` in `/kvmapp/server/dl_lib`;
-`kvm_system`, which MaixCDK links for the vendor loader, gets its interpreter set with
-`patchelf` in CI. This page records why.
+`kvm_system` is linked for the musl loader directly
+(`support/sg2002/cmake/thead-musl.cmake`), although the toolchain that builds it defaults
+to the vendor one. This page records why.
 
 ## The bug
 

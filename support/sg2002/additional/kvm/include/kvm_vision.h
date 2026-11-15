@@ -3,12 +3,6 @@
 #ifndef KVM_VISION_H_
 #define KVM_VISION_H_
 
-#include "kvm_mmf.hpp"
-#include "maix_camera.hpp"
-#include "maix_basic.hpp"
-
-#include "maix_i2c.hpp"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -20,8 +14,6 @@ extern "C" {
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
-
-// #include "kvm_mmf.hpp"
 
 #define IMG_BUFFER_FULL			-3
 #define IMG_VENC_ERROR			-2
@@ -38,7 +30,7 @@ extern "C" {
 #define UNKNOWN_RES                     3
 #define ERROR_RES                       4
 
-void kvmv_init(uint8_t _debug_info_en = 0);
+void kvmv_init(uint8_t _debug_info_en);
 void set_venc_auto_recyc(uint8_t _enable);
 /**********************************************************************************
  * @name    kvmv_read_img
@@ -58,7 +50,7 @@ void set_venc_auto_recyc(uint8_t _enable);
         -5: Retrieving image, please wait
         -4: Modifying image resolution, please wait
         -3: img buffer full
-        -2: VENC Errorl
+        -2: VENC Error
         -1: No images were acquired
          0: Acquire MJPEG encoded images
          1: Acquire H264 encoded images(SPS)[Deprecated]

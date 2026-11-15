@@ -4,8 +4,8 @@ config BR2_PACKAGE_HARDENED_SG2002_VENDOR_RUNTIME
 	depends on BR2_HARDENED_SG2002_VENDOR_ABI_READY
 	select BR2_PACKAGE_HARDENED_NANOKVM_KVMAPP
 	help
-	  Install the prepared /mnt/system vendor BSP runtime and the pinned
-	  OpenCV/protobuf dependency closure needed by the current libkvm build.
+	  Install the prepared /mnt/system vendor BSP runtime and the GCC
+	  runtime libraries libkvm loads.
 
 	  This input is generated from the pinned vendor rootfs and is restricted
 	  to recoverable-media testing. It is not approved for redistribution or

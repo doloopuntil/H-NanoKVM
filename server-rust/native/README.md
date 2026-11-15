@@ -6,8 +6,9 @@ backend.
 - `dl_lib/` is packaged to the device as `/kvmapp/server/dl_lib`.
 - `include/` contains the C ABI header used by the Rust FFI bindings.
 
-The corresponding native sources are under `support/sg2002/additional/kvm`,
-`kvm_mmf`, `vision`, and `peripheral`. The Rust FFI mutex serializes calls made
+The corresponding native sources are under `support/sg2002/additional/kvm` and
+`kvm_mmf`, built with plain CMake (`support/sg2002/CMakeLists.txt`,
+[cross-build](../../docs/development/cross-build.md)). The Rust FFI mutex serializes calls made
 by Rust, but native capture/detection threads still have their own lifecycle.
 Known native lifecycle, VENC, bounds, and hardware-error findings are tracked in
 [`docs/native-code-audit.md`](../../docs/archive/native-code-audit.md).
@@ -18,40 +19,23 @@ Sections below that name `system-image.yml`, `vendor-sdk-stock` or `support/sg20
 describe the 5.10 build, removed on 2026-11-13; git history keeps it. The 6.x workflow,
 `system-image-6x.yml`, keeps the `build-native-libkvm` job.
 
-## libkvm.so: removed video NEEDED entry
+## No OpenCV
 
-`dl_lib/libkvm.so` originally declared `DT_NEEDED` on
-`libopencv_video.so.409`, which in this build's OpenCV pulls in a chain
-(`video`→`dnn`+`calib3d`; `calib3d`→`features2d`+`flann`; `dnn`→`protobuf`)
-of 6 additional non-redistributable vendor libraries. Verified via
-`readelf --dyn-syms` that `libkvm.so` calls nothing from any of them: its
-184 undefined function symbols were checked against video's exports
-directly (zero overlap) and against the full export set unique to
-video/dnn/calib3d/features2d/flann as a group, not also provided by
-core/imgproc/imgcodecs/highgui (still zero overlap, 978 candidate symbols
-checked). This points to the dependency being a MaixCDK build-convention
-artifact (linking a common library set), not a real call path.
-
-Patched with `patchelf --remove-needed libopencv_video.so.409 dl_lib/libkvm.so`.
-This only edits the ELF dynamic section (verified: file size and the full
-184-symbol undefined-symbol set are unchanged) -- no code is modified.
-`libkvm.so` now needs only `core`/`highgui`/`imgcodecs`/`imgproc` from
-OpenCV, matching the exact 4 modules `sipeed/NanoKVM` (the GPL-3.0
-upstream) ships in its own `server/dl_lib/`, rather than the 9 this fork's
-vendor-runtime staging previously carried. `libkvm_mmf.so` never needed
-any OpenCV module.
-
-Not yet verified on real hardware -- this is static analysis (symbol-table
-comparison), not a device boot/video test. If HDMI capture or any vision
-feature breaks after this change, this is the first thing to revert.
+`libkvm.so` used to link MaixCDK's camera, image and I2C classes, and through the image
+class four OpenCV modules (`core`, `imgcodecs`, `imgproc`, `highgui`; `libgomp` came with
+`core`), after six others (`video`, `dnn`, `calib3d`, `features2d`, `flann`, `protobuf`) had
+been dropped as unused. `libkvm` itself never called OpenCV. It now drives the VI channel
+and the JPEG encoder through `libkvm_mmf.so` directly (`src/kvm_capture.cpp`) and talks to
+the LT6911 over i2c-dev, and the image ships no OpenCV library. The checked-in `libkvm.so`
+in `dl_lib/` is an old MaixCDK build that still lists OpenCV; CI replaces it.
 
 ## libkvm_mmf.so statically embeds its own copy of the LT6911 driver
 
 The LT6911 patch applied to `vendor-sdk-stock`'s checkout of
 `sipeed/LicheeRV-Nano-Build`
 (`buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/lt6911-sensor-id-probe-removed.patch`)
-does not reach the code actually driving HDMI capture by itself. `libkvm_mmf.so` is
-built by MaixCDK (`support/sg2002/additional/kvm_mmf/CMakeLists.txt`)
+does not reach the code actually driving HDMI capture by itself. `libkvm_mmf.so` was
+built by MaixCDK
 against a *second*, independent copy of the same upstream sensor source --
 `sipeed/MaixCDK`'s own `components/3rd_party/sophgo-middleware/` checkout
 -- compiled directly into `libkvm_mmf.so` as source, not linked against
@@ -65,9 +49,11 @@ correctly patched, but nothing in the running process tree (`kvm_system`,
 
 `.github/workflows/system-image-6x.yml`'s `build-native-libkvm` job
 builds `libkvm.so`/`libkvm_mmf.so` from this repository's own
-`support/sg2002/additional/` sources via MaixCDK instead of reusing the
-prebuilt app 2.0.42 archive copies, applying the LT6911 patch to MaixCDK's
-checkout first. Those sources carry the native changes the image relies on
+`support/sg2002/additional/` sources instead of reusing the
+prebuilt app 2.0.42 archive copies. Since MaixCDK left the build,
+`scripts/stage-sg2002-sdk.sh` takes the driver from the pinned
+`sipeed/LicheeRV-Nano-Build` commit (the same bytes as MaixCDK's copy) and applies the
+patch there. Those sources carry the native changes the image relies on
 (zero-copy capture, shared VI state, HDMI signal, the skipped stale-state
 release on a fresh boot), and the job checks for them before building.
 `woffko/Hardened_NanoKVM`'s own published `libkvm_mmf.so` still contains the
@@ -240,9 +226,10 @@ loaders (`ld-musl-riscv64xthead.so.1`, `ld-musl-riscv64v0p7_xthead.so.1`).
 diagnostic that discovered these paths, this is production extraction).
 
 Update 2026-11-11 (Linux 6.18 image): the four GCC runtime libraries come from the
-MaixCDK musl toolchain that builds libkvm, its plain `lib64/lp64d` build stripped with
+T-Head musl toolchain that builds libkvm, its plain `lib64/lp64d` build stripped with
 `--strip-all -R .comment`. That output is byte-identical to the stock image's copies (checked
-against a running Lite), and `scripts/stage-maixcdk-runtime.sh` pins the hashes. The 6.18
+against a running Lite), and `scripts/stage-thead-runtime.sh` pins the hashes. `libgomp`
+left with OpenCV; three remain. The 6.18
 image no longer ships `libsns_lt6911.so`: no process on the Lite maps it. The 5.10 pipeline
 still takes all of these from `vendor-sdk-stock`.
 
