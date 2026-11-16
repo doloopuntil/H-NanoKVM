@@ -72,13 +72,13 @@ find_udhcpc6() {
     return 1
 }
 
-RX_BATCHING_FLAG="${RX_BATCHING_FLAG:-/etc/kvm/network/eth.rx-batching}"
+RX_BATCHING_OFF_FLAG="${RX_BATCHING_OFF_FLAG:-/etc/kvm/network/eth.rx-batching-off}"
 NET_CLASS_DIR="${NET_CLASS_DIR:-/sys/class/net}"
 
-# Opt-in NAPI interrupt deferral: fewer RX interrupts, more latency under load.
+# NAPI interrupt deferral unless opted out: fewer RX interrupts, less CPU per packet.
 # Leaves values someone else set alone.
 apply_rx_batching() {
-    [ -e "$RX_BATCHING_FLAG" ] || return 0
+    [ -e "$RX_BATCHING_OFF_FLAG" ] && return 0
     net="$NET_CLASS_DIR/eth0"
     flush="$net/gro_flush_timeout"
     defer="$net/napi_defer_hard_irqs"
