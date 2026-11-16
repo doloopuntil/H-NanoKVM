@@ -56,6 +56,7 @@ The boot files:
 | `system-version.json` | Installed system version. |
 | `system-update-*.json`, `system-update-rollback.sh` | Pending system update, backup, boot-good marker and rollback script. |
 | `ssh_stop` | Present when SSH is turned off. |
+| `ssh_keys_only` | Present while an SSH key is registered or two-factor sign-in is on; `S50sshd` then turns SSH password login off. The server keeps it in step. |
 | `hdmi_disable`, `hdmi_idle_timeout`, `h264_safe_mode` | Video capture settings. |
 | `oled_sleep` | OLED timeout. |
 | `mouse-jiggler`, `shortcuts.json`, `leader-key` | Input settings. |

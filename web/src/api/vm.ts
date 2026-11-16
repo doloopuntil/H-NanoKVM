@@ -105,6 +105,23 @@ export function disableSSH() {
   return http.post('/api/vm/ssh/disable');
 }
 
+export type SshKey = { fingerprint: string; keyType: string; label: string; hasOptions: boolean };
+// keysOnly: two-factor auth is on, so SSH takes keys only
+export type SshKeys = { keys: SshKey[]; keysOnly: boolean };
+
+export function getSshKeys() {
+  return http.get('/api/vm/ssh/keys');
+}
+
+// password is encrypted; code is the second factor when the account has one
+export function addSshKey(password: string, publicKey: string, label?: string, code?: string) {
+  return http.post('/api/vm/ssh/keys', { password, publicKey, label, code });
+}
+
+export function removeSshKey(fingerprint: string) {
+  return http.delete('/api/vm/ssh/keys', { fingerprint });
+}
+
 // get the swap file size and the space a swap file may take
 export function getSwap() {
   return http.get('/api/vm/swap');

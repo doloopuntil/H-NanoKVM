@@ -8,7 +8,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     AppError, Result,
-    api::account::{require_second_factor, verify_password_limited},
+    api::{
+        account::{require_second_factor, verify_password_limited},
+        ssh_keys,
+    },
     auth::{
         clock,
         password::{BACKUP_CODE_COUNT, TotpConfig, generate_backup_codes},
@@ -179,6 +182,7 @@ pub async fn confirm(
         .await;
 
     audit::totp_enrolled(&session.username);
+    ssh_keys::sync_keys_only(&state).await;
     Ok(Json(ApiResponse::ok(TotpConfirmRsp {
         backup_codes: codes,
     })))
@@ -238,6 +242,7 @@ pub async fn disable(
         .await;
 
     audit::totp_disabled(&session.username);
+    ssh_keys::sync_keys_only(&state).await;
     Ok(Json(ApiResponse::<()>::ok_empty()))
 }
 
@@ -289,7 +294,10 @@ mod tests {
     async fn state_and_session() -> (tempfile::TempDir, AppState, Session) {
         let dir = tempfile::tempdir().unwrap();
         let mut config = Config::default();
-        config.paths.account_file = dir.path().canonicalize().unwrap().join("pwd");
+        let root = dir.path().canonicalize().unwrap();
+        config.paths.account_file = root.join("pwd");
+        config.paths.ssh_authorized_keys = root.join("authorized_keys");
+        config.paths.ssh_keys_only_flag = root.join("ssh_keys_only");
         let state = AppState::new(config).await.unwrap();
         state.accounts.set_account("operator", PASSWORD).unwrap();
         let session = state.sessions.issue("operator", 900).await;
@@ -400,6 +408,31 @@ mod tests {
 
         request(Some(current_code())).await.unwrap();
         assert!(state.accounts.totp_config("operator").unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn ssh_turns_keys_only_with_two_factor_and_back() {
+        let (_dir, state, session) = state_and_session().await;
+        let flag = state.config.paths.ssh_keys_only_flag.clone();
+        ssh_keys::sync_keys_only(&state).await;
+        assert!(!flag.exists());
+
+        enrol(&state);
+        ssh_keys::sync_keys_only(&state).await;
+        assert!(flag.exists());
+
+        disable(
+            State(state.clone()),
+            Extension(CurrentSession(session.clone())),
+            addr(),
+            Json(TotpDisableReq {
+                password: PASSWORD.to_string(),
+                code: Some(current_code()),
+            }),
+        )
+        .await
+        .unwrap();
+        assert!(!flag.exists());
     }
 
     #[tokio::test]

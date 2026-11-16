@@ -456,6 +456,29 @@ const id = {
           description: 'Aktifkan akses jarak jauh SSH',
           tip: 'Tetapkan kata sandi yang kuat di Akun > Kata sandi sebelum mengaktifkan opsi ini'
         },
+        sshKeys: {
+          section: 'Kunci SSH',
+          passwordLogin: 'Masuk dengan kata sandi',
+          on: 'Aktif',
+          off: 'Nonaktif',
+          passwordLoginOnDesc:
+            'Nonaktif setelah ada kunci SSH terdaftar atau autentikasi dua faktor aktif',
+          passwordLoginOffDesc:
+            'Nonaktif selama ada kunci SSH terdaftar atau autentikasi dua faktor aktif, jadi SSH hanya menerima kunci',
+          unnamed: 'Kunci tanpa nama',
+          options: 'Opsi',
+          remove: 'Hapus',
+          removeConfirm: 'Hapus kunci ini?',
+          add: 'Tambah kunci',
+          addDesc: 'Komputer yang memiliki kunci privat yang cocok dapat masuk sebagai root',
+          addButton: 'Tambah',
+          addTitle: 'Tambah kunci SSH',
+          addHelp:
+            'Tempel kunci publik komputer yang akan terhubung, misalnya isi ~/.ssh/id_ed25519.pub. Label bersifat opsional.',
+          labelPlaceholder: 'Label',
+          lockout:
+            'SSH hanya menerima kunci selama autentikasi dua faktor aktif, dan belum ada kunci yang terdaftar. Tambahkan kunci untuk masuk melalui SSH.'
+        },
         swap: {
           title: 'Swap',
           description: 'Gunakan file swap saat memori hampir habis',

@@ -456,6 +456,29 @@ const pt_br = {
           description: 'Habilitar acesso remoto SSH',
           tip: 'Defina uma senha forte em Conta > Senha antes de habilitar esta opção'
         },
+        sshKeys: {
+          section: 'Chaves SSH',
+          passwordLogin: 'Login com senha',
+          on: 'Ligado',
+          off: 'Desligado',
+          passwordLoginOnDesc:
+            'Desliga quando há uma chave SSH cadastrada ou a autenticação em duas etapas está ativa',
+          passwordLoginOffDesc:
+            'Desligado enquanto houver uma chave SSH cadastrada ou a autenticação em duas etapas estiver ativa, então o SSH aceita só chaves',
+          unnamed: 'Chave sem nome',
+          options: 'Opções',
+          remove: 'Remover',
+          removeConfirm: 'Remover esta chave?',
+          add: 'Adicionar chave',
+          addDesc: 'Um computador com a chave privada correspondente pode entrar como root',
+          addButton: 'Adicionar',
+          addTitle: 'Adicionar chave SSH',
+          addHelp:
+            'Cole a chave pública do computador que vai se conectar, por exemplo o conteúdo de ~/.ssh/id_ed25519.pub. O rótulo é opcional.',
+          labelPlaceholder: 'Rótulo',
+          lockout:
+            'Enquanto a autenticação em duas etapas estiver ativa, o SSH aceita só chaves, e nenhuma chave está cadastrada. Adicione uma chave para entrar por SSH.'
+        },
         swap: {
           title: 'Swap',
           description: 'Use um arquivo de swap quando a memória estiver acabando',

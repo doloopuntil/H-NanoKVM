@@ -435,6 +435,26 @@ const zh = {
           description: '启用 SSH 远程访问',
           tip: '启用此选项前，请在 帐号 > 密码 中设置强密码'
         },
+        sshKeys: {
+          section: 'SSH 密钥',
+          passwordLogin: '密码登录',
+          on: '开',
+          off: '关',
+          passwordLoginOnDesc: '登记了 SSH 密钥或开启两步验证后会关闭',
+          passwordLoginOffDesc: '已登记 SSH 密钥或两步验证开启期间关闭，SSH 只接受密钥',
+          unnamed: '未命名密钥',
+          options: '选项',
+          remove: '移除',
+          removeConfirm: '移除此密钥？',
+          add: '添加密钥',
+          addDesc: '持有对应私钥的电脑可以以 root 身份登录',
+          addButton: '添加',
+          addTitle: '添加 SSH 密钥',
+          addHelp: '粘贴将要连接的电脑的公钥，例如 ~/.ssh/id_ed25519.pub 的内容。名称可以不填。',
+          labelPlaceholder: '名称',
+          lockout:
+            '两步验证开启期间 SSH 只接受密钥，但尚未登记任何密钥。请添加密钥以通过 SSH 登录。'
+        },
         swap: {
           title: 'Swap',
           description: '内存不足时使用交换文件',

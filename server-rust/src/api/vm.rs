@@ -566,6 +566,11 @@ async fn ssh_enabled() -> bool {
     !ssh_stop_requested() && sshd_is_running().await
 }
 
+/// sshd is on and running, so a configuration change needs a restart.
+pub(crate) async fn sshd_should_run() -> bool {
+    ssh_enabled().await
+}
+
 fn ssh_stop_requested() -> bool {
     Path::new(SSH_STOP_FLAG).exists()
 }

@@ -453,6 +453,29 @@ const cz = {
           description: 'Povolit vzdálený přístup SSH',
           tip: 'Před zapnutím této možnosti nastavte silné heslo v Účet > Heslo'
         },
+        sshKeys: {
+          section: 'Klíče SSH',
+          passwordLogin: 'Přihlášení heslem',
+          on: 'Zapnuto',
+          off: 'Vypnuto',
+          passwordLoginOnDesc:
+            'Vypne se, jakmile je zaregistrován klíč SSH nebo je zapnuté dvoufázové ověření',
+          passwordLoginOffDesc:
+            'Vypnuto, dokud je zaregistrován klíč SSH nebo je zapnuté dvoufázové ověření, takže SSH přijímá jen klíče',
+          unnamed: 'Klíč bez názvu',
+          options: 'Volby',
+          remove: 'Odebrat',
+          removeConfirm: 'Odebrat tento klíč?',
+          add: 'Přidat klíč',
+          addDesc: 'Počítač s odpovídajícím soukromým klíčem se může přihlásit jako root',
+          addButton: 'Přidat',
+          addTitle: 'Přidat klíč SSH',
+          addHelp:
+            'Vložte veřejný klíč počítače, který se bude připojovat, například obsah souboru ~/.ssh/id_ed25519.pub. Popisek je nepovinný.',
+          labelPlaceholder: 'Popisek',
+          lockout:
+            'Dokud je zapnuté dvoufázové ověření, SSH přijímá jen klíče, a žádný klíč není zaregistrován. Přidejte klíč, abyste se mohli přihlásit přes SSH.'
+        },
         swap: {
           title: 'Swap',
           description: 'Používat odkládací soubor, když dochází paměť',

@@ -145,6 +145,9 @@ is handled the same way. Authenticated routes keep the detailed message.
 | GET             | `/api/vm/ssh`              | Implemented.                                                                                                       |
 | POST            | `/api/vm/ssh/enable`       | Implemented.                                                                                                       |
 | POST            | `/api/vm/ssh/disable`      | Implemented.                                                                                                       |
+| GET             | `/api/vm/ssh/keys`         | Implemented; `keys` (`fingerprint`, `keyType`, `label`, `hasOptions`) from `/root/.ssh/authorized_keys` and `keysOnly`. |
+| POST            | `/api/vm/ssh/keys`         | Implemented; `{password, publicKey, label?, code?}`, the password and second factor checked again. Returns the list. |
+| DELETE          | `/api/vm/ssh/keys`         | Implemented; `{fingerprint}`. Returns the list.                                                                    |
 | GET             | `/api/vm/mdns`             | Implemented.                                                                                                       |
 | POST            | `/api/vm/mdns/enable`      | Implemented.                                                                                                       |
 | POST            | `/api/vm/mdns/disable`     | Implemented.                                                                                                       |

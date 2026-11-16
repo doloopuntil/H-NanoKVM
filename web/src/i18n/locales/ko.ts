@@ -449,6 +449,28 @@ const ko = {
           description: 'SSH 원격 접속 활성화',
           tip: '이 옵션을 활성화하기 전에 계정 > 비밀번호에서 강력한 비밀번호를 설정하세요'
         },
+        sshKeys: {
+          section: 'SSH 키',
+          passwordLogin: '비밀번호 로그인',
+          on: '켜짐',
+          off: '꺼짐',
+          passwordLoginOnDesc: 'SSH 키가 등록되어 있거나 2단계 인증이 켜져 있으면 꺼집니다',
+          passwordLoginOffDesc:
+            'SSH 키가 등록되어 있거나 2단계 인증이 켜져 있는 동안 꺼져 있어 SSH는 키만 받습니다',
+          unnamed: '이름 없는 키',
+          options: '옵션',
+          remove: '제거',
+          removeConfirm: '이 키를 제거할까요?',
+          add: '키 추가',
+          addDesc: '일치하는 개인 키가 있는 컴퓨터는 root로 로그인할 수 있습니다',
+          addButton: '추가',
+          addTitle: 'SSH 키 추가',
+          addHelp:
+            '연결할 컴퓨터의 공개 키를 붙여 넣으세요. 예를 들어 ~/.ssh/id_ed25519.pub 파일의 내용입니다. 레이블은 선택 사항입니다.',
+          labelPlaceholder: '레이블',
+          lockout:
+            '2단계 인증이 켜져 있는 동안 SSH는 키만 받지만 등록된 키가 없습니다. SSH로 로그인하려면 키를 추가하세요.'
+        },
         swap: {
           title: '스왑',
           description: '메모리가 부족할 때 스왑 파일을 사용합니다',

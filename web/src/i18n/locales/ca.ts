@@ -455,6 +455,29 @@ const ca = {
           description: 'Activa accés remot per SSH',
           tip: "Configura una contrasenya segura a Compte > Contrasenya abans d'activar aquesta opció"
         },
+        sshKeys: {
+          section: 'Claus SSH',
+          passwordLogin: 'Inici de sessió amb contrasenya',
+          on: 'Activat',
+          off: 'Desactivat',
+          passwordLoginOnDesc:
+            "Es desactiva quan hi ha una clau SSH registrada o l'autenticació de dos factors està activa",
+          passwordLoginOffDesc:
+            "Desactivat mentre hi hagi una clau SSH registrada o l'autenticació de dos factors estigui activa, de manera que SSH només accepta claus",
+          unnamed: 'Clau sense nom',
+          options: 'Opcions',
+          remove: 'Elimina',
+          removeConfirm: 'Voleu eliminar aquesta clau?',
+          add: 'Afegeix una clau',
+          addDesc: 'Un ordinador amb la clau privada corresponent pot iniciar sessió com a root',
+          addButton: 'Afegeix',
+          addTitle: 'Afegeix una clau SSH',
+          addHelp:
+            "Enganxeu la clau pública de l'ordinador que es connectarà, com ara el contingut de ~/.ssh/id_ed25519.pub. L'etiqueta és opcional.",
+          labelPlaceholder: 'Etiqueta',
+          lockout:
+            "SSH només accepta claus mentre l'autenticació de dos factors està activa, i no hi ha cap clau registrada. Afegiu una clau per iniciar sessió per SSH."
+        },
         swap: {
           title: 'Swap',
           description: "Utilitza un fitxer swap quan la memòria s'esgota",

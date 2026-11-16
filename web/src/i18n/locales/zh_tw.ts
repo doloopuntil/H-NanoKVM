@@ -436,6 +436,26 @@ const zh_tw = {
           description: '啟用 SSH 伺服器',
           tip: '啟用此選項前，請在 帳號 > 密碼 中設定強密碼'
         },
+        sshKeys: {
+          section: 'SSH 金鑰',
+          passwordLogin: '密碼登入',
+          on: '開',
+          off: '關',
+          passwordLoginOnDesc: '登記了 SSH 金鑰或開啟兩步驟驗證後會關閉',
+          passwordLoginOffDesc: '已登記 SSH 金鑰或兩步驟驗證開啟期間關閉，SSH 只接受金鑰',
+          unnamed: '未命名金鑰',
+          options: '選項',
+          remove: '移除',
+          removeConfirm: '移除此金鑰？',
+          add: '新增金鑰',
+          addDesc: '持有對應私鑰的電腦可以 root 身分登入',
+          addButton: '新增',
+          addTitle: '新增 SSH 金鑰',
+          addHelp: '貼上將要連線的電腦的公鑰，例如 ~/.ssh/id_ed25519.pub 的內容。名稱可以不填。',
+          labelPlaceholder: '名稱',
+          lockout:
+            '兩步驟驗證開啟期間 SSH 只接受金鑰，但尚未登記任何金鑰。請新增金鑰以透過 SSH 登入。'
+        },
         swap: {
           title: 'Swap',
           description: '記憶體不足時使用 Swap 檔',
