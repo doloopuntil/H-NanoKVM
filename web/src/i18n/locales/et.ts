@@ -448,6 +448,29 @@ const et = {
           description: 'Luba SSH kaugjuurdepääs',
           tip: 'Määra enne selle valiku lubamist kohas Konto > Parool tugev parool'
         },
+        sshKeys: {
+          section: 'SSH-võtmed',
+          passwordLogin: 'Parooliga sisselogimine',
+          on: 'Sees',
+          off: 'Väljas',
+          passwordLoginOnDesc:
+            'Lülitub välja, kui mõni SSH-võti on lisatud või kaheastmeline autentimine on sees',
+          passwordLoginOffDesc:
+            'Väljas, kuni mõni SSH-võti on lisatud või kaheastmeline autentimine on sees, nii et SSH võtab vastu ainult võtmeid',
+          unnamed: 'Nimeta võti',
+          options: 'Valikud',
+          remove: 'Eemalda',
+          removeConfirm: 'Kas eemaldada see võti?',
+          add: 'Lisa võti',
+          addDesc: 'Arvuti, millel on vastav privaatvõti, saab sisse logida kasutajana root',
+          addButton: 'Lisa',
+          addTitle: 'Lisa SSH-võti',
+          addHelp:
+            'Kleebi ühenduva arvuti avalik võti, näiteks faili ~/.ssh/id_ed25519.pub sisu. Silt on valikuline.',
+          labelPlaceholder: 'Silt',
+          lockout:
+            'Kuni kaheastmeline autentimine on sees, võtab SSH vastu ainult võtmeid, aga ühtegi võtit pole lisatud. Lisa võti, et SSH kaudu sisse logida.'
+        },
         swap: {
           title: 'Swap',
           description: 'Kasuta swap-faili, kui mälu hakkab otsa saama',

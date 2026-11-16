@@ -4,7 +4,7 @@ use axum::{
     response::{IntoResponse, Redirect, Response},
 };
 use nanokvm_rust_server::{
-    api::{compatibility, cpu_clock, monitor, picoclaw, system_firewall, tls_switch, vm},
+    api::{compatibility, cpu_clock, monitor, picoclaw, ssh_keys, system_firewall, tls_switch, vm},
     config::Config,
     ffi::kvm,
     hdmi_idle,
@@ -223,6 +223,7 @@ fn initialize_kvm() {
 async fn run_http(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let addr = config.listen_addr()?;
     let state = AppState::new(config).await?;
+    spawn_ssh_keys_only_sync(&state);
     let limiter = ConnLimiter::new();
 
     if state.config.needs_dedicated_loopback_listener() {
@@ -246,6 +247,7 @@ async fn run_https(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let https_addr = config.https_listen_addr()?;
     let (tls_config, cert_resolver) = cert_manager::load_server_config(&config)?;
     let state = AppState::new(config).await?;
+    spawn_ssh_keys_only_sync(&state);
     cert_manager::spawn(cert_resolver);
     let limiter = ConnLimiter::new();
 
@@ -272,6 +274,12 @@ async fn run_https(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     info!(addr = %https_addr, "starting NanoKVM Rust HTTPS backend");
     serve::serve(tls_listener, routes::build(state)).await;
     Ok(())
+}
+
+/// SSH password logins follow the account's two-factor state, also after a restore or reset.
+fn spawn_ssh_keys_only_sync(state: &AppState) {
+    let state = state.clone();
+    tokio::spawn(async move { ssh_keys::sync_keys_only(&state).await });
 }
 
 async fn spawn_http_listener(

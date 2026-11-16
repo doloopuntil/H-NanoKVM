@@ -14,6 +14,7 @@ pub mod picoclaw;
 mod picoclaw_policy;
 pub mod picoclaw_sessions;
 pub mod script;
+pub mod ssh_keys;
 pub mod storage;
 pub mod stream;
 pub mod system_firewall;

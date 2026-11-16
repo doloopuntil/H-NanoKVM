@@ -458,6 +458,30 @@ const es = {
           description: 'Habilitar acceso remoto SSH',
           tip: 'Establece una contraseña segura en Cuenta > Contraseña antes de activar esta opción'
         },
+        sshKeys: {
+          section: 'Claves SSH',
+          passwordLogin: 'Inicio de sesión con contraseña',
+          on: 'Activado',
+          off: 'Desactivado',
+          passwordLoginOnDesc:
+            'Se desactiva cuando hay una clave SSH registrada o la autenticación en dos pasos está activada',
+          passwordLoginOffDesc:
+            'Desactivado mientras haya una clave SSH registrada o la autenticación en dos pasos esté activada, así que SSH solo acepta claves',
+          unnamed: 'Clave sin nombre',
+          options: 'Opciones',
+          remove: 'Quitar',
+          removeConfirm: '¿Quitar esta clave?',
+          add: 'Añadir clave',
+          addDesc:
+            'Un ordenador con la clave privada correspondiente puede iniciar sesión como root',
+          addButton: 'Añadir',
+          addTitle: 'Añadir clave SSH',
+          addHelp:
+            'Pegue la clave pública del ordenador que se conectará, por ejemplo el contenido de ~/.ssh/id_ed25519.pub. La etiqueta es opcional.',
+          labelPlaceholder: 'Etiqueta',
+          lockout:
+            'SSH solo acepta claves mientras la autenticación en dos pasos está activada, y no hay ninguna clave registrada. Añada una clave para iniciar sesión por SSH.'
+        },
         swap: {
           title: 'Memoria swap',
           description: 'Usa un archivo swap cuando se agota la memoria',

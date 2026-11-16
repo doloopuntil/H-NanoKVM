@@ -66,6 +66,28 @@ pub fn totp_backup_codes_regenerated(username: &str) {
     );
 }
 
+pub fn ssh_key_added(username: &str, fingerprint: &str) {
+    emit(
+        84,
+        &format!(
+            "{TAG}: SSH key added user={} fingerprint={}",
+            sanitize(username),
+            sanitize(fingerprint)
+        ),
+    );
+}
+
+pub fn ssh_key_removed(username: &str, fingerprint: &str) {
+    emit(
+        85,
+        &format!(
+            "{TAG}: SSH key removed user={} fingerprint={}",
+            sanitize(username),
+            sanitize(fingerprint)
+        ),
+    );
+}
+
 pub fn system_update_local_key_set(username: &str) {
     emit(
         84,

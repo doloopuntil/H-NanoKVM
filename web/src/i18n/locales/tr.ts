@@ -453,6 +453,29 @@ const tr = {
           description: 'SSH uzaktan erişimini etkinleştir',
           tip: 'Bu seçeneği etkinleştirmeden önce Hesap > Şifre bölümünde güçlü bir şifre belirleyin'
         },
+        sshKeys: {
+          section: 'SSH anahtarları',
+          passwordLogin: 'Parolayla giriş',
+          on: 'Açık',
+          off: 'Kapalı',
+          passwordLoginOnDesc:
+            'Bir SSH anahtarı kayıtlıyken veya iki adımlı doğrulama açıkken kapanır',
+          passwordLoginOffDesc:
+            'Bir SSH anahtarı kayıtlıyken veya iki adımlı doğrulama açıkken kapalıdır, bu yüzden SSH yalnızca anahtar kabul eder',
+          unnamed: 'Adsız anahtar',
+          options: 'Seçenekler',
+          remove: 'Kaldır',
+          removeConfirm: 'Bu anahtar kaldırılsın mı?',
+          add: 'Anahtar ekle',
+          addDesc: 'Eşleşen özel anahtara sahip bir bilgisayar root olarak giriş yapabilir',
+          addButton: 'Ekle',
+          addTitle: 'SSH anahtarı ekle',
+          addHelp:
+            'Bağlanacak bilgisayarın açık anahtarını yapıştırın, örneğin ~/.ssh/id_ed25519.pub dosyasının içeriği. Etiket isteğe bağlıdır.',
+          labelPlaceholder: 'Etiket',
+          lockout:
+            'İki adımlı doğrulama açıkken SSH yalnızca anahtar kabul eder ve kayıtlı anahtar yok. SSH ile giriş yapmak için bir anahtar ekleyin.'
+        },
         swap: {
           title: 'Swap',
           description: 'Bellek azaldığında bir swap dosyası kullan',

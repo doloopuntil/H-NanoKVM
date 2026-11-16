@@ -451,6 +451,28 @@ const en = {
           description: 'Enable SSH remote access',
           tip: 'Set a strong password in Account > Password before enabling this option'
         },
+        sshKeys: {
+          section: 'SSH keys',
+          passwordLogin: 'Password login',
+          on: 'On',
+          off: 'Off',
+          passwordLoginOnDesc: 'Turns off once an SSH key is registered or two-factor auth is on',
+          passwordLoginOffDesc:
+            'Off while an SSH key is registered or two-factor auth is on, so SSH accepts keys only',
+          unnamed: 'Unnamed key',
+          options: 'Options',
+          remove: 'Remove',
+          removeConfirm: 'Remove this key?',
+          add: 'Add key',
+          addDesc: 'A computer with the matching private key can log in as root',
+          addButton: 'Add',
+          addTitle: 'Add SSH key',
+          addHelp:
+            'Paste the public key of the computer that will connect, such as the contents of ~/.ssh/id_ed25519.pub. The label is optional.',
+          labelPlaceholder: 'Label',
+          lockout:
+            'SSH accepts keys only while two-factor auth is on, and no key is registered. Add a key to log in over SSH.'
+        },
         swap: {
           title: 'Swap',
           description: 'Use a swap file when memory runs low',

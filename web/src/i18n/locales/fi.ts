@@ -457,6 +457,29 @@ const fi = {
           description: 'Ota SSH-etäkäyttö käyttöön',
           tip: 'Aseta vahva salasana kohdassa Tili > Salasana ennen tämän asetuksen käyttöönottoa'
         },
+        sshKeys: {
+          section: 'SSH-avaimet',
+          passwordLogin: 'Kirjautuminen salasanalla',
+          on: 'Päällä',
+          off: 'Pois',
+          passwordLoginOnDesc:
+            'Kytkeytyy pois, kun SSH-avain on lisätty tai kaksivaiheinen tunnistautuminen on päällä',
+          passwordLoginOffDesc:
+            'Pois, kun SSH-avain on lisätty tai kaksivaiheinen tunnistautuminen on päällä, joten SSH hyväksyy vain avaimia',
+          unnamed: 'Nimetön avain',
+          options: 'Asetukset',
+          remove: 'Poista',
+          removeConfirm: 'Poistetaanko tämä avain?',
+          add: 'Lisää avain',
+          addDesc: 'Tietokone, jolla on vastaava yksityinen avain, voi kirjautua root-käyttäjänä',
+          addButton: 'Lisää',
+          addTitle: 'Lisää SSH-avain',
+          addHelp:
+            'Liitä yhdistävän tietokoneen julkinen avain, esimerkiksi tiedoston ~/.ssh/id_ed25519.pub sisältö. Nimi on valinnainen.',
+          labelPlaceholder: 'Nimi',
+          lockout:
+            'SSH hyväksyy vain avaimia, kun kaksivaiheinen tunnistautuminen on päällä, eikä yhtään avainta ole lisätty. Lisää avain, jotta voit kirjautua SSH:lla.'
+        },
         swap: {
           title: 'Swap',
           description: 'Käytä swap-tiedostoa, kun muisti on vähissä',

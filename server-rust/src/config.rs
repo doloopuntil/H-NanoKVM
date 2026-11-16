@@ -117,6 +117,11 @@ pub struct Paths {
     pub update_cache_dir: PathBuf,
     pub system_update_public_key: PathBuf,
     pub system_update_local_public_key: PathBuf,
+    /// Root's SSH keys, managed from the web UI.
+    pub ssh_authorized_keys: PathBuf,
+    /// Present while a key is registered or two-factor auth is on; S50sshd then turns SSH
+    /// password logins off.
+    pub ssh_keys_only_flag: PathBuf,
 }
 
 impl Default for Config {
@@ -210,6 +215,8 @@ impl Default for Paths {
             update_cache_dir: PathBuf::from("/data/.hardened-kvmcache"),
             system_update_public_key: PathBuf::from("/etc/kvm/system-update-signing.pub.pem"),
             system_update_local_public_key: PathBuf::from("/etc/kvm/system-update-local.pub.pem"),
+            ssh_authorized_keys: PathBuf::from("/root/.ssh/authorized_keys"),
+            ssh_keys_only_flag: PathBuf::from("/etc/kvm/ssh_keys_only"),
         }
     }
 }

@@ -455,6 +455,29 @@ const se = {
           description: 'Aktivera SSH-fjärråtkomst',
           tip: 'Ställ in ett starkt lösenord under Konto > Lösenord innan du aktiverar det här alternativet'
         },
+        sshKeys: {
+          section: 'SSH-nycklar',
+          passwordLogin: 'Inloggning med lösenord',
+          on: 'På',
+          off: 'Av',
+          passwordLoginOnDesc:
+            'Stängs av när en SSH-nyckel är registrerad eller tvåfaktorsautentisering är på',
+          passwordLoginOffDesc:
+            'Av medan en SSH-nyckel är registrerad eller tvåfaktorsautentisering är på, så SSH tar bara emot nycklar',
+          unnamed: 'Namnlös nyckel',
+          options: 'Alternativ',
+          remove: 'Ta bort',
+          removeConfirm: 'Ta bort den här nyckeln?',
+          add: 'Lägg till nyckel',
+          addDesc: 'En dator med den matchande privata nyckeln kan logga in som root',
+          addButton: 'Lägg till',
+          addTitle: 'Lägg till SSH-nyckel',
+          addHelp:
+            'Klistra in den publika nyckeln från datorn som ska ansluta, till exempel innehållet i ~/.ssh/id_ed25519.pub. Etiketten är valfri.',
+          labelPlaceholder: 'Etikett',
+          lockout:
+            'SSH tar bara emot nycklar medan tvåfaktorsautentisering är på, och ingen nyckel är registrerad. Lägg till en nyckel för att logga in via SSH.'
+        },
         swap: {
           title: 'Swap',
           description: 'Använd en swap-fil när minnet börjar ta slut',

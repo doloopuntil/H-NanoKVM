@@ -20,6 +20,7 @@ import { Mdns } from './mdns';
 import { Monitor } from './monitor';
 import { Overdrive } from './overdrive';
 import { Ssh } from './ssh';
+import { SshKeys } from './ssh-keys';
 import { Swap } from './swap';
 import { TimeSettings } from './time';
 import { Tls } from './tls';
@@ -52,6 +53,8 @@ export const System = ({ section, setIsLocked }: SystemProps) => {
   const servicesRef = useRef<SystemActionHandle>(null);
   // what stops certificates now; the Alert above the Services sections
   const [certificateBlocked, setCertificateBlocked] = useState<string | null>(null);
+  // SSH takes keys only and has none: the Alert above the Services sections
+  const [sshLockout, setSshLockout] = useState(false);
 
   const updateActionState = useCallback((state: SystemActionState) => {
     setActionState(state);
@@ -127,10 +130,19 @@ export const System = ({ section, setIsLocked }: SystemProps) => {
           {section === 'services' && (
             <div className="flex flex-col gap-6">
               {certificateBlocked && <Alert type="warning" showIcon title={certificateBlocked} />}
+              {sshLockout && (
+                <Alert type="warning" showIcon title={t('settings.device.sshKeys.lockout')} />
+              )}
 
               <SettingSection title={t('settings.device.sections.connectivity')}>
                 <Ssh />
                 <Mdns />
+              </SettingSection>
+
+              <SectionDivider />
+
+              <SettingSection title={t('settings.device.sshKeys.section')}>
+                <SshKeys onLockoutChange={setSshLockout} />
               </SettingSection>
 
               <SectionDivider />
