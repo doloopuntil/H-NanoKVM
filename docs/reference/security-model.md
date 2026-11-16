@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
-last-checked: 2026-11-15
+last-checked: 2026-11-16
 ---
 
 # Security model
@@ -72,7 +72,9 @@ and writes through debugfs. Every module comes with the system image and a syste
 replaces kernel and modules together, so no module has to be signed after the build. The
 media middleware (`libsys`) maps its buffers through `/dev/cvi-sys`, which
 maps only buffers the media `sys` driver allocated in the 75 MiB carveout (uncached when
-opened with `O_SYNC`) and refuses kernel memory, registers and free carveout. The video
+opened with `O_SYNC`) and refuses kernel memory, registers and free carveout. Its cache
+flush and invalidate requests take the same check: an invalidate discards cached writes, so
+one aimed at kernel memory could corrupt it. The video
 encoder keeps every stream packet it hands to userspace in the carveout; the vendor driver
 used kernel heap memory for H.264 headers, which userspace then mapped through `/dev/mem`.
 The init scripts read the RTC registers they need through nvmem devices (see
