@@ -5,6 +5,9 @@ use axum::{
     response::Response,
 };
 
+/// 180 days; no includeSubDomains, as the device's name may sit under someone else's domain.
+const HSTS: &str = "max-age=15552000";
+
 /// The policy for a request whose host cannot be named: same origin only.
 const STRICT_POLICY: &str = "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 
@@ -87,6 +90,12 @@ pub async fn security_headers(req: Request<Body>, next: Next) -> Response {
         "Permissions-Policy",
         HeaderValue::from_static("camera=(), microphone=(), geolocation=()"),
     );
+    if is_html_shell && crate::http::cert_manager::hsts_applies() {
+        headers.insert(
+            header::STRICT_TRANSPORT_SECURITY,
+            HeaderValue::from_static(HSTS),
+        );
+    }
     if is_api || is_html_shell {
         headers.insert(
             header::CACHE_CONTROL,
@@ -190,6 +199,17 @@ mod tests {
         assert_eq!(status, StatusCode::OK);
         assert_eq!(value.unwrap(), "public, max-age=31536000, immutable");
         assert_eq!(cache("/index.html").await.1.unwrap(), "no-store, max-age=0");
+        // no HTTPS server runs in tests, so no HSTS
+        let req = Request::builder()
+            .uri("/index.html")
+            .body(Body::empty())
+            .unwrap();
+        let rsp = app.clone().oneshot(req).await.unwrap();
+        assert!(
+            rsp.headers()
+                .get(header::STRICT_TRANSPORT_SECURITY)
+                .is_none()
+        );
         let (status, value) = cache("/assets/missing.js").await;
         assert_eq!(status, StatusCode::NOT_FOUND);
         assert!(value.is_none());

@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-10-28
+last-checked: 2026-11-17
 ---
 
 # HTTPS certificate
@@ -46,8 +46,21 @@ request needs, so no certificate is requested in that mode. See
 The device checks every hour and renews in the last 30 days. After a failure it waits
 an hour, then six hours, then a day, and shows the last error. The clock must be
 synchronized and HTTPS on. If a certificate expires and cannot be renewed, the device
-serves its self-signed certificate again, so the interface stays reachable. **Renew
+serves its self-signed certificate again, so the interface stays reachable by its IP
+address; by its name only once the browser's HSTS entry has run out (see below). **Renew
 now** requests a certificate without waiting.
+
+## HSTS
+
+With a Tailscale or Let's Encrypt certificate kept, the device tells browsers to use only
+HTTPS for its name for 180 days (HSTS), so a typed `http://` address or bare name cannot
+be answered by someone else on the network. Browsers ignore this for the self-signed
+certificate and for IP addresses, so the device sends it only for the trusted ones.
+
+The other side: for those 180 days, a browser that has seen it refuses the name over plain
+HTTP and offers no way past a certificate warning. If you turn HTTPS off, go back to the
+self-signed certificate, or the certificate expires, open the device by its IP address,
+or remove the name in the browser's HSTS settings (Chrome: `chrome://net-internals/#hsts`).
 
 ## Testing
 
