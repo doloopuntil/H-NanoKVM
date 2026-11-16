@@ -7,7 +7,7 @@ TEST_ROOT="$(mktemp -d)"
 trap 'rm -rf "$TEST_ROOT"' EXIT
 
 export S30ETH_TEST_ONLY=1
-export RX_BATCHING_FLAG="$TEST_ROOT/eth.rx-batching"
+export RX_BATCHING_OFF_FLAG="$TEST_ROOT/eth.rx-batching-off"
 export NET_CLASS_DIR="$TEST_ROOT/net"
 NET="$NET_CLASS_DIR/eth0"
 mkdir -p "$NET"
@@ -29,12 +29,13 @@ expect() {
 }
 
 reset 0 0
+touch "$RX_BATCHING_OFF_FLAG"
 apply_rx_batching
-expect 0 0 "applied without the flag"
+expect 0 0 "applied with the opt-out flag"
 
-touch "$RX_BATCHING_FLAG"
+rm -f "$RX_BATCHING_OFF_FLAG"
 apply_rx_batching
-expect 200000 2 "not applied with the flag"
+expect 200000 2 "not applied by default"
 
 apply_rx_batching
 expect 200000 2 "a second start changed the profile"

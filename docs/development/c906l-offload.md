@@ -160,8 +160,9 @@ All on the main core or in fixed-function blocks; none needs the C906L.
   scatter-gather; TSO is fixed off in hardware. NAPI batching (`gro_flush_timeout` 200 us,
   `napi_defer_hard_irqs` 2) cut receive interrupts from ~2150 to ~170 a second and changed neither
   the frame rate nor the CPU: the softirq time is per-packet TCP work (~2200 ACKs in, ~5700
-  segments out a second), not interrupt entry. `rx-usecs` above 136 is rejected by the driver. The
-  batching stays opt-in.
+  segments out a second), not interrupt entry. `rx-usecs` above 136 is rejected by the driver.
+  Uploads are different: there the batching saves about 14% of the CPU per MB received, so it is
+  on by default (2026-11-16).
 - **Zero-copy sends for plain HTTP** (`MSG_ZEROCOPY`). A kernel copy runs at ~640 MB/s here, so the
   copy it saves costs under 2% of the CPU at the 100 Mbit link rate, before its own page pinning and
   completion handling, and it would need the MJPEG response written around hyper.
