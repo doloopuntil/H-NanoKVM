@@ -458,6 +458,28 @@ const ja = {
           description: 'SSH リモートアクセスを有効にする',
           tip: 'このオプションを有効にする前に、アカウント > パスワード で強力なパスワードを設定してください'
         },
+        sshKeys: {
+          section: 'SSH 鍵',
+          passwordLogin: 'パスワードでのログイン',
+          on: 'オン',
+          off: 'オフ',
+          passwordLoginOnDesc: 'SSH 鍵が登録されているか二要素認証がオンのときはオフになります',
+          passwordLoginOffDesc:
+            'SSH 鍵が登録されているか二要素認証がオンの間はオフで、SSH は鍵のみ受け付けます',
+          unnamed: '名前のない鍵',
+          options: 'オプション',
+          remove: '削除',
+          removeConfirm: 'この鍵を削除しますか？',
+          add: '鍵を追加',
+          addDesc: '対応する秘密鍵を持つコンピューターは root としてログインできます',
+          addButton: '追加',
+          addTitle: 'SSH 鍵を追加',
+          addHelp:
+            '接続するコンピューターの公開鍵を貼り付けてください。例えば ~/.ssh/id_ed25519.pub の内容です。ラベルは任意です。',
+          labelPlaceholder: 'ラベル',
+          lockout:
+            '二要素認証がオンの間、SSH は鍵のみ受け付けますが、鍵が登録されていません。SSH でログインするには鍵を追加してください。'
+        },
         swap: {
           title: 'スワップ',
           description: 'メモリが不足したときにスワップファイルを使用します',

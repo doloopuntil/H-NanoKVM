@@ -198,6 +198,12 @@ Known exceptions:
   `usb0` leads to the computer under control: in every mode its new connections are dropped
   first, until the operator creates `/etc/kvm/usb_management`. A new SD card no longer ships
   the `usb.rndis0` default, so USB networking is opt-in.
+- SSH takes keys only once a key is registered or the web account has two-factor auth: the
+  server keeps `/etc/kvm/ssh_keys_only` in step and `S50sshd` then starts sshd without password
+  or keyboard-interactive login, so the web password alone no longer opens a root shell. Keys
+  are added from the web UI with the password and the second factor asked again, checked
+  strictly (key type, structure, RSA of 3072 bits or more, no options) and written to
+  `/root/.ssh/authorized_keys` with mode 0600; adding and removing are logged.
 - sshd starts with three tries per connection, a one-minute login window and penalties for
   failed or unknown-user connections, counted per /64 for IPv6; `sshd -t` checks them first and
   an sshd that refuses them still starts without them.

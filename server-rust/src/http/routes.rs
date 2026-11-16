@@ -9,7 +9,7 @@ use tower_http::{services::ServeDir, trace::TraceLayer};
 use crate::{
     api::{
         account, account_totp, application, autostart, compatibility, cpu_clock, download, hid,
-        https_cert, monitor, network, picoclaw, script, storage, stream, system_firewall,
+        https_cert, monitor, network, picoclaw, script, ssh_keys, storage, stream, system_firewall,
         system_log, system_time, system_update, tailscale, tls_switch, trusted_proxies, upload, vm,
         watchdog, webrtc_stream, wireguard,
     },
@@ -152,6 +152,12 @@ pub fn build(state: AppState) -> Router {
         .route("/api/vm/ssh", get(vm::get_ssh_state))
         .route("/api/vm/ssh/enable", post(vm::enable_ssh))
         .route("/api/vm/ssh/disable", post(vm::disable_ssh))
+        .route(
+            "/api/vm/ssh/keys",
+            get(ssh_keys::list_keys)
+                .post(ssh_keys::add_key)
+                .delete(ssh_keys::remove_key),
+        )
         .route(
             "/api/vm/trusted-proxies",
             get(trusted_proxies::get).post(trusted_proxies::set),

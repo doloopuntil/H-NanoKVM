@@ -458,6 +458,29 @@ const pl = {
           description: 'Włącz SSH zdalny dostęp',
           tip: 'Ustaw silne hasło w Konto > Hasło przed włączeniem tej opcji'
         },
+        sshKeys: {
+          section: 'Klucze SSH',
+          passwordLogin: 'Logowanie hasłem',
+          on: 'Włączone',
+          off: 'Wyłączone',
+          passwordLoginOnDesc:
+            'Wyłącza się, gdy zarejestrowano klucz SSH lub uwierzytelnianie dwuskładnikowe jest włączone',
+          passwordLoginOffDesc:
+            'Wyłączone, dopóki zarejestrowany jest klucz SSH lub uwierzytelnianie dwuskładnikowe jest włączone, więc SSH przyjmuje tylko klucze',
+          unnamed: 'Klucz bez nazwy',
+          options: 'Opcje',
+          remove: 'Usuń',
+          removeConfirm: 'Usunąć ten klucz?',
+          add: 'Dodaj klucz',
+          addDesc: 'Komputer z pasującym kluczem prywatnym może zalogować się jako root',
+          addButton: 'Dodaj',
+          addTitle: 'Dodaj klucz SSH',
+          addHelp:
+            'Wklej klucz publiczny komputera, który będzie się łączyć, na przykład zawartość ~/.ssh/id_ed25519.pub. Etykieta jest opcjonalna.',
+          labelPlaceholder: 'Etykieta',
+          lockout:
+            'Dopóki uwierzytelnianie dwuskładnikowe jest włączone, SSH przyjmuje tylko klucze, a żaden klucz nie jest zarejestrowany. Dodaj klucz, aby logować się przez SSH.'
+        },
         swap: {
           title: 'Swap',
           description: 'Używaj pliku wymiany, gdy brakuje pamięci',

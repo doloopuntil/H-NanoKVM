@@ -458,6 +458,29 @@ const it = {
           description: "Abilita l'accesso remoto SSH",
           tip: 'Imposta una password complessa in Account > Password prima di abilitare questa opzione'
         },
+        sshKeys: {
+          section: 'Chiavi SSH',
+          passwordLogin: 'Accesso con password',
+          on: 'Attivo',
+          off: 'Disattivo',
+          passwordLoginOnDesc:
+            "Si disattiva quando è registrata una chiave SSH o l'autenticazione a due fattori è attiva",
+          passwordLoginOffDesc:
+            "Disattivo finché è registrata una chiave SSH o l'autenticazione a due fattori è attiva, quindi SSH accetta solo chiavi",
+          unnamed: 'Chiave senza nome',
+          options: 'Opzioni',
+          remove: 'Rimuovi',
+          removeConfirm: 'Rimuovere questa chiave?',
+          add: 'Aggiungi chiave',
+          addDesc: 'Un computer con la chiave privata corrispondente può accedere come root',
+          addButton: 'Aggiungi',
+          addTitle: 'Aggiungi chiave SSH',
+          addHelp:
+            "Incolla la chiave pubblica del computer che si collegherà, ad esempio il contenuto di ~/.ssh/id_ed25519.pub. L'etichetta è facoltativa.",
+          labelPlaceholder: 'Etichetta',
+          lockout:
+            "Finché l'autenticazione a due fattori è attiva, SSH accetta solo chiavi e non è registrata alcuna chiave. Aggiungi una chiave per accedere tramite SSH."
+        },
         swap: {
           title: 'Swap',
           description: 'Usa un file di scambio quando la memoria sta per esaurirsi',

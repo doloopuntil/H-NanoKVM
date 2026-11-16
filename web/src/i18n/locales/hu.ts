@@ -457,6 +457,30 @@ const hu = {
           description: 'Engedélyezze a SSH távoli hozzáférést',
           tip: 'Az opció engedélyezése előtt állítson be erős jelszót itt: Fiók > Jelszó'
         },
+        sshKeys: {
+          section: 'SSH-kulcsok',
+          passwordLogin: 'Bejelentkezés jelszóval',
+          on: 'Be',
+          off: 'Ki',
+          passwordLoginOnDesc:
+            'Kikapcsol, ha van regisztrált SSH-kulcs, vagy be van kapcsolva a kétfaktoros hitelesítés',
+          passwordLoginOffDesc:
+            'Ki, amíg van regisztrált SSH-kulcs, vagy be van kapcsolva a kétfaktoros hitelesítés, így az SSH csak kulcsot fogad el',
+          unnamed: 'Névtelen kulcs',
+          options: 'Beállítások',
+          remove: 'Eltávolítás',
+          removeConfirm: 'Eltávolítja ezt a kulcsot?',
+          add: 'Kulcs hozzáadása',
+          addDesc:
+            'A megfelelő privát kulccsal rendelkező számítógép root felhasználóként jelentkezhet be',
+          addButton: 'Hozzáadás',
+          addTitle: 'SSH-kulcs hozzáadása',
+          addHelp:
+            'Illessze be a csatlakozó számítógép nyilvános kulcsát, például a ~/.ssh/id_ed25519.pub fájl tartalmát. A címke nem kötelező.',
+          labelPlaceholder: 'Címke',
+          lockout:
+            'Amíg a kétfaktoros hitelesítés be van kapcsolva, az SSH csak kulcsot fogad el, és nincs regisztrált kulcs. Adjon hozzá egy kulcsot az SSH-bejelentkezéshez.'
+        },
         swap: {
           title: 'Swap',
           description: 'Swap fájl használata, ha fogy a memória',

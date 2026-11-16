@@ -454,6 +454,29 @@ const da = {
           description: 'Aktiver SSH fjernadgang',
           tip: 'Indstil en stærk adgangskode under Konto > Adgangskode, før du aktiverer denne indstilling'
         },
+        sshKeys: {
+          section: 'SSH-nøgler',
+          passwordLogin: 'Login med adgangskode',
+          on: 'Til',
+          off: 'Fra',
+          passwordLoginOnDesc:
+            'Slås fra, når en SSH-nøgle er registreret, eller totrinsgodkendelse er slået til',
+          passwordLoginOffDesc:
+            'Fra, mens en SSH-nøgle er registreret, eller totrinsgodkendelse er slået til, så SSH kun accepterer nøgler',
+          unnamed: 'Unavngiven nøgle',
+          options: 'Indstillinger',
+          remove: 'Fjern',
+          removeConfirm: 'Fjern denne nøgle?',
+          add: 'Tilføj nøgle',
+          addDesc: 'En computer med den tilhørende private nøgle kan logge ind som root',
+          addButton: 'Tilføj',
+          addTitle: 'Tilføj SSH-nøgle',
+          addHelp:
+            'Indsæt den offentlige nøgle fra den computer, der skal forbinde, for eksempel indholdet af ~/.ssh/id_ed25519.pub. Etiketten er valgfri.',
+          labelPlaceholder: 'Etiket',
+          lockout:
+            'SSH accepterer kun nøgler, mens totrinsgodkendelse er slået til, og der er ingen nøgle registreret. Tilføj en nøgle for at logge ind via SSH.'
+        },
         swap: {
           title: 'Swap',
           description: 'Brug en swap-fil, når hukommelsen er ved at slippe op',

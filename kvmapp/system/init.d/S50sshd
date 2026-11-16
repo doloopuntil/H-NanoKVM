@@ -16,6 +16,12 @@ PIDFILE="/var/run/sshd.pid"
 # but a second one is; the refusal grows to ten minutes.
 SSHD_LIMITS="-o MaxAuthTries=3 -o LoginGraceTime=60 -o PerSourceNetBlockSize=32:64 \
 -o PerSourcePenalties=authfail:10s -o PerSourcePenalties=invaliduser:10s"
+# Keys only once a key is registered or the web account has two-factor auth; the web
+# server keeps this flag.
+SSHD_AUTH=""
+if [ -e /etc/kvm/ssh_keys_only ]; then
+    SSHD_AUTH="-o PasswordAuthentication=no -o KbdInteractiveAuthentication=no"
+fi
 
 umask 077
 
@@ -25,11 +31,11 @@ startssh() {
 
         printf "Starting sshd: "
         # An sshd that does not know these options still starts, without them.
-        if /usr/sbin/sshd -t $SSHD_LIMITS 2>/dev/null; then
-            /usr/sbin/sshd $SSHD_LIMITS
+        if /usr/sbin/sshd -t $SSHD_LIMITS $SSHD_AUTH 2>/dev/null; then
+            /usr/sbin/sshd $SSHD_LIMITS $SSHD_AUTH
         else
             printf "without password guessing limits, "
-            /usr/sbin/sshd
+            /usr/sbin/sshd $SSHD_AUTH
         fi
         touch /var/lock/sshd
         echo "OK"

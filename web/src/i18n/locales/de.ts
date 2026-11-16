@@ -460,6 +460,29 @@ const de = {
           description: 'Entfernten SSH-Zugang aktivieren',
           tip: 'Legen Sie unter Konto > Passwort ein starkes Passwort fest, bevor Sie diese Option aktivieren'
         },
+        sshKeys: {
+          section: 'SSH-Schlüssel',
+          passwordLogin: 'Anmeldung mit Passwort',
+          on: 'An',
+          off: 'Aus',
+          passwordLoginOnDesc:
+            'Wird abgeschaltet, sobald ein SSH-Schlüssel hinterlegt oder die Zwei-Faktor-Authentifizierung aktiv ist',
+          passwordLoginOffDesc:
+            'Aus, solange ein SSH-Schlüssel hinterlegt oder die Zwei-Faktor-Authentifizierung aktiv ist, SSH nimmt dann nur Schlüssel an',
+          unnamed: 'Unbenannter Schlüssel',
+          options: 'Optionen',
+          remove: 'Entfernen',
+          removeConfirm: 'Diesen Schlüssel entfernen?',
+          add: 'Schlüssel hinzufügen',
+          addDesc: 'Ein Computer mit dem passenden privaten Schlüssel kann sich als root anmelden',
+          addButton: 'Hinzufügen',
+          addTitle: 'SSH-Schlüssel hinzufügen',
+          addHelp:
+            'Fügen Sie den öffentlichen Schlüssel des Computers ein, der sich verbinden soll, etwa den Inhalt von ~/.ssh/id_ed25519.pub. Die Bezeichnung ist optional.',
+          labelPlaceholder: 'Bezeichnung',
+          lockout:
+            'Solange die Zwei-Faktor-Authentifizierung aktiv ist, nimmt SSH nur Schlüssel an, und es ist kein Schlüssel hinterlegt. Fügen Sie einen Schlüssel hinzu, um sich per SSH anzumelden.'
+        },
         swap: {
           title: 'Swap',
           description: 'Eine Swap-Datei nutzen, wenn der Speicher knapp wird',

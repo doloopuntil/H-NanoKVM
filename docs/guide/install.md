@@ -189,7 +189,8 @@ After writing, remove the card only after `sync` returns.
 3. Open `http://<address>` in a browser.
 4. Create the administrator account. There is no default `admin/admin`. The
    account's password also becomes the `root` password for SSH, which is on by
-   default; turn it off in **Settings > Network > Services** if you don't need it.
+   default; turn it off in **Settings > Network > Services** if you don't need it,
+   or register an SSH key there, which turns SSH password login off.
 5. Optional but recommended: turn on HTTPS (**Settings > Network > Services**), set up two-factor sign-in
    ([Sign-in and two-factor](sign-in.md)) and review the
    [firewall mode](firewall.md).

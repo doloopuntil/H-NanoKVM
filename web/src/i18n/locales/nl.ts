@@ -460,6 +460,29 @@ const nl = {
           description: 'Schakel SSH externe toegang in',
           tip: 'Stel een sterk wachtwoord in via Account > Wachtwoord voordat u deze optie inschakelt'
         },
+        sshKeys: {
+          section: 'SSH-sleutels',
+          passwordLogin: 'Inloggen met wachtwoord',
+          on: 'Aan',
+          off: 'Uit',
+          passwordLoginOnDesc:
+            'Gaat uit zodra er een SSH-sleutel is geregistreerd of tweefactorauthenticatie aan staat',
+          passwordLoginOffDesc:
+            'Uit zolang er een SSH-sleutel is geregistreerd of tweefactorauthenticatie aan staat, dus SSH accepteert alleen sleutels',
+          unnamed: 'Naamloze sleutel',
+          options: 'Opties',
+          remove: 'Verwijderen',
+          removeConfirm: 'Deze sleutel verwijderen?',
+          add: 'Sleutel toevoegen',
+          addDesc: 'Een computer met de bijbehorende privésleutel kan inloggen als root',
+          addButton: 'Toevoegen',
+          addTitle: 'SSH-sleutel toevoegen',
+          addHelp:
+            'Plak de openbare sleutel van de computer die verbinding maakt, bijvoorbeeld de inhoud van ~/.ssh/id_ed25519.pub. Het label is optioneel.',
+          labelPlaceholder: 'Label',
+          lockout:
+            'Zolang tweefactorauthenticatie aan staat, accepteert SSH alleen sleutels, en er is geen sleutel geregistreerd. Voeg een sleutel toe om via SSH in te loggen.'
+        },
         swap: {
           title: 'Swap',
           description: 'Een wisselbestand gebruiken als het geheugen opraakt',

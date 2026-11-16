@@ -450,6 +450,28 @@ const vi = {
           description: 'Kích hoạt SSH truy cập từ xa',
           tip: 'Đặt mật khẩu mạnh trong Tài khoản > Mật khẩu trước khi bật tùy chọn này'
         },
+        sshKeys: {
+          section: 'Khóa SSH',
+          passwordLogin: 'Đăng nhập bằng mật khẩu',
+          on: 'Bật',
+          off: 'Tắt',
+          passwordLoginOnDesc: 'Tắt khi đã đăng ký khóa SSH hoặc xác thực hai yếu tố được bật',
+          passwordLoginOffDesc:
+            'Tắt khi đã đăng ký khóa SSH hoặc xác thực hai yếu tố được bật, nên SSH chỉ nhận khóa',
+          unnamed: 'Khóa chưa đặt tên',
+          options: 'Tùy chọn',
+          remove: 'Gỡ',
+          removeConfirm: 'Gỡ khóa này?',
+          add: 'Thêm khóa',
+          addDesc: 'Máy tính có khóa riêng tương ứng có thể đăng nhập với quyền root',
+          addButton: 'Thêm',
+          addTitle: 'Thêm khóa SSH',
+          addHelp:
+            'Dán khóa công khai của máy tính sẽ kết nối, ví dụ nội dung của ~/.ssh/id_ed25519.pub. Nhãn là tùy chọn.',
+          labelPlaceholder: 'Nhãn',
+          lockout:
+            'Khi xác thực hai yếu tố được bật, SSH chỉ nhận khóa, nhưng chưa có khóa nào được đăng ký. Hãy thêm khóa để đăng nhập qua SSH.'
+        },
         swap: {
           title: 'Swap',
           description: 'Dùng tệp hoán đổi khi bộ nhớ sắp hết',

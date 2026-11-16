@@ -457,6 +457,29 @@ const nb = {
           description: 'Aktiver SSH ekstern tilgang',
           tip: 'Angi et sterkt passord under Konto > Passord før du aktiverer dette alternativet'
         },
+        sshKeys: {
+          section: 'SSH-nøkler',
+          passwordLogin: 'Pålogging med passord',
+          on: 'På',
+          off: 'Av',
+          passwordLoginOnDesc:
+            'Slås av når en SSH-nøkkel er registrert eller tofaktorautentisering er på',
+          passwordLoginOffDesc:
+            'Av mens en SSH-nøkkel er registrert eller tofaktorautentisering er på, så SSH godtar bare nøkler',
+          unnamed: 'Nøkkel uten navn',
+          options: 'Alternativer',
+          remove: 'Fjern',
+          removeConfirm: 'Fjerne denne nøkkelen?',
+          add: 'Legg til nøkkel',
+          addDesc: 'En datamaskin med den tilhørende private nøkkelen kan logge på som root',
+          addButton: 'Legg til',
+          addTitle: 'Legg til SSH-nøkkel',
+          addHelp:
+            'Lim inn den offentlige nøkkelen til datamaskinen som skal koble til, for eksempel innholdet i ~/.ssh/id_ed25519.pub. Etiketten er valgfri.',
+          labelPlaceholder: 'Etikett',
+          lockout:
+            'SSH godtar bare nøkler mens tofaktorautentisering er på, og ingen nøkkel er registrert. Legg til en nøkkel for å logge på via SSH.'
+        },
         swap: {
           title: 'Swap',
           description: 'Bruk en byttefil når minnet begynner å ta slutt',

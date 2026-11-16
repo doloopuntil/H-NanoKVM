@@ -458,6 +458,30 @@ const fr = {
           description: "Activer l'accès à distance SSH",
           tip: "Définissez un mot de passe fort dans Compte > Mot de passe avant d'activer cette option"
         },
+        sshKeys: {
+          section: 'Clés SSH',
+          passwordLogin: 'Connexion par mot de passe',
+          on: 'Activée',
+          off: 'Désactivée',
+          passwordLoginOnDesc:
+            "Se désactive dès qu'une clé SSH est enregistrée ou que l'authentification à deux facteurs est activée",
+          passwordLoginOffDesc:
+            "Désactivée tant qu'une clé SSH est enregistrée ou que l'authentification à deux facteurs est activée, SSH n'accepte alors que des clés",
+          unnamed: 'Clé sans nom',
+          options: 'Options',
+          remove: 'Retirer',
+          removeConfirm: 'Retirer cette clé?',
+          add: 'Ajouter une clé',
+          addDesc:
+            'Un ordinateur qui possède la clé privée correspondante peut se connecter en root',
+          addButton: 'Ajouter',
+          addTitle: 'Ajouter une clé SSH',
+          addHelp:
+            "Collez la clé publique de l'ordinateur qui se connectera, par exemple le contenu de ~/.ssh/id_ed25519.pub. Le libellé est facultatif.",
+          labelPlaceholder: 'Libellé',
+          lockout:
+            "Tant que l'authentification à deux facteurs est activée, SSH n'accepte que des clés, et aucune clé n'est enregistrée. Ajoutez une clé pour vous connecter en SSH."
+        },
         swap: {
           title: 'Swap',
           description: "Utiliser un fichier d'échange quand la mémoire manque",
