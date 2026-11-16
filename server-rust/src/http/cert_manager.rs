@@ -34,6 +34,8 @@ const FALLBACK_KEY: &str = "/etc/kvm/server.key";
 
 static RESOLVER: OnceLock<Arc<CertResolver>> = OnceLock::new();
 static BUSY: AtomicBool = AtomicBool::new(false);
+/// The settings name Let's Encrypt or Tailscale as the source.
+static MANAGED: AtomicBool = AtomicBool::new(false);
 
 const DAY: u64 = 24 * 60 * 60;
 const RENEW_BEFORE: u64 = 30 * DAY;
@@ -180,7 +182,21 @@ fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<()> {
 }
 
 pub fn write_settings(settings: &Settings) -> Result<()> {
-    write_json(Path::new(SETTINGS_FILE), settings)
+    write_json(Path::new(SETTINGS_FILE), settings)?;
+    note_source(settings.source);
+    Ok(())
+}
+
+fn note_source(source: Source) {
+    MANAGED.store(source != Source::SelfSigned, Ordering::Release);
+}
+
+/// HTTPS serves a Let's Encrypt or Tailscale certificate that is not waiting for confirmation:
+/// the only case where a browser keeps HSTS, so the only one it is sent in.
+pub fn hsts_applies() -> bool {
+    RESOLVER.get().is_some()
+        && MANAGED.load(Ordering::Acquire)
+        && !crate::api::tls_switch::is_pending()
 }
 
 fn write_status(status: &Status) {
@@ -348,6 +364,7 @@ pub fn load_server_config(
 
 /// Check every hour for as long as the server runs; the plan decides whether anything is due.
 pub fn spawn(resolver: Arc<CertResolver>) {
+    note_source(read_settings().source);
     let _ = RESOLVER.set(resolver.clone());
     tokio::spawn(async move {
         // a crash during an order can leave the validation window open
