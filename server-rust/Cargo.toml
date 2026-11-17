@@ -14,7 +14,6 @@ async-stream = "0.3"
 async-trait = "0.1"
 axum = { version = "0.8", features = ["json", "multipart", "ws"] }
 base64 = "0.23"
-bcrypt = "0.19.3"
 bytes = "1"
 cipher = "0.4"
 # Already present in Cargo.lock as transitive dependencies of the webrtc/rcgen

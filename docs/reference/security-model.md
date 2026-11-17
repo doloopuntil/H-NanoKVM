@@ -28,7 +28,7 @@ behaviour is in the guides ([sign-in](../guide/sign-in.md),
 | Area | Control |
 | --- | --- |
 | First boot | No default credential. Without `/etc/kvm/pwd`, the UI asks for the first account. `security.allow_default_admin` stays off. |
-| Passwords | Argon2id for new passwords, bcrypt still accepted. Changing the password needs the current one and also sets the `root` password. A new password may not contain NUL, CR or LF (they cannot pass the two-line `passwd` input), and a user name may not contain control characters; existing passwords still verify. |
+| Passwords | Argon2id. Changing the password needs the current one and also sets the `root` password. A new password may not contain NUL, CR or LF (they cannot pass the two-line `passwd` input), and a user name may not contain control characters; existing passwords still verify. |
 | Sessions | Opaque in-memory sessions, per-device secret, revoked on logout and password change. Optional idle lock. At most 32 live sessions: a login drops the expired ones and, at the cap, revokes the one closest to expiry. The terminal, HID, MJPEG and H.264 direct sockets and the PicoClaw chat end with the login that opened them (logout, a password change or expiry). WebRTC peers are not tied to it. |
 | Two-factor | Optional TOTP with backup codes; every change needs the password and, once enrolled, a fresh code; `security.require_totp` confines an unenrolled session to enrolment. |
 | CSRF and origin | CSRF token (compared in constant time) plus `Origin`/`Referer` check on every state-changing request; an `Origin` or `Referer` that is not text is refused, not ignored. WebSockets check `Origin`. |

@@ -21,7 +21,7 @@ and every other session is signed out.
 
 ## What protects a session
 
-- New passwords are stored with Argon2id. Older bcrypt files are still accepted.
+- Passwords are stored with Argon2id.
 - Sessions are bound to a CSRF token and checked against the request's
   `Origin`. WebSockets check their `Origin` too.
 - Five wrong passwords from one address lock that address out for ten minutes.

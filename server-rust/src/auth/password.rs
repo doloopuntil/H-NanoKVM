@@ -195,23 +195,11 @@ fn hash_password_unchecked(password: &str) -> Result<String> {
 }
 
 pub fn verify_password(hash: &str, password: &str) -> Result<bool> {
-    if is_bcrypt_hash(hash) {
-        return bcrypt::verify(password, hash)
-            .map_err(|err| AppError::Config(format!("invalid bcrypt password hash: {err}")));
-    }
-
     let parsed = PasswordHash::new(hash)
         .map_err(|err| AppError::Config(format!("invalid password hash: {err}")))?;
     Ok(Argon2::default()
         .verify_password(password.as_bytes(), &parsed)
         .is_ok())
-}
-
-fn is_bcrypt_hash(hash: &str) -> bool {
-    matches!(
-        hash.as_bytes().get(..4),
-        Some(b"$2a$" | b"$2b$" | b"$2x$" | b"$2y$")
-    )
 }
 
 fn validate_username(username: &str) -> Result<()> {
@@ -382,10 +370,12 @@ mod tests {
     }
 
     #[test]
-    fn bcrypt_hash_verifies_for_legacy_go_accounts() {
-        let hash = bcrypt::hash("legacy password", 10).unwrap();
-        assert!(verify_password(&hash, "legacy password").unwrap());
-        assert!(!verify_password(&hash, "wrong password").unwrap());
+    fn a_bcrypt_hash_is_not_a_password_hash_any_more() {
+        let hash = "$2b$10$abcdefghijklmnopqrstuuRAWsEpyC2y0P6dgnXBvlnTK8ADgdSU.";
+        assert!(matches!(
+            verify_password(hash, "legacy password"),
+            Err(AppError::Config(_))
+        ));
     }
 
     fn store_with_account() -> (tempfile::TempDir, AccountStore) {
