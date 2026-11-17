@@ -1,0 +1,37 @@
+# A custom /boot/logo.bin; HDMI from the /proc/cvitek/vi_dbg fallback, then the
+# shared VI state, then stale shared state; resolution 0x0; quality buckets.
+i2c 5 0x3d
+input
+file /etc/kvm/hw beta\n
+file /boot/logo.bin \x05\x2a\x4f\x74\x99\xbe\xe3\x08\x2d\x52\x77\x9c\xc1\xe6\x0b\x30\x55\x7a\x9f\xc4\xe9\x0e\x33\x58\x7d\xa2\xc7\xec\x11\x36\x5b\x80
+file /kvmapp/kvm/now_fps 0\n
+file /kvmapp/kvm/type mjpeg\n
+file /kvmapp/kvm/qlty 59\n
+file /kvmapp/kvm/width 0\n
+file /kvmapp/kvm/height 0\n
+file /proc/cvitek/vi_dbg VIDevFPS: 60\nVIFPS: 60\n
+iface eth0 running 192.168.1.20
+route eth0 192.168.1.1
+at 3000
+file /kvmapp/kvm/qlty 74\n
+file /kvmapp/kvm/width 1280\n
+file /kvmapp/kvm/height 720\n
+at 6000
+file /kvmapp/kvm/qlty 89\n
+file /proc/cvitek/vi_dbg VIDevFPS: 0\nVIFPS: 0\n
+at 9000
+file /kvmapp/kvm/qlty 90\n
+file /kvmapp/kvm/type h264\n
+file /kvmapp/kvm/qlty 1499\n
+at 12000
+file /kvmapp/kvm/qlty 2499\n
+vi 30
+at 15000
+file /kvmapp/kvm/qlty 3499\n
+at 18000
+file /kvmapp/kvm/qlty 3500\n
+vi freeze
+at 60000
+file /kvmapp/kvm/type unknown\n
+at 63000
+end

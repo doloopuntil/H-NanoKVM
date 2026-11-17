@@ -1,0 +1,29 @@
+# Wi-Fi setup fails to connect: the AP restarts with a new key; a long press leaves
+# setup (S30wifi restart).
+i2c 5 0x3d
+input
+file /etc/kvm/hw beta\n
+file /kvmapp/kvm/now_fps 0\n
+file /kvmapp/kvm/type mjpeg\n
+file /kvmapp/kvm/qlty 80\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+file /sys/class/udc/4340000.usb/state configured\n
+file /sys/kernel/config/usb_gadget/g0/configs/c.1/hid.GS0
+vi 60
+iface eth0 running 192.168.1.20
+route eth0 192.168.1.1
+iface wlan0 up -
+at 2050
+key press 2000
+at 6500
+iface wlan0 running 10.20.30.1
+at 8500
+sta on
+at 10500
+file /kvmapp/kvm/wifi_try_connect
+sta off
+at 25050
+key press 2000
+at 32000
+end

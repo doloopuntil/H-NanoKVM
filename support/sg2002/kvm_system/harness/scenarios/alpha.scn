@@ -1,0 +1,14 @@
+# No /etc/kvm/hw (early "alpha" board): the OLED on bus 1, no key device.
+i2c 1 0x3d
+file /kvmapp/kvm/now_fps 0\n
+file /kvmapp/kvm/type mjpeg\n
+file /kvmapp/kvm/qlty 80\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+file /sys/class/udc/4340000.usb/state configured\n
+file /sys/kernel/config/usb_gadget/g0/configs/c.1/hid.GS0
+vi 60
+iface eth0 running 192.168.1.20
+route eth0 192.168.1.1
+at 5000
+end

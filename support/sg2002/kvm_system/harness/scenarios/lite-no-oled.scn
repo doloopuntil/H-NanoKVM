@@ -1,0 +1,23 @@
+# Lite: "beta" without an OLED (bus 5 present, nothing at 0x3d), no Wi-Fi module.
+# Only the markers and the web Wi-Fi hook are left.
+i2c 5 0x10
+input
+file /etc/kvm/hw beta\n
+file /etc/kvm/oled_exist
+file /etc/kvm/wifi_exist
+file /kvmapp/kvm/now_fps 0\n
+file /kvmapp/kvm/type mjpeg\n
+file /kvmapp/kvm/qlty 80\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+file /sys/class/udc/4340000.usb/state configured\n
+file /sys/kernel/config/usb_gadget/g0/configs/c.1/hid.GS0
+vi 60
+iface eth0 running 192.168.1.20
+route eth0 192.168.1.1
+at 2050
+key press 2000
+at 5500
+file /kvmapp/kvm/wifi_try_connect
+at 8000
+end
