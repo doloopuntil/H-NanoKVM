@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-15
+last-checked: 2026-11-17
 ---
 
 # Build and deploy the server
@@ -17,7 +17,7 @@ binary to the device. That binary starts the web server, but video capture will
 fail with:
 
 ```text
-load libkvm: Dynamic loading not supported
+failed to initialize libkvm: libkvm is linked only into the device build
 ```
 
 For hardware video, the Rust backend must be built with the `linked-libkvm`
@@ -28,7 +28,8 @@ server-rust/scripts/build-linked-libkvm.sh
 ```
 
 That script sets the NanoKVM dynamic loader, RPATH, sysroot libraries and headers,
-and the `linked-libkvm` feature expected by `server-rust/src/ffi/kvm.rs`.
+and the `linked-libkvm` feature expected by `server-rust/src/ffi/kvm.rs`. Without that feature
+(host builds and tests) the server has no video; it never loads `libkvm` at run time.
 
 ## Toolchain
 
