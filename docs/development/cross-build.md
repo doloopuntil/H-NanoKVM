@@ -174,8 +174,8 @@ RELRO or the T-Head extensions, has an RPATH or vector code, if `kvm_system` has
 an unexpected library, or if `libkvm.so` exports anything other than the
 functions in `support/sg2002/additional/kvm/libkvm.map`.
 
-Copy `libkvm.so` and `libkvm_mmf.so` into `server-rust/native/dl_lib/` before
-running the linked Rust build and packaging. `scripts/package-rust-kvmapp.sh`
+Copy `libkvm.so` and `libkvm_mmf.so` into `server-rust/native/dl_lib/` (not in git)
+before running the linked Rust build and packaging. `scripts/package-rust-kvmapp.sh`
 packages that directory as `/kvmapp/server/dl_lib`, and takes `kvm_system` from
 `build/native-libkvm/kvm_system` or `KVM_SYSTEM_SOURCE`. Never let packaging
 silently reuse an older native helper or old `libkvm` after changing source.

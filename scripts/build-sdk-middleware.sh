@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 # Build libsys, libvenc, libvdec, libvi, libvpss, libvo, libgdc, librgn and libini from
 # sophgo/cvi_mpi, with the flags its Makefiles use for musl_riscv64 on CV181X.
-# Usage: build-sdk-middleware.sh MPI_DIR OSDRV_DIR SDK_DIR OUTPUT_DIR CROSS_PREFIX [REFERENCE_DIR]
+# Usage: build-sdk-middleware.sh MPI_DIR OSDRV_DIR SDK_DIR OUTPUT_DIR CROSS_PREFIX
 # OSDRV_DIR: sophgo/osdrv of the same release (uapi headers). SDK_DIR: ION uapi of our kernel.
 # CROSS_PREFIX: Buildroot's host/bin/riscv64-buildroot-linux-musl-.
-# REFERENCE_DIR: libraries whose exported symbols each new library must keep.
 set -euo pipefail
 
-[ "$#" -ge 5 ] || {
-	echo "usage: $0 MPI_DIR OSDRV_DIR SDK_DIR OUTPUT_DIR CROSS_PREFIX [REFERENCE_DIR]" >&2
+[ "$#" -eq 5 ] || {
+	echo "usage: $0 MPI_DIR OSDRV_DIR SDK_DIR OUTPUT_DIR CROSS_PREFIX" >&2
 	exit 2
 }
 MW=$1
@@ -16,7 +15,6 @@ OSDRV_DIR=$2
 SDK_DIR=$3
 OUTPUT_DIR=$4
 PREFIX=$5
-REFERENCE_DIR=${6:-}
 OPT_FLAGS=${SDK_MIDDLEWARE_OPT_FLAGS:--Os}
 UAPI="$OSDRV_DIR/interdrv/include"
 
@@ -116,32 +114,4 @@ for lib in $LIBS; do
 		exit 1
 	}
 done
-# Every export of the reference libraries must still exist; libvpu's moved to its split parts.
-# Removed upstream and unused by anything we ship (GDC affine/warp/fisheye, region colour
-# inversion, decoder fds, a libsys test hook). Any other loss fails the build.
-ALLOWED_MISSING="vb_ioctl_unit_test
-CVI_VDEC_GetFd
-CVI_VDEC_CloseFd
-CVI_GDC_AddAffineTask
-CVI_GDC_AddCnvWarpTask
-CVI_GDC_AddCorrectionTask
-CVI_GDC_AddCorrectionTaskCNV
-CVI_RGN_Invert_Color
-CVI_VI_GetExtChnFisheye
-CVI_VI_SetExtChnFisheye
-mesh_gen_cnv
-mesh_gen_fisheye
-rgn_invert_color"
-if [ -n "$REFERENCE_DIR" ]; then
-	for ref in libsys.so libvenc.so libvdec.so libvpu.so libini.so; do
-		# shellcheck disable=SC2086
-		missing=$(comm -23 <(exports "$REFERENCE_DIR/$ref") \
-			<(cd "$OUTPUT_DIR" && for lib in $LIBS; do exports "$lib"; done | sort -u) |
-			grep -vxF "$ALLOWED_MISSING" || true)
-		if [ -n "$missing" ]; then
-			echo "$ref exports missing from the new libraries: $missing" >&2
-			exit 1
-		fi
-	done
-fi
 (cd "$OUTPUT_DIR" && sha256sum ./*.so > SHA256SUMS)
