@@ -61,7 +61,6 @@ typedef struct {
 	char wifi_ap_pass[AP_KEY_CHARS + 1] = {0};
     uint8_t oled_sleep_state = 0;	// 0:wakeup; 1:sleep;
 	int8_t reconvery_update = 0;	// 0:Undetected; 1:Needs Update; 2:Update finish; -1:not need to update
-	uint8_t ping_allow = 1;
 } kvm_sys_state_t;
 
 typedef struct {

@@ -21,11 +21,6 @@ NANOKVM_LOADER=/lib/ld-musl-riscv64.so.1
 KVM_SYSTEM_SOURCE_DIR=/kvmapp/kvm_system
 KVM_SYSTEM_LOG=/tmp/kvm_system.log
 KVM_SYSTEM_PID_FILE=/tmp/kvm-system.pid
-HWMON_SOURCE=/kvmapp/hwmon/nanokvm-hwmon
-HWMON_PID_FILE=/tmp/nanokvm-hwmon.pid
-HWMON_LOG=/tmp/nanokvm-hwmon.log
-HWMON_START_DELAY_SECS=20
-RUST_HWMON_FLAG=/etc/kvm/rust_hwmon_enabled
 SYSTEM_UPDATE_WATCHDOG_PID_FILE=/tmp/system-update-watchdog.pid
 SYSTEM_UPDATE_LOG=/tmp/system-update-watchdog.log
 SYSTEM_VERSION_FILE=/etc/kvm/system-version.json
@@ -219,33 +214,6 @@ stop_pid_file() {
 
 stop_watchdog() {
     stop_pid_file "$WATCHDOG_PID_FILE"
-}
-
-start_hwmon_shadow() {
-    [ -x "$HWMON_SOURCE" ] || return
-    [ -f "$HWMON_PID_FILE" ] && kill -0 "$(cat "$HWMON_PID_FILE" 2>/dev/null)" 2>/dev/null && return
-
-    : > "$HWMON_LOG" 2>/dev/null || HWMON_LOG=/dev/null
-    runtime_log "starting nanokvm-hwmon shadow monitor after ${HWMON_START_DELAY_SECS}s delay"
-    (
-        sleep "$HWMON_START_DELAY_SECS"
-        exec "$NANOKVM_LOADER" --library-path "$NANOKVM_NATIVE_LIBRARY_PATH" "$HWMON_SOURCE"
-    ) >"$HWMON_LOG" 2>&1 &
-    echo $! > "$HWMON_PID_FILE"
-}
-
-enable_rust_hwmon_state() {
-    [ -x "$HWMON_SOURCE" ] || return
-    mkdir -p /etc/kvm
-    : > "$RUST_HWMON_FLAG" 2>/dev/null || true
-    chmod 0600 "$RUST_HWMON_FLAG" 2>/dev/null || true
-}
-
-stop_hwmon_shadow() {
-    pidof nanokvm-hwmon >/dev/null 2>&1 && runtime_log "stopping nanokvm-hwmon shadow monitor"
-    stop_pid_file "$HWMON_PID_FILE"
-    killall nanokvm-hwmon 2>/dev/null || true
-    wait_process_exit nanokvm-hwmon >/dev/null 2>&1 || true
 }
 
 stop_system_update_watchdog() {
@@ -687,7 +655,6 @@ stop_runtime() {
     stop_app_update_watchdog
     stop_system_update_watchdog
     stop_watchdog
-    stop_hwmon_shadow
     stop_server_process || reboot_after_unrecoverable_server "runtime stop"
     stop_kvm_system_process || true
 }
@@ -697,7 +664,6 @@ start_runtime() {
     ensure_kvm_state_files
     install_system_update_public_key
     install_boot_scripts
-    enable_rust_hwmon_state
 
     start_kvm_system_runtime || runtime_log "continuing without kvm_system; watchdog will retry"
 
@@ -705,7 +671,6 @@ start_runtime() {
     start_watchdog
     start_system_update_watchdog
     start_app_update_watchdog
-    start_hwmon_shadow
 }
 
 case "$1" in

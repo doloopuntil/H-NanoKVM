@@ -214,7 +214,8 @@ Known exceptions:
   needed: Buildroot 2026.05.1 already carries it.
 - The DHCPv6 hook lets only an address literal reach `ip` or a `nameserver` line and only domain
   names reach `search`, and it removes the `/128` it added when the lease ends or changes.
-- The root hwmon helper writes its snapshot through a random exclusive temporary file in `/tmp`.
+- `kvm_system`, which drives the OLED and the button, reads the network state from `/proc` and
+  the interfaces themselves, without a shell or `ping`.
 - HID: a failed write resets the USB gadget only when the controller state says that can help
   (not while the host is off or asleep), and at most once a minute. An H.264 keyframe is
   requested at most once a second for all viewers.

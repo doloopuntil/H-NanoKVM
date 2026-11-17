@@ -109,7 +109,6 @@ require_dir /mnt/data
 require_regular /kvmapp/version
 require_regular /kvmapp/server/NanoKVM-Server
 require_regular /kvmapp/backends/NanoKVM-Server.rust
-require_regular /kvmapp/hwmon/nanokvm-hwmon
 require_regular /kvmapp/kvm_system/kvm_system
 require_regular /kvmapp/system/keys/system-update-signing.pub.pem
 if [ -n "$EXPECTED_UPDATE_KEY_ID" ]; then

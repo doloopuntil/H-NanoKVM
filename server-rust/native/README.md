@@ -224,8 +224,8 @@ GCC now builds the native code, and Buildroot installs its own `libstdc++` and `
 `/usr/lib`; GCC 14 inlines the byte-sized atomics, so nothing needs `libatomic`.
 
 Update 2026-11: `libc.so` and the T-Head loader are no longer extracted or shipped.
-The loader's riscv64 `__clone` misaligns thread stacks, so the server, `nanokvm-hwmon`
-and `kvm_system` run on Buildroot's musl 1.2.6 loader; see
+The loader's riscv64 `__clone` misaligns thread stacks, so the server and `kvm_system`
+run on Buildroot's musl 1.2.6 loader; see
 [riscv64 thread stack alignment](../../docs/development/riscv-musl-stack-alignment.md).
 
 `libsns_lt6911.so` was the 8th file checked, and its bytes differ (2,100 of

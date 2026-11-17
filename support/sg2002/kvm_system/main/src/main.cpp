@@ -158,7 +158,6 @@ void* thread_key_handle(void * arg)
 
 void* thread_sys_handle(void * arg)
 {
-	get_ping_allow_state();
     while(kvm_sys_state.sys_thread_running && !shutdown_requested)
     {
 		pthread_mutex_lock(&state_mutex);
@@ -168,15 +167,12 @@ void* thread_sys_handle(void * arg)
 			kvm_update_wifi_state();
 			// kvm_update_rndis_state();
 			// kvm_update_tailscale_state();
-			// sys_state
-			if(!kvm_update_passive_state_from_rust_hwmon()){
-				kvm_update_usb_state();
-				kvm_update_hdmi_state();
-				kvm_update_stream_fps();
-				kvm_update_hdmi_res();
-				kvm_update_stream_type();
-				kvm_update_stream_qlty();
-			}
+			kvm_update_usb_state();
+			kvm_update_hdmi_state();
+			kvm_update_stream_fps();
+			kvm_update_hdmi_res();
+			kvm_update_stream_type();
+			kvm_update_stream_qlty();
 			kvm_wifi_web_config_process();
 
 		} else if(kvm_sys_state.page == 1){
@@ -203,15 +199,14 @@ int main(int argc, char* argv[])
 	bool display_thread_started = false;
 	bool key_thread_started = false;
 
-	system("sync");
-
 	OLED_state = oled_exist();
 	if(OLED_state){
 		printf("oled exist\r\n");
-		system("touch /etc/kvm/oled_exist");
+		int fd = open("/etc/kvm/oled_exist", O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
+		if(fd >= 0) close(fd);
 	} else {
 		printf("oled not exist\r\n");
-		system("rm /etc/kvm/oled_exist");
+		unlink("/etc/kvm/oled_exist");
 	}
 
 	if(kvm_sys_state.sys_thread_running == 0){

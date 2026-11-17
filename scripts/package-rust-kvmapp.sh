@@ -8,7 +8,6 @@ KVMAPP_STAGE="$STAGE_DIR/kvmapp"
 OUT_DIR="${OUT_DIR:-$BUILD_DIR/artifacts}"
 RUST_TARGET="${RUST_TARGET:-}"
 RUST_BINARY="${RUST_BINARY:-}"
-HWMON_BINARY="${HWMON_BINARY:-}"
 WEB_DIST="${WEB_DIST:-$ROOT_DIR/web/dist}"
 APP_VERSION="${APP_VERSION:-}"
 ARTIFACT_NAME="${ARTIFACT_NAME:-nanokvm-kvmapp-rust.tar.gz}"
@@ -77,22 +76,8 @@ if [ -z "$RUST_BINARY" ]; then
   fi
 fi
 
-if [ -z "$HWMON_BINARY" ]; then
-  if [ -n "$RUST_TARGET" ]; then
-    HWMON_BINARY="$ROOT_DIR/server-rust/target/$RUST_TARGET/release/nanokvm-hwmon"
-  else
-    HWMON_BINARY="$ROOT_DIR/server-rust/target/release/nanokvm-hwmon"
-  fi
-fi
-
 if [ ! -x "$RUST_BINARY" ]; then
   echo "missing executable Rust backend: $RUST_BINARY" >&2
-  echo "run: make rust-app RUST_TARGET=<target>" >&2
-  exit 1
-fi
-
-if [ ! -x "$HWMON_BINARY" ]; then
-  echo "missing executable Rust hwmon helper: $HWMON_BINARY" >&2
   echo "run: make rust-app RUST_TARGET=<target>" >&2
   exit 1
 fi
@@ -103,7 +88,7 @@ if [ ! -f "$NATIVE_LIB_DIR/libkvm.so" ]; then
 fi
 
 rm -rf "$STAGE_DIR"
-mkdir -p "$KVMAPP_STAGE/server" "$KVMAPP_STAGE/backends" "$KVMAPP_STAGE/hwmon" "$OUT_DIR"
+mkdir -p "$KVMAPP_STAGE/server" "$KVMAPP_STAGE/backends" "$OUT_DIR"
 cp -R "$ROOT_DIR/kvmapp/." "$KVMAPP_STAGE/"
 restore_kvm_system_helper
 
@@ -122,8 +107,6 @@ cp "$RUST_BINARY" "$KVMAPP_STAGE/server/NanoKVM-Server"
 chmod 0755 "$KVMAPP_STAGE/server/NanoKVM-Server"
 cp "$RUST_BINARY" "$KVMAPP_STAGE/backends/NanoKVM-Server.rust"
 chmod 0755 "$KVMAPP_STAGE/backends/NanoKVM-Server.rust"
-cp "$HWMON_BINARY" "$KVMAPP_STAGE/hwmon/nanokvm-hwmon"
-chmod 0755 "$KVMAPP_STAGE/hwmon/nanokvm-hwmon"
 
 rm -f "$KVMAPP_STAGE/backends/NanoKVM-Server.go" \
   "$KVMAPP_STAGE/server/NanoKVM-Server.go" \
@@ -163,8 +146,6 @@ fi
   printf 'source: %s\n' "$(git -C "$ROOT_DIR" rev-parse --short HEAD 2>/dev/null || printf unknown)"
   printf 'rust_binary: kvmapp/server/NanoKVM-Server\n'
   printf 'rust_binary_sha256: %s\n' "$(sha256sum "$KVMAPP_STAGE/server/NanoKVM-Server" | awk '{print $1}')"
-  printf 'hwmon_binary: kvmapp/hwmon/nanokvm-hwmon\n'
-  printf 'hwmon_binary_sha256: %s\n' "$(sha256sum "$KVMAPP_STAGE/hwmon/nanokvm-hwmon" | awk '{print $1}')"
   printf 'rust_target: %s\n' "${RUST_TARGET:-host}"
   printf 'web_dist: kvmapp/server/web\n'
   printf 'app_version: %s\n' "$(cat "$KVMAPP_STAGE/version")"
