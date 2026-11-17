@@ -48,7 +48,6 @@ APP_UPDATE_PENDING_FILE=/etc/kvm/app-update-pending.json
 APP_UPDATE_WATCHDOG_PID_FILE=/tmp/app-update-watchdog.pid
 SENSOR_BUNDLE_DIR=/kvmapp/system/mnt-data
 SENSOR_DATA_DIR=/mnt/data
-LEGACY_NEW_APP_MARKER=/kvmapp/kvm_new_app
 BOOT_INIT_SCRIPTS="S00kmod S01fs S01syslogd S02klogd S02watchdog S03usbdev S15kvmhwd S30eth S30wifi S40firewall S45wireguard S49ntp S50avahi-daemon S50sshd S95nanokvm"
 OPTIONAL_BOOT_INIT_SCRIPTS="S98tailscaled"
 
@@ -58,42 +57,11 @@ runtime_log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') $message" >> /tmp/nanokvm-watchdog.log 2>/dev/null || true
 }
 
-cleanup_legacy_app_artifacts() {
-    mkdir -p /etc/kvm /kvmapp/kvm
-    rm -f \
-        /boot/logo.jpeg \
-        /etc/kvm/frame_detact \
-        /etc/init.d/S02udisk \
-        /etc/init.d/S04backlight \
-        /etc/init.d/S05tp \
-        /etc/init.d/S40bluetoothd \
-        /etc/init.d/S50ssdpd \
-        /kvmapp/kvm_system/kvm_stream 2>/dev/null || true
-
-    rm -rf /kvmapp/jpg_stream 2>/dev/null || true
-}
-
 install_optional_boot_scripts() {
     for name in $OPTIONAL_BOOT_INIT_SCRIPTS; do
         [ -e "/etc/init.d/$name" ] || continue
         install_boot_script "$name"
     done
-}
-
-cleanup_legacy_new_app_marker() {
-    [ -e "$LEGACY_NEW_APP_MARKER" ] || return
-
-    runtime_log "handling legacy kvm_new_app marker in S95nanokvm"
-    rmmod soph_saradc 2>/dev/null || true
-    rm -f /mnt/system/ko/soph_saradc.ko 2>/dev/null || true
-    [ -e /root/old/kvm_new_img ] && rm -rf /root/old 2>/dev/null || true
-    rm -f "$LEGACY_NEW_APP_MARKER" 2>/dev/null || true
-}
-
-cleanup_legacy_new_image_marker() {
-    [ -e /kvmapp/kvm_new_img ] || return
-    runtime_log "removed legacy kvm_new_img marker; DNS is managed by network config"
-    rm -f /kvmapp/kvm_new_img 2>/dev/null || true
 }
 
 wait_process_exit() {
@@ -729,9 +697,6 @@ start_runtime() {
     ensure_kvm_state_files
     install_system_update_public_key
     install_boot_scripts
-    cleanup_legacy_app_artifacts
-    cleanup_legacy_new_app_marker
-    cleanup_legacy_new_image_marker
     enable_rust_hwmon_state
 
     start_kvm_system_runtime || runtime_log "continuing without kvm_system; watchdog will retry"

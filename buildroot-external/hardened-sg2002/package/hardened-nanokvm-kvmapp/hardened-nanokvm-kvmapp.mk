@@ -32,11 +32,6 @@ define HARDENED_NANOKVM_KVMAPP_INSTALL_TARGET_CMDS
 		[ -f "$$script" ] || continue; \
 		$(INSTALL) -m 0755 "$$script" "$(TARGET_DIR)/etc/init.d/$$name"; \
 	done
-	rm -f $(TARGET_DIR)/etc/init.d/S02udisk \
-		$(TARGET_DIR)/etc/init.d/S04backlight \
-		$(TARGET_DIR)/etc/init.d/S05tp \
-		$(TARGET_DIR)/etc/init.d/S40bluetoothd \
-		$(TARGET_DIR)/etc/init.d/S50ssdpd
 	cp -a $(@D)/system/mnt-data/. $(TARGET_DIR)/mnt/data/
 	if [ -f $(TARGET_DIR)/mnt/data/sensor_cfg.ini.LT ]; then \
 		cp $(TARGET_DIR)/mnt/data/sensor_cfg.ini.LT $(TARGET_DIR)/mnt/data/sensor_cfg.ini; \
