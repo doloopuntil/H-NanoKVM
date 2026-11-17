@@ -43,3 +43,6 @@ command before `| grep`; the harness applies the grep itself.
 
 Not covered: real I2C timing and errors in the middle of a frame, the mounting of the
 panels (`render.py` shows controller RAM), thread interleavings other than the one above.
+
+`../rust/tests/golden.rs` replays the same scenarios against the Rust port
+(`cargo test` in `../rust`, also on macOS) and compares with these goldens.
