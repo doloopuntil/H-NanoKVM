@@ -3,7 +3,11 @@
 This directory contains the native NanoKVM runtime pieces used by the Rust
 backend.
 
-- `dl_lib/` is packaged to the device as `/kvmapp/server/dl_lib`.
+- `dl_lib/` is packaged to the device as `/kvmapp/server/dl_lib`. It holds `libkvm.so` and
+  `libkvm_mmf.so` for local links, and the prebuilt `libsys`, `libvenc`, `libvdec`, `libvpu` and
+  `libini` that the middleware build checks its exports against. CI replaces all of them with
+  builds from source and drops `libvpu.so`; the image build fails unless `dl_lib` holds exactly
+  those builds (`libkvm`, `libkvm_mmf` and the nine middleware libraries).
 - `include/` contains the C ABI header used by the Rust FFI bindings.
 
 The corresponding native sources are under `support/sg2002/additional/kvm` and
@@ -174,27 +178,15 @@ user space and the drivers agree on every shared struct. Our changes on top:
   packets kept in that carveout, and the 5.10.265 build fixes
   (`buildroot-external/hardened-sg2002/board/sg2002/kernel/patches/sophgo-osdrv-1b3a496-*.patch`).
 
-## dl_lib's CVI/ISP/audio middleware: no longer extracted from raw.12
+## dl_lib's prebuilt middleware: removed
 
-The ~32 CVI/ISP/audio middleware libraries checked into this directory
-(`libcvi_*`, `libisp*`, `libae`/`libaf`/`libawb`, `libaac*`, `libcli.so`,
-`libini.so`, `libmisc.so`, `libosdc.so`, `libsys.so`, `libtinyalsa.so`,
-`libvdec.so`/`libvenc.so`/`libvpu.so`, etc.) have been in git since the
-`RC5` commit, long before this fork started sourcing a build from the
-published raw.12 image. Diffed byte-for-byte against raw.12's own
-`/kvmapp/server/dl_lib`: every one of them is identical. The CI pipeline
-used to extract them wholesale from raw.12 anyway (redundant but
-harmless, since the bytes matched) via
-`hardened-sg2002-vendor-runtime.mk`'s `cp -a kvmapp-dl-lib/.` overlay,
-which ran *after* `hardened-nanokvm-kvmapp.mk` had already installed
-this directory's own content.
-
-`system-image.yml`'s "Extract vendor runtime staging bundle" step
-no longer dumps `/kvmapp/server/dl_lib` wholesale -- the 5 files this
-directory doesn't carry (`libc.so` and the 4 GCC runtime libs) no longer
-come from raw.12 at all; see below. Final image content is unchanged
-(proven byte-identical either way); raw.12 is just no longer asked for
-content this repo already has verified in git.
+`dl_lib` used to carry about 30 prebuilt CVI, ISP and audio libraries from the vendor
+image. The ISP and 3A libraries went with the ISP; on 2026-11-17 the remaining 19 that
+nothing loads went too (`libaac*`, `libcli`, `libcvi_RES1`, `libcvi_VoiceEngine`,
+`libcvi_audio`, `libcvi_ive`, `libcvi_ssp`, `libcvi_vqe`, `libdnvqe`, `libjson-c`,
+`libmipi_tx`, `libmisc`, `libosdc`, `libraw_dump`, `libtinyalsa`): no shipped library,
+`kvm_system`, `nanokvm-hwmon` or the server lists or names them, and on a running Lite the
+server maps only the source-built set. That was 528 KB of the 1.0 MB `dl_lib`.
 
 ## libc.so, GCC runtime, loaders, and libsns_lt6911.so: closed -- from our own build
 

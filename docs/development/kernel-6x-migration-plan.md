@@ -226,14 +226,10 @@ extracted or shipped; the workflow still extracts `libc.so` and `libgcc_s.so.1` 
 link-time sysroot for the server, and the vendor `libstdc++.so.6.0.28` and friends
 stay in `dl_lib`.
 
-Still binary or unlicensed: audio/misc libraries checked into `dl_lib/`
-(`libaac*`, `libcvi_audio`, `libcvi_VoiceEngine`, `libcvi_ssp`, `libcvi_vqe`,
-`libdnvqe`, `libcvi_RES1`, `libcvi_ive`, `libosdc`, `libmisc`, `libmipi_tx`,
-`libraw_dump`, `libcli`, `libtinyalsa`), 4 OpenCV modules from upstream
-sipeed/NanoKVM, the video **codec firmware** (`sg2002_codec_fw`, unlicensed,
-installed to `/usr/share/fw_vcodec`) and the AIC8800 firmware. The checked-in
-copies of `libkvm`, `libsys`, `libvenc`... in `dl_lib/` may be leftovers; check
-before relying on them.
+Still binary or unlicensed: the video **codec firmware** (`sg2002_codec_fw`, unlicensed,
+installed to `/usr/share/fw_vcodec`) and the AIC8800 firmware. (Later: the audio
+and helper libraries in `dl_lib/` and OpenCV are gone; `dl_lib` ships only what CI
+builds from source, see `server-rust/native/README.md`.)
 
 ## 4. The licheerv tree (what it gives us)
 
