@@ -31,9 +31,8 @@ extern "C" {
 #define ERROR_RES                       4
 
 void kvmv_init(uint8_t _debug_info_en);
-void set_venc_auto_recyc(uint8_t _enable);
 /**********************************************************************************
- * @name    kvmv_read_img
+ * @name    kvmv_read_img_alloc
  * @author  Sipeed BuGu
  * @date    2024/10/25
  * @version R1.0
@@ -59,16 +58,13 @@ void set_venc_auto_recyc(uint8_t _enable);
          4: Acquire H264 encoded images(P)
          5: IMG not changed
  **********************************************************************************/
-int kvmv_read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _qlty, uint8_t** _pp_kvm_data, uint32_t* _p_kvmv_data_size);
 /* Returns memory for an encoded frame of `size` bytes, or NULL to drop it. */
 typedef uint8_t *(*kvmv_alloc_fn)(void *ctx, uint32_t size);
-/* As kvmv_read_img, but the frame is copied once, straight from the encoder into memory from
- * alloc(ctx, size), which the caller owns; free_kvmv_data is not used. alloc is called at most
- * once, under the capture lock; *_p_kvmv_data_size is the frame size, 0 when none. */
+/* The frame is copied once, straight from the encoder into memory from alloc(ctx, size), which
+ * the caller owns. alloc is called at most once, under the capture lock; *_p_kvmv_data_size is
+ * the frame size, 0 when none. */
 int kvmv_read_img_alloc(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _qlty,
 			kvmv_alloc_fn alloc, void *ctx, uint32_t* _p_kvmv_data_size);
-int free_kvmv_data(uint8_t ** _pp_kvm_data);
-void free_all_kvmv_data();
 void kvmv_set_h264_fps(uint8_t _fps);
 // Asks for an IDR on the running channel; requests are coalesced to one per 500 ms.
 void kvmv_request_keyframe(void);

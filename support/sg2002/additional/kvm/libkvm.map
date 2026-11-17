@@ -3,16 +3,12 @@
 	global:
 		kvmv_init;
 		kvmv_deinit;
-		kvmv_read_img;
 		kvmv_read_img_alloc;
 		kvmv_set_h264_fps;
 		kvmv_request_keyframe;
 		kvmv_hdmi_control;
 		kvmv_hdmi_signal_active;
-		free_kvmv_data;
-		free_all_kvmv_data;
 		set_frame_detact;
-		set_venc_auto_recyc;
 	local:
 		*;
 };
