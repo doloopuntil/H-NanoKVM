@@ -1,0 +1,36 @@
+# PCIe board: Ethernet through states 0-3, USB, HDMI and stream status; no Wi-Fi module.
+i2c 5 0x3c
+input
+file /etc/kvm/hw pcie\n
+file /kvmapp/kvm/now_fps 0\n
+file /kvmapp/kvm/type mjpeg\n
+file /kvmapp/kvm/qlty 80\n
+file /kvmapp/kvm/width 0\n
+file /kvmapp/kvm/height 0\n
+file /sys/class/udc/4340000.usb/state not attached\n
+iface eth0 down -
+at 3000
+iface eth0 running -
+at 6000
+iface eth0 running 192.168.1.20
+at 9000
+route eth0 192.168.1.1
+at 12000
+file /sys/class/udc/4340000.usb/state configured\n
+file /sys/kernel/config/usb_gadget/g0/configs/c.1/hid.GS0
+vi 60
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+file /kvmapp/kvm/now_fps 30\n
+at 15000
+file /kvmapp/kvm/type h264\n
+file /kvmapp/kvm/qlty 3000\n
+at 18000
+iface eth0 running 10.0.0.123
+route eth0 10.0.0.1
+at 24000
+iface eth0 down -
+route eth0 -
+vi 0
+at 30000
+end

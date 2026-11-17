@@ -1,0 +1,33 @@
+# PCIe: Short presses toggle the blank sub-page; OLED auto-sleep from /etc/kvm/oled_sleep:
+# 10 s sleeps, a key or a status change wakes, under 10 never sleeps, over 86400 means 30.
+i2c 5 0x3c
+input
+file /etc/kvm/hw pcie\n
+file /kvmapp/kvm/now_fps 0\n
+file /kvmapp/kvm/type mjpeg\n
+file /kvmapp/kvm/qlty 80\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+file /sys/class/udc/4340000.usb/state configured\n
+file /sys/kernel/config/usb_gadget/g0/configs/c.1/hid.GS0
+vi 60
+iface eth0 running 192.168.1.20
+route eth0 192.168.1.1
+at 2050
+key press 200
+at 4050
+key press 300
+at 6050
+file /etc/kvm/oled_sleep 10\n
+at 20550
+key press 100
+at 33000
+file /kvmapp/kvm/qlty 30\n
+at 47000
+file /etc/kvm/oled_sleep 5\n
+at 60000
+file /etc/kvm/oled_sleep 999999\n
+at 95000
+rm /etc/kvm/oled_sleep
+at 97000
+end
