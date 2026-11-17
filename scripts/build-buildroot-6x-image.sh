@@ -152,9 +152,12 @@ build_stage() {
 		debugfs -R "stat /usr/lib/$lib" "$ROOTFS" 2>/dev/null | grep -q "Type: symlink\|Type: regular" || \
 			die "rootfs lacks /usr/lib/$lib"
 	done
-	debugfs -R "ls /kvmapp/server/dl_lib" "$ROOTFS" 2>/dev/null | \
-		grep -Eq 'libstdc\+\+|libgcc_s|libatomic|libgomp|libopencv' && \
-		die "dl_lib ships a GCC runtime library or OpenCV"
+	# dl_lib holds exactly what this pipeline builds from source: no prebuilt or runtime library
+	expected_dl_lib="libgdc.so libini.so libkvm.so libkvm_mmf.so librgn.so libsys.so libvdec.so \
+libvenc.so libvi.so libvo.so libvpss.so"
+	shipped_dl_lib=$(debugfs -R "ls -p /kvmapp/server/dl_lib" "$ROOTFS" 2>/dev/null | \
+		awk -F/ '$6 != "" && $6 != "." && $6 != ".." {print $6}' | LC_ALL=C sort | xargs)
+	[ "$shipped_dl_lib" = "$expected_dl_lib" ] || die "dl_lib is not the CI-built set: $shipped_dl_lib"
 	# libsys maps media buffers through /dev/cvi-sys, never /dev/mem
 	debugfs -R "dump /kvmapp/server/dl_lib/libsys.so $REPORT_DIR/libsys.so" "$ROOTFS" >/dev/null 2>&1
 	grep -aq '/dev/cvi-sys' "$REPORT_DIR/libsys.so" || die "libsys.so does not map through /dev/cvi-sys"
