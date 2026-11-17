@@ -28,14 +28,12 @@ are still accepted.
 | `logger.file` | `stdout` | |
 | `stun` | empty | STUN server (`host:port`) for H.264 WebRTC. Empty or `disable`: none, and the device contacts no outside server; a viewer on the same network, WireGuard or Tailscale needs none. Set one only for viewers behind another NAT. |
 | `turn.turn_addr`, `turn.turn_user`, `turn.turn_cred` | empty | Optional TURN server for WebRTC. |
-| `compatibility_mode` | `false` | |
 
 ## Authentication and sessions
 
 | Field | Default | Meaning |
 | --- | --- | --- |
 | `authentication` | `enable` | `disable` turns sign-in off, but only together with `security.allow_auth_disable: true`. For local web UI development only. |
-| `jwt.secret_key` | empty | Upstream field, unused: sessions are opaque random tokens kept in memory. |
 | `jwt.refresh_token_duration` | `2678400` | Seconds. |
 | `jwt.revoke_tokens_on_logout` | `true` | |
 | `security.login_max_failures` | `5` | Failed sign-ins per address and user before a lockout; an address is also locked after four times as many failures across all users. |

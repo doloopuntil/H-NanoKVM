@@ -80,7 +80,7 @@ The full SD image is built from source in CI; see
 - Static frontend serving from configured `paths.web_root`.
 - Existing `code/msg/data` API response envelope.
 - Auth setup, login, logout, account, password check/change.
-- Argon2id password hashing for new writes and existing bcrypt verification.
+- Argon2id password hashing.
 - Session cookies compatible with the current React auth guard.
 - CSRF token binding, Origin checks, security headers, login lockout, and
   logout/password-change session revocation.

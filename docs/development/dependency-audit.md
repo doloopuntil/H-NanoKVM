@@ -166,7 +166,7 @@ was compile-checked on the host only.
 2. Boot, sign-in, HTTPS (rustls and webpki update), uploads (multer/axum update), Direct
    and WebRTC video, HID, and a Let's Encrypt issue/renew (instant-acme with the new rustls).
 3. nix 0.31: mounts, signals, terminal/pty, network ioctls.
-4. Legacy bcrypt password verification, and certificate generation (`generate_self_signed_cert`).
+4. Certificate generation (`generate_self_signed_cert`). (bcrypt verification was removed on 2026-11-17.)
 5. webrtc 0.21: video in Chrome, Firefox and Safari, a second viewer joining (keyframe on
    PLI), ICE over eth0, USB and WireGuard, STUN/TURN, and reconnect after a network drop.
 6. serde_norway: the server config loads and saves unchanged, and PicoClaw's

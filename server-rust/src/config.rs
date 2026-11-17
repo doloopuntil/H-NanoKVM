@@ -26,7 +26,6 @@ pub struct Config {
     pub turn: Turn,
     pub security: Security,
     pub paths: Paths,
-    pub compatibility_mode: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,9 +52,6 @@ pub struct Logger {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Jwt {
-    pub secret_key: String,
-    #[serde(alias = "secretKey")]
-    pub secret_key_legacy: String,
     #[serde(alias = "refreshTokenDuration")]
     pub refresh_token_duration: u64,
     #[serde(alias = "revokeTokensOnLogout")]
@@ -139,7 +135,6 @@ impl Default for Config {
             turn: Turn::default(),
             security: Security::default(),
             paths: Paths::default(),
-            compatibility_mode: false,
         }
     }
 }
@@ -174,8 +169,6 @@ impl Default for Logger {
 impl Default for Jwt {
     fn default() -> Self {
         Self {
-            secret_key: String::new(),
-            secret_key_legacy: String::new(),
             refresh_token_duration: 2_678_400,
             revoke_tokens_on_logout: true,
         }
@@ -230,16 +223,12 @@ impl Config {
         let path = std::env::var("NANOKVM_CONFIG")
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from(DEFAULT_CONFIG_PATH));
-        let mut config = if path.exists() {
-            let data = fs::read_to_string(&path)?;
-            serde_norway::from_str::<Config>(&data).map_err(|err| {
-                AppError::Config(format!("failed to parse {}: {err}", path.display()))
-            })?
-        } else {
-            Config::default()
-        };
-        config.normalize_legacy_fields();
-        Ok(config)
+        if !path.exists() {
+            return Ok(Config::default());
+        }
+        let data = fs::read_to_string(&path)?;
+        serde_norway::from_str::<Config>(&data)
+            .map_err(|err| AppError::Config(format!("failed to parse {}: {err}", path.display())))
     }
 
     pub fn write(&self) -> Result<()> {
@@ -322,15 +311,6 @@ impl Config {
                 proxies = ?trusted.entries(),
                 "forwarded client address and scheme are trusted from these proxies"
             );
-        }
-    }
-
-    fn normalize_legacy_fields(&mut self) {
-        if self.jwt.secret_key.is_empty() && !self.jwt.secret_key_legacy.is_empty() {
-            self.jwt.secret_key = self.jwt.secret_key_legacy.clone();
-        }
-        if self.paths.update_cache_dir == *"/root/.kvmcache" {
-            self.paths.update_cache_dir = PathBuf::from("/data/.hardened-kvmcache");
         }
     }
 }
