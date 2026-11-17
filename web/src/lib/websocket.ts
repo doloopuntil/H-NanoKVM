@@ -1,9 +1,7 @@
-import { IMessageEvent, w3cwebsocket as W3cWebSocket } from 'websocket';
-
 import { getBaseUrl } from '@/lib/service.ts';
 
-type MessageHandler = (message: IMessageEvent) => void;
-type SendData = number[] | ArrayBuffer | Uint8Array;
+type MessageHandler = (message: globalThis.MessageEvent) => void;
+type SendData = number[] | ArrayBuffer | Uint8Array<ArrayBuffer>;
 
 export enum MessageEvent {
   Heartbeat = 0,
@@ -40,7 +38,7 @@ export function reconnectDelay(
 
 export class WsClient {
   private readonly options: Required<WsClientOptions>;
-  private instance: W3cWebSocket | null = null;
+  private instance: WebSocket | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempts = 0;
@@ -101,24 +99,20 @@ export class WsClient {
       return false;
     }
 
-    if (data instanceof ArrayBuffer || (data as unknown) instanceof Uint8Array) {
-      this.instance.send(data);
-    } else {
-      this.instance.send(JSON.stringify(data));
-    }
+    this.instance.send(Array.isArray(data) ? JSON.stringify(data) : data);
 
     return true;
   }
 
   public get isConnected(): boolean {
-    return this.instance?.readyState === W3cWebSocket.OPEN;
+    return this.instance?.readyState === WebSocket.OPEN;
   }
 
   private createConnection(): void {
     this.cleanup();
     this.discardInstance();
 
-    const socket = new W3cWebSocket(this.options.url);
+    const socket = new WebSocket(this.options.url);
     this.instance = socket;
     socket.binaryType = 'arraybuffer';
 
@@ -131,10 +125,10 @@ export class WsClient {
     socket.onclose = () => {
       if (socket === this.instance) this.handleClose();
     };
-    socket.onerror = (error: Error) => {
+    socket.onerror = (error: Event) => {
       if (socket === this.instance) this.handleError(error);
     };
-    socket.onmessage = (message: IMessageEvent) => {
+    socket.onmessage = (message: globalThis.MessageEvent) => {
       if (socket === this.instance) this.handleMessage(message);
     };
   }
@@ -152,7 +146,7 @@ export class WsClient {
     socket.onclose = () => {};
     socket.onerror = () => {};
     socket.onmessage = () => {};
-    if (socket.readyState === W3cWebSocket.CONNECTING || socket.readyState === W3cWebSocket.OPEN) {
+    if (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN) {
       socket.close();
     }
   }
@@ -167,11 +161,11 @@ export class WsClient {
     this.scheduleReconnect();
   }
 
-  private handleError(error: Error): void {
+  private handleError(error: Event): void {
     console.error('[WebSocket] Error:', error);
   }
 
-  private handleMessage(message: IMessageEvent): void {
+  private handleMessage(message: globalThis.MessageEvent): void {
     try {
       const data = JSON.parse(message.data as string);
       const handlers = this.eventHandlers.get(data.type);

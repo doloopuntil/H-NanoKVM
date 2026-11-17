@@ -3,7 +3,6 @@ import { notification, Spin } from 'antd';
 import clsx from 'clsx';
 import { useAtom, useAtomValue } from 'jotai';
 import { useTranslation } from 'react-i18next';
-import { w3cwebsocket as W3cWebSocket } from 'websocket';
 
 import * as storage from '@/lib/localstorage.ts';
 import { getBaseUrl } from '@/lib/service.ts';
@@ -54,7 +53,7 @@ export const H264Webrtc = () => {
 
   useEffect(() => {
     const url = `${getBaseUrl('ws')}/api/stream/h264`;
-    const ws = new W3cWebSocket(url);
+    const ws = new WebSocket(url);
     const videoElement = videoRef.current;
 
     let video: RTCPeerConnection | null = null;
