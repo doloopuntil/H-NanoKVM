@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-07
+last-checked: 2026-11-17
 ---
 
 # Rust backend
@@ -15,6 +15,14 @@ and its configuration in [Server configuration](../reference/config.md).
 The SG2002 has one CPU core, so the Tokio runtime has one worker thread. A
 blocking call in an async handler (a HID write that waits for the host, a large
 file read) stalls every other request: run such work with `spawn_blocking`.
+
+Keyboard and mouse input (`/api/ws`) runs apart from that worker. Under the video and an
+upload the worker can take 100 ms to come back to a socket, while a mostly idle thread gets
+the CPU within a few milliseconds. So once the WebSocket is upgraded, `ws/input.rs` moves
+its connection (TLS or plain TCP) to a single-threaded runtime on the `hid-input` thread.
+The handshake, the session and origin checks stay on the main worker. Measured on a Lite
+with the stream open during an upload: a 5 ms timer on the input thread was late by 1.3 ms
+(median) and 9 ms at worst, against 94 and 234 ms on the main worker.
 
 ## Build
 

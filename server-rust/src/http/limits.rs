@@ -140,6 +140,10 @@ impl<S> Guarded<S> {
     pub fn get_ref(&self) -> &S {
         &self.io
     }
+
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.io
+    }
 }
 
 impl<S: AsyncRead + Unpin> AsyncRead for Guarded<S> {

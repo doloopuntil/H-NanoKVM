@@ -148,8 +148,9 @@ All on the main core or in fixed-function blocks; none needs the C906L.
 - **MJPEG tiles**: the IVE finds changed 128x128 tiles and only those are sent over a WebSocket.
   NanoKVM-OS measured 40 to 2.9 Mbit/s and 88% to 42% CPU with a stopwatch on screen. Our osdrv tree
   already builds `interdrv/ive`. A feature of its own: the browser has to assemble the picture.
-- **Upload scheduling**: the upload on a lower-priority thread so the video keeps its turns. A second
-  core does not fix starvation on the first.
+- **Upload scheduling**: done for input instead (2026-11-17). The delay under an upload was work
+  queued on the one Tokio worker, not a lack of CPU, so keyboard and mouse moved to a thread of
+  their own ([Rust backend](backend.md)). A second core would not have helped.
 - **Splice uploads to the file** with kTLS receive, to skip the copy through the server. The upload
   is still CPU-bound (2-5 MB/s next to a streaming viewer), but a copy costs ~1.6 ms per MB here, so
   this saves a few percent at most. Not while kernel TLS is out.
