@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useAtom } from 'jotai';
-import { Helmet, HelmetData } from 'react-helmet-async';
 
 import { getWebTitle } from '@/api/vm.ts';
 import { existToken } from '@/lib/cookie.ts';
@@ -9,12 +8,9 @@ import { webTitleAtom } from '@/jotai/settings.ts';
 
 type HeadProps = {
   title?: string;
-  description?: string;
 };
 
-const helmetData = new HelmetData({});
-
-export const Head = ({ title = '', description = '' }: HeadProps = {}) => {
+export const Head = ({ title = '' }: HeadProps = {}) => {
   const [webTitle, setWebTitle] = useAtom(webTitleAtom);
 
   useEffect(() => {
@@ -27,13 +23,10 @@ export const Head = ({ title = '', description = '' }: HeadProps = {}) => {
     });
   }, [setWebTitle]);
 
-  return (
-    <Helmet
-      helmetData={helmetData}
-      title={webTitle ? webTitle : title ? `${title} - ${HARDENED_NAME}` : undefined}
-      defaultTitle={webTitle}
-    >
-      <meta name="description" content={description} />
-    </Helmet>
-  );
+  const pageTitle = webTitle || (title ? `${title} - ${HARDENED_NAME}` : '');
+  useEffect(() => {
+    if (pageTitle) document.title = pageTitle;
+  }, [pageTitle]);
+
+  return null;
 };

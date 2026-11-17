@@ -3,7 +3,6 @@ import { StyleProvider } from '@ant-design/cssinjs';
 import { ConfigProvider, Spin, theme } from 'antd';
 import ReactDOM from 'react-dom/client';
 import { ErrorBoundary } from 'react-error-boundary';
-import { HelmetProvider } from 'react-helmet-async';
 import { RouterProvider } from 'react-router-dom';
 
 import { MainError } from './components/main-error.tsx';
@@ -41,13 +40,11 @@ const renderApp = () => {
         }
       >
         <ErrorBoundary FallbackComponent={MainError}>
-          <HelmetProvider>
-            <StyleProvider layer>
-              <ConfigProvider theme={themeConfig}>
-                <RouterProvider router={router} />
-              </ConfigProvider>
-            </StyleProvider>
-          </HelmetProvider>
+          <StyleProvider layer>
+            <ConfigProvider theme={themeConfig}>
+              <RouterProvider router={router} />
+            </ConfigProvider>
+          </StyleProvider>
         </ErrorBoundary>
       </Suspense>
     </React.StrictMode>
