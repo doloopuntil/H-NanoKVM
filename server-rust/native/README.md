@@ -3,11 +3,10 @@
 This directory contains the native NanoKVM runtime pieces used by the Rust
 backend.
 
-- `dl_lib/` is packaged to the device as `/kvmapp/server/dl_lib`. It holds `libkvm.so` and
-  `libkvm_mmf.so` for local links, and the prebuilt `libsys`, `libvenc`, `libvdec`, `libvpu` and
-  `libini` that the middleware build checks its exports against. CI replaces all of them with
-  builds from source and drops `libvpu.so`; the image build fails unless `dl_lib` holds exactly
-  those builds (`libkvm`, `libkvm_mmf` and the nine middleware libraries).
+- `dl_lib/` is not in git. CI fills it with that run's builds of `libkvm`, `libkvm_mmf` and
+  the nine middleware libraries; the server links against them and the package installs them
+  as `/kvmapp/server/dl_lib`, and the image build fails unless it holds exactly those. For a
+  local device build, copy `libkvm.so` and `libkvm_mmf.so` from a device or a CI run into it.
 - `include/` contains the C ABI header used by the Rust FFI bindings.
 
 The corresponding native sources are under `support/sg2002/additional/kvm` and
@@ -30,9 +29,7 @@ class four OpenCV modules (`core`, `imgcodecs`, `imgproc`, `highgui`; `libgomp` 
 `core`), after six others (`video`, `dnn`, `calib3d`, `features2d`, `flann`, `protobuf`) had
 been dropped as unused. `libkvm` itself never called OpenCV. It now drives the VI channel
 and the JPEG encoder through `libkvm_mmf.so` directly (`src/kvm_capture.cpp`) and talks to
-the LT6911 over i2c-dev, and the image ships no OpenCV library. The checked-in `libkvm.so`
-and `libkvm_mmf.so` in `dl_lib/` are CI builds of this source, kept so the server links
-locally; CI replaces them with fresh builds.
+the LT6911 over i2c-dev, and the image ships no OpenCV library.
 
 ## libkvm_mmf.so statically embeds its own copy of the LT6911 driver
 
@@ -159,11 +156,10 @@ boot, with none of them on the library path.
 
 CI builds `libsys.so`, `libvenc.so`, `libvdec.so`, `libvi.so`, `libvpss.so`,
 `libvo.so`, `libgdc.so`, `librgn.so` and `libini.so` from public `sophgo/cvi_mpi`
-with `scripts/build-sdk-middleware.sh`, and ships those instead of the checked-in
-copies. The checked-in `libvpu.so` is split into `libvi`/`libvpss`/`libvo`/
-`libgdc`/`librgn` and is removed from the image. The checked-in copies are
-MaixCDK's prebuilts: the source build must keep every symbol they export,
-except a short list in the script that Sophgo removed and nothing here uses.
+with `scripts/build-sdk-middleware.sh`. MaixCDK's prebuilt `libvpu.so` is split there
+into `libvi`/`libvpss`/`libvo`/`libgdc`/`librgn`. Until 2026-11-17 the build also checked
+that the source libraries kept every symbol MaixCDK's prebuilts exported; with the
+prebuilts gone from git and only source builds in the image, that check went too.
 The libraries, the headers and sample code `libkvm_mmf.so` compiles against,
 the sensor list (`sophgo/SensorSupportList`) and every video kernel module come
 from one Sophgo release (2026-08-24: `cvi_mpi` 693a72a, `osdrv` 1b3a496), so
@@ -181,7 +177,7 @@ user space and the drivers agree on every shared struct. Our changes on top:
 ## dl_lib's prebuilt middleware: removed
 
 `dl_lib` used to carry about 30 prebuilt CVI, ISP and audio libraries from the vendor
-image. The ISP and 3A libraries went with the ISP; on 2026-11-17 the remaining 19 that
+image; none is left, and the directory itself left git with them. The ISP and 3A libraries went with the ISP; on 2026-11-17 the remaining 19 that
 nothing loads went too (`libaac*`, `libcli`, `libcvi_RES1`, `libcvi_VoiceEngine`,
 `libcvi_audio`, `libcvi_ive`, `libcvi_ssp`, `libcvi_vqe`, `libdnvqe`, `libjson-c`,
 `libmipi_tx`, `libmisc`, `libosdc`, `libraw_dump`, `libtinyalsa`): no shipped library,

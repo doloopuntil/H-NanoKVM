@@ -40,8 +40,8 @@ make web-app
 For a video-enabled NanoKVM RISC-V binary, use the linked `libkvm` build. Copy
 the NanoKVM runtime libraries into `server-rust/sysroot/lib` or point
 `NANOKVM_SYSROOT_LIB` at a directory containing `libc.so` and `libgcc_s.so.1`,
-then run. The NanoKVM native runtime libraries used for linking and packaging
-are kept in `server-rust/native/dl_lib`.
+then run. Copy `libkvm.so` and `libkvm_mmf.so` from a device or a CI run into
+`server-rust/native/dl_lib`, which is not in git; CI fills it with its own builds.
 
 ```sh
 rustup target add riscv64gc-unknown-linux-musl

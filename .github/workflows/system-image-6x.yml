@@ -136,14 +136,12 @@ jobs:
           echo "CROSS_PREFIX=$RUN_ROOT/buildroot/host/bin/riscv64-buildroot-linux-musl-" >> "$GITHUB_ENV"
 
       # libsys/libvenc/libvdec/libvi/libvpss/libvo/libgdc/librgn/libini: libkvm_mmf.so links
-      # against these and the image ships them. Together they must keep every export of the
-      # old prebuilts (libvpu was split into libvi/libvpss/libvo/libgdc/librgn).
+      # against these and the image ships them.
       - name: Build the Sophgo middleware from source
         run: |
           SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh "$RUNNER_TEMP/cvi_mpi" \
             "$RUNNER_TEMP/osdrv-uapi" "$RUNNER_TEMP/sdk" \
-            "$GITHUB_WORKSPACE/build/native-libkvm/middleware" "$CROSS_PREFIX" \
-            server-rust/native/dl_lib
+            "$GITHUB_WORKSPACE/build/native-libkvm/middleware" "$CROSS_PREFIX"
 
       # kvm_mmf compiles against these headers and sample code, so they match the libraries above.
       - name: Stage the headers, sample code and LT6911 driver for libkvm_mmf
@@ -177,16 +175,16 @@ jobs:
           cp "$SYSROOT/lib/libc.so" "$SYSROOT/lib/libgcc_s.so.1" server-rust/sysroot/lib/
           cp -R "$SYSROOT/usr/include" server-rust/sysroot/include
 
-      # This run's libkvm.so, libkvm_mmf.so and middleware replace the checked-in copies.
+      # dl_lib is not in git: the server links against and packages this run's builds only.
       - name: Use freshly-built libkvm.so, libkvm_mmf.so and middleware
         run: |
+          mkdir -p server-rust/native/dl_lib
           cp build/native-libkvm/libkvm.so server-rust/native/dl_lib/libkvm.so
           cp build/native-libkvm/libkvm_mmf.so server-rust/native/dl_lib/libkvm_mmf.so
           for lib in libsys.so libvenc.so libvdec.so libvi.so libvpss.so libvo.so libgdc.so librgn.so \
             libini.so; do
             cp "build/native-libkvm/middleware/$lib" "server-rust/native/dl_lib/$lib"
           done
-          rm server-rust/native/dl_lib/libvpu.so
 
       # build.rs assembles the XTheadVector TLS code with Buildroot's GNU binutils.
       - name: Build Hardened kvmapp bridge
