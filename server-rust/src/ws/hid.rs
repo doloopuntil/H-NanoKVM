@@ -1,12 +1,9 @@
 use axum::{
-    extract::{
-        Extension, State,
-        ws::{Message, WebSocket, WebSocketUpgrade},
-    },
-    http::HeaderMap,
-    response::IntoResponse,
+    extract::{Extension, Request, State},
+    response::Response,
 };
 use futures_util::{SinkExt, StreamExt};
+use hyper::upgrade::OnUpgrade;
 use serde::Serialize;
 use std::{
     fs,
@@ -24,6 +21,10 @@ use std::{
 };
 use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 use tokio::sync::{broadcast, mpsc};
+use tokio_tungstenite::{
+    WebSocketStream,
+    tungstenite::{Message, protocol::WebSocketConfig},
+};
 
 use crate::{
     AppError, Result,
@@ -32,8 +33,13 @@ use crate::{
         proxy::ClientInfo,
     },
     state::AppState,
-    ws::origin::validate_ws_origin,
+    ws::{
+        input::{self, Socket},
+        origin::validate_ws_origin,
+    },
 };
+
+type InputSink = futures_util::stream::SplitSink<WebSocketStream<Box<dyn Socket>>, Message>;
 
 const HID_KEYBOARD: &str = "/dev/hidg0";
 const HID_MOUSE_RELATIVE: &str = "/dev/hidg1";
@@ -500,20 +506,29 @@ pub async fn connect(
     State(state): State<AppState>,
     client: ClientInfo,
     current: Option<Extension<CurrentSession>>,
-    headers: HeaderMap,
-    ws: WebSocketUpgrade,
-) -> Result<impl IntoResponse> {
+    mut request: Request,
+) -> Result<Response> {
     let session = TransportSession::capture(&state.config, current)?;
-    if !validate_ws_origin(&headers, &state.config, &client) {
+    if !validate_ws_origin(request.headers(), &state.config, &client) {
         return Err(AppError::Forbidden("invalid websocket origin".to_string()));
     }
+    let not_websocket = || AppError::BadRequest("not a websocket upgrade".to_string());
+    let response = input::accept_upgrade(request.headers()).ok_or_else(not_websocket)?;
+    let upgrade = request
+        .extensions_mut()
+        .remove::<OnUpgrade>()
+        .ok_or_else(not_websocket)?;
 
-    Ok(ws
-        .max_message_size(MAX_WS_MESSAGE_BYTES)
-        .on_upgrade(move |socket| handle_socket(socket, session)))
+    let config = WebSocketConfig::default()
+        .max_message_size(Some(MAX_WS_MESSAGE_BYTES))
+        .max_frame_size(Some(MAX_WS_MESSAGE_BYTES));
+    input::on_upgrade(upgrade, config, move |socket| {
+        handle_socket(socket, session)
+    });
+    Ok(response)
 }
 
-async fn handle_socket(socket: WebSocket, session: TransportSession) {
+async fn handle_socket(socket: WebSocketStream<Box<dyn Socket>>, session: TransportSession) {
     // The socket lives as long as the login that opened it: logout, a password change or expiry
     // end it, and the keys and buttons it held are released.
     if !session.is_active() {
@@ -559,7 +574,7 @@ async fn handle_socket(socket: WebSocket, session: TransportSession) {
             Message::Binary(data) => data,
             Message::Text(text) => text.as_bytes().to_vec().into(),
             Message::Close(_) => break,
-            Message::Ping(_) | Message::Pong(_) => continue,
+            Message::Ping(_) | Message::Pong(_) | Message::Frame(_) => continue,
         };
 
         if data.is_empty() || data.len() > MAX_WS_MESSAGE_BYTES {
@@ -606,9 +621,7 @@ async fn handle_socket(socket: WebSocket, session: TransportSession) {
     let _ = mouse_worker.await;
 }
 
-async fn send_capture_status_snapshot(
-    ws_tx: &mut futures_util::stream::SplitSink<WebSocket, Message>,
-) {
+async fn send_capture_status_snapshot(ws_tx: &mut InputSink) {
     for status in crate::api::stream::capture_status_snapshot() {
         let Ok(data) = serde_json::to_string(&status) else {
             continue;
@@ -623,9 +636,7 @@ async fn send_capture_status_snapshot(
     }
 }
 
-async fn send_keyboard_led_snapshot(
-    ws_tx: &mut futures_util::stream::SplitSink<WebSocket, Message>,
-) {
+async fn send_keyboard_led_snapshot(ws_tx: &mut InputSink) {
     let Ok(data) = serde_json::to_string(&keyboard_led_status()) else {
         return;
     };

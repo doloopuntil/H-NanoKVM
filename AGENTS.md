@@ -37,9 +37,9 @@ Details and known failures: [docs/development/testing.md](docs/development/testi
   application version is plain `x.y.z`.
 - **Boot scripts** are listed in `kvmapp/system/init.d/S95nanokvm`, the kvmapp
   `.mk` and `server-rust/src/main.rs`. A new init script goes into all three.
-- **One CPU core.** The server's Tokio runtime has one worker thread. Never block
-  in an async handler; use `spawn_blocking` for HID writes, slow file I/O and
-  anything that waits on the host.
+- **One CPU core.** The server's Tokio runtime has one worker thread (input WebSockets
+  move to a small runtime of their own, `ws/input.rs`). Never block in an async handler;
+  use `spawn_blocking` for HID writes, slow file I/O and anything that waits on the host.
 - **Commands** run only through `system::command::run_allowed` with an
   `AllowedCommand` variant: argv only, no shell strings.
 - **Secrets and config** are written with `fsutil::write_0600_atomic`. Files that
