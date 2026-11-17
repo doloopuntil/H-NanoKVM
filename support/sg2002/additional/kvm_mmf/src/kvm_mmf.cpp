@@ -22,7 +22,6 @@
 #include "cvi_awb.h"
 #include "cvi_isp.h"
 #include "cvi_sns_ctrl.h"
-#include "cvi_ive.h"
 #include "cvi_sys.h"
 #include <linux/sys_uapi.h>
 #include "sample_comm.h"
@@ -95,12 +94,6 @@ typedef struct {
 	VIDEO_FRAME_INFO_S vi_frame[MMF_VI_MAX_CHN];
 	VB_CONFIG_S vb_conf;
 
-	int ive_is_init;
-	IVE_HANDLE ive_handle;
-	IVE_IMAGE_S ive_rgb2yuv_rgb_img;
-	IVE_IMAGE_S ive_rgb2yuv_yuv_img;
-	int ive_rgb2yuv_w;
-	int ive_rgb2yuv_h;
 
 	bool rgn_is_init[MMF_RGN_MAX_NUM];
 	bool rgn_is_bind[MMF_RGN_MAX_NUM];
@@ -589,95 +582,6 @@ static CVI_S32 _mmf_free_frame(VIDEO_FRAME_INFO_S *pstVideoFrame)
 	free(pstVideoFrame);
 
 	return CVI_SUCCESS;
-}
-
-static int cvi_ive_init(void)
-{
-	CVI_S32 s32Ret;
-	if (priv.ive_is_init)
-		return 0;
-
-	priv.ive_rgb2yuv_w = 640;
-	priv.ive_rgb2yuv_h = 480;
-	priv.ive_handle = CVI_IVE_CreateHandle();
-	if (priv.ive_handle == NULL) {
-		printf("CVI_IVE_CreateHandle failed!\n");
-		return -1;
-	}
-
-	s32Ret = CVI_IVE_CreateImage_Cached(priv.ive_handle, &priv.ive_rgb2yuv_rgb_img, IVE_IMAGE_TYPE_U8C3_PACKAGE, priv.ive_rgb2yuv_w, priv.ive_rgb2yuv_h);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("Create src image failed!\n");
-		CVI_IVE_DestroyHandle(priv.ive_handle);
-		return -1;
-	}
-
-	s32Ret = CVI_IVE_CreateImage_Cached(priv.ive_handle, &priv.ive_rgb2yuv_yuv_img, IVE_IMAGE_TYPE_YUV420SP, priv.ive_rgb2yuv_w, priv.ive_rgb2yuv_h);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("Create src image failed!\n");
-		CVI_IVE_DestroyHandle(priv.ive_handle);
-		return -1;
-	}
-
-	priv.ive_is_init = 1;
-	return 0;
-}
-
-static int cvi_ive_deinit(void)
-{
-	if (priv.ive_is_init == 0)
-		return 0;
-
-	CVI_SYS_FreeI(priv.ive_handle, &priv.ive_rgb2yuv_rgb_img);
-	CVI_SYS_FreeI(priv.ive_handle, &priv.ive_rgb2yuv_yuv_img);
-	CVI_IVE_DestroyHandle(priv.ive_handle);
-
-	priv.ive_is_init = 0;
-	return 0;
-}
-
-static int cvi_rgb2nv21(uint8_t *src, int input_w, int input_h)
-{
-	CVI_S32 s32Ret;
-
-	int width = ALIGN(input_w, DEFAULT_ALIGN);
-	int height = input_h;
-
-	if (width != priv.ive_rgb2yuv_w || height != priv.ive_rgb2yuv_h) {
-		CVI_SYS_FreeI(priv.ive_handle, &priv.ive_rgb2yuv_rgb_img);
-		CVI_SYS_FreeI(priv.ive_handle, &priv.ive_rgb2yuv_yuv_img);
-		priv.ive_rgb2yuv_w = width;
-		priv.ive_rgb2yuv_h = height;
-		printf("reinit rgb2nv21 buffer, buff w:%d h:%d\n", priv.ive_rgb2yuv_w, priv.ive_rgb2yuv_h);
-		s32Ret = CVI_IVE_CreateImage_Cached(priv.ive_handle, &priv.ive_rgb2yuv_rgb_img, IVE_IMAGE_TYPE_U8C3_PACKAGE, priv.ive_rgb2yuv_w, priv.ive_rgb2yuv_h);
-		if (s32Ret != CVI_SUCCESS) {
-			printf("Create src image failed!\n");
-			return -1;
-		}
-
-		s32Ret = CVI_IVE_CreateImage_Cached(priv.ive_handle, &priv.ive_rgb2yuv_yuv_img, IVE_IMAGE_TYPE_YUV420SP, priv.ive_rgb2yuv_w, priv.ive_rgb2yuv_h);
-		if (s32Ret != CVI_SUCCESS) {
-			printf("Create src image failed!\n");
-			return -1;
-		}
-	}
-
-	if (width != input_w) {
-		for (int h = 0; h < height; h++) {
-			memcpy((uint8_t *)priv.ive_rgb2yuv_rgb_img.u64VirAddr[0] + width * h * 3, (uint8_t *)src + input_w * h * 3, input_w * 3);
-		}
-	} else {
-		memcpy((uint8_t *)priv.ive_rgb2yuv_rgb_img.u64VirAddr[0], (uint8_t *)src, width * height * 3);
-	}
-
-	IVE_CSC_CTRL_S stCtrl;
-	stCtrl.enMode = IVE_CSC_MODE_VIDEO_BT601_RGB2YUV;
-	s32Ret = CVI_IVE_CSC(priv.ive_handle, &priv.ive_rgb2yuv_rgb_img, &priv.ive_rgb2yuv_yuv_img, &stCtrl, 1);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("Run HW IVE CSC YUV2RGB failed!\n");
-		return -1;
-	}
-	return 0;
 }
 
 #include <sys/ioctl.h>
@@ -1242,7 +1146,6 @@ _need_exit_sys_and_deinit_vi:
 
 static void _mmf_deinit(void)
 {
-	UNUSED(cvi_ive_deinit);
 	mmf_del_vi_channel_all();
 	mmf_del_venc_channel_all();
 	mmf_enc_jpg_deinit(0);
@@ -1294,7 +1197,6 @@ int mmf_init(void)
 		printf("maix multi-media init ok\n");
 	}
 
-	UNUSED(cvi_ive_init);
 	priv.mmf_used_cnt = 1;
 
 	if (_try_release_vi() != CVI_SUCCESS) {
@@ -1723,12 +1625,6 @@ bool mmf_vi_chn_is_open(int ch) {
 	return priv.vi_chn_is_inited[ch];
 }
 
-int mmf_reset_vi_channel(int ch, int width, int height, int format)
-{
-	mmf_del_vi_channel(ch);
-	return mmf_add_vi_channel(ch, width, height, format);
-}
-
 int mmf_vi_aligned_width(int ch) {
 	UNUSED(ch);
 	return DEFAULT_ALIGN;
@@ -1820,49 +1716,6 @@ void mmf_vi_frame_release(int ch) {
 		return;
 	}
 	_mmf_release_vi_frame(ch);
-}
-
-int mmf_region_frame_push(int ch, void *data, int len)
-{
-	CVI_S32 s32Ret;
-	RGN_CANVAS_INFO_S stCanvasInfo;
-
-	if (ch < 0 || ch >= MMF_RGN_MAX_NUM) {
-		SAMPLE_PRT("Handle ch is illegal %d!\n", ch);
-		return CVI_FAILURE;
-	}
-
-	if (!priv.rgn_is_init[ch]) {
-		return 0;
-	}
-
-	if (!priv.rgn_is_bind[ch]) {
-		return 0;
-	}
-
-	s32Ret = CVI_RGN_GetCanvasInfo(ch, &stCanvasInfo);
-	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_GetCanvasInfo failed with %#x!\n", s32Ret);
-		return CVI_FAILURE;
-	}
-
-	if (stCanvasInfo.enPixelFormat == PIXEL_FORMAT_ARGB_8888) {
-		if (!data || (CVI_U32)len != stCanvasInfo.stSize.u32Width * stCanvasInfo.stSize.u32Height * 4) {
-			printf("Param is error!\r\n");
-			return CVI_FAILURE;
-		}
-		memcpy(stCanvasInfo.pu8VirtAddr, data, len);
-	} else {
-		printf("Not support format!\r\n");
-		return CVI_FAILURE;
-	}
-
-	s32Ret = CVI_RGN_UpdateCanvas(ch);
-	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_UpdateCanvas failed with %#x!\n", s32Ret);
-		return CVI_FAILURE;
-	}
-	return s32Ret;
 }
 
 int mmf_enc_jpg_init(int ch, int w, int h, int format, int quality)
@@ -2223,74 +2076,6 @@ int mmf_enc_jpg_push_with_quality(int ch, uint8_t *data, int w, int h, int forma
 	return s32Ret;
 }
 
-int mmf_enc_jpg_push(int ch, uint8_t *data, int w, int h, int format)
-{
-	UNUSED(ch);
-	CVI_S32 s32Ret = CVI_SUCCESS;
-	if (priv.enc_jpg_running) {
-		return s32Ret;
-	}
-
-	SIZE_S stSize = {(CVI_U32)w, (CVI_U32)h};
-	if (priv.enc_jpg_frame == NULL || priv.enc_jpg_frame_w != w || priv.enc_jpg_frame_h != h || priv.enc_jpg_frame_fmt != format) {
-		mmf_enc_jpg_deinit(ch);
-		mmf_enc_jpg_init(ch, w, h, format, 80);
-		priv.enc_jpg_frame_w = w;
-		priv.enc_jpg_frame_h = h;
-		priv.enc_jpg_frame_fmt = format;
-		if (priv.enc_jpg_frame) {
-			_mmf_free_frame(priv.enc_jpg_frame);
-			priv.enc_jpg_frame = NULL;
-		}
-		priv.enc_jpg_frame = (VIDEO_FRAME_INFO_S *)_mmf_alloc_frame(priv.enc_jpg_input_pool_id, stSize, (PIXEL_FORMAT_E)format);
-		if (!priv.enc_jpg_frame) {
-			printf("Alloc frame failed!\r\n");
-			return -1;
-		}
-	}
-
-	switch (format) {
-		case PIXEL_FORMAT_RGB_888:
-		{
-			if (priv.enc_jpg_frame->stVFrame.u32Stride[0] != (CVI_U32)w * 3) {
-				for (CVI_U32 h = 0; h < priv.enc_jpg_frame->stVFrame.u32Height; h++) {
-					memcpy((uint8_t *)priv.enc_jpg_frame->stVFrame.pu8VirAddr[0] + priv.enc_jpg_frame->stVFrame.u32Stride[0] * h, ((uint8_t *)data) + w * h * 3, w * 3);
-				}
-			} else {
-				memcpy(priv.enc_jpg_frame->stVFrame.pu8VirAddr[0], data, w * h * 3);
-			}
-
-			s32Ret = CVI_VPSS_SendFrame(2, priv.enc_jpg_frame, 1000);
-			if (s32Ret != CVI_SUCCESS) {
-				printf("CVI_VPSS_SendFrame failed with %#x\n", s32Ret);
-				return s32Ret;
-			}
-		}
-		break;
-		case PIXEL_FORMAT_NV21:
-			if (priv.enc_jpg_frame->stVFrame.u32Stride[0] != (CVI_U32)w) {
-				for (CVI_U32 h = 0; h < priv.enc_jpg_frame->stVFrame.u32Height * 3 / 2; h ++) {
-					memcpy((uint8_t *)priv.enc_jpg_frame->stVFrame.pu8VirAddr[0] + priv.enc_jpg_frame->stVFrame.u32Stride[0] * h,
-							((uint8_t *)data) + w * h, w);
-				}
-			} else {
-				memcpy(priv.enc_jpg_frame->stVFrame.pu8VirAddr[0], ((uint8_t *)data), w * h * 3 / 2);
-			}
-
-			s32Ret = CVI_VENC_SendFrame(ch, priv.enc_jpg_frame, 1000);
-			if (s32Ret != CVI_SUCCESS) {
-				printf("CVI_VENC_SendFrame failed with %d\n", s32Ret);
-				return s32Ret;
-			}
-		break;
-		default: return -1;
-	}
-
-	priv.enc_jpg_running = 1;
-
-	return s32Ret;
-}
-
 int mmf_enc_jpg_pop(int ch, uint8_t **data, int *size)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
@@ -2396,16 +2181,6 @@ void mmf_set_vi_hmirror(int ch, bool en)
 	g_priv.vi_hmirror[ch] = en;
 }
 
-void mmf_get_vi_hmirror(int ch, bool *en)
-{
-	if (ch < 0 || ch >= MMF_VI_MAX_CHN || en == NULL) {
-		printf("invalid ch, must be [0, %d)\r\n", ch);
-		return;
-	}
-
-	*en = (bool)g_priv.vi_hmirror[ch];
-}
-
 void mmf_set_vi_vflip(int ch, bool en)
 {
 	if (ch < 0 || ch >= MMF_VI_MAX_CHN) {
@@ -2414,16 +2189,6 @@ void mmf_set_vi_vflip(int ch, bool en)
 	}
 
 	g_priv.vi_vflip[ch] = en;
-}
-
-void mmf_get_vi_vflip(int ch, bool *en)
-{
-	if (ch < 0 || ch >= MMF_VI_MAX_CHN || en == NULL) {
-		printf("invalid ch, must be [0, %d)\r\n", ch);
-		return;
-	}
-
-	*en = (bool)g_priv.vi_vflip[ch];
 }
 
 // Stream buffer sized from the picture: 1-8 MiB, 64 KiB aligned.
