@@ -54,7 +54,6 @@
 #define h264_idr_min_gap_ms     500     // requested IDRs are coalesced to this rate
 #define fresh_frame_discard_count 5
 
-#define kvmv_data_buffer_size   4
 #define Try_rounds_HDMI_err_res 5
 
 #define vi_width_path           "/kvmapp/kvm/width"
@@ -140,7 +139,6 @@ typedef struct {
     std::atomic<uint8_t> hdmi_res_err{0};
     uint8_t hdmi_try_rounds = 0;
     std::atomic<uint8_t> vi_detect_state{0};
-    uint8_t venc_auto_recyc = 0;
     std::atomic<uint8_t> fresh_frame_count{0};
 } kvmv_cfg_t;
 
@@ -161,10 +159,6 @@ typedef struct {
 KvmCamera *cam = NULL;
 
 kvmv_cfg_t kvmv_cfg;
-
-kvmv_data_t kvmv_data_buffer[kvmv_data_buffer_size];
-
-uint8_t kvmv_data_buffer_index = 0;
 
 uint8_t debug_en = 0;
 uint8_t last_vi_state_code = 0;
@@ -312,13 +306,6 @@ uint8_t refresh_vi_state()
     return last_vi_state_code;
 }
 
-uint8_t to_roll(int8_t _input)
-{
-    if(_input <                      0) return _input + kvmv_data_buffer_size;
-    if(_input >= kvmv_data_buffer_size) return _input - kvmv_data_buffer_size;
-    return _input;
-}
-
 int maxmin_data(int _max, int _min, int _data)
 {
 	if(_data > _max) return _max;
@@ -370,17 +357,6 @@ static bool read_uint16_file(const char *path, uint16_t *value)
 
     *value = static_cast<uint16_t>(parsed);
     return true;
-}
-
-kvmv_data_t* get_save_buffer()
-{
-    kvmv_data_buffer_index = to_roll(kvmv_data_buffer_index + 1);
-    // debug("[kvmv]kvmv_data_buffer_index = %d\n", kvmv_data_buffer_index);
-    // debug("[kvmv]kvmv_data_buffer.p_img_data = %d\n", kvmv_data_buffer[kvmv_data_buffer_index].p_img_data);
-    if(kvmv_data_buffer[kvmv_data_buffer_index].p_img_data == NULL){
-        return &kvmv_data_buffer[kvmv_data_buffer_index];
-    }
-    return NULL;
 }
 
 // ====HDMI RES==================================================
@@ -1896,11 +1872,6 @@ void kvmv_init(uint8_t _debug_info_en)
      * tears down a freshly started ISP/VI stack and is unreliable with a
      * cleanly rebuilt vendor MMF library.  Real input-resolution changes are
      * still handled by restart_camera_from_worker(). */
-    for(int i = 0; i < kvmv_data_buffer_size; i++){
-        kvmv_data_buffer[i].p_img_data = NULL;
-        kvmv_data_buffer[i].img_data_size = 0;
-    }
-    kvmv_data_buffer_index = 0;
     pthread_mutex_unlock(&vi_mutex);
 
     // debug("[kvmv]kvmv_init - 2\r\n");
@@ -1950,14 +1921,8 @@ uint8_t check_kvmv(uint8_t _try_num)
     return 1;
 }
 
-void set_venc_auto_recyc(uint8_t _enable)
-{
-    if(_enable) kvmv_cfg.venc_auto_recyc = 1;
-    else kvmv_cfg.venc_auto_recyc = 0;
-}
-
 /**********************************************************************************
- * @name    kvmv_read_img
+ * @name    kvmv_read_img_alloc
  * @author  Sipeed BuGu
  * @date    2024/10/25
  * @version R1.0
@@ -1986,11 +1951,6 @@ void set_venc_auto_recyc(uint8_t _enable)
 static int read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _qlty,
                     kvmv_alloc_fn alloc, void *ctx, uint8_t** _pp_kvm_data, uint32_t* _p_kvmv_data_size);
 
-int kvmv_read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _qlty, uint8_t** _pp_kvm_data, uint32_t* _p_kvmv_data_size)
-{
-    return read_img(_width, _height, _type, _qlty, NULL, NULL, _pp_kvm_data, _p_kvmv_data_size);
-}
-
 int kvmv_read_img_alloc(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _qlty,
                         kvmv_alloc_fn alloc, void *ctx, uint32_t* _p_kvmv_data_size)
 {
@@ -2002,7 +1962,7 @@ int kvmv_read_img_alloc(uint16_t _width, uint16_t _height, uint8_t _type, uint16
     return read_img(_width, _height, _type, _qlty, alloc, ctx, &data, _p_kvmv_data_size);
 }
 
-// With alloc, frames go to the caller's memory and never into the kvmv_data_buffer slots.
+// Frames go to the caller's memory from alloc.
 static int read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _qlty,
                     kvmv_alloc_fn alloc, void *ctx, uint8_t** _pp_kvm_data, uint32_t* _p_kvmv_data_size)
 {
@@ -2110,15 +2070,9 @@ static int read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _
         // img exist
         // Encode
         if(kvmv_cfg.venc_type == VENC_MJPEG && kvmv_cfg.venc_type != _type){
-            if(kvmv_cfg.venc_auto_recyc == 1){
-                mmf_enc_jpg_deinit(0);
-            }
             kvm_venc.enc_h264_init = 1;
         }
         if(kvmv_cfg.venc_type == VENC_H264 && kvmv_cfg.venc_type != _type){
-            if(kvmv_cfg.venc_auto_recyc == 1){
-                mmf_del_venc_channel(kvm_venc.mmf_venc_chn);
-            }
             kvm_venc.enc_h264_init = 0;
         }
 
@@ -2134,38 +2088,14 @@ static int read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _
 				pthread_mutex_unlock(&vi_mutex);
 				return IMG_VENC_ERROR;
 			}
-            if (alloc != NULL) {
-                *_pp_kvm_data = jpg;
-                *_p_kvmv_data_size = static_cast<uint32_t>(jpg_size);
-                pthread_mutex_unlock(&vi_mutex);
-                return IMG_MJPEG_TYPE;
-            }
-            kvmv_data_t* p_kvmv_data = get_save_buffer();
-            if(p_kvmv_data == NULL){
-                // buffer full
-                free(jpg);
-                debug("[kvmv]jpg buffer full\n");
-                pthread_mutex_unlock(&vi_mutex);
-                return IMG_BUFFER_FULL;
-            }
-            p_kvmv_data->p_img_data = jpg;
-            p_kvmv_data->img_data_size = static_cast<uint32_t>(jpg_size);
-            p_kvmv_data->img_data_type = VENC_MJPEG;
-            *_pp_kvm_data = p_kvmv_data->p_img_data;
-            *_p_kvmv_data_size = p_kvmv_data->img_data_size;
+            *_pp_kvm_data = jpg;
+            *_p_kvmv_data_size = static_cast<uint32_t>(jpg_size);
             pthread_mutex_unlock(&vi_mutex);
             return IMG_MJPEG_TYPE;
         } else if (kvmv_cfg.venc_type == VENC_H264){
             int ret;
             kvmv_data_t caller_data;
-            kvmv_data_t* p_kvmv_data = alloc != NULL ? &caller_data : get_save_buffer();
-            if(p_kvmv_data == NULL){
-                // buffer full
-                kvm_frame_release(&frame);
-                *_pp_kvm_data = NULL;
-                pthread_mutex_unlock(&vi_mutex);
-                return IMG_BUFFER_FULL;
-            }
+            kvmv_data_t* p_kvmv_data = &caller_data;
             ret = raw_to_h264(&frame, p_kvmv_data, maxmin_data(10000, 500, (int)_qlty), alloc, ctx);
             kvm_frame_release(&frame);
 			if (ret < 0 || !p_kvmv_data->p_img_data || p_kvmv_data->img_data_size == 0) {
@@ -2183,43 +2113,6 @@ static int read_img(uint16_t _width, uint16_t _height, uint8_t _type, uint16_t _
     *_pp_kvm_data = NULL;
     pthread_mutex_unlock(&vi_mutex);
     return IMG_NOT_EXIST;
-}
-
-int free_kvmv_data(uint8_t ** _pp_kvm_data)
-{
-    // Serialize with read_img, which writes the same rotating buffer slots.
-    // deinit calls free_all_kvmv_data() while already holding ViLock, so only
-    // this externally invoked free takes the lock.
-    ViLock vi_lock;
-    if (vi_mutex_initialized) vi_lock.lock();
-        // debug("[kvmv]free_kvmv_data - 1\r\n");
-    for(int i = 0; i < kvmv_data_buffer_size; i++){
-        if(*_pp_kvm_data == kvmv_data_buffer[i].p_img_data){
-            // debug("[kvmv]free buffer : %d\n", *_pp_kvm_data);
-            if (*_pp_kvm_data != NULL){
-        // debug("[kvmv]free_kvmv_data - 2\r\n");
-                free(*_pp_kvm_data);
-        // debug("[kvmv]free_kvmv_data - 3\r\n");
-                kvmv_data_buffer[i].p_img_data = NULL;
-                uint8_t _type = kvmv_data_buffer[i].img_data_type;
-                return _type;
-            } else {
-                return IMG_NOT_EXIST;
-            }
-        }
-    }
-    return IMG_NOT_EXIST;
-}
-
-void free_all_kvmv_data()
-{
-    for(int i = 0; i < kvmv_data_buffer_size; i++){
-        if(kvmv_data_buffer[i].p_img_data != NULL){
-            free(kvmv_data_buffer[i].p_img_data);
-            kvmv_data_buffer[i].p_img_data = NULL;
-        }
-        kvmv_data_buffer[i].img_data_size = 0;
-    }
 }
 
 void kvmv_deinit()
@@ -2262,7 +2155,6 @@ void kvmv_deinit()
      * than decrementing only one reference and leaving VB/VENC initialized
      * for the next backend process. */
     mmf_try_deinit(true);
-    free_all_kvmv_data();
     pthread_mutex_unlock(&vi_mutex);
 
     int mutex_res = pthread_mutex_destroy(&vi_mutex);
@@ -2374,7 +2266,7 @@ uint8_t kvmv_hdmi_control(uint8_t _en)
         set_hdmi_capture_enabled(1);
 
         // Keep the existing VI channel and consume queued frames after idle.
-        // Reopening it here or from kvmv_read_img can exhaust the carveout
+        // Reopening it here or from read_img can exhaust the carveout
         // heap while the HDMI detector is transitioning.
         kvmv_cfg.fresh_frame_count.store(fresh_frame_discard_count, std::memory_order_release);
         return 0;
