@@ -43,7 +43,6 @@ target_include_directories(kvm_mmf
 		"${SDK}/sample/common"
 		"${SDK}/uapi"
 		"${SDK}/3rdparty/inih"
-		"${SDK}/modules/ive/include"
 		"${SDK}/component/isp/common"
 		"${SDK}/component/isp/sensor/lontium_lt6911")
 target_compile_definitions(kvm_mmf PRIVATE

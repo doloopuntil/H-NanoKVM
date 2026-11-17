@@ -38,13 +38,10 @@ int mmf_add_vi_channel_with_enc(int ch, int width, int height, int format);
 int mmf_add_vi_channel(int ch, int width, int height, int format);
 int mmf_del_vi_channel(int ch);
 int mmf_del_vi_channel_all(void);
-int mmf_reset_vi_channel(int ch, int width, int height, int format);
 bool mmf_vi_chn_is_open(int ch);
 int mmf_vi_aligned_width(int ch);
 void mmf_set_vi_hmirror(int ch, bool en);
 void mmf_set_vi_vflip(int ch, bool en);
-void mmf_get_vi_hmirror(int ch, bool *en);
-void mmf_get_vi_vflip(int ch, bool *en);
 
 // get vi frame
 // Leases the next VI frame without mapping it; the encoders take it with data NULL.
@@ -64,7 +61,6 @@ int mmf_invert_format_to_mmf(int maix_format);
 // venc
 int mmf_enc_jpg_init(int ch, int w, int h, int format, int quality);
 int mmf_enc_jpg_deinit(int ch);
-int mmf_enc_jpg_push(int ch, uint8_t *data, int w, int h, int format);
 int mmf_enc_jpg_push_with_quality(int ch, uint8_t *data, int w, int h, int format, int quality);
 int mmf_enc_jpg_pop(int ch, uint8_t **data, int *size);
 int mmf_enc_jpg_free(int ch);
