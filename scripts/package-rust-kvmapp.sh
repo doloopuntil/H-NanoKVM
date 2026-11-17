@@ -105,10 +105,6 @@ fi
 rm -rf "$STAGE_DIR"
 mkdir -p "$KVMAPP_STAGE/server" "$KVMAPP_STAGE/backends" "$KVMAPP_STAGE/hwmon" "$OUT_DIR"
 cp -R "$ROOT_DIR/kvmapp/." "$KVMAPP_STAGE/"
-rm -rf "$KVMAPP_STAGE/jpg_stream"
-rm -f "$KVMAPP_STAGE/kvm_system/kvm_stream" \
-  "$KVMAPP_STAGE/kvm_new_app" \
-  "$KVMAPP_STAGE/kvm_new_img"
 restore_kvm_system_helper
 
 if readelf -d "$KVMAPP_STAGE/kvm_system/kvm_system" 2>/dev/null | grep -Eq '\((RPATH|RUNPATH)\)'; then
