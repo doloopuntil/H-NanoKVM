@@ -2,8 +2,9 @@
 """Renders the OLED pictures in a kvm_system trace: replays the I2C command and data bytes
 on a page-addressed controller RAM and prints the RAM after each tick that changed it.
 
-The picture is RAM order (column 0 left, page 0 top), not the panel's mounting:
-PCIe sends A0/C0, which turns its panel by 180 degrees.
+Assumes SSD1306 page addressing: B0-B7, the low three bits, so the PCIe code's
+"page + 8" lands on pages 0-3; its 64x32 panel shows columns 32-95. The picture is RAM
+order (column 0 left, page 0 top); PCIe sends A0/C0, which turns its panel by 180 degrees.
 Usage: render.py TRACE [full|pcie]
 """
 import re
@@ -11,7 +12,7 @@ import sys
 
 ARGS = {0x81: 1, 0xA8: 1, 0xD3: 1, 0xD5: 1, 0xD9: 1, 0xDA: 1, 0xDB: 1, 0x20: 1, 0x8D: 1,
         0x26: 6, 0x27: 6, 0x29: 5, 0x2A: 5, 0xA3: 2, 0x21: 2, 0x22: 2, 0xDC: 1, 0xAD: 1}
-WINDOWS = {"full": (0, 8, 0, 128), "pcie": (8, 12, 32, 96)}
+WINDOWS = {"full": (0, 8, 0, 128), "pcie": (0, 4, 32, 96)}
 LINE = re.compile(r"^@(\d+) i2c (\d+):([0-9a-f]+) (NACK )?([CD])(.*)$")
 
 
@@ -28,7 +29,7 @@ def expand(text):
 
 class Panel:
     def __init__(self):
-        self.ram = [[0] * 256 for _ in range(16)]
+        self.ram = [[0] * 256 for _ in range(8)]
         self.page = self.col = 0
         self.on = False
         self.pending = []
@@ -42,7 +43,7 @@ class Panel:
         if byte in ARGS:
             self.pending = [byte, ARGS[byte]]
         elif 0xB0 <= byte <= 0xBF:
-            self.page = byte - 0xB0
+            self.page = byte & 0x07
         elif byte <= 0x0F:
             self.col = (self.col & 0xF0) | byte
         elif byte <= 0x1F:
