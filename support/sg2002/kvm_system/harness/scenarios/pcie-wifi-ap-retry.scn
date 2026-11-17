@@ -1,5 +1,5 @@
-# PCIe: Wi-Fi setup fails to connect: the AP restarts with a new key; a short press during the
-# connect wait; then a long press leaves setup (S30wifi restart).
+# PCIe: Wi-Fi setup fails to connect: the AP restarts with a new key; a long press leaves
+# setup (S30wifi restart).
 i2c 5 0x3c
 input
 file /etc/kvm/hw pcie\n
@@ -23,8 +23,6 @@ sta on
 at 10500
 file /kvmapp/kvm/wifi_try_connect
 sta off
-at 12050
-key press 100
 at 25050
 key press 2000
 at 32000

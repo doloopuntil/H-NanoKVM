@@ -532,7 +532,6 @@
 @11000 i2c 5:3c D 00 00 60 60 00 00
 @11000 i2c 5:3c C ba 15 06
 @11000 i2c 5:3c D 00 00 60 60 00 00
-@12050 > key press 100
 @17000 run wpa_cli -i wlan0 status
 @17000 i2c 5:3c C b0 00 10
 @17000 i2c 5:3c D 00*128
@@ -590,234 +589,61 @@
 @17000 i2c 5:3c D 00 00 60 60 00 00
 @17000 i2c 5:3c C ba 15 06
 @17000 i2c 5:3c D 00 00 60 60 00 00
-@17000 run /etc/init.d/S30wifi restart
+@18000 write /kvmapp/kvm/ap.ssid "NanoKVM\n"
+@18000 create /kvmapp/kvm/ap.pass.new 0600
+@18000 chmod /kvmapp/kvm/ap.pass.new 0600
+@18000 write /kvmapp/kvm/ap.pass.new "6npgfawv5b"
+@18000 rename /kvmapp/kvm/ap.pass.new /kvmapp/kvm/ap.pass
+@18000 run /etc/init.d/S30wifi ap
 @18000 i2c 5:3c C b0 00 10
-@18000 i2c 5:3c D 00*128
+@18000 i2c 5:3c D ff*128
 @18000 i2c 5:3c C b1 00 10
-@18000 i2c 5:3c D 00*128
+@18000 i2c 5:3c D ff*128
 @18000 i2c 5:3c C b2 00 10
-@18000 i2c 5:3c D 00*128
+@18000 i2c 5:3c D ff*128
 @18000 i2c 5:3c C b3 00 10
-@18000 i2c 5:3c D 00*128
+@18000 i2c 5:3c D ff*128
 @18000 i2c 5:3c C b4 00 10
-@18000 i2c 5:3c D 00*128
+@18000 i2c 5:3c D ff*128
 @18000 i2c 5:3c C b5 00 10
-@18000 i2c 5:3c D 00*128
+@18000 i2c 5:3c D ff*128
 @18000 i2c 5:3c C b6 00 10
-@18000 i2c 5:3c D 00*128
+@18000 i2c 5:3c D ff*128
 @18000 i2c 5:3c C b7 00 10
-@18000 i2c 5:3c D 00*128
-@18000 i2c 5:3c C a0 c0 b8 13 03
-@18000 i2c 5:3c D fc
-@18000 i2c 5:3c C b9 13 03
-@18000 i2c 5:3c D 3f
-@18000 i2c 5:3c C b8 13 04
-@18000 i2c 5:3c D fc
-@18000 i2c 5:3c C b9 13 04
-@18000 i2c 5:3c D 3f
-@18000 i2c 5:3c C b8 12 01
-@18000 i2c 5:3c D 00
-@18000 i2c 5:3c C b9 12 01
-@18000 i2c 5:3c D 00
-@18000 i2c 5:3c C b8 12 02
-@18000 i2c 5:3c D f8
-@18000 i2c 5:3c C b9 12 02
-@18000 i2c 5:3c D 1f
-@18000 i2c 5:3c C b8 12 03
-@18000 i2c 5:3c D fc
+@18000 i2c 5:3c D ff*128
+@18000 i2c 5:3c C b8 13 0d
+@18000 i2c 5:3c D ff ff 03 fb 8b 8b 8b fb 03 ff 1b ff ef b3 23 2f 1b bf 67 2f 77 43 9f ff 03 fb 8b 8b 8b fb 03 ff ff
+@18000 i2c 5:3c C b9 13 0d
+@18000 i2c 5:3c D ff ff a2 16 6e 16 ea d6 aa cb 58 23 da ef d4 0b 68 63 48 19 6a 17 d8 63 6a 92 42 62 fe 9e ea ff ff
+@18000 i2c 5:3c C ba 13 0d
+@18000 i2c 5:3c D ff ff b6 b5 fd a7 bb 88 aa fd 35 57 e9 0e 28 0b 69 64 2b 89 7e 55 0a 98 bf 98 36 7d f2 3f e8 ff ff
+@18000 i2c 5:3c C bb 13 0d
+@18000 i2c 5:3c D ff ff 80 be a2 a2 a2 be 80 ff ba ac c9 d1 eb eb a9 c6 d3 99 e4 e0 88 83 da db b0 cd a2 89 c4 ff ff
 @18000 i2c 5:3c C b9 12 03
-@18000 i2c 5:3c D 3f
-@18000 i2c 5:3c C b8 12 04
-@18000 i2c 5:3c D f6
-@18000 i2c 5:3c C b9 12 04
-@18000 i2c 5:3c D 7f
-@18000 i2c 5:3c C b8 12 05
-@18000 i2c 5:3c D b2
-@18000 i2c 5:3c C b9 12 05
-@18000 i2c 5:3c D 7f
-@18000 i2c 5:3c C b8 12 06
-@18000 i2c 5:3c D 1e
-@18000 i2c 5:3c C b9 12 06
-@18000 i2c 5:3c D 67
-@18000 i2c 5:3c C b8 12 07
-@18000 i2c 5:3c D 0e
-@18000 i2c 5:3c C b9 12 07
-@18000 i2c 5:3c D 66
-@18000 i2c 5:3c C b8 12 08
-@18000 i2c 5:3c D 66
-@18000 i2c 5:3c C b9 12 08
-@18000 i2c 5:3c D 66
-@18000 i2c 5:3c C b8 12 09
-@18000 i2c 5:3c D 66
+@18000 i2c 5:3c D ff c0 bf c7 bf c0
 @18000 i2c 5:3c C b9 12 09
-@18000 i2c 5:3c D 66
-@18000 i2c 5:3c C b8 12 0a
-@18000 i2c 5:3c D 66
-@18000 i2c 5:3c C b9 12 0a
-@18000 i2c 5:3c D 66
-@18000 i2c 5:3c C b8 12 0b
-@18000 i2c 5:3c D 66
-@18000 i2c 5:3c C b9 12 0b
-@18000 i2c 5:3c D 70
-@18000 i2c 5:3c C b8 12 0c
-@18000 i2c 5:3c D fe
-@18000 i2c 5:3c C b9 12 0c
-@18000 i2c 5:3c D 78
-@18000 i2c 5:3c C b8 12 0d
-@18000 i2c 5:3c D fe
-@18000 i2c 5:3c C b9 12 0d
-@18000 i2c 5:3c D 7d
-@18000 i2c 5:3c C b8 12 0e
-@18000 i2c 5:3c D fc
-@18000 i2c 5:3c C b9 12 0e
-@18000 i2c 5:3c D 3f
-@18000 i2c 5:3c C b8 12 0f
-@18000 i2c 5:3c D f8
+@18000 i2c 5:3c D ff ff bb 82 bf ff
 @18000 i2c 5:3c C b9 12 0f
-@18000 i2c 5:3c D 1f
-@18000 i2c 5:3c C b8 13 00
-@18000 i2c 5:3c D 00
-@18000 i2c 5:3c C b9 13 00
-@18000 i2c 5:3c D 00
-@18000 i2c 5:3c C b9 14 0b
-@18000 i2c 5:3c D 00 3e 08 08 3e 00 3e 22 22 1c 00 3c 02 0c 02 3c 00 22 3e 22 00
-@18000 i2c 5:3c C b9 13 08
-@18000 i2c 5:3c D 00 3e 08 08 3e 00 22 3e 20 00 3e 22 22 1c 00
-@18000 i2c 5:3c C b8 13 08
-@18000 i2c 5:3c D 00 3e 2a 2a 22 00 02 3e 02 00 3e 08 08 3e 00
-@18000 i2c 5:3c C b8 14 0b
-@18000 i2c 5:3c D 00 1e 20 18 20 1e 00 3a 00 3e 0a 0a 00 3a 00
-@18000 i2c 5:3c C bb 15 0b
-@18000 i2c 5:3c D 00 58 54 64
-@18000 i2c 5:3c C bb 15 07
-@18000 i2c 5:3c D 00 7c 14 1c
-@18000 i2c 5:3c C bb 15 03
-@18000 i2c 5:3c D 00 7c 14 14
-@18000 i2c 5:3c C bb 14 0f
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 14 0b
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C b8 13 08
-@18000 i2c 5:3c D 3e 41 55 55 5d 7f 7d 41 7d 7f 41 77 77 41 3e
-@18000 i2c 5:3c C ba 15 0b
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 15 07
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 15 03
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 14 0f
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 14 0b
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 14 07
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 14 03
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 13 0f
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 13 0b
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 13 07
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 13 03
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 12 0f
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 12 0b
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 12 07
-@18000 i2c 5:3c D 00*4
+@18000 i2c 5:3c D ff 80 f6 f6 f6 fe
+@18000 i2c 5:3c C b9 13 05
+@18000 i2c 5:3c D ff ff bb 82 bf ff
 @18000 i2c 5:3c C ba 12 03
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C ba 12 00
-@18000 i2c 5:3c D 00 7c 54 54
-@18000 i2c 5:3c C ba 15 0b
-@18000 i2c 5:3c D 00 7c 44 7c
-@18000 i2c 5:3c C ba 15 07
-@18000 i2c 5:3c D 00 74 54 5c
-@18000 i2c 5:3c C ba 15 03
-@18000 i2c 5:3c D 00 00 40 00
-@18000 i2c 5:3c C ba 14 0f
-@18000 i2c 5:3c D 00 44 7c 40
-@18000 i2c 5:3c C ba 14 0b
-@18000 i2c 5:3c D 00 00 40 00
-@18000 i2c 5:3c C ba 14 07
-@18000 i2c 5:3c D 00 7c 54 7c
-@18000 i2c 5:3c C ba 14 03
-@18000 i2c 5:3c D 00 7c 54 74
-@18000 i2c 5:3c C ba 13 0f
-@18000 i2c 5:3c D 00 44 7c 40
-@18000 i2c 5:3c C ba 13 0b
-@18000 i2c 5:3c D 00 00 40 00
-@18000 i2c 5:3c C ba 13 07
-@18000 i2c 5:3c D 00 74 54 5c
-@18000 i2c 5:3c C ba 13 03
-@18000 i2c 5:3c D 00 5c 54 7c
+@18000 i2c 5:3c D ff 83 ed ee ed 83
+@18000 i2c 5:3c C ba 12 09
+@18000 i2c 5:3c D ff 80 f6 f6 f6 f9
 @18000 i2c 5:3c C ba 12 0f
-@18000 i2c 5:3c D 00 44 7c 40
-@18000 i2c 5:3c C b8 14 0b
-@18000 i2c 5:3c D 00 1e 20 18 20 1e 00 3a 00 3e 0a 0a 00 3a 00
-@18000 i2c 5:3c C b9 13 08
-@18000 i2c 5:3c D 3e 41 77 77 41 7f 5d 41 5f 7f 41 5d 5d 63 3e
-@18000 i2c 5:3c C b9 14 0b
-@18000 i2c 5:3c D 3e 41 77 77 41 7f 41 5d 5d 63 7f 43 7d 73 7d 43 7f 5d 41 5d 3e
-@18000 i2c 5:3c C bb 15 0b
-@18000 i2c 5:3c D 00 58 54 64
-@18000 i2c 5:3c C bb 15 07
-@18000 i2c 5:3c D 00 7c 14 1c
-@18000 i2c 5:3c C bb 15 03
-@18000 i2c 5:3c D 00 7c 14 14
-@18000 i2c 5:3c C bb 14 0f
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 14 0b
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 14 0a
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 14 0c
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 14 0e
-@18000 i2c 5:3c D 00 7c 44 7c
-@18000 i2c 5:3c C bb 14 0e
-@18000 i2c 5:3c D 00 7c 44 7c
-@18000 i2c 5:3c C bb 14 00
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 13 0c
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 13 08
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 13 04
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 13 00
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 12 0c
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 12 08
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 12 04
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 12 00
-@18000 i2c 5:3c D 00*4
-@18000 i2c 5:3c C bb 14 00
-@18000 i2c 5:3c D 00 7c 44 7c
-@18000 i2c 5:3c C bb 13 0c
-@18000 i2c 5:3c D 00 7c 54 7c
-@18000 i2c 5:3c C bb 13 08
-@18000 i2c 5:3c D 00 7c 44 7c
-@18000 i2c 5:3c C bb 13 04
-@18000 i2c 5:3c D 00 44 7c 40
-@18000 i2c 5:3c C bb 13 00
-@18000 i2c 5:3c D 00 00 30 00
-@18000 i2c 5:3c C bb 12 0c
-@18000 i2c 5:3c D 00 7c 44 7c
-@18000 i2c 5:3c C bb 12 08
-@18000 i2c 5:3c D 00 74 54 5c
-@18000 i2c 5:3c C bb 12 04
-@18000 i2c 5:3c D 00 5c 54 7c
-@18000 i2c 5:3c C bb 12 00
-@18000 i2c 5:3c D 00 44 7c 40
-@19000 i2c 5:3c C b8 14 0b
-@19000 i2c 5:3c D 00 1e 20 18 20 1e 00 3a 00 3e 0a 0a 00 3a 00
+@18000 i2c 5:3c D ff ff c9 c9 ff ff
+@19000 run hostapd_cli all sta
+@20000 run hostapd_cli all sta
+@21000 run hostapd_cli all sta
+@22000 run hostapd_cli all sta
+@23000 run hostapd_cli all sta
+@24000 run hostapd_cli all sta
+@25000 run hostapd_cli all sta
 @25050 > key press 2000
+@26000 run hostapd_cli all sta
+@27000 run hostapd_cli all sta
+@27050 run /etc/init.d/S30wifi restart
 @28000 i2c 5:3c C b0 00 10
 @28000 i2c 5:3c D 00*128
 @28000 i2c 5:3c C b1 00 10
@@ -834,92 +660,216 @@
 @28000 i2c 5:3c D 00*128
 @28000 i2c 5:3c C b7 00 10
 @28000 i2c 5:3c D 00*128
-@28000 i2c 5:3c C b9 12 00
-@28000 i2c 5:3c D 00 3f 40 38 40 3f
+@28000 i2c 5:3c C a0 c0 b8 13 03
+@28000 i2c 5:3c D fc
+@28000 i2c 5:3c C b9 13 03
+@28000 i2c 5:3c D 3f
+@28000 i2c 5:3c C b8 13 04
+@28000 i2c 5:3c D fc
+@28000 i2c 5:3c C b9 13 04
+@28000 i2c 5:3c D 3f
+@28000 i2c 5:3c C b8 12 01
+@28000 i2c 5:3c D 00
+@28000 i2c 5:3c C b9 12 01
+@28000 i2c 5:3c D 00
+@28000 i2c 5:3c C b8 12 02
+@28000 i2c 5:3c D f8
+@28000 i2c 5:3c C b9 12 02
+@28000 i2c 5:3c D 1f
+@28000 i2c 5:3c C b8 12 03
+@28000 i2c 5:3c D fc
+@28000 i2c 5:3c C b9 12 03
+@28000 i2c 5:3c D 3f
+@28000 i2c 5:3c C b8 12 04
+@28000 i2c 5:3c D f6
+@28000 i2c 5:3c C b9 12 04
+@28000 i2c 5:3c D 7f
+@28000 i2c 5:3c C b8 12 05
+@28000 i2c 5:3c D b2
+@28000 i2c 5:3c C b9 12 05
+@28000 i2c 5:3c D 7f
+@28000 i2c 5:3c C b8 12 06
+@28000 i2c 5:3c D 1e
 @28000 i2c 5:3c C b9 12 06
-@28000 i2c 5:3c D 00 00 44 7d 40 00
+@28000 i2c 5:3c D 67
+@28000 i2c 5:3c C b8 12 07
+@28000 i2c 5:3c D 0e
+@28000 i2c 5:3c C b9 12 07
+@28000 i2c 5:3c D 66
+@28000 i2c 5:3c C b8 12 08
+@28000 i2c 5:3c D 66
+@28000 i2c 5:3c C b9 12 08
+@28000 i2c 5:3c D 66
+@28000 i2c 5:3c C b8 12 09
+@28000 i2c 5:3c D 66
+@28000 i2c 5:3c C b9 12 09
+@28000 i2c 5:3c D 66
+@28000 i2c 5:3c C b8 12 0a
+@28000 i2c 5:3c D 66
+@28000 i2c 5:3c C b9 12 0a
+@28000 i2c 5:3c D 66
+@28000 i2c 5:3c C b8 12 0b
+@28000 i2c 5:3c D 66
+@28000 i2c 5:3c C b9 12 0b
+@28000 i2c 5:3c D 70
+@28000 i2c 5:3c C b8 12 0c
+@28000 i2c 5:3c D fe
 @28000 i2c 5:3c C b9 12 0c
-@28000 i2c 5:3c D 00 7f 09 09 09 01
-@28000 i2c 5:3c C b9 13 02
-@28000 i2c 5:3c D 00 00 44 7d 40 00
+@28000 i2c 5:3c D 78
+@28000 i2c 5:3c C b8 12 0d
+@28000 i2c 5:3c D fe
+@28000 i2c 5:3c C b9 12 0d
+@28000 i2c 5:3c D 7d
+@28000 i2c 5:3c C b8 12 0e
+@28000 i2c 5:3c D fc
+@28000 i2c 5:3c C b9 12 0e
+@28000 i2c 5:3c D 3f
+@28000 i2c 5:3c C b8 12 0f
+@28000 i2c 5:3c D f8
+@28000 i2c 5:3c C b9 12 0f
+@28000 i2c 5:3c D 1f
+@28000 i2c 5:3c C b8 13 00
+@28000 i2c 5:3c D 00
+@28000 i2c 5:3c C b9 13 00
+@28000 i2c 5:3c D 00
+@28000 i2c 5:3c C b9 14 0b
+@28000 i2c 5:3c D 00 3e 08 08 3e 00 3e 22 22 1c 00 3c 02 0c 02 3c 00 22 3e 22 00
 @28000 i2c 5:3c C b9 13 08
-@28000 i2c 5:3c D 00*6
-@28000 i2c 5:3c C b9 13 0e
-@28000 i2c 5:3c D 00 7c 12 11 12 7c
-@28000 i2c 5:3c C b9 14 04
-@28000 i2c 5:3c D 00 7f 09 09 09 06
-@28000 i2c 5:3c C b9 14 0a
-@28000 i2c 5:3c D 00*6
-@28000 i2c 5:3c C b9 15 00
-@28000 i2c 5:3c D 00 00 44 7d 40 00
-@28000 i2c 5:3c C b9 15 06
-@28000 i2c 5:3c D 00 48 54 54 54 20
+@28000 i2c 5:3c D 00 3e 08 08 3e 00 22 3e 20 00 3e 22 22 1c 00
+@28000 i2c 5:3c C b8 13 08
+@28000 i2c 5:3c D 00 3e 2a 2a 22 00 02 3e 02 00 3e 08 08 3e 00
+@28000 i2c 5:3c C b8 14 0b
+@28000 i2c 5:3c D 00 1e 20 18 20 1e 00 3a 00 3e 0a 0a 00 3a 00
+@28000 i2c 5:3c C bb 15 0b
+@28000 i2c 5:3c D 00 58 54 64
+@28000 i2c 5:3c C bb 15 07
+@28000 i2c 5:3c D 00 7c 14 1c
+@28000 i2c 5:3c C bb 15 03
+@28000 i2c 5:3c D 00 7c 14 14
+@28000 i2c 5:3c C bb 14 0f
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 14 0b
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C b8 13 08
+@28000 i2c 5:3c D 3e 41 55 55 5d 7f 7d 41 7d 7f 41 77 77 41 3e
+@28000 i2c 5:3c C ba 15 0b
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 15 07
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 15 03
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 14 0f
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 14 0b
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 14 07
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 14 03
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 13 0f
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 13 0b
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 13 07
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 13 03
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 12 0f
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 12 0b
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 12 07
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C ba 12 03
+@28000 i2c 5:3c D 00*4
 @28000 i2c 5:3c C ba 12 00
-@28000 i2c 5:3c D 00 46 49 49 49 31
-@28000 i2c 5:3c C ba 12 06
-@28000 i2c 5:3c D 00 04 3f 44 40 20
-@28000 i2c 5:3c C ba 12 0c
-@28000 i2c 5:3c D 00 20 54 54 54 78
-@28000 i2c 5:3c C ba 13 02
-@28000 i2c 5:3c D 00 7c 08 04 04 08
-@28000 i2c 5:3c C ba 13 08
-@28000 i2c 5:3c D 00 04 3f 44 40 20
-@28000 i2c 5:3c C ba 13 0e
-@28000 i2c 5:3c D 00 00 44 7d 40 00
-@28000 i2c 5:3c C ba 14 04
-@28000 i2c 5:3c D 00 7c 08 04 04 78
-@28000 i2c 5:3c C ba 14 0a
-@28000 i2c 5:3c D 00 18 a4 a4 a4 7c
-@28000 i2c 5:3c C ba 15 00
-@28000 i2c 5:3c D 00 00 60 60 00 00
-@28000 i2c 5:3c C ba 15 06
-@28000 i2c 5:3c D 00 00 60 60 00 00
-@29000 write /kvmapp/kvm/ap.ssid "NanoKVM\n"
-@29000 create /kvmapp/kvm/ap.pass.new 0600
-@29000 chmod /kvmapp/kvm/ap.pass.new 0600
-@29000 write /kvmapp/kvm/ap.pass.new "6npgfawv5b"
-@29000 rename /kvmapp/kvm/ap.pass.new /kvmapp/kvm/ap.pass
-@29000 run /etc/init.d/S30wifi ap
-@29000 i2c 5:3c C b0 00 10
-@29000 i2c 5:3c D ff*128
-@29000 i2c 5:3c C b1 00 10
-@29000 i2c 5:3c D ff*128
-@29000 i2c 5:3c C b2 00 10
-@29000 i2c 5:3c D ff*128
-@29000 i2c 5:3c C b3 00 10
-@29000 i2c 5:3c D ff*128
-@29000 i2c 5:3c C b4 00 10
-@29000 i2c 5:3c D ff*128
-@29000 i2c 5:3c C b5 00 10
-@29000 i2c 5:3c D ff*128
-@29000 i2c 5:3c C b6 00 10
-@29000 i2c 5:3c D ff*128
-@29000 i2c 5:3c C b7 00 10
-@29000 i2c 5:3c D ff*128
-@29000 i2c 5:3c C b8 13 0d
-@29000 i2c 5:3c D ff ff 03 fb 8b 8b 8b fb 03 ff 1b ff ef b3 23 2f 1b bf 67 2f 77 43 9f ff 03 fb 8b 8b 8b fb 03 ff ff
-@29000 i2c 5:3c C b9 13 0d
-@29000 i2c 5:3c D ff ff a2 16 6e 16 ea d6 aa cb 58 23 da ef d4 0b 68 63 48 19 6a 17 d8 63 6a 92 42 62 fe 9e ea ff ff
-@29000 i2c 5:3c C ba 13 0d
-@29000 i2c 5:3c D ff ff b6 b5 fd a7 bb 88 aa fd 35 57 e9 0e 28 0b 69 64 2b 89 7e 55 0a 98 bf 98 36 7d f2 3f e8 ff ff
-@29000 i2c 5:3c C bb 13 0d
-@29000 i2c 5:3c D ff ff 80 be a2 a2 a2 be 80 ff ba ac c9 d1 eb eb a9 c6 d3 99 e4 e0 88 83 da db b0 cd a2 89 c4 ff ff
-@29000 i2c 5:3c C b9 12 03
-@29000 i2c 5:3c D ff c0 bf c7 bf c0
-@29000 i2c 5:3c C b9 12 09
-@29000 i2c 5:3c D ff ff bb 82 bf ff
-@29000 i2c 5:3c C b9 12 0f
-@29000 i2c 5:3c D ff 80 f6 f6 f6 fe
-@29000 i2c 5:3c C b9 13 05
-@29000 i2c 5:3c D ff ff bb 82 bf ff
-@29000 i2c 5:3c C ba 12 03
-@29000 i2c 5:3c D ff 83 ed ee ed 83
-@29000 i2c 5:3c C ba 12 09
-@29000 i2c 5:3c D ff 80 f6 f6 f6 f9
-@29000 i2c 5:3c C ba 12 0f
-@29000 i2c 5:3c D ff ff c9 c9 ff ff
-@30000 run hostapd_cli all sta
-@31000 run hostapd_cli all sta
+@28000 i2c 5:3c D 00 7c 54 54
+@28000 i2c 5:3c C ba 15 0b
+@28000 i2c 5:3c D 00 7c 44 7c
+@28000 i2c 5:3c C ba 15 07
+@28000 i2c 5:3c D 00 74 54 5c
+@28000 i2c 5:3c C ba 15 03
+@28000 i2c 5:3c D 00 00 40 00
+@28000 i2c 5:3c C ba 14 0f
+@28000 i2c 5:3c D 00 44 7c 40
+@28000 i2c 5:3c C ba 14 0b
+@28000 i2c 5:3c D 00 00 40 00
+@28000 i2c 5:3c C ba 14 07
+@28000 i2c 5:3c D 00 7c 54 7c
+@28000 i2c 5:3c C ba 14 03
+@28000 i2c 5:3c D 00 7c 54 74
+@28000 i2c 5:3c C ba 13 0f
+@28000 i2c 5:3c D 00 44 7c 40
+@28000 i2c 5:3c C ba 13 0b
+@28000 i2c 5:3c D 00 00 40 00
+@28000 i2c 5:3c C ba 13 07
+@28000 i2c 5:3c D 00 74 54 5c
+@28000 i2c 5:3c C ba 13 03
+@28000 i2c 5:3c D 00 5c 54 7c
+@28000 i2c 5:3c C ba 12 0f
+@28000 i2c 5:3c D 00 44 7c 40
+@28000 i2c 5:3c C b8 14 0b
+@28000 i2c 5:3c D 00 1e 20 18 20 1e 00 3a 00 3e 0a 0a 00 3a 00
+@28000 i2c 5:3c C b9 13 08
+@28000 i2c 5:3c D 3e 41 77 77 41 7f 5d 41 5f 7f 41 5d 5d 63 3e
+@28000 i2c 5:3c C b9 14 0b
+@28000 i2c 5:3c D 3e 41 77 77 41 7f 41 5d 5d 63 7f 43 7d 73 7d 43 7f 5d 41 5d 3e
+@28000 i2c 5:3c C bb 15 0b
+@28000 i2c 5:3c D 00 58 54 64
+@28000 i2c 5:3c C bb 15 07
+@28000 i2c 5:3c D 00 7c 14 1c
+@28000 i2c 5:3c C bb 15 03
+@28000 i2c 5:3c D 00 7c 14 14
+@28000 i2c 5:3c C bb 14 0f
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 14 0b
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 14 0a
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 14 0c
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 14 0e
+@28000 i2c 5:3c D 00 7c 44 7c
+@28000 i2c 5:3c C bb 14 0e
+@28000 i2c 5:3c D 00 7c 44 7c
+@28000 i2c 5:3c C bb 14 00
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 13 0c
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 13 08
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 13 04
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 13 00
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 12 0c
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 12 08
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 12 04
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 12 00
+@28000 i2c 5:3c D 00*4
+@28000 i2c 5:3c C bb 14 00
+@28000 i2c 5:3c D 00 7c 44 7c
+@28000 i2c 5:3c C bb 13 0c
+@28000 i2c 5:3c D 00 7c 54 7c
+@28000 i2c 5:3c C bb 13 08
+@28000 i2c 5:3c D 00 7c 44 7c
+@28000 i2c 5:3c C bb 13 04
+@28000 i2c 5:3c D 00 44 7c 40
+@28000 i2c 5:3c C bb 13 00
+@28000 i2c 5:3c D 00 00 30 00
+@28000 i2c 5:3c C bb 12 0c
+@28000 i2c 5:3c D 00 7c 44 7c
+@28000 i2c 5:3c C bb 12 08
+@28000 i2c 5:3c D 00 74 54 5c
+@28000 i2c 5:3c C bb 12 04
+@28000 i2c 5:3c D 00 5c 54 7c
+@28000 i2c 5:3c C bb 12 00
+@28000 i2c 5:3c D 00 44 7c 40
+@29000 i2c 5:3c C b8 14 0b
+@29000 i2c 5:3c D 00 1e 20 18 20 1e 00 3a 00 3e 0a 0a 00 3a 00
 @32000 > end
 @32000 i2c 5:3c C b0 00 10
 @32000 i2c 5:3c D 00*128
@@ -937,4 +887,4 @@
 @32000 i2c 5:3c D 00*128
 @32000 i2c 5:3c C b7 00 10
 @32000 i2c 5:3c D 00*128
-@32050 exit 0
+@32000 exit 0

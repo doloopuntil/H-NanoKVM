@@ -20,4 +20,4 @@
 @6000 run /etc/init.d/S30wifi restart
 @6000 run wpa_cli -i wlan0 status
 @8000 > end
-@8050 exit 0
+@8000 exit 0

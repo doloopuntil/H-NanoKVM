@@ -825,7 +825,7 @@ int main(int argc, char **argv)
 	char *args[] = {name, nullptr};
 	int r = kvm_system_main(1, args);
 	flush_run();
-	fprintf(g_trace, "@%llu exit %d\n", (unsigned long long)g_now, r);
+	fprintf(g_trace, "@%llu exit %d\n", (unsigned long long)g_end, r);
 	fclose(g_trace);
 	std::string cmd = "rm -rf " + g_root;
 	// _exit: the I2cBus destructors would run after the fake fd tables are gone.
