@@ -214,9 +214,9 @@ Known exceptions:
 - The DHCPv6 hook lets only an address literal reach `ip` or a `nameserver` line and only domain
   names reach `search`, and it removes the `/128` it added when the lease ends or changes.
 - The front panel (OLED, button, Wi-Fi setup) is a thread of the server, written in Rust. It
-  reads the network state from `/proc` and the interfaces themselves, runs `S30wifi`,
-  `hostapd_cli` and `wpa_cli` through the command allowlist without a shell, and writes the
-  AP key with mode 0600.
+  reads the network state from `/proc` and the interfaces themselves, runs `S30wifi` and
+  `hostapd_cli` through the command allowlist without a shell, asks wpa_supplicant's control
+  socket for the connection state, and writes the AP key with mode 0600.
 - HID: a failed write resets the USB gadget only when the controller state says that can help
   (not while the host is off or asleep), and at most once a minute. An H.264 keyframe is
   requested at most once a second for all viewers.

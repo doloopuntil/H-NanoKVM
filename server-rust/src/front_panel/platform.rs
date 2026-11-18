@@ -20,7 +20,8 @@ pub enum Command {
 }
 
 impl Command {
-    /// As the C++ ran them; the golden traces record this.
+    /// As the C++ ran them; the golden traces record this. The board answers `WpaStatus`
+    /// from wpa_supplicant's control socket: the image has no wpa_cli.
     pub fn argv(self) -> &'static [&'static str] {
         match self {
             Command::WifiRestart => &["/etc/init.d/S30wifi", "restart"],
