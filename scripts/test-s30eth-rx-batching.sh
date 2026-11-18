@@ -35,14 +35,18 @@ expect 0 0 "applied with the opt-out flag"
 
 rm -f "$RX_BATCHING_OFF_FLAG"
 apply_rx_batching
-expect 200000 2 "not applied by default"
+expect 200000 0 "not applied by default"
 
 apply_rx_batching
-expect 200000 2 "a second start changed the profile"
+expect 200000 0 "a second start changed the profile"
 
 reset 50000 0
 apply_rx_batching
 expect 50000 0 "overwrote a value set elsewhere"
+
+reset 0 2
+apply_rx_batching
+expect 0 2 "overwrote a deferral set elsewhere"
 
 rm -f "$NET/napi_defer_hard_irqs"
 reset_flush_only() { echo 0 > "$NET/gro_flush_timeout"; }
