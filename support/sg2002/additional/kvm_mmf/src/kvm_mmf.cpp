@@ -364,8 +364,8 @@ static int _free_leak_memory_of_ion(void)
 		if (sscanf(line, "%*d %19s %19s %*d %19s",
 			alloc_buf_size_str, phy_addr_str, buffer_name) == 3) {
 			printf("[ION] %s  %s  %s\r\n", alloc_buf_size_str, phy_addr_str, buffer_name);
-			// Other buffers may still be owned by kvm_system while the server
-			// starts; releasing them here makes VI init fail.
+			// Free only the capture buffer; releasing the others here made
+			// VI init fail.
 			if (strcmp(buffer_name, "VI_DMA_BUF"))
 				continue;
 			struct sys_ion_data ion_data = {

@@ -131,8 +131,8 @@ The full SD image is built from source in CI; see
   for 30 seconds, and closes a socket that cannot take a frame within 2 seconds.
   The player reconnects with a growing delay.
 - Device startup uses an idempotent `S95nanokvm`: stale `S95nanokvm.*` backup
-  scripts are moved out of boot autostart, old `kvm_system`/`NanoKVM-Server`
-  processes are stopped before runtime copy/start, stale web backup directories
+  scripts are moved out of boot autostart, an old `NanoKVM-Server` process is
+  stopped before the server starts, stale web backup directories
   are removed from `/kvmapp/server`, and port 443 is explicitly allowed for
   HTTPS.
 - Keyboard and mouse HID websocket, queued HID writes, paste, shortcuts, HID
