@@ -31,7 +31,7 @@ in `/etc/modprobe.d/aic8800.conf`), so `wlan0` exists before the server looks fo
 | `S03usbdev` | Builds the USB gadget: keyboard, mice, mass storage, network. Hands over to `S03usbhid` when `/boot/usb.hidonly` exists. |
 | `S03usbhid` | The HID-only gadget: keyboard and mice only. |
 | `S15kvmhwd` | Detects the board and the HDMI bridge once and writes `/etc/kvm/hw` (`beta` or `pcie`, rebooting after the first `pcie` detection) and `/etc/kvm/hdmi_version`; `re-detect` repeats it. The device tree muxes every pin (the Wi-Fi SDIO pins with `sdhci1`) and names the GPIO lines, which the server and libkvm claim by name; the script writes no registers. |
-| `S30eth` | Wired network: DHCP or static IPv4, fixed DNS servers, IPv6 modes, MAC derived from the chip ID, and receive batching (`gro_flush_timeout` 200 µs, `napi_defer_hard_irqs` 2), on unless `/etc/kvm/network/eth.rx-batching-off` exists. |
+| `S30eth` | Wired network: DHCP or static IPv4, fixed DNS servers, IPv6 modes, MAC derived from the chip ID, and receive batching (`gro_flush_timeout` 200 µs, `napi_defer_hard_irqs` left at 0), on unless `/etc/kvm/network/eth.rx-batching-off` exists. |
 | `S30wifi` | Wi-Fi client or access-point mode. |
 | `S40firewall` | Applies the firewall mode from `/etc/kvm/firewall.json`, including the WireGuard rules. `acme-open` and `acme-close` add and remove one rule that lets any source reach the HTTPS port while a certificate authority validates an order. See [Firewall modes](../guide/firewall.md). |
 | `S45wireguard` | Brings up `wg0` from `/etc/kvm/wireguard/` and runs the endpoint watcher. See [WireGuard](../guide/wireguard.md). |
