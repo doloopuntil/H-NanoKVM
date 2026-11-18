@@ -21,7 +21,8 @@ HARDENED_SOPH_MEDIA_OSDRV_PATCHES = \
 	sys-mmap vc-packets-in-carveout vc-timed-locks jpeg-wait-by-interrupt \
 	vpu-block-lock-sleeps jpeg-huffman-tables-without-vmalloc \
 	jpeg-load-tables-only-when-they-change vc-remove-only-what-was-registered \
-	fix-bugs-clang-reports sys-cache-ops-in-buffers venc-source-formats
+	fix-bugs-clang-reports sys-cache-ops-in-buffers venc-source-formats \
+	sys-buffer-bounds
 
 # Build order follows KBUILD_EXTRA_SYMBOLS: each directory links against the ones before it.
 HARDENED_SOPH_MEDIA_DIRS = sys base cif vcodec jpeg cvi_vc_drv vi vpss dwa rgn vo

@@ -1,0 +1,67 @@
+diff --git a/interdrv/include/chip/cv181x/uapi/linux/sys_uapi.h b/interdrv/include/chip/cv181x/uapi/linux/sys_uapi.h
+index 5f351e5..7419f1a 100644
+--- a/interdrv/include/chip/cv181x/uapi/linux/sys_uapi.h
++++ b/interdrv/include/chip/cv181x/uapi/linux/sys_uapi.h
+@@ -33,6 +33,14 @@ struct sys_ion_mem_state {
+ 
+ #define SYS_ION_G_ION_MEM_STATE _IOWR(SYS_IOC_MAGIC, 0x12, struct sys_ion_mem_state)
+ 
++/* The allocated buffer that holds addr_p, as cvi_sys_mmap allows mapping it. */
++struct sys_buf_bounds {
++	__u64 addr_p;	/* in */
++	__u64 base_p;	/* out: start of the buffer */
++	__u64 size;	/* out: its size, a multiple of the page size */
++};
++#define SYS_BUF_BOUNDS _IOWR(SYS_IOC_MAGIC, 0x13, struct sys_buf_bounds)
++
+ enum SYS_IOCTL {
+ 	SYS_IOCTL_SET_VIVPSSMODE,
+ 	SYS_IOCTL_GET_VIVPSSMODE,
+diff --git a/interdrv/sys/common/sys.c b/interdrv/sys/common/sys.c
+index 0b9a06b..556d036 100644
+--- a/interdrv/sys/common/sys.c
++++ b/interdrv/sys/common/sys.c
+@@ -806,6 +806,32 @@ static long _cvi_sys_sg_ctrl(struct file *filp, unsigned int cmd, unsigned long
+ 
+ }
+ 
++/* The allocated buffer holding a physical address, so a client can map all of it at once. */
++static long sys_buf_bounds_user(unsigned long arg)
++{
++	struct sys_buf_bounds bounds;
++	struct sys_mem_buf *buf;
++	long ret = -ENOENT;
++
++	if (copy_from_user(&bounds, (void __user *)arg, sizeof(bounds)))
++		return -EFAULT;
++
++	mutex_lock(&sys_mem_lock);
++	list_for_each_entry(buf, &sys_mem_bufs, list) {
++		if (bounds.addr_p >= buf->paddr && bounds.addr_p - buf->paddr < buf->size) {
++			bounds.base_p = buf->paddr;
++			bounds.size = buf->size;
++			ret = 0;
++			break;
++		}
++	}
++	mutex_unlock(&sys_mem_lock);
++
++	if (!ret && copy_to_user((void __user *)arg, &bounds, sizeof(bounds)))
++		ret = -EFAULT;
++	return ret;
++}
++
+ static long cvi_sys_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+ {
+ 	struct cvi_sys_device *ndev = filp->private_data;
+@@ -842,6 +868,10 @@ static long cvi_sys_ioctl(struct file *filp, unsigned int cmd, unsigned long arg
+ 		}
+ 		break;
+ 
++	case SYS_BUF_BOUNDS:
++		ret = sys_buf_bounds_user(arg);
++		break;
++
+ 	case SYS_INIT_USER:
+ 		ret = sys_init_user(ndev, arg);
+ 		break;
