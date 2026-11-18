@@ -92,9 +92,8 @@ since.
 `/etc/init.d/S95nanokvm` does wire `/mnt/system/usr/lib` and
 `/mnt/system/usr/lib/3rd` into the native library search path
 (`NANOKVM_NATIVE_LIBRARY_PATH`, passed to the musl loader's
-`--library-path` when launching the server, `kvm_system`, and
-`nanokvm-hwmon`) -- so it's not simply unreferenced, it's a deliberate
-fallback. But `/kvmapp/server/dl_lib` is checked first in that same path
+`--library-path` when launching the server) -- so it's not simply
+unreferenced, it's a deliberate fallback. But `/kvmapp/server/dl_lib` is checked first in that same path
 and already contains every file `/mnt/system/usr/lib` and its `3rd/`
 subdirectory (`libcli.so`, `libini.so`) have, except exactly the
 suspect files above -- so the fallback never actually gets exercised for
@@ -224,8 +223,8 @@ GCC now builds the native code, and Buildroot installs its own `libstdc++` and `
 `/usr/lib`; GCC 14 inlines the byte-sized atomics, so nothing needs `libatomic`.
 
 Update 2026-11: `libc.so` and the T-Head loader are no longer extracted or shipped.
-The loader's riscv64 `__clone` misaligns thread stacks, so the server and `kvm_system`
-run on Buildroot's musl 1.2.6 loader; see
+The loader's riscv64 `__clone` misaligns thread stacks, so the server
+runs on Buildroot's musl 1.2.6 loader; see
 [riscv64 thread stack alignment](../../docs/development/riscv-musl-stack-alignment.md).
 
 `libsns_lt6911.so` was the 8th file checked, and its bytes differ (2,100 of

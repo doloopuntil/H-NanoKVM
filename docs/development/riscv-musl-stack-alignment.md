@@ -6,10 +6,10 @@ last-checked: 2026-11-15
 
 # riscv64 thread stack alignment
 
-The server and `kvm_system` run on Buildroot's musl 1.2.6 loader,
+The server runs on Buildroot's musl 1.2.6 loader,
 `/lib/ld-musl-riscv64.so.1`. The image no longer ships the vendor T-Head loader
 `/lib/ld-musl-riscv64xthead.so.1` or the vendor `libc.so` in `/kvmapp/server/dl_lib`;
-`kvm_system` and `libkvm` are built by Buildroot's GCC, whose default loader is the musl
+`libkvm` and `libkvm_mmf` are built by Buildroot's GCC, whose default loader is the musl
 one. This page records why.
 
 ## The bug
