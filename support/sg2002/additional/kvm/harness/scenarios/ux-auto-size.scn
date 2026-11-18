@@ -1,0 +1,36 @@
+# Lite (UXC, beta, bridge), reads with 0x0 (follow the input): 1080p, 720p, unplug, replug.
+chip ux
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+src 1920 1080
+vidbg auto
+call init
+at 200
+int fall
+at 500
+call mjpeg 0 0 80 every 33 until 3000
+at 3000
+src 1280 720
+int rise
+int fall
+at 3100
+call mjpeg 0 0 80 every 33 until 6000
+at 6000
+src off
+int fall
+at 6100
+call mjpeg 0 0 80 every 500 until 9000
+call signal
+at 9000
+src 1920 1080
+vidbg auto
+int fall
+at 9200
+call mjpeg 0 0 80 every 33 until 12000
+call signal
+call deinit
+at 15000
+end

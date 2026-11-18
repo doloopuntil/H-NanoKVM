@@ -1,0 +1,16 @@
+# vi_dbg missing: no VI state is published; bridge reads still work.
+chip ux
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg absent
+src 1920 1080
+call init
+at 300
+int fall
+at 1100
+call mjpeg 1920 1080 80 every 100 until 12000
+at 12000
+end

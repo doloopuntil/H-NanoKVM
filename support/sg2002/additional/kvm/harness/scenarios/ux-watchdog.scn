@@ -1,0 +1,26 @@
+# Watchdog enabled by /etc/kvm/watchdog: feeds below 95 % (94 too), reboots at 95 and 100 %; unparsable or over 100 does nothing.
+chip ux
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+file /etc/kvm/watchdog 1\n
+carveout 40
+src 1920 1080
+call init
+at 2000
+carveout 94
+at 3000
+carveout 95
+at 3700
+carveout x
+at 4200
+carveout 100
+at 4700
+carveout 101
+at 5200
+rm /etc/kvm/watchdog
+at 6000
+end

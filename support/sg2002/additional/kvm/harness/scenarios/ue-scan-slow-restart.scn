@@ -1,0 +1,15 @@
+# ue scan with camera restarts that take 1.5 s under the capture lock: reads time out with -5.
+chip ue
+board beta
+restart_ms 1500
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+src 1280 720
+call init
+at 500
+call mjpeg 1280 720 80 every 300 until 25000
+at 25000
+end

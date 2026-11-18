@@ -1,0 +1,23 @@
+# UXC: frame detect on an MJPEG stream: unchanged frames give 5, a change resumes.
+chip ux
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+src 1920 1080
+call init
+at 1100
+call detect 3
+call mjpeg 1920 1080 80 every 33 until 2000
+at 2000
+frame 2
+at 2500
+frame 3
+at 2500
+call mjpeg 1920 1080 80 every 33 until 3000
+call detect 0
+call mjpeg 1920 1080 80 every 33 until 3500
+at 4000
+end

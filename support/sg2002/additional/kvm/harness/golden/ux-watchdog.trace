@@ -1,0 +1,47 @@
+@0 > file /etc/kvm/hdmi_mode 0
+@0 > file /kvmapp/kvm/state 0\n
+@0 > file /kvmapp/kvm/width 1920\n
+@0 > file /kvmapp/kvm/height 1080\n
+@0 > vidbg auto
+@0 > file /etc/kvm/watchdog 1\n
+@0 > carveout 40
+@0 > src 1920 1080
+@0 call init
+@0 cam create 1920x1080 in=1920x1080
+@0 cam mirror_flip
+@0 write /kvmapp/kvm/state "0\n"
+@0 run /kvmapp/system/init.d/S15kvmhwd get_hdmi_version
+@0 write /etc/kvm/hdmi_mode "0\n"
+@10 write /kvmapp/kvm/state "0\n"
+@500 run carveout usage -> 40
+@500 write /tmp/nanokvm_wd ""
+@1000 vi_state seq=2 dev_fps=60 fps=60 width_gt=0 width_ls=0 height_gt=0 height_ls=0
+@1000 write /kvmapp/kvm/state "1\n"
+@1000 run carveout usage -> 40
+@1000 write /tmp/nanokvm_wd ""
+@1500 run carveout usage -> 40
+@1500 write /tmp/nanokvm_wd ""
+@2000 > carveout 94
+@2000 run carveout usage -> 94
+@2000 write /tmp/nanokvm_wd ""
+@2500 run carveout usage -> 94
+@2500 write /tmp/nanokvm_wd ""
+@3000 > carveout 95
+@3000 run carveout usage -> 95
+@3000 run reboot
+@3000 write /tmp/nanokvm_wd ""
+@3500 run carveout usage -> 95
+@3500 run reboot
+@3500 write /tmp/nanokvm_wd ""
+@3700 > carveout x
+@4000 run carveout usage -> x
+@4000 write /tmp/nanokvm_wd ""
+@4200 > carveout 100
+@4500 run carveout usage -> 100
+@4500 run reboot
+@4500 write /tmp/nanokvm_wd ""
+@4700 > carveout 101
+@5000 run carveout usage -> 101
+@5000 write /tmp/nanokvm_wd ""
+@5200 > rm /etc/kvm/watchdog
+@6000 end

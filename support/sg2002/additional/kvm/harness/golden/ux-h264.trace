@@ -1,0 +1,59 @@
+@0 > file /etc/kvm/hdmi_mode 0
+@0 > file /kvmapp/kvm/state 0\n
+@0 > file /kvmapp/kvm/width 1920\n
+@0 > file /kvmapp/kvm/height 1080\n
+@0 > vidbg auto
+@0 > src 1920 1080
+@0 call init
+@0 cam create 1920x1080 in=1920x1080
+@0 cam mirror_flip
+@0 write /kvmapp/kvm/state "0\n"
+@0 run /kvmapp/system/init.d/S15kvmhwd get_hdmi_version
+@0 write /etc/kvm/hdmi_mode "0\n"
+@10 write /kvmapp/kvm/state "0\n"
+@1000 vi_state seq=2 dev_fps=60 fps=60 width_gt=0 width_ls=0 height_gt=0 height_ls=0
+@1000 write /kvmapp/kvm/state "1\n"
+@1100 cam mirror_flip
+@1116 venc del 1
+@1116 venc add 1 1920x1080 gop=300 fps=30/30 bitrate=2000
+@1116 call h264 1920 1080 30 2000 -> 3 h264 1920x1080 I size=6017
+@1149..@1512 call h264 1920 1080 30 2000 -> 4 h264 1920x1080 P size=700 x12
+@1512 call idr
+@1528 call h264 1920 1080 30 2000 -> 4 h264 1920x1080 P size=700
+@1528 call idr
+@1544..@1608 call h264 1920 1080 30 2000 -> 4 h264 1920x1080 P size=700 x5
+@1624 venc idr 1
+@1624 call h264 1920 1080 30 2000 -> 3 h264 1920x1080 I size=6017
+@1640..@1944 call h264 1920 1080 30 2000 -> 4 h264 1920x1080 P size=700 x20
+@1944 call idr
+@2016 venc del 1
+@2016 venc add 1 1920x1080 gop=600 fps=60/60 bitrate=2000
+@2016 call h264 1920 1080 60 2000 -> 3 h264 1920x1080 I size=6017
+@2033..@2509 call h264 1920 1080 60 2000 -> 4 h264 1920x1080 P size=700 x29
+@2525 venc del 1
+@2525 venc add 1 1920x1080 gop=600 fps=60/60 bitrate=3000
+@2525 call h264 1920 1080 60 3000 -> 3 h264 1920x1080 I size=6017
+@2541..@3009 call h264 1920 1080 60 3000 -> 4 h264 1920x1080 P size=700 x29
+@3025..@3511 call mjpeg 1920 1080 80 -> 0 jpeg 1920x1080 q80 size=1080 x16
+@3527..@3992 call h264 1920 1080 60 3000 -> 4 h264 1920x1080 P size=700 x29
+@4000 > venc fail push
+@4009 venc del 1
+@4009 call h264 1920 1080 60 3000 -> -1
+@4010 > venc fail none
+@4025 venc del 1
+@4025 venc add 1 1920x1080 gop=600 fps=60/60 bitrate=3000
+@4025 call h264 1920 1080 60 3000 -> 3 h264 1920x1080 I size=6017
+@4041..@4509 call h264 1920 1080 60 3000 -> 4 h264 1920x1080 P size=700 x29
+@4509 cam size 1280x720
+@4509 cam mirror_flip
+@4525 venc del 1
+@4525 venc add 1 1280x720 gop=300 fps=30/30 bitrate=10000
+@4525 call h264 1280 720 30 20000 -> 3 h264 1280x720 I size=6017
+@4549..@5011 call h264 1280 720 30 20000 -> 4 h264 1280x720 P size=700 x15
+@5011 cam size 1920x1080
+@5011 cam mirror_flip
+@5027 venc del 1
+@5027 venc add 1 1920x1080 gop=10 fps=1/1 bitrate=500
+@5027 call h264 1920 1080 0 100 -> 3 h264 1920x1080 I size=6017
+@5049..@5214 call h264 1920 1080 0 100 -> 4 h264 1920x1080 P size=700 x6
+@6000 end

@@ -1,0 +1,18 @@
+# No bridge answers (ue): scan mode for good; boot at 720p, the host moves to 1080p.
+chip ue
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+src 1280 720
+call init
+at 500
+call mjpeg 1280 720 80 every 500 until 20000
+at 20000
+src 1920 1080
+at 20100
+call mjpeg 1920 1080 80 every 500 until 50000
+at 50000
+end

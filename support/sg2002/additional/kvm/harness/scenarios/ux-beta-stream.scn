@@ -1,0 +1,40 @@
+# Lite (UXC, beta): explicit sizes as the server passes them; 720p, unplug, HDMI off/on, replug.
+chip ux
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+src 1920 1080
+call init
+at 1100
+call mjpeg 1920 1080 80 every 33 until 3000
+at 3000
+src 1280 720
+int rise
+int fall
+at 3100
+call mjpeg 1920 1080 80 every 33 until 4300
+call mjpeg 1280 720 80 every 33 until 6000
+at 6000
+src off
+int fall
+at 6100
+call mjpeg 1280 720 80 every 500 until 8000
+call signal
+at 8000
+call hdmi 0
+call signal
+call mjpeg 1280 720 80
+at 9000
+src 1920 1080
+int fall
+at 9500
+call hdmi 1
+call mjpeg 1280 720 80 every 33 until 11000
+call mjpeg 1920 1080 80 every 33 until 13000
+call signal
+call deinit
+at 14000
+end

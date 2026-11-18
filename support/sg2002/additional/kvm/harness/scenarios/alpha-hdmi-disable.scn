@@ -1,0 +1,18 @@
+# No /etc/kvm/hw (alpha): hdmi_control falls back to 'a'; HDMI disabled at boot by /etc/kvm/hdmi_disable.
+chip ux
+board none
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+file /etc/kvm/hdmi_disable 1\n
+src 1920 1080
+call init
+at 1100
+call signal
+call mjpeg 1920 1080 80
+call hdmi 1
+call signal
+at 2000
+end

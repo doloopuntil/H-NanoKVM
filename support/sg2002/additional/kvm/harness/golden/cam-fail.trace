@@ -1,0 +1,17 @@
+@0 > file /etc/kvm/hdmi_mode 0
+@0 > file /kvmapp/kvm/state 0\n
+@0 > file /kvmapp/kvm/width 1920\n
+@0 > file /kvmapp/kvm/height 1080\n
+@0 > vidbg auto
+@0 > src 1920 1080
+@0 call init
+@0 cam create 1920x1080 fail
+@0 mmf deinit force
+@0..@10 write /kvmapp/kvm/state "0\n" x2
+@100..@1100 call mjpeg 1920 1080 80 -> -1 x3
+@1100 call signal -> 0
+@1100 call deinit
+@1100 write /kvmapp/kvm/state "0\n"
+@1100 mmf deinit force
+@1100 call deinit done
+@2000 end

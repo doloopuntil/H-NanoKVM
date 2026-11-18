@@ -1,0 +1,22 @@
+# PCIe: hdmi-reset GPIO claimed out of reset, driven by hdmi 0/1; reads discard 5 frames after re-enable.
+chip ux
+board pcie
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+src 1920 1080
+call init
+at 1100
+call mjpeg 1920 1080 80 every 33 until 2000
+at 2000
+call hdmi 0
+call signal
+at 3000
+call hdmi 1
+call mjpeg 1920 1080 80 every 33 until 3500
+call signal
+call deinit
+at 4000
+end

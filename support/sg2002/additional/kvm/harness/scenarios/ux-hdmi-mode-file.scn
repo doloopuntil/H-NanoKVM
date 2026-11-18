@@ -1,0 +1,16 @@
+# A mode left in /etc/kvm/hdmi_mode is reset at start; garbage in it is rewritten to 0.
+chip ux
+board beta
+file /etc/kvm/hdmi_mode 2
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+src 1920 1080
+call init
+at 2000
+file /etc/kvm/hdmi_mode x
+at 2500
+call mjpeg 1920 1080 80 every 200 until 3500
+at 4000
+end
