@@ -38,7 +38,7 @@ help:
 	@echo "  all           - Build Rust kvmapp (default)"
 	@echo "  clean         - Clean build artifacts"
 	@echo ""
-	@echo "The SG2002 native code (libkvm, kvm_system): docs/development/cross-build.md"
+	@echo "The SG2002 native code (libkvm, libkvm_mmf): docs/development/cross-build.md"
 
 # Build Rust application locally
 rust-app:

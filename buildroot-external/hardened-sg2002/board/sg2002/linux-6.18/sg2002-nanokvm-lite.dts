@@ -84,7 +84,7 @@
 		};
 	};
 
-	/* OLED on the Full and PCIe; probed by kvm_system */
+	/* OLED on the Full and PCIe; probed by the server's front panel */
 	i2c5: i2c-gpio {
 		compatible = "i2c-gpio";
 		pinctrl-names = "default";
@@ -361,7 +361,7 @@
 	status = "okay";
 };
 
-/* Kept so /dev/i2c-1 exists for kvm_system; its pads stay SDIO */
+/* Kept so /dev/i2c-1 exists for the front panel; its pads stay SDIO */
 &i2c1 {
 	status = "okay";
 };

@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
-last-checked: 2026-11-13
+last-checked: 2026-11-18
 source: constants in server-rust/src and kvmapp/system/init.d
 ---
 
@@ -69,7 +69,7 @@ The boot files:
 | `hw` | Board, written by `S15kvmhwd` at first boot: `pcie` when an OLED answers at `0x3c` on I2C bus 5, otherwise `beta`. |
 | `hdmi_version` | HDMI bridge, written by `S15kvmhwd` from I2C bus 4: `c` (LT6911C), `ux` (LT6911UXC), `d` (LT6911D) or `ue` (no answer). |
 | `hdmi_mode` | How libkvm finds the input size: `0` reads it from the bridge on its interrupt, `1` tries a list of common sizes, `2` uses `/kvmapp/kvm/width` and `height`. libkvm writes it; it falls back to `1` when the bridge reports a size it does not know. |
-| `oled_exist`, `wifi_exist` | OLED and Wi-Fi present, written by `kvm_system`. |
+| `oled_exist`, `wifi_exist` | OLED and Wi-Fi present, written by the server's front panel. |
 | `.picoclaw_internal_token` | Token PicoClaw uses to call the server's internal routes. |
 
 ## `/boot`: flags read before the root filesystem is up

@@ -73,18 +73,11 @@ else
 	fail "could not read the Avahi configuration"
 fi
 
-# T-Head code generation: musl and kvm_system use the extensions, nothing uses the vector unit
+# T-Head code generation: musl uses the extensions
 if dump /usr/lib/libc.so libc.so; then
 	readelf -A "$TMP_DIR/libc.so" 2>/dev/null | grep -Fq xtheadmempair || fail "libc.so is not built for the T-Head extensions"
 else
 	fail "could not read /usr/lib/libc.so"
-fi
-if dump /kvmapp/kvm_system/kvm_system kvm_system; then
-	readelf -A "$TMP_DIR/kvm_system" 2>/dev/null | grep -Fq xtheadmempair || fail "kvm_system is not built for the T-Head extensions"
-	! readelf -A "$TMP_DIR/kvm_system" 2>/dev/null | grep -Fq v0p7 || fail "kvm_system uses the vector extension"
-	! readelf -d "$TMP_DIR/kvm_system" 2>/dev/null | grep -Eq '\((RPATH|RUNPATH)\)' || fail "kvm_system has an RPATH"
-else
-	fail "could not read kvm_system"
 fi
 
 # The init scripts installed in /etc/init.d are the ones the application package carries

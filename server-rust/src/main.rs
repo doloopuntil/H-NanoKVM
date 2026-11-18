@@ -7,7 +7,7 @@ use nanokvm_rust_server::{
     api::{compatibility, cpu_clock, monitor, picoclaw, ssh_keys, system_firewall, tls_switch, vm},
     config::Config,
     ffi::kvm,
-    hdmi_idle,
+    front_panel, hdmi_idle,
     http::{
         cert_manager,
         limits::{ConnLimiter, LimitedListener},
@@ -54,6 +54,7 @@ const BOOT_INIT_SCRIPTS: &[&str] = &[
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 const KVM_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(4);
+const FRONT_PANEL_STOP_TIMEOUT: Duration = Duration::from_secs(2);
 const BUNDLED_UPDATE_TRUST_DIR: &str = "/kvmapp/system/keys";
 
 // One worker on the one core. Timers and sockets are otherwise checked only every 61 task
@@ -82,6 +83,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     vm::record_swap_at_startup();
     monitor::start_sampler();
     initialize_kvm();
+    front_panel::start();
     hdmi_idle::start();
     hid_ws::start_keyboard_led_reader();
     hid_ws::start_persisted_mouse_jiggler();
@@ -114,6 +116,7 @@ fn install_shutdown_signal_handler() {
     tokio::spawn(async {
         shutdown_signal().await;
         warn!("shutdown signal received; deinitializing NanoKVM video backend");
+        let panel = tokio::task::spawn_blocking(|| front_panel::stop(FRONT_PANEL_STOP_TIMEOUT));
 
         match time::timeout(
             KVM_SHUTDOWN_TIMEOUT,
@@ -126,6 +129,7 @@ fn install_shutdown_signal_handler() {
             Ok(Err(err)) => warn!(error = ?err, "NanoKVM video backend deinit task failed"),
             Err(_) => warn!("NanoKVM video backend deinit timed out"),
         }
+        let _ = panel.await;
 
         process::exit(0);
     });

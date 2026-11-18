@@ -11,9 +11,6 @@ RUST_BINARY="${RUST_BINARY:-}"
 WEB_DIST="${WEB_DIST:-$ROOT_DIR/web/dist}"
 APP_VERSION="${APP_VERSION:-}"
 ARTIFACT_NAME="${ARTIFACT_NAME:-nanokvm-kvmapp-rust.tar.gz}"
-BASE_ROOTFS_IMAGE="${BASE_ROOTFS_IMAGE:-$BUILD_DIR/sd-image/rootfs.ext}"
-KVM_SYSTEM_SOURCE="${KVM_SYSTEM_SOURCE:-}"
-KVM_SYSTEM_BUILD_SOURCE="${KVM_SYSTEM_BUILD_SOURCE:-$BUILD_DIR/native-libkvm/kvm_system}"
 NATIVE_LIB_DIR="${NATIVE_LIB_DIR:-$ROOT_DIR/server-rust/native/dl_lib}"
 SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1782723554}"
 
@@ -23,50 +20,6 @@ case "$SOURCE_DATE_EPOCH" in
     exit 1
     ;;
 esac
-
-restore_kvm_system_helper() {
-  dest="$KVMAPP_STAGE/kvm_system/kvm_system"
-  tmp="$STAGE_DIR/kvm_system.orig"
-
-  mkdir -p "$KVMAPP_STAGE/kvm_system"
-
-  if [ -n "$KVM_SYSTEM_SOURCE" ] && [ -s "$KVM_SYSTEM_SOURCE" ]; then
-    cp "$KVM_SYSTEM_SOURCE" "$dest"
-    chmod 0755 "$dest"
-    return
-  fi
-
-  if [ -s "$KVM_SYSTEM_BUILD_SOURCE" ]; then
-    cp "$KVM_SYSTEM_BUILD_SOURCE" "$dest"
-    chmod 0755 "$dest"
-    return
-  fi
-
-  if [ -s "$dest" ]; then
-    chmod 0755 "$dest"
-    return
-  fi
-
-  if [ -d "$ROOT_DIR/support/sg2002/kvm_system/main" ]; then
-    echo "missing built NanoKVM helper: $KVM_SYSTEM_BUILD_SOURCE" >&2
-    echo "build it with scripts/build-sg2002-native.sh (docs/development/cross-build.md)" >&2
-    echo "or set KVM_SYSTEM_SOURCE=<path>" >&2
-    exit 1
-  fi
-
-  if [ -f "$BASE_ROOTFS_IMAGE" ] && command -v debugfs >/dev/null 2>&1; then
-    rm -f "$tmp"
-    if debugfs -R "dump /kvmapp/kvm_system/kvm_system $tmp" "$BASE_ROOTFS_IMAGE" >/dev/null 2>&1 && [ -s "$tmp" ]; then
-      cp "$tmp" "$dest"
-      chmod 0755 "$dest"
-      return
-    fi
-  fi
-
-  echo "missing required NanoKVM helper: /kvmapp/kvm_system/kvm_system" >&2
-  echo "set KVM_SYSTEM_SOURCE=<path> or BASE_ROOTFS_IMAGE=<rootfs.ext>" >&2
-  exit 1
-}
 
 if [ -z "$RUST_BINARY" ]; then
   if [ -n "$RUST_TARGET" ]; then
@@ -90,12 +43,6 @@ fi
 rm -rf "$STAGE_DIR"
 mkdir -p "$KVMAPP_STAGE/server" "$KVMAPP_STAGE/backends" "$OUT_DIR"
 cp -R "$ROOT_DIR/kvmapp/." "$KVMAPP_STAGE/"
-restore_kvm_system_helper
-
-if readelf -d "$KVMAPP_STAGE/kvm_system/kvm_system" 2>/dev/null | grep -Eq '\((RPATH|RUNPATH)\)'; then
-  echo "kvm_system must not contain RPATH/RUNPATH; Buildroot target sanitization corrupts this vendor xthead ELF" >&2
-  exit 1
-fi
 
 if [ -n "$APP_VERSION" ]; then
   printf '%s\n' "$APP_VERSION" > "$KVMAPP_STAGE/version"
@@ -150,8 +97,6 @@ fi
   printf 'web_dist: kvmapp/server/web\n'
   printf 'app_version: %s\n' "$(cat "$KVMAPP_STAGE/version")"
   printf 'native_lib_dir: kvmapp/server/dl_lib\n'
-  printf 'kvm_system_helper: kvmapp/kvm_system/kvm_system\n'
-  printf 'kvm_system_sha256: %s\n' "$(sha256sum "$KVMAPP_STAGE/kvm_system/kvm_system" | awk '{print $1}')"
   printf 'source_date_epoch: %s\n' "$SOURCE_DATE_EPOCH"
 } > "$STAGE_DIR/MANIFEST.txt"
 

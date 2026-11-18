@@ -2,8 +2,8 @@
 
 use std::net::Ipv4Addr;
 
-use crate::oled::{TYPE_H264, TYPE_MJPG};
-use crate::{Platform, System};
+use super::oled::{TYPE_H264, TYPE_MJPG};
+use super::{Platform, System};
 
 const VI_SHARED_PATH: &str = "/dev/shm/nanokvm_vi_state";
 const VI_SHARED_MAGIC: u32 = 0x4e4b_5649;
@@ -14,7 +14,7 @@ const RTF_GATEWAY: u64 = 0x2;
 
 /// HDMI state between reads (the statics of kvm_update_hdmi_state).
 #[derive(Debug)]
-pub(crate) struct HdmiCache {
+pub(super) struct HdmiCache {
     check_times: u8,
     fallback_fps: u32,
     fallback_updated_ms: u32,
@@ -39,7 +39,7 @@ impl Default for HdmiCache {
 }
 
 /// C strtoul(s, NULL, 10): spaces, a sign, digits; saturates; "-n" wraps.
-pub(crate) fn strtoul(s: &[u8]) -> u64 {
+pub(super) fn strtoul(s: &[u8]) -> u64 {
     let mut i = 0;
     while i < s.len() && matches!(s[i], b' ' | b'\t' | b'\n' | 0x0b | 0x0c | b'\r') {
         i += 1;
@@ -173,7 +173,7 @@ impl<P: Platform> System<P> {
             .unwrap_or_default()
     }
 
-    pub(crate) fn refresh_wifi_addr(&mut self) -> bool {
+    pub(super) fn refresh_wifi_addr(&mut self) -> bool {
         self.sys.wifi_addr = self.interface_ip("wlan0");
         !self.sys.wifi_addr.is_empty()
     }
@@ -192,7 +192,7 @@ impl<P: Platform> System<P> {
     }
 
     /// 0 down, 1 link without an address, 2 address, 3 address and a default route.
-    pub(crate) fn update_eth_state(&mut self) {
+    pub(super) fn update_eth_state(&mut self) {
         if !self.iface_running("eth0") {
             self.sys.eth_state = 0;
             return;
@@ -208,7 +208,7 @@ impl<P: Platform> System<P> {
     }
 
     /// -2 no Wi-Fi module, 0 not connected, 1 address and a default route.
-    pub(crate) fn update_wifi_state(&mut self) {
+    pub(super) fn update_wifi_state(&mut self) {
         if self.sys.wifi_state == -2 {
             return;
         }
@@ -235,7 +235,7 @@ impl<P: Platform> System<P> {
         }
     }
 
-    pub(crate) fn update_usb_state(&mut self) {
+    pub(super) fn update_usb_state(&mut self) {
         let Some(state) = self.read_text("/sys/class/udc/4340000.usb/state", 9) else {
             self.sys.usb_state = -1;
             self.sys.hid_state = 0;
@@ -286,7 +286,7 @@ impl<P: Platform> System<P> {
     }
 
     /// Every sixth call: the shared VI state, else /proc/cvitek/vi_dbg at most every 10 s.
-    pub(crate) fn update_hdmi_state(&mut self) {
+    pub(super) fn update_hdmi_state(&mut self) {
         self.hdmi.check_times += 1;
         if self.hdmi.check_times <= 5 {
             return;
@@ -296,7 +296,7 @@ impl<P: Platform> System<P> {
             Ok((fps, _)) => {
                 self.sys.hdmi_state = (fps != 0) as i8;
                 if self.hdmi.shared_failure_logged {
-                    eprintln!("[kvm_system] VI shared state recovered");
+                    tracing::info!("front panel: VI shared state recovered");
                 }
                 self.hdmi.shared_failure_logged = false;
                 self.hdmi.fallback_failure_logged = false;
@@ -304,7 +304,7 @@ impl<P: Platform> System<P> {
             }
             Err(why) => {
                 if !self.hdmi.shared_failure_logged {
-                    eprintln!("[kvm_system] VI shared state {why}; using direct fallback");
+                    tracing::warn!("front panel: VI shared state {why}; using direct fallback");
                     self.hdmi.shared_failure_logged = true;
                 }
             }
@@ -326,14 +326,14 @@ impl<P: Platform> System<P> {
                     self.hdmi.fallback_updated_ms = now;
                     self.hdmi.fallback_valid = true;
                     if self.hdmi.fallback_failure_logged {
-                        eprintln!("[kvm_system] direct VI fallback recovered");
+                        tracing::info!("front panel: direct VI fallback recovered");
                     }
                     self.hdmi.fallback_failure_logged = false;
                 }
                 None => {
                     self.hdmi.fallback_valid = false;
                     if !self.hdmi.fallback_failure_logged {
-                        eprintln!("[kvm_system] direct VI fallback unavailable");
+                        tracing::warn!("front panel: direct VI fallback unavailable");
                         self.hdmi.fallback_failure_logged = true;
                     }
                 }
@@ -348,13 +348,13 @@ impl<P: Platform> System<P> {
         };
     }
 
-    pub(crate) fn update_stream_fps(&mut self) {
+    pub(super) fn update_stream_fps(&mut self) {
         if let Some(t) = self.read_text("/kvmapp/kvm/now_fps", 9) {
             self.sys.now_fps = atoi(&t) as i32 as i8;
         }
     }
 
-    pub(crate) fn update_stream_type(&mut self) {
+    pub(super) fn update_stream_type(&mut self) {
         if let Some(t) = self.read_text("/kvmapp/kvm/type", 9) {
             self.sys.stream_type = match t[0] {
                 b'm' => TYPE_MJPG as i8,
@@ -364,13 +364,13 @@ impl<P: Platform> System<P> {
         }
     }
 
-    pub(crate) fn update_stream_qlty(&mut self) {
+    pub(super) fn update_stream_qlty(&mut self) {
         if let Some(t) = self.read_text("/kvmapp/kvm/qlty", 9) {
             self.sys.qlty = stream_quality_bucket(strtoul(&t), self.sys.stream_type);
         }
     }
 
-    pub(crate) fn update_hdmi_res(&mut self) {
+    pub(super) fn update_hdmi_res(&mut self) {
         if let Some(t) = self.read_text("/kvmapp/kvm/width", 9) {
             self.sys.hdmi_width = atoi(&t) as i32 as i16;
         }

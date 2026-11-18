@@ -1,16 +1,16 @@
-//! kvm_system in Rust: the status OLED and button of the Full and PCIe boards, Wi-Fi
-//! setup over an access point, and the status files the server reads. A port of
-//! support/sg2002/kvm_system; harness/golden holds the C++ behaviour it must match.
+//! The front panel: the status OLED and button of the Full and PCIe boards, Wi-Fi setup
+//! over an access point, and the status files the server reads. Ported from the C++
+//! kvm_system; tests/front_panel/golden holds the behaviour it must keep.
 
+mod device;
 mod font;
-#[cfg(target_os = "linux")]
-pub mod linux;
 mod oled;
 pub mod platform;
 mod status;
 mod ui;
 mod wifi;
 
+pub use device::{start, stop};
 pub use platform::{Command, IfaceFlags, KeyEvent, Platform};
 
 const STATE_DELAY_MS: u64 = 1000;
@@ -162,7 +162,7 @@ impl<P: Platform> System<P> {
         self.p
     }
 
-    /// Runs until SIGTERM: status every second, the OLED every second, keys at once.
+    /// Runs until `stop`: status every second, the OLED every second, keys at once.
     pub fn run(&mut self) {
         self.oled_present = self.oled_detect();
         self.p.set_marker("/etc/kvm/oled_exist", self.oled_present);

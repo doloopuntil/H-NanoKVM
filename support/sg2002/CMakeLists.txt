@@ -1,4 +1,4 @@
-# libkvm_mmf.so, libkvm.so and kvm_system for the SG2002.
+# libkvm_mmf.so and libkvm.so for the SG2002.
 # cmake -S support/sg2002 -B build -DCMAKE_TOOLCHAIN_FILE=support/sg2002/cmake/buildroot-musl.cmake \
 #   -DSG2002_CROSS_PREFIX=... -DSG2002_SDK_DIR=...   (scripts/stage-sg2002-sdk.sh makes the SDK dir)
 cmake_minimum_required(VERSION 3.16)
@@ -65,27 +65,3 @@ target_link_options(kvm PRIVATE
 	-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/additional/kvm/libkvm.map)
 set_target_properties(kvm PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/additional/kvm/libkvm.map)
 target_link_libraries(kvm PRIVATE kvm_mmf pthread)
-
-# kvm_system: status, keys and the OLED (Full and PCIe boards).
-set(ks kvm_system/main)
-add_executable(kvm_system
-	${ks}/src/main.cpp
-	${ks}/lib/libqr/qr.c
-	${ks}/lib/libqr/qrcnv.c
-	${ks}/lib/libqr/qrcnv_bmp.c
-	${ks}/lib/oled_ctrl/oled_ctrl.cpp
-	${ks}/lib/oled_ui/oled_ui.cpp
-	${ks}/lib/system_ctrl/system_ctrl.cpp
-	${ks}/lib/system_state/system_state.cpp)
-target_include_directories(kvm_system PRIVATE
-	${ks}/include
-	${ks}/lib/libqr
-	${ks}/lib/oled_ctrl
-	${ks}/lib/oled_ui
-	${ks}/lib/system_ctrl
-	${ks}/lib/system_state
-	additional/kvm/include
-	common)
-target_compile_options(kvm_system PRIVATE -Os -ffunction-sections -fdata-sections)
-target_link_options(kvm_system PRIVATE -pie -Wl,--gc-sections -Wl,--as-needed)
-target_link_libraries(kvm_system PRIVATE pthread)

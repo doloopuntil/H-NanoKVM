@@ -1,6 +1,6 @@
-//! Runs the C++ harness scenarios (../harness/scenarios) against the Rust port and
-//! compares the traces with the goldens recorded from the C++ (../harness/golden).
-//! The scenario semantics and trace format follow ../harness/fake.cpp line for line.
+//! Replays tests/front_panel/scenarios against the front panel and compares the traces
+//! with the goldens recorded from the C++ kvm_system (tests/front_panel/golden). The
+//! scenario semantics and trace format follow the old harness (tests/front_panel/README.md).
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::fmt::Write as _;
@@ -8,7 +8,7 @@ use std::fs;
 use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 
-use kvm_system::{Command, IfaceFlags, KeyEvent, Platform, System};
+use nanokvm_rust_server::front_panel::{Command, IfaceFlags, KeyEvent, Platform, System};
 
 /// Scenarios where the port deliberately differs from the C++, and why.
 const EXPECTED_DIFFERENCES: &[(&str, &str)] = &[(
@@ -499,7 +499,7 @@ impl Platform for Sim {
 
 fn run_scenario(scenario: &Path) -> String {
     let root = std::env::temp_dir().join(format!(
-        "kvm-system-golden-{}-{}",
+        "front-panel-golden-{}-{}",
         std::process::id(),
         scenario.file_stem().unwrap().to_string_lossy()
     ));
@@ -520,9 +520,9 @@ fn run_scenario(scenario: &Path) -> String {
 
 #[test]
 fn goldens() {
-    let harness = Path::new(env!("CARGO_MANIFEST_DIR")).join("../harness");
-    let out_dir = std::env::var_os("KVM_SYSTEM_TRACE_DIR").map(PathBuf::from);
-    let mut names: Vec<_> = fs::read_dir(harness.join("scenarios"))
+    let data = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/front_panel");
+    let out_dir = std::env::var_os("FRONT_PANEL_TRACE_DIR").map(PathBuf::from);
+    let mut names: Vec<_> = fs::read_dir(data.join("scenarios"))
         .unwrap()
         .map(|e| e.unwrap().path())
         .filter(|p| p.extension().is_some_and(|e| e == "scn"))
@@ -535,8 +535,7 @@ fn goldens() {
         if let Some(dir) = &out_dir {
             fs::write(dir.join(format!("{name}.trace")), &got).unwrap();
         }
-        let want =
-            fs::read_to_string(harness.join("golden").join(format!("{name}.trace"))).unwrap();
+        let want = fs::read_to_string(data.join("golden").join(format!("{name}.trace"))).unwrap();
         let expected_diff = EXPECTED_DIFFERENCES.iter().find(|d| d.0 == name);
         match (got == want, expected_diff) {
             (true, None) => eprintln!("ok      {name}"),

@@ -1670,11 +1670,11 @@ stop_update_runtime() {{\n\
       $BB rm -f \"$PID_FILE\" >/dev/null 2>&1 || true\n\
     fi\n\
   done\n\
-  for NAME in NanoKVM-Server kvm_system tailscaled picoclaw dnsmasq sshd ssdpd avahi-daemon ntpd bluetoothd dbus-daemon haveged input-event-daemon udevd syslogd klogd; do\n\
+  for NAME in NanoKVM-Server tailscaled picoclaw dnsmasq sshd ssdpd avahi-daemon ntpd bluetoothd dbus-daemon haveged input-event-daemon udevd syslogd klogd; do\n\
     $BB killall \"$NAME\" >/dev/null 2>&1 || true\n\
   done\n\
   $BB sleep 1\n\
-  for NAME in NanoKVM-Server kvm_system tailscaled picoclaw dnsmasq sshd ssdpd avahi-daemon ntpd bluetoothd dbus-daemon haveged input-event-daemon udevd syslogd klogd; do\n\
+  for NAME in NanoKVM-Server tailscaled picoclaw dnsmasq sshd ssdpd avahi-daemon ntpd bluetoothd dbus-daemon haveged input-event-daemon udevd syslogd klogd; do\n\
     $BB killall -9 \"$NAME\" >/dev/null 2>&1 || true\n\
   done\n\
   for PROC in /proc/[0-9]*; do\n\

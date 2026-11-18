@@ -22,7 +22,7 @@ corepack pnpm --dir web test
 corepack pnpm --dir web lint
 corepack pnpm --dir web build
 sh -n kvmapp/system/init.d/<script>
-scripts/build-sg2002-native.sh <cross-prefix> <sdk-dir> <out>   # libkvm, kvm_system
+scripts/build-sg2002-native.sh <cross-prefix> <sdk-dir> <out>   # libkvm, libkvm_mmf
 gh workflow run system-image-6x.yml --ref <branch>   # full SD image build
 ```
 
@@ -56,7 +56,7 @@ Details and known failures: [docs/development/testing.md](docs/development/testi
   styles. Keep that order. Style antd's inner parts through its `styles` prop where antd names them.
 - **Image workflow**: do not reintroduce downloads of published Hardened
   artifacts (the raw.12 system, the 2.0.42 app archive); `libkvm` and
-  `kvm_system` are built from source. The `build/rc12-run` path name is a
+  `libkvm_mmf` are built from source. The `build/rc12-run` path name is a
   deliberate leftover. Change the workflow
   only with a real CI run to prove it
   ([docs/development/ci-image-build.md](docs/development/ci-image-build.md)).

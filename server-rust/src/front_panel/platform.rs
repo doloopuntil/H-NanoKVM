@@ -1,4 +1,4 @@
-//! Everything kvm_system needs from the outside. `linux::Linux` is the device;
+//! Everything the front panel needs from the outside. `device::Device` is the board;
 //! the tests drive the same code through a recorded scenario.
 
 use std::net::Ipv4Addr;
@@ -10,7 +10,7 @@ pub struct KeyEvent {
     pub pressed: bool,
 }
 
-/// The commands kvm_system runs, argv only.
+/// The commands the front panel runs, argv only.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Command {
     WifiRestart,
@@ -20,6 +20,7 @@ pub enum Command {
 }
 
 impl Command {
+    /// As the C++ ran them; the golden traces record this.
     pub fn argv(self) -> &'static [&'static str] {
         match self {
             Command::WifiRestart => &["/etc/init.d/S30wifi", "restart"],
@@ -30,7 +31,7 @@ impl Command {
     }
 }
 
-/// SIOCGIFFLAGS, reduced to what kvm_system looks at.
+/// Interface flags, reduced to what the front panel looks at.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct IfaceFlags {
     pub up: bool,
@@ -39,7 +40,7 @@ pub struct IfaceFlags {
 
 pub trait Platform {
     fn now_ms(&mut self) -> u64;
-    /// True once SIGTERM or SIGINT arrived.
+    /// True once the server asked the panel to stop.
     fn shutdown_requested(&mut self) -> bool;
     /// Opens the button; false when there is none.
     fn open_key_device(&mut self) -> bool;

@@ -75,7 +75,7 @@
     {
       "name": "hardened-nanokvm-kvmapp",
       "source": "build/kvmapp-rust/kvmapp",
-      "role": "Rust backend, web assets, native runtime, kvm_system, init scripts, and update key",
+      "role": "Rust backend, web assets, native runtime, init scripts, and update key",
       "license": "GPL-3.0-only source plus non-redistributable vendor ABI payload",
       "status": "local Buildroot package added; native ABI closure validated, redistribution disabled"
     }

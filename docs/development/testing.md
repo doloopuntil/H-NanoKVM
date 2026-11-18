@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-11
+last-checked: 2026-11-18
 ---
 
 # Testing
@@ -29,17 +29,16 @@ Clippy is clean; `-D warnings` makes any new warning an error locally (CI does n
 ```sh
 node scripts/test-wifi-provisioning-result.cjs
 node scripts/test-web-input-hygiene.cjs
-python3 scripts/test-kvm-system-ap-key.py
 ```
 
 The first runs the real handler of the AP setup page against synthetic responses: only
 `code: 0` is success, every other code, a missing response or a failed request is a
-failure. It needs the web dependencies (or `--typescript-module`). The second compiles
-`ap_key.h` of `kvm_system` for the host and checks the key's alphabet, uniformity,
-failure handling and 0600 storage. It needs Linux (`getrandom`), so run it in a
-container on a Mac. The second runs the real keymap, wheel, IME-gate and HID-socket modules against stubs
-([web input hygiene](web-input-hygiene.md)). None touches a device; the OLED layout and the C++ build are
-checked in CI only.
+failure. It needs the web dependencies (or `--typescript-module`). The second runs the real keymap, wheel, IME-gate and HID-socket modules against stubs
+([web input hygiene](web-input-hygiene.md)). None touches a device.
+
+The front panel (OLED, button, Wi-Fi setup) is checked by `cargo test`: the goldens in
+`server-rust/tests/front_panel` were recorded from the C++ `kvm_system` it replaced, and the
+AP key's alphabet and failure handling have unit tests.
 
 The init-script tests `scripts/test-s50sshd.sh`, `test-udhcpc6-script.sh`,
 `test-s49ntp.sh`, `test-s30wifi.sh`, `test-s95-pid-files.sh` and `test-s03usb-ids.sh` run BusyBox in private user, network and mount namespaces, so they need a

@@ -1,7 +1,7 @@
 //! The OLED pages (oled_ui.cpp): the status page, the Wi-Fi setup pages and auto-sleep.
 
-use crate::oled::{ETH_STATE, HDMI_STATE, HID_STATE, WIFI_STATE};
-use crate::{Hw, IpKind, Platform, STATE_DELAY_MS, System};
+use super::oled::{ETH_STATE, HDMI_STATE, HID_STATE, WIFI_STATE};
+use super::{Hw, IpKind, Platform, STATE_DELAY_MS, System};
 
 const IP_CHANGE_MS: u64 = 5000;
 const OLED_SLEEP_DELAY_MIN: u32 = 10;
@@ -204,7 +204,7 @@ impl<P: Platform> System<P> {
         }
     }
 
-    pub(crate) fn main_ui(&mut self, page_changed: bool, sub_page_changed: bool) {
+    pub(super) fn main_ui(&mut self, page_changed: bool, sub_page_changed: bool) {
         if self.state_changed() {
             self.oled_sleep_time_update();
         }
@@ -261,7 +261,7 @@ impl<P: Platform> System<P> {
         }
     }
 
-    pub(crate) fn wifi_config_ui(&mut self, first: bool, sub_page_changed: bool) {
+    pub(super) fn wifi_config_ui(&mut self, first: bool, sub_page_changed: bool) {
         if first && self.sys.wifi_config_process == -1 {
             self.sys.wifi_config_process = 0;
             self.sys.sub_page = 0;
@@ -307,17 +307,17 @@ impl<P: Platform> System<P> {
         self.show_string(0, 2, second, 8);
     }
 
-    pub(crate) fn oled_sleep_time_update(&mut self) {
+    pub(super) fn oled_sleep_time_update(&mut self) {
         self.oled.sleep_start = self.p.now_ms();
     }
 
     /// /etc/kvm/oled_sleep: seconds without a change or key before the status page blanks.
-    pub(crate) fn oled_auto_sleep(&mut self) {
+    pub(super) fn oled_auto_sleep(&mut self) {
         let mut close = false;
         if self.p.exists(OLED_SLEEP_FILE) {
             let mut param = OLED_SLEEP_DELAY_DEFAULT;
             if let Some(text) = self.p.read(OLED_SLEEP_FILE, 15).filter(|t| !t.is_empty()) {
-                param = crate::status::strtoul(&text) as u32;
+                param = super::status::strtoul(&text) as u32;
                 if param > OLED_SLEEP_DELAY_MAX {
                     param = OLED_SLEEP_DELAY_DEFAULT;
                 }
@@ -355,12 +355,12 @@ impl<P: Platform> System<P> {
 
 #[cfg(test)]
 mod tests {
-    /// Same matrices as libqr for ../harness/qr-strings.txt (golden/qr-matrices.txt, made by qr_dump.c).
+    /// Same matrices as libqr for tests/front_panel/qr-strings.txt (golden/qr-matrices.txt).
     #[test]
     fn qr_matches_libqr() {
-        let harness = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../harness");
-        let want = std::fs::read_to_string(harness.join("golden/qr-matrices.txt")).unwrap();
-        let strings = std::fs::read_to_string(harness.join("qr-strings.txt")).unwrap();
+        let data = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/front_panel");
+        let want = std::fs::read_to_string(data.join("golden/qr-matrices.txt")).unwrap();
+        let strings = std::fs::read_to_string(data.join("qr-strings.txt")).unwrap();
         let mut got = String::new();
         for text in strings.lines() {
             got += &format!("> {text}\n");

@@ -51,7 +51,7 @@ CONFIG_USB_CONFIGFS_RNDIS=y
 # CONFIG_USB_CONFIGFS_OBEX is not set
 # CONFIG_USB_CONFIGFS_F_FS is not set
 
-# Platform devices used by init scripts and kvm_system.
+# Platform devices used by init scripts and the server.
 # GPIO lines are claimed by DT name through the character device; no sysfs numbers.
 # CONFIG_GPIO_SYSFS is not set
 CONFIG_GPIO_CDEV=y
