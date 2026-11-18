@@ -9,6 +9,30 @@ const OLED_SLEEP_DELAY_DEFAULT: u32 = 30;
 const OLED_SLEEP_DELAY_MAX: u32 = 86400;
 const OLED_SLEEP_FILE: &str = "/etc/kvm/oled_sleep";
 
+/// Version 3, level M, byte mode, mask 4: libqr's qrInit(3, QR_EM_8BIT, 1, 4) in kvm_system.
+/// None over 42 bytes. Rows of 29 modules, true is dark.
+fn qr_matrix(text: &str) -> Option<[[bool; 29]; 29]> {
+    use qrcodegen::{Mask, QrCode, QrCodeEcc, QrSegment, Version};
+    let version = Version::new(3);
+    let segs = [QrSegment::make_bytes(text.as_bytes())];
+    let qr = QrCode::encode_segments_advanced(
+        &segs,
+        QrCodeEcc::Medium,
+        version,
+        version,
+        Some(Mask::new(4)),
+        false,
+    )
+    .ok()?;
+    let mut m = [[false; 29]; 29];
+    for (row, line) in m.iter_mut().enumerate() {
+        for (col, dark) in line.iter_mut().enumerate() {
+            *dark = qr.get_module(col as i32, row as i32);
+        }
+    }
+    Some(m)
+}
+
 impl<P: Platform> System<P> {
     fn init_ui(&mut self) {
         if self.hw != Hw::Pcie {
@@ -37,27 +61,17 @@ impl<P: Platform> System<P> {
         }
     }
 
-    /// QR code version 3, level M, mask 4, in a 33x32 box at column 29 of a filled screen.
+    /// QR code in a 33x32 box at column 29 of a filled screen.
     fn show_qr(&mut self, text: &str) {
-        let segs = qrcodegen::QrSegment::make_bytes(text.as_bytes());
-        let version = qrcodegen::Version::new(3);
-        let Ok(qr) = qrcodegen::QrCode::encode_segments_advanced(
-            &[segs],
-            qrcodegen::QrCodeEcc::Medium,
-            version,
-            version,
-            Some(qrcodegen::Mask::new(4)),
-            false,
-        ) else {
+        let Some(qr) = qr_matrix(text) else {
             return;
         };
         let mut img = [0xFFu8; 132];
-        for row in 0..29 {
-            for col in 0..29 {
-                if qr.get_module(col, row) {
-                    let (y, x) = (row as usize + 2, col as usize + 2);
-                    img[(y / 8) * 33 + x] &= !(1 << (y % 8));
-                }
+        // Two light modules of quiet zone above and to the left.
+        for (row, line) in qr.iter().enumerate() {
+            for (col, _) in line.iter().enumerate().filter(|m| *m.1) {
+                let (y, x) = (row + 2, col + 2);
+                img[(y / 8) * 33 + x] &= !(1 << (y % 8));
             }
         }
         self.oled_fill();
@@ -335,6 +349,34 @@ impl<P: Platform> System<P> {
             } else {
                 0
             };
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    /// Same matrices as libqr for ../harness/qr-strings.txt (golden/qr-matrices.txt, made by qr_dump.c).
+    #[test]
+    fn qr_matches_libqr() {
+        let harness = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../harness");
+        let want = std::fs::read_to_string(harness.join("golden/qr-matrices.txt")).unwrap();
+        let strings = std::fs::read_to_string(harness.join("qr-strings.txt")).unwrap();
+        let mut got = String::new();
+        for text in strings.lines() {
+            got += &format!("> {text}\n");
+            match super::qr_matrix(text) {
+                None => got += "ERROR\n",
+                Some(m) => {
+                    for row in m {
+                        got.extend(row.iter().map(|&d| if d { '#' } else { '.' }));
+                        got.push('\n');
+                    }
+                }
+            }
+        }
+        assert_eq!(got.lines().count(), want.lines().count());
+        for (i, (g, w)) in got.lines().zip(want.lines()).enumerate() {
+            assert_eq!(g, w, "line {}", i + 1);
         }
     }
 }
