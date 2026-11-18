@@ -131,6 +131,9 @@ jobs:
           patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
             < support/sg2002/middleware-patches/cvi-mpi-693a72a-venc-persistent-pack-mappings.patch
           grep -q VENC_MAP_WINDOWS "$RUNNER_TEMP/cvi_mpi/modules/venc/src/cvi_venc.c"
+          patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
+            < support/sg2002/middleware-patches/cvi-mpi-693a72a-no-devmem-commands.patch
+          ! grep -q 'system("devmem' "$RUNNER_TEMP/cvi_mpi/modules/sys/src/cvi_sys.c"
 
       - name: Build Buildroot's cross-compiler and musl
         run: |

@@ -1,0 +1,61 @@
+diff --git a/modules/sys/src/cvi_sys.c b/modules/sys/src/cvi_sys.c
+index d06cf73..f304691 100644
+--- a/modules/sys/src/cvi_sys.c
++++ b/modules/sys/src/cvi_sys.c
+@@ -47,46 +47,8 @@ CVI_CHAR const *log_name[8] = {
+ 
+ pthread_mutex_t tdma_pio_seq_lock = PTHREAD_MUTEX_INITIALIZER;
+ static uint32_t tdma_pio_seq;
+-static pthread_once_t lp_off_once = PTHREAD_ONCE_INIT;
+-
+-static void _sys_low_power_off(void)
+-{
+-	// disable fab lowpower/slowdown
+-	// sys_ctrl clklp
+-	system("devmem 0x03002A50 32 0xFFFFFFFF");
+-	system("devmem 0x03002A60 32 0xFFFFFFFF");
+-	system("devmem 0x03002A00 32 0x003F5500");
+-	system("devmem 0x03002A04 32 0x003F5500");
+-	system("devmem 0x03002A0C 32 0x003F5500");
+-	system("devmem 0x03002A10 32 0x003F5500");
+-	system("devmem 0x03002A14 32 0x003F5500");
+-	system("devmem 0x03002A18 32 0x003F5500");
+-	system("devmem 0x03002A1C 32 0x003F5500");
+-	system("devmem 0x03002A20 32 0x003F5500");
+-	system("devmem 0x03002A24 32 0x003F5500");
+-	system("devmem 0x03002A28 32 0x003F5500");
+-	system("devmem 0x03002A2C 32 0x003F5500");
+-	system("devmem 0x03002A30 32 0x003F5500");
+-	// ddrsys clklp
+-	system("devmem 0x0800A014 32 0x00000FFF");
+-	// vipsys clklp
+-	system("devmem 0X0A0C8020 32 0x00000C01");
+-	system("devmem 0x0A0C8024 32 0x00000C01");
+-	system("devmem 0x0A0C8028 32 0x00000C01");
+-	system("devmem 0x0A0C802C 32 0x0C010C01");
+-	system("devmem 0x0A0C8038 32 0x001F0500");
+-	system("devmem 0x0A0C803C 32 0x001F0500");
+-	system("devmem 0x0A0C8040 32 0x001F0500");
+-	system("devmem 0x0A0C8044 32 0x001F0500");
+-	system("devmem 0x0A0C8048 32 0x001F0500");
+-	system("devmem 0x0A0C80C4 32 0x001F0500");
+-	system("devmem 0x0A0C80C8 32 0x001F0500");
+-	system("devmem 0x0A0C80CC 32 0x001F0500");
+-	// vc fab
+-	// system("devmem 0x0B030028 32 0x07");
+-
+-	CVI_TRACE_SYS(CVI_DBG_INFO, "low_power_off\n");
+-}
++/* The vendor turned off the fabric, DDR and VIP clock low-power modes here with 27
++ * "devmem" shell commands. H-NanoKVM has no devmem and no /dev/mem: removed. */
+ 
+ static int _ion_hash_key(void *key)
+ {
+@@ -196,7 +158,6 @@ CVI_S32 CVI_SYS_Init(void)
+ 	VI_VPSS_MODE_S stVIVPSSMode;
+ 	VPSS_MODE_S stVPSSMode;
+ 
+-	pthread_once(&lp_off_once, _sys_low_power_off);
+ 
+ 	s32ret = base_dev_open();
+ 	if (s32ret != CVI_SUCCESS) {
