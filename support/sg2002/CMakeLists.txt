@@ -53,12 +53,12 @@ target_link_options(kvm_mmf PRIVATE -Wl,--gc-sections)
 target_link_directories(kvm_mmf PRIVATE "${SDK}/lib")
 target_link_libraries(kvm_mmf PRIVATE sys vdec venc vi vpss vo gdc rgn ini pthread)
 
-# libkvm.so: the C API the server links (kvm_vision.h); libkvm.map lists every export.
+# libkvm.so: the camera and encoder C API the server links (kvm_media.h); libkvm.map lists
+# every export. HDMI detection and the reads are in server-rust/src/capture.
 add_library(kvm SHARED
 	additional/kvm/src/kvm_capture.cpp
-	additional/kvm/src/kvm_vision.cpp
-	additional/kvm/src/vi_state_shared.cpp)
-target_include_directories(kvm PRIVATE additional/kvm/include common)
+	additional/kvm/src/kvm_media.cpp)
+target_include_directories(kvm PRIVATE additional/kvm/include)
 target_compile_options(kvm PRIVATE -O2)
 target_link_options(kvm PRIVATE
 	-Wl,--as-needed

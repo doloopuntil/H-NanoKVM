@@ -73,8 +73,7 @@ expected=$(sed -n 's/^\t\t\([a-z_0-9]*\);$/\1/p' "$ROOT/support/sg2002/additiona
 [ "$exports" = "$expected" ] || fail "libkvm.so exports differ from libkvm.map: $exports"
 for sym in $(awk '/#\[link\(name = "kvm"\)\]/ {f = 1; next} f && /^}/ {exit} f' \
 	"$ROOT/server-rust/src/ffi/kvm.rs" |
-	sed -n 's/^ *#\[link_name = "\([a-z_0-9]*\)"\]/\1/p; s/^ *fn \([a-z_0-9]*\)(.*/\1/p' |
-	grep -vx kvm_set_frame_detect); do
+	sed -n 's/^ *\(pub \)\{0,1\}fn \([a-z_0-9]*\)(.*/\2/p'); do
 	grep -qx "$sym" <<<"$exports" || fail "libkvm.so does not export $sym"
 done
 

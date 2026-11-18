@@ -7,12 +7,11 @@ backend.
   the nine middleware libraries; the server links against them and the package installs them
   as `/kvmapp/server/dl_lib`, and the image build fails unless it holds exactly those. For a
   local device build, copy `libkvm.so` and `libkvm_mmf.so` from a device or a CI run into it.
-- `include/` contains the C ABI header used by the Rust FFI bindings.
-
 The corresponding native sources are under `support/sg2002/additional/kvm` and
 `kvm_mmf`, built with plain CMake (`support/sg2002/CMakeLists.txt`,
-[cross-build](../../docs/development/cross-build.md)). The Rust FFI mutex serializes calls made
-by Rust, but native capture/detection threads still have their own lifecycle.
+[cross-build](../../docs/development/cross-build.md)). `src/ffi/kvm.rs` binds libkvm's
+camera and encoder API (`support/sg2002/additional/kvm/include/kvm_media.h`); HDMI detection,
+the LT6911 and the frame reads run in the server (`src/capture`), which serialises every call.
 Known native lifecycle, VENC, bounds, and hardware-error findings are tracked in
 [`docs/native-code-audit.md`](../../docs/archive/native-code-audit.md).
 
@@ -167,7 +166,7 @@ user space and the drivers agree on every shared struct. Our changes on top:
   on VI errors, and `libsys` maps media buffers through `/dev/cvi-sys` instead of
   `/dev/mem` (`support/sg2002/middleware-patches/`);
 - the kernel side carries `/proc/lt_int` (LT6911 interrupt counter for
-  `kvm_vision`), quiet VI and VPSS logging, a guard that skips DCI statistics
+  the server's capture module), quiet VI and VPSS logging, a guard that skips DCI statistics
   on the LT6911 YUV bypass pipe, the `soph_sys` media-memory allocator that
   replaces ION, an `mmap` on `/dev/cvi-sys` limited to its buffers, video encoder
   packets kept in that carveout, and the 5.10.265 build fixes

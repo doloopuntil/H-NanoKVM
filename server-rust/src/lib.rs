@@ -1,5 +1,6 @@
 pub mod api;
 pub mod auth;
+pub mod capture;
 pub mod config;
 pub mod error;
 pub mod ffi;

@@ -5,8 +5,8 @@ use axum::{
 };
 use nanokvm_rust_server::{
     api::{compatibility, cpu_clock, monitor, picoclaw, ssh_keys, system_firewall, tls_switch, vm},
+    capture,
     config::Config,
-    ffi::kvm,
     front_panel, hdmi_idle,
     http::{
         cert_manager,
@@ -120,7 +120,7 @@ fn install_shutdown_signal_handler() {
 
         match time::timeout(
             KVM_SHUTDOWN_TIMEOUT,
-            tokio::task::spawn_blocking(kvm::shutdown),
+            tokio::task::spawn_blocking(capture::shutdown),
         )
         .await
         {
@@ -218,7 +218,7 @@ fn temp_boot_script_path(dst: &Path) -> io::Result<PathBuf> {
 
 fn initialize_kvm() {
     vm::init_atx_lines();
-    match kvm::init() {
+    match capture::init() {
         Ok(()) => info!("initialized NanoKVM video backend"),
         Err(err) => warn!(error = ?err, "NanoKVM video backend initialization failed"),
     }

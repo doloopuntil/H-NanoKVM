@@ -164,8 +164,7 @@ jobs:
           # The sources must carry the native changes this image relies on.
           grep -q "no stale sys state to release" support/sg2002/additional/kvm_mmf/src/kvm_mmf.cpp
           grep -q "mmf_vi_frame_release" support/sg2002/additional/kvm_mmf/src/kvm_mmf.cpp
-          grep -q "kvmv_hdmi_signal_active" support/sg2002/additional/kvm/src/kvm_vision.cpp
-          grep -q "fresh_frame_count" support/sg2002/additional/kvm/src/kvm_vision.cpp
+          grep -q "kvmc_frame_venc_push" support/sg2002/additional/kvm/src/kvm_media.cpp
           scripts/build-sg2002-native.sh "$CROSS_PREFIX" "$RUNNER_TEMP/sg2002-sdk" \
             "$GITHUB_WORKSPACE/build/native-libkvm"
           file build/native-libkvm/libkvm.so build/native-libkvm/libkvm_mmf.so

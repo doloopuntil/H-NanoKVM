@@ -39,9 +39,9 @@ use crate::{
         storage, stream,
     },
     auth::session::{SessionEnd, SessionLifetime},
+    capture,
     config::Config,
     error::ApiResponse,
-    ffi::kvm,
     hdmi_idle,
     http::{middleware::CurrentSession, proxy::ClientInfo},
     state::{AppState, is_allowed_session_lock_duration},
@@ -466,7 +466,7 @@ pub async fn get_hdmi_state() -> Result<impl IntoResponse> {
     let enabled = !Path::new(HDMI_DISABLE_FILE).exists();
     Ok(Json(ApiResponse::ok(HdmiStateRsp {
         enabled,
-        signal: enabled && kvm::hdmi_signal_active(),
+        signal: enabled && capture::hdmi_signal_active(),
         idle_timeout: hdmi_idle::idle_timeout_minutes(),
     })))
 }
@@ -479,14 +479,14 @@ pub async fn set_hdmi_idle_timeout(
 }
 
 pub async fn enable_hdmi() -> Result<impl IntoResponse> {
-    stream::libkvm(|| kvm::set_hdmi(true)).await?;
+    stream::libkvm(|| capture::set_hdmi(true)).await?;
     persist_hdmi_enabled()?;
     hdmi_idle::capture_enabled();
     Ok(Json(ApiResponse::<()>::ok_empty()))
 }
 
 pub async fn disable_hdmi() -> Result<impl IntoResponse> {
-    stream::libkvm(|| kvm::set_hdmi(false)).await?;
+    stream::libkvm(|| capture::set_hdmi(false)).await?;
     persist_hdmi_disabled()?;
     hdmi_idle::capture_disabled();
     Ok(Json(ApiResponse::<()>::ok_empty()))
@@ -499,10 +499,10 @@ pub async fn reset_hdmi() -> Result<impl IntoResponse> {
     }
     // A lost client must not leave HDMI capture switched off.
     stream::owned_interval(
-        || kvm::set_hdmi(false).map(drop),
+        || capture::set_hdmi(false).map(drop),
         Duration::from_secs(1),
         || {
-            kvm::set_hdmi(true)?;
+            capture::set_hdmi(true)?;
             persist_hdmi_enabled()?;
             hdmi_idle::capture_enabled();
             Ok(())
