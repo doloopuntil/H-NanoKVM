@@ -159,7 +159,8 @@ keep the Buildroot output on a Docker volume, not a bind mount):
    `sophgo/cvi_mpi`, `sophgo/osdrv` (`interdrv/include`),
    `sophgo/SensorSupportList` (`common`) and `sipeed/LicheeRV-Nano-Build`
    (the ION uapi and `middleware/v2/component/isp/sensor/cv182x/lontium_lt6911`).
-   Apply the two patches in `support/sg2002/middleware-patches/` to cvi_mpi.
+   Apply the patches in `support/sg2002/middleware-patches/` to cvi_mpi, in the order
+   the workflow applies them.
 3. Build the middleware, stage the SDK directory, then build and check the
    two libraries:
 
