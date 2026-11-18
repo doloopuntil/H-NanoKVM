@@ -1,0 +1,27 @@
+@0 > file /etc/kvm/hdmi_mode 0
+@0 > file /kvmapp/kvm/state 0\n
+@0 > file /kvmapp/kvm/width 1920\n
+@0 > file /kvmapp/kvm/height 1080\n
+@0 > vidbg auto
+@0 > src 1920 1080
+@0 call init
+@0 cam create 1920x1080 in=1920x1080
+@0 cam mirror_flip
+@0 write /kvmapp/kvm/state "0\n"
+@0 run /kvmapp/system/init.d/S15kvmhwd get_hdmi_version
+@0 write /etc/kvm/hdmi_mode "0\n"
+@10 write /kvmapp/kvm/state "0\n"
+@1000 vi_state seq=2 dev_fps=60 fps=60 width_gt=0 width_ls=0 height_gt=0 height_ls=0
+@1000 write /kvmapp/kvm/state "1\n"
+@1100 call detect 3
+@1100 cam mirror_flip
+@1116..@1248 call mjpeg 1920 1080 80 -> 0 jpeg 1920x1080 q80 size=1080 x5
+@1281..@1974 call mjpeg 1920 1080 80 -> 5 x22
+@2000 > frame 2
+@2007 call mjpeg 1920 1080 80 -> 0 jpeg 1920x1080 q80 size=1080
+@2500 > frame 3
+@2516..@2648 call mjpeg 1920 1080 80 -> 0 jpeg 1920x1080 q80 size=1080 x5
+@2681..@3011 call mjpeg 1920 1080 80 -> 5 x11
+@3011 call detect 0
+@3027..@3507 call mjpeg 1920 1080 80 -> 0 jpeg 1920x1080 q80 size=1080 x31
+@4000 end

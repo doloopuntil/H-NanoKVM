@@ -1,0 +1,28 @@
+# UXC: unknown 1234x567 falls back to scan mode; the host moves to 1024x768 during the scan, scan finds it, bridge mode again.
+chip ux
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+src 1920 1080
+call init
+at 1100
+call mjpeg 1920 1080 80 every 200 until 2000
+at 2000
+src 1234 567
+int fall
+at 2100
+call mjpeg 1920 1080 80 every 200 until 9000
+at 9000
+src 1024 768
+at 9100
+call mjpeg 1024 768 80 every 200 until 40000
+at 40000
+src 1280 720
+int fall
+at 40100
+call mjpeg 1280 720 80 every 200 until 45000
+at 45000
+end

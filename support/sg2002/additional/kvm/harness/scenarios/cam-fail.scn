@@ -1,0 +1,17 @@
+# The media stack does not come up: no threads, every read returns -1.
+chip ux
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+cam fail
+src 1920 1080
+call init
+at 100
+call mjpeg 1920 1080 80 every 500 until 1500
+call signal
+call deinit
+at 2000
+end

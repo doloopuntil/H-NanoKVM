@@ -1,0 +1,58 @@
+@0 > file /etc/kvm/hdmi_mode 0
+@0 > file /kvmapp/kvm/state 0\n
+@0 > file /kvmapp/kvm/width 1920\n
+@0 > file /kvmapp/kvm/height 1080\n
+@0 > vidbg auto
+@0 > src 1920 1080
+@0 call init
+@0 cam create 1920x1080 in=1920x1080
+@0 cam mirror_flip
+@0 write /kvmapp/kvm/state "0\n"
+@0 run /kvmapp/system/init.d/S15kvmhwd get_hdmi_version
+@0 write /etc/kvm/hdmi_mode "0\n"
+@10 write /kvmapp/kvm/state "0\n"
+@1000 vi_state seq=2 dev_fps=60 fps=60 width_gt=0 width_ls=0 height_gt=0 height_ls=0
+@1000 write /kvmapp/kvm/state "1\n"
+@1100 cam mirror_flip
+@1116..@1916 call mjpeg 1920 1080 80 -> 0 jpeg 1920x1080 q80 size=1080 x5
+@2000 > nack on
+@2000 > src 1280 720
+@2000 > int fall
+@2000 write /proc/lt_int "0"
+@2000 i2c 2b w NACK ff 80
+@2000 i2c 2b w NACK ee 01
+@2000 i2c 2b w NACK 10 00
+@2000..@2000 i2c 2b w NACK ff 86 x2
+@2000 i2c 2b w NACK a3
+@2000 i2c 2b r NACK 1
+@2000 write /kvmapp/kvm/state "0\n"
+@2000 i2c 2b w NACK ff 80
+@2000 i2c 2b w NACK ee 00
+@2100 cam size 1280x720
+@2100 cam mirror_flip
+@3000 > nack off
+@3100 call mjpeg 1280 720 80 -> -1
+@3500 > int fall
+@3500 write /proc/lt_int "0"
+@3500 i2c 2b w ff 80
+@3500 i2c 2b w ee 01
+@3500 i2c 2b w 10 00
+@3500..@3500 i2c 2b w ff 86 x2
+@3500 i2c 2b w a3
+@3500 i2c 2b r 55
+@3500 write /kvmapp/kvm/state "1\n"
+@3500 i2c 2b w ff 85
+@3500 i2c 2b w f0
+@3500 i2c 2b r 02 d0
+@3500 i2c 2b w ea
+@3500 i2c 2b r 05 00
+@3500 write /kvmapp/kvm/width "1280\n"
+@3500 write /kvmapp/kvm/height "720\n"
+@3500 run sync
+@3500 i2c 2b w ff 80
+@3500 i2c 2b w ee 00
+@4100 cam restart 1920x1080 in=1280x720
+@4100 cam size 1280x720
+@4100 cam mirror_flip
+@4116..@5916 call mjpeg 1280 720 80 -> 0 jpeg 1280x720 q80 size=1080 x19
+@6000 end

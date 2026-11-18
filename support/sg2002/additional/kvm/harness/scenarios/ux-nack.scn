@@ -1,0 +1,24 @@
+# UXC: I2C NACKs during the interrupt read, then the bus recovers.
+chip ux
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+src 1920 1080
+call init
+at 1100
+call mjpeg 1920 1080 80 every 200 until 2000
+at 2000
+nack on
+src 1280 720
+int fall
+at 3000
+nack off
+at 3500
+int fall
+at 2100
+call mjpeg 1280 720 80 every 200 until 6000
+at 6000
+end

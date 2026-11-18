@@ -1,0 +1,38 @@
+# UXC: H.264 with fps and bitrate changes, keyframe requests (coalesced), MJPEG switch, a failed push.
+chip ux
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+src 1920 1080
+call init
+at 1100
+call h264 1920 1080 30 2000 every 33 until 1500
+call idr
+call h264 1920 1080 30 2000
+call idr
+call h264 1920 1080 30 2000 every 33 until 1800
+call h264 1920 1080 30 2000 every 100 until 2000
+call idr
+at 2000
+call h264 1920 1080 60 2000 every 17 until 2500
+at 2500
+call h264 1920 1080 60 3000 every 17 until 3000
+at 3000
+call mjpeg 1920 1080 80 every 33 until 3500
+at 3500
+call h264 1920 1080 60 3000 every 17 until 4000
+at 4000
+venc fail push
+at 4010
+venc fail none
+at 4000
+call h264 1920 1080 60 3000 every 17 until 4500
+at 4500
+call h264 1280 720 30 20000 every 33 until 5000
+at 5000
+call h264 1920 1080 0 100 every 33 until 5200
+at 6000
+end

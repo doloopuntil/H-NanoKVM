@@ -1,0 +1,16 @@
+# PCIe without a hdmi-reset line in the DT: no GPIO, capture flag only.
+chip ux
+board pcie
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+nogpio
+src 1920 1080
+call init
+at 1100
+call hdmi 0
+call hdmi 1
+at 2000
+end

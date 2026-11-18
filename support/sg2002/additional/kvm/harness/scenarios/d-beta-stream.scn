@@ -1,0 +1,27 @@
+# LT6911D: falling edges, no enable/disable writes; insert, 720p, unplug.
+chip d
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+call init
+at 1500
+src 1920 1080
+int fall
+at 1600
+call mjpeg 1920 1080 80 every 100 until 3000
+at 3000
+src 1280 720
+int fall
+at 3100
+call mjpeg 1280 720 80 every 100 until 6000
+at 6000
+src off
+int fall
+at 6100
+call mjpeg 1280 720 80 every 500 until 8000
+call signal
+at 8000
+end

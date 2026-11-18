@@ -1,0 +1,19 @@
+# ue: no size in the list works, five rounds, then manual mode with clamped width/height.
+chip ue
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+src 1234 567
+call init
+at 500
+call mjpeg 1920 1080 80 every 2000 until 90000
+at 90000
+file /kvmapp/kvm/width 4000\n
+file /kvmapp/kvm/height 2\n
+at 90000
+call mjpeg 1920 1080 80 every 2000 until 110000
+at 110000
+end

@@ -1,0 +1,25 @@
+# UXC: unknown size that never resolves: five scan rounds, then back to bridge mode (-7 meanwhile);
+# the host returns to 1080p afterwards.
+chip ux
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+src 1920 1080
+call init
+at 1100
+call mjpeg 1920 1080 80 every 500 until 2000
+at 2000
+src 1234 567
+int fall
+at 2100
+call mjpeg 1920 1080 80 every 1000 until 80000
+at 80000
+src 1920 1080
+int fall
+at 80100
+call mjpeg 1920 1080 80 every 1000 until 100000
+at 100000
+end

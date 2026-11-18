@@ -1,0 +1,24 @@
+# UXC: unsupported 1366x768 gives -6 until the host goes back to 1080p.
+chip ux
+board beta
+file /etc/kvm/hdmi_mode 0
+file /kvmapp/kvm/state 0\n
+file /kvmapp/kvm/width 1920\n
+file /kvmapp/kvm/height 1080\n
+vidbg auto
+src 1920 1080
+call init
+at 1100
+call mjpeg 1920 1080 80 every 100 until 2000
+at 2000
+src 1366 768
+int fall
+at 2100
+call mjpeg 1920 1080 80 every 100 until 5000
+at 5000
+src 1920 1080
+int fall
+at 5100
+call mjpeg 1920 1080 80 every 100 until 8000
+at 8000
+end

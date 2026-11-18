@@ -1,0 +1,37 @@
+@0 > file /etc/kvm/hdmi_mode 0
+@0 > file /kvmapp/kvm/state 0\n
+@0 > file /kvmapp/kvm/width 1920\n
+@0 > file /kvmapp/kvm/height 1080\n
+@0 > vidbg absent
+@0 > src 1920 1080
+@0 call init
+@0 cam create 1920x1080 in=1920x1080
+@0 cam mirror_flip
+@0 write /kvmapp/kvm/state "0\n"
+@0 run /kvmapp/system/init.d/S15kvmhwd get_hdmi_version
+@0 write /etc/kvm/hdmi_mode "0\n"
+@10 write /kvmapp/kvm/state "0\n"
+@300 > int fall
+@300 write /proc/lt_int "0"
+@300 i2c 2b w ff 80
+@300 i2c 2b w ee 01
+@300 i2c 2b w 10 00
+@300..@300 i2c 2b w ff 86 x2
+@300 i2c 2b w a3
+@300 i2c 2b r 55
+@300 write /kvmapp/kvm/state "1\n"
+@300 i2c 2b w ff 85
+@300 i2c 2b w f0
+@300 i2c 2b r 04 38
+@300 i2c 2b w ea
+@300 i2c 2b r 07 80
+@300 write /kvmapp/kvm/width "1920\n"
+@300 write /kvmapp/kvm/height "1080\n"
+@300 run sync
+@300 i2c 2b w ff 80
+@300 i2c 2b w ee 00
+@1100 cam mirror_flip
+@1116..@9916 call mjpeg 1920 1080 80 -> 0 jpeg 1920x1080 q80 size=1080 x89
+@10000 write /kvmapp/kvm/state "0\n"
+@10016..@11916 call mjpeg 1920 1080 80 -> 0 jpeg 1920x1080 q80 size=1080 x20
+@12000 end

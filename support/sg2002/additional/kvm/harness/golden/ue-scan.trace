@@ -1,0 +1,78 @@
+@0 > file /etc/kvm/hdmi_mode 0
+@0 > file /kvmapp/kvm/state 0\n
+@0 > file /kvmapp/kvm/width 1920\n
+@0 > file /kvmapp/kvm/height 1080\n
+@0 > vidbg auto
+@0 > src 1280 720
+@0 call init
+@0 cam create 1920x1080 in=1920x1080
+@0 cam mirror_flip
+@0 write /kvmapp/kvm/state "0\n"
+@0 run /kvmapp/system/init.d/S15kvmhwd get_hdmi_version
+@0 write /etc/kvm/hdmi_mode "1\n"
+@10 write /kvmapp/kvm/state "0\n"
+@500 call mjpeg 1280 720 80 -> -4
+@1000 vi_state seq=2 dev_fps=60 fps=0 width_gt=0 width_ls=1 height_gt=0 height_ls=1
+@1000 write /kvmapp/kvm/state "1\n"
+@1000 write /kvmapp/kvm/width "1920\n"
+@1000 write /kvmapp/kvm/height "1080\n"
+@1000 cam restart 1920x1080 in=1920x1080
+@1000..@2000 call mjpeg 1280 720 80 -> -4 x3
+@2050 vi_state seq=4 dev_fps=60 fps=0 width_gt=0 width_ls=1 height_gt=0 height_ls=1
+@2050 write /kvmapp/kvm/width "1600\n"
+@2050 write /kvmapp/kvm/height "900\n"
+@2050 cam restart 1920x1080 in=1600x900
+@2500..@3000 call mjpeg 1280 720 80 -> -4 x2
+@3100 vi_state seq=6 dev_fps=60 fps=0 width_gt=0 width_ls=1 height_gt=0 height_ls=1
+@3100 write /kvmapp/kvm/width "1440\n"
+@3100 write /kvmapp/kvm/height "1080\n"
+@3100 cam restart 1920x1080 in=1440x1080
+@3500..@4000 call mjpeg 1280 720 80 -> -4 x2
+@4150 vi_state seq=8 dev_fps=60 fps=0 width_gt=0 width_ls=1 height_gt=0 height_ls=1
+@4150 write /kvmapp/kvm/width "1440\n"
+@4150 write /kvmapp/kvm/height "900\n"
+@4150 cam restart 1920x1080 in=1440x900
+@4500..@5000 call mjpeg 1280 720 80 -> -4 x2
+@5200 vi_state seq=10 dev_fps=60 fps=0 width_gt=0 width_ls=1 height_gt=0 height_ls=1
+@5200 write /kvmapp/kvm/width "1280\n"
+@5200 write /kvmapp/kvm/height "1024\n"
+@5200 cam restart 1920x1080 in=1280x1024
+@5500..@6000 call mjpeg 1280 720 80 -> -4 x2
+@6250 vi_state seq=12 dev_fps=60 fps=0 width_gt=0 width_ls=0 height_gt=0 height_ls=1
+@6250 write /kvmapp/kvm/width "1280\n"
+@6250 write /kvmapp/kvm/height "960\n"
+@6250 cam restart 1920x1080 in=1280x960
+@6500..@7000 call mjpeg 1280 720 80 -> -4 x2
+@7300 vi_state seq=14 dev_fps=60 fps=0 width_gt=0 width_ls=0 height_gt=0 height_ls=1
+@7300 write /kvmapp/kvm/width "1280\n"
+@7300 write /kvmapp/kvm/height "800\n"
+@7300 cam restart 1920x1080 in=1280x800
+@7500..@8000 call mjpeg 1280 720 80 -> -4 x2
+@8350 vi_state seq=16 dev_fps=60 fps=0 width_gt=0 width_ls=0 height_gt=0 height_ls=1
+@8350 write /kvmapp/kvm/width "1280\n"
+@8350 write /kvmapp/kvm/height "720\n"
+@8350 cam restart 1920x1080 in=1280x720
+@8500..@9000 call mjpeg 1280 720 80 -> -4 x2
+@9400 vi_state seq=18 dev_fps=60 fps=60 width_gt=0 width_ls=0 height_gt=0 height_ls=0
+@9500 cam size 1280x720
+@9500 cam mirror_flip
+@9516..@19016 call mjpeg 1280 720 80 -> 0 jpeg 1280x720 q80 size=1080 x20
+@19400 vi_state seq=20 dev_fps=60 fps=60 width_gt=0 width_ls=0 height_gt=0 height_ls=0
+@19516 call mjpeg 1280 720 80 -> 0 jpeg 1280x720 q80 size=1080
+@20000 > src 1920 1080
+@20100 cam size 1920x1080
+@20100 cam mirror_flip
+@23100..@29100 call mjpeg 1920 1080 80 -> -1 x3
+@29400 vi_state seq=22 dev_fps=60 fps=0 width_gt=1 width_ls=0 height_gt=1 height_ls=0
+@30410 vi_state seq=24 dev_fps=60 fps=0 width_gt=1 width_ls=0 height_gt=1 height_ls=0
+@30410 write /kvmapp/kvm/width "1920\n"
+@30410 write /kvmapp/kvm/height "1080\n"
+@32100 call mjpeg 1920 1080 80 -> -1
+@32100..@32100 call mjpeg 1920 1080 80 -> -4 x21
+@32100 cam restart 1920x1080 in=1920x1080
+@32600..@33100 call mjpeg 1920 1080 80 -> -4 x2
+@33150 vi_state seq=26 dev_fps=60 fps=60 width_gt=0 width_ls=0 height_gt=0 height_ls=0
+@33616..@43116 call mjpeg 1920 1080 80 -> 0 jpeg 1920x1080 q80 size=1080 x20
+@43150 vi_state seq=28 dev_fps=60 fps=60 width_gt=0 width_ls=0 height_gt=0 height_ls=0
+@43616..@49616 call mjpeg 1920 1080 80 -> 0 jpeg 1920x1080 q80 size=1080 x13
+@50000 end
