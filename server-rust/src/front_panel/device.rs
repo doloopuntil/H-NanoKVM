@@ -42,6 +42,9 @@ const INPUT_EVENT_SIZE: usize = 24;
 const _: () = assert!(std::mem::size_of::<libc::input_event>() == INPUT_EVENT_SIZE);
 const WIFI_SCRIPT_TIMEOUT: Duration = Duration::from_secs(120);
 const CLI_TIMEOUT: Duration = Duration::from_secs(5);
+// ctrl_interface in the wpa_supplicant.conf S30wifi writes, plus the interface name.
+const WPA_CTRL_SOCKET: &str = "/var/run/wpa_supplicant/wlan0";
+const WPA_CTRL_TIMEOUT: Duration = Duration::from_secs(2);
 
 nix::ioctl_write_int_bad!(i2c_slave, 0x0703);
 // EVIOCSCLOCKID: timestamp the button's events with this clock.
@@ -117,6 +120,41 @@ fn monotonic_ms() -> u64 {
     clock_gettime(ClockId::CLOCK_MONOTONIC)
         .map(|ts| ts.tv_sec() as u64 * 1000 + ts.tv_nsec() as u64 / 1_000_000)
         .unwrap_or(0)
+}
+
+/// One request on a wpa_supplicant control socket, as wpa_cli sends it. The reply goes to
+/// the sender's address, so the client binds an abstract name for the exchange.
+#[cfg(target_os = "linux")]
+fn wpa_request(ctrl: &Path, request: &[u8]) -> Option<String> {
+    use std::os::{
+        linux::net::SocketAddrExt,
+        unix::net::{SocketAddr, UnixDatagram},
+    };
+    static SEQ: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+
+    let name = format!(
+        "hnanokvm-wpa-{}-{}",
+        std::process::id(),
+        SEQ.fetch_add(1, Ordering::Relaxed)
+    );
+    let socket = UnixDatagram::bind_addr(&SocketAddr::from_abstract_name(name).ok()?).ok()?;
+    socket.set_read_timeout(Some(WPA_CTRL_TIMEOUT)).ok()?;
+    socket.connect(ctrl).ok()?;
+    socket.send(request).ok()?;
+    let mut buf = vec![0_u8; 4096];
+    // Event messages start with '<'; only an attached client gets them, skip them anyway.
+    for _ in 0..4 {
+        let n = socket.recv(&mut buf).ok()?;
+        if buf[..n].first() != Some(&b'<') {
+            return Some(String::from_utf8_lossy(&buf[..n]).into_owned());
+        }
+    }
+    None
+}
+
+#[cfg(not(target_os = "linux"))]
+fn wpa_request(_ctrl: &Path, _request: &[u8]) -> Option<String> {
+    None
 }
 
 /// A key press or release from one raw input_event.
@@ -271,11 +309,8 @@ impl Platform for Device {
             ),
             Command::WifiAp => (AllowedCommand::ServiceWifi, &["ap"], WIFI_SCRIPT_TIMEOUT),
             Command::HostapdAllSta => (AllowedCommand::HostapdCli, &["all", "sta"], CLI_TIMEOUT),
-            Command::WpaStatus => (
-                AllowedCommand::WpaCli,
-                &["-i", "wlan0", "status"],
-                CLI_TIMEOUT,
-            ),
+            // The image has no wpa_cli; ask wpa_supplicant's control socket instead.
+            Command::WpaStatus => return wpa_request(Path::new(WPA_CTRL_SOCKET), b"STATUS"),
         };
         match self.runtime.block_on(run_allowed(program, args, timeout)) {
             Ok(out) => Some(String::from_utf8_lossy(&out.stdout).into_owned()),
@@ -335,6 +370,30 @@ mod tests {
         assert_eq!((press.time_ms, press.pressed), (12_345, true));
         let release = parse_key_event(&event(13, 0, EV_KEY, 0)).unwrap();
         assert_eq!((release.time_ms, release.pressed), (13_000, false));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn asks_the_wpa_control_socket_and_skips_events() {
+        use std::os::unix::net::UnixDatagram;
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("wlan0");
+        let server = UnixDatagram::bind(&path).unwrap();
+        let replier = thread::spawn(move || {
+            let mut buf = [0_u8; 64];
+            let (n, from) = server.recv_from(&mut buf).unwrap();
+            assert_eq!(&buf[..n], b"STATUS");
+            server
+                .send_to_addr(b"<3>CTRL-EVENT-SCAN-STARTED", &from)
+                .unwrap();
+            server
+                .send_to_addr(b"bssid=00:11:22:33:44:55\nwpa_state=COMPLETED\n", &from)
+                .unwrap();
+        });
+        let reply = wpa_request(&path, b"STATUS").unwrap();
+        replier.join().unwrap();
+        assert!(reply.contains("wpa_state=COMPLETED"), "{reply}");
+        assert!(wpa_request(&dir.path().join("missing"), b"STATUS").is_none());
     }
 
     #[test]
