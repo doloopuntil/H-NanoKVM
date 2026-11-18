@@ -46,3 +46,8 @@ panels (`render.py` shows controller RAM), thread interleavings other than the o
 
 `../rust/tests/golden.rs` replays the same scenarios against the Rust port
 (`cargo test` in `../rust`, also on macOS) and compares with these goldens.
+
+QR codes: `qr_dump.c` prints libqr's 29x29 matrix (`qrInit(3, QR_EM_8BIT, 1, 4)`: version 3,
+byte mode, level M, mask 4 as in the spec) for every line of `qr-strings.txt` into
+`golden/qr-matrices.txt`; over 42 bytes it prints `ERROR`. The Rust test `qr_matches_libqr`
+compares the `qrcodegen` crate (1.8.0, MIT, Project Nayuki) against it.

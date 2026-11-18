@@ -39,3 +39,6 @@ g++ -o "$out/kvm_system_harness" "$out/obj/fake.o" $objs -lpthread
 
 # Every libc call left in the code under test must be harmless (no I/O to the host).
 nm -u $objs | awk '{print $2}' | sort -u > "$out/undefined.txt"
+
+# libqr on its own, for the QR matrix comparison (qr-strings.txt).
+gcc -std=gnu11 -O2 -w -I"$ks/lib/libqr" "$here/qr_dump.c" "$ks/lib/libqr/qr.c" "$ks/lib/libqr/qrcnv.c" "$ks/lib/libqr/qrcnv_bmp.c" -o "$out/qr_dump" -lm

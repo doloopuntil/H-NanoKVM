@@ -17,8 +17,8 @@ mkdir -p "$here/golden"
 docker run --rm -v "$repo":/src:ro -v "$here/golden":/golden -e UPDATE=$update "$image" sh -eu -c '
 	/src/'"$rel"'/build.sh /tmp/h >/dev/null
 	cd /src/'"$rel"'/scenarios
-	set -- "$@"
-	[ $# -gt 0 ] || set -- *.scn
+	ALL=0
+	[ $# -gt 0 ] || { ALL=1; set -- *.scn; }
 	fail=0
 	for scn in "$@"; do
 		name=${scn%.scn}
@@ -33,5 +33,15 @@ docker run --rm -v "$repo":/src:ro -v "$here/golden":/golden -e UPDATE=$update "
 			echo "DIFF $name"; diff "/golden/$name.trace" "/tmp/$name.trace" | head -20; fail=1
 		fi
 	done
+	if [ "$ALL" = 1 ]; then
+		/tmp/h/qr_dump < ../qr-strings.txt > /tmp/qr-matrices.txt
+		if [ "$UPDATE" = 1 ]; then
+			cp /tmp/qr-matrices.txt /golden/qr-matrices.txt; echo "wrote qr-matrices"
+		elif cmp -s /tmp/qr-matrices.txt /golden/qr-matrices.txt; then
+			echo "ok   qr-matrices"
+		else
+			echo "DIFF qr-matrices"; fail=1
+		fi
+	fi
 	exit $fail
 ' sh "$@"
