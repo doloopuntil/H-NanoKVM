@@ -10,7 +10,7 @@ use tokio::{
 };
 use tracing::{debug, warn};
 
-use crate::{AppError, Result, ffi::kvm};
+use crate::{AppError, Result, capture};
 
 pub const IDLE_TIMEOUT_FILE: &str = "/etc/kvm/hdmi_idle_timeout";
 pub const MAX_IDLE_TIMEOUT_MINUTES: u32 = 7 * 24 * 60;
@@ -104,11 +104,11 @@ fn send(command: Command) {
 }
 
 fn hdmi_disabled() -> bool {
-    Path::new(kvm::HDMI_DISABLE_FILE).exists()
+    Path::new(capture::HDMI_DISABLE_FILE).exists()
 }
 
 async fn set_hdmi(enabled: bool) {
-    match tokio::task::spawn_blocking(move || kvm::set_hdmi(enabled)).await {
+    match tokio::task::spawn_blocking(move || capture::set_hdmi(enabled)).await {
         Ok(Ok(_)) => {}
         Ok(Err(err)) => warn!(error = ?err, enabled, "failed to switch hdmi capture"),
         Err(err) => warn!(error = ?err, enabled, "hdmi capture task failed"),

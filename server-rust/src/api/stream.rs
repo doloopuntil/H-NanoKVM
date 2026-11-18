@@ -29,8 +29,8 @@ use tracing::{debug, info, warn};
 use crate::{
     AppError, Result,
     api::direct_flow::{DirectFlow, MAX_CONTROL_BYTES, Offer, parse_control},
+    capture,
     error::ApiResponse,
-    ffi::kvm,
     hdmi_idle,
     http::{
         middleware::{CurrentSession, TransportSession},
@@ -772,7 +772,7 @@ async fn run_mjpeg_producer() {
             );
         }
         let frame = tokio::task::spawn_blocking(move || {
-            kvm::read_mjpeg(screen.width, screen.height, screen.quality)
+            capture::read_mjpeg(screen.width, screen.height, screen.quality)
         })
         .await;
 
@@ -958,7 +958,7 @@ fn h264_direct_producer_action(
 }
 
 fn apply_frame_detect(value: u8) -> Result<()> {
-    kvm::set_frame_detect(value)?;
+    capture::set_frame_detect(value)?;
     FRAME_DETECT.store(value, Ordering::Relaxed);
     Ok(())
 }
@@ -1176,7 +1176,7 @@ pub fn request_h264_keyframe(reason: &'static str) {
         *last = Some(now);
     }
     info!(reason, "requesting h264 keyframe");
-    kvm::request_keyframe();
+    capture::request_keyframe();
 }
 
 /// Lets one message through per interval and counts the ones it holds back.
@@ -1223,7 +1223,7 @@ pub async fn read_h264_capture_frame(
 
     let task = tokio::task::spawn_blocking(move || {
         let fps = u8::try_from(screen.fps).unwrap_or(u8::MAX);
-        kvm::read_h264(
+        capture::read_h264(
             screen.width,
             screen.height,
             fps,
@@ -1390,11 +1390,11 @@ pub fn capture_mjpeg_frame_now() -> std::result::Result<LatestMjpegFrame, String
 
     let detect = FRAME_DETECT.load(Ordering::Relaxed);
     if detect != 0 {
-        kvm::set_frame_detect(0).map_err(|err| err.to_string())?;
+        capture::set_frame_detect(0).map_err(|err| err.to_string())?;
     }
-    let read = kvm::read_mjpeg(screen.width, screen.height, screen.quality);
+    let read = capture::read_mjpeg(screen.width, screen.height, screen.quality);
     if detect != 0 {
-        let _ = kvm::set_frame_detect(detect);
+        let _ = capture::set_frame_detect(detect);
     }
 
     let (data, result) = read.map_err(|err| err.to_string())?;
