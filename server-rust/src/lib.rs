@@ -3,6 +3,7 @@ pub mod auth;
 pub mod config;
 pub mod error;
 pub mod ffi;
+pub mod front_panel;
 pub mod fsutil;
 pub mod hdmi_idle;
 pub mod http;

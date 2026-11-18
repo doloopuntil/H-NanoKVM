@@ -109,7 +109,6 @@ require_dir /mnt/data
 require_regular /kvmapp/version
 require_regular /kvmapp/server/NanoKVM-Server
 require_regular /kvmapp/backends/NanoKVM-Server.rust
-require_regular /kvmapp/kvm_system/kvm_system
 require_regular /kvmapp/system/keys/system-update-signing.pub.pem
 if [ -n "$EXPECTED_UPDATE_KEY_ID" ]; then
   [ -n "$EXPECTED_UPDATE_PUBLIC_KEY_DER_SHA256" ] || \
@@ -133,7 +132,7 @@ reject_path /kvmapp/backends/NanoKVM-Server.go
 reject_path /kvmapp/server/NanoKVM-Server.go
 reject_path /kvmapp/server/NanoKVM-Server.go.bak
 reject_path /kvmapp/jpg_stream
-reject_path /kvmapp/kvm_system/kvm_stream
+reject_path /kvmapp/kvm_system
 reject_path /kvmapp/kvm_new_app
 reject_path /kvmapp/kvm_new_img
 reject_path /etc/kvm/scripts/switch-backend-go.sh

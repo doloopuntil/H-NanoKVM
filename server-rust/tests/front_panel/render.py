@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Renders the OLED pictures in a kvm_system trace: replays the I2C command and data bytes
+"""Renders the OLED pictures in a front panel trace: replays the I2C command and data bytes
 on a page-addressed controller RAM and prints the RAM after each tick that changed it.
 
 Assumes SSD1306 page addressing: B0-B7, the low three bits, so the PCIe code's

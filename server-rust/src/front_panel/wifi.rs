@@ -1,17 +1,17 @@
 //! Wi-Fi setup over the access point (system_ctrl.cpp) and the AP key (ap_key.h).
 
-use crate::{Command, Platform, System};
+use super::{Command, Platform, System};
 
 const WIFI_CONNECTION_DELAY_MS: u64 = 5000;
 const WIFI_TRY_CONNECT: &str = "/kvmapp/kvm/wifi_try_connect";
 
 /// The AP key is the WPA2 passphrase and the provisioning key at once: ten characters
 /// from 31 unambiguous symbols (~49 bits), read off the OLED.
-pub(crate) const AP_KEY_CHARS: usize = 10;
+pub(super) const AP_KEY_CHARS: usize = 10;
 const AP_KEY_ALPHABET: &[u8] = b"23456789abcdefghjkmnpqrstuvwxyz";
 
 /// A fresh key from the CSPRNG, or None; there is no weaker fallback.
-pub(crate) fn ap_key_generate(random: &mut dyn FnMut(&mut [u8]) -> bool) -> Option<String> {
+pub(super) fn ap_key_generate(random: &mut dyn FnMut(&mut [u8]) -> bool) -> Option<String> {
     let size = AP_KEY_ALPHABET.len();
     // Bytes at or above the largest multiple of `size` are drawn again.
     let limit = 256 / size * size;
@@ -62,19 +62,19 @@ impl<P: Platform> System<P> {
     }
 
     /// Credentials entered in the web UI while the status page shows.
-    pub(crate) fn wifi_web_config_process(&mut self) {
+    pub(super) fn wifi_web_config_process(&mut self) {
         if self.take_credentials() {
             self.sys.wifi_config_process = if self.wifi_connected() { -1 } else { 0 };
         }
     }
 
     /// One step of AP setup: start the AP, wait for a phone, wait for credentials, connect.
-    pub(crate) fn wifi_config_process(&mut self) {
+    pub(super) fn wifi_config_process(&mut self) {
         match self.sys.wifi_config_process {
             0 => {
                 let p = &mut self.p;
                 let Some(key) = ap_key_generate(&mut |buf| p.random(buf)) else {
-                    println!("[kvms]WiFi AP not started: no random key");
+                    tracing::warn!("front panel: Wi-Fi AP not started: no random key");
                     self.sys.wifi_config_process = -1;
                     self.sys.sub_page = 6;
                     return;
@@ -85,7 +85,7 @@ impl<P: Platform> System<P> {
                     .p
                     .write_secret("/kvmapp/kvm/ap.pass", self.sys.wifi_ap_pass.as_bytes())
                 {
-                    println!("[kvms]WiFi AP not started: key not stored");
+                    tracing::warn!("front panel: Wi-Fi AP not started: key not stored");
                     self.sys.wifi_ap_pass.clear();
                     self.sys.wifi_config_process = -1;
                     self.sys.sub_page = 6;

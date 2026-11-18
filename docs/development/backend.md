@@ -1,14 +1,14 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-17
+last-checked: 2026-11-18
 ---
 
 # Rust backend
 
 The Rust backend lives in `server-rust/`. It replaces upstream's Go `server/`
 and runs as `NanoKVM-Server`, keeping the rest of the NanoKVM runtime:
-`kvm_system`, `libkvm.so`, the USB gadget scripts, the Sophgo multimedia stack and
+`libkvm.so`, the USB gadget scripts, the Sophgo multimedia stack and
 the React frontend. Its routes are listed in [Backend API](../reference/api.md)
 and its configuration in [Server configuration](../reference/config.md).
 
@@ -23,6 +23,23 @@ its connection (TLS or plain TCP) to a single-threaded runtime on the `hid-input
 The handshake, the session and origin checks stay on the main worker. Measured on a Lite
 with the stream open during an upload: a 5 ms timer on the input thread was late by 1.3 ms
 (median) and 9 ms at worst, against 94 and 234 ms on the main worker.
+
+## Front panel
+
+`front_panel/` drives the OLED and the button of the Full and PCIe boards and runs the Wi-Fi
+setup over an access point; it replaces the C++ `kvm_system`. It runs on its own
+`front-panel` thread, started at boot on every board (on the Lite it only writes the status
+files and watches for Wi-Fi credentials from the web UI). I2C frames and `S30wifi restart`
+block for seconds, so it never runs on the Tokio worker; it runs its commands on the runtime
+through `run_allowed` and writes `ap.pass` with `write_0600_atomic`. It still talks to the
+rest of the server through the files in `/kvmapp/kvm` and `/etc/kvm`
+([Files on the device](../reference/device-files.md)).
+
+Everything outside the code goes through the `Platform` trait. `tests/front_panel_golden.rs`
+replays 18 scenarios against it and compares the I2C bytes, file writes and commands with
+goldens recorded from the C++ program, the only check for the Full and PCIe boards
+([tests/front_panel](../../server-rust/tests/front_panel/README.md)). A panic in the thread
+stops the server (`panic = "abort"`), so the code does not unwrap on I/O.
 
 ## Build
 

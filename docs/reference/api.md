@@ -254,8 +254,6 @@ See [Server configuration](config.md).
 
 ## External Components To Preserve
 
-- `kvm_system` (OLED, buttons, Wi-Fi provisioning) remains an external native
-  component.
 - `libkvm.so` and `libkvm_mmf.so` remain the native video boundary; the Rust
   server calls them through FFI. They are built from `support/sg2002` in CI.
 - Init scripts under `/etc/init.d/` remain the service-control boundary

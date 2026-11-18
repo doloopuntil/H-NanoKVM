@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
-last-checked: 2026-11-16
+last-checked: 2026-11-18
 ---
 
 # Security model
@@ -40,7 +40,7 @@ behaviour is in the guides ([sign-in](../guide/sign-in.md),
 | Public routes | The routes that need no session (health, version, sign-in, setup, AP-mode Wi-Fi) answer an internal error with `internal error` and log the detail. The HTTP to HTTPS redirect uses the `Host` header only when it is a host name, an IPv4 address or a bracketed IPv6 address with an optional port, and answers 400 otherwise. |
 | Online app update | Moves forward only: signed metadata for an older or equal version is refused before the download. A manual import is the way to install an older release. Metadata has no expiry or sequence number, so withholding newer releases is not detected. |
 | Browser | Security headers on every response; the CSP allows scripts and images only from the device (images also from `data:`), so chat output cannot load external content; `base-uri` is `none`, forms post to the device only, and the device cannot be framed. With a Tailscale or Let's Encrypt certificate kept, pages also carry HSTS for 180 days ([HTTPS certificate](../guide/https-certificate.md#hsts)). |
-| Writable directories | `/tmp` and `/dev/shm`, which every account can write, are mounted `noexec,nosuid,nodev`. `NanoKVM-Server` and `kvm_system` run in place from `/kvmapp`; the raw system updater stages its loader and BusyBox in root-only `/run`. The image build fails if the fstab loses `noexec`. |
+| Writable directories | `/tmp` and `/dev/shm`, which every account can write, are mounted `noexec,nosuid,nodev`. `NanoKVM-Server` runs in place from `/kvmapp`; the raw system updater stages its loader and BusyBox in root-only `/run`. The image build fails if the fstab loses `noexec`. |
 | Commands | Privileged commands go through an argv-only allowlist (`system/command.rs`) with timeouts and bounded output; no shell strings. |
 | Files and archives | Atomic `0600` writes for secrets, symlink and traversal checks, bounded archive extraction. |
 | Updates | Signed metadata and payload hashes for application and system updates; raw partition writes happen only after the install confirmation; boot watchdog rollback. An optional local key, set with the password and logged, signs bundles uploaded from the browser only. |
@@ -158,11 +158,10 @@ Known exceptions:
   hardware initialization and factory-compatible control paths. The 2026-07-11
   audit of that code and its remediation are in
   [`native-code-audit.md`](../archive/native-code-audit.md).
-- The native code built in CI (the Sophgo middleware, `libkvm.so`, `libkvm_mmf.so`,
-  `kvm_system`) is compiled with `-fstack-protector-strong`, and the build fails if a library
-  or binary does not call the stack check. `libkvm.so`, `libkvm_mmf.so` and `kvm_system` are
-  also linked with full RELRO (`-z relro -z now`), `kvm_system` is position-independent, and
-  `libkvm.so` exports only its C API (`libkvm.map`). They are built with plain CMake from
+- The native code built in CI (the Sophgo middleware, `libkvm.so`, `libkvm_mmf.so`) is
+  compiled with `-fstack-protector-strong`, and the build fails if a library does not call
+  the stack check. `libkvm.so` and `libkvm_mmf.so` are also linked with full RELRO
+  (`-z relro -z now`), and `libkvm.so` exports only its C API (`libkvm.map`). They are built with plain CMake from
   this repository and the Sophgo middleware by Buildroot's GCC, the toolchain that builds the
   rest of the rootfs, so they load the `libstdc++` and musl Buildroot maintains; no MaixCDK or
   OpenCV code is linked in or shipped, and `dl_lib` carries no GCC runtime of its own.
@@ -214,8 +213,10 @@ Known exceptions:
   needed: Buildroot 2026.05.1 already carries it.
 - The DHCPv6 hook lets only an address literal reach `ip` or a `nameserver` line and only domain
   names reach `search`, and it removes the `/128` it added when the lease ends or changes.
-- `kvm_system`, which drives the OLED and the button, reads the network state from `/proc` and
-  the interfaces themselves, without a shell or `ping`.
+- The front panel (OLED, button, Wi-Fi setup) is a thread of the server, written in Rust. It
+  reads the network state from `/proc` and the interfaces themselves, runs `S30wifi`,
+  `hostapd_cli` and `wpa_cli` through the command allowlist without a shell, and writes the
+  AP key with mode 0600.
 - HID: a failed write resets the USB gadget only when the controller state says that can help
   (not while the host is off or asleep), and at most once a minute. An H.264 keyframe is
   requested at most once a second for all viewers.

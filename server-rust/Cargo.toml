@@ -23,10 +23,12 @@ flate2 = "1"
 hmac = "0.12"
 # Already in Cargo.lock via axum; used directly to set a header timeout.
 hyper = { version = "1", features = ["http1", "server"] }
+# QR codes on the front panel OLED (MIT, no dependencies).
+qrcodegen = "1.8"
 hyper-util = { version = "0.1", features = ["tokio"] }
 getrandom = "0.4"
 futures-util = { version = "0.3.32", features = ["sink"] }
-nix = { version = "0.31.3", features = ["fs", "ioctl", "mount", "net", "process", "signal", "term"] }
+nix = { version = "0.31.3", features = ["fs", "ioctl", "mount", "net", "poll", "process", "signal", "term", "time"] }
 rcgen = "0.14"
 # Types webrtc takes from its sans-I/O core; pinned with webrtc.
 rtc = { version = "=0.21.1", default-features = false }

@@ -1,4 +1,4 @@
-// Small Linux helpers shared by libkvm and kvm_system: i2c-dev access and millisecond time.
+// Small Linux helpers for libkvm: i2c-dev access and millisecond time.
 #ifndef KVM_PLATFORM_HPP_
 #define KVM_PLATFORM_HPP_
 

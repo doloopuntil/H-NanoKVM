@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build libkvm_mmf.so, libkvm.so and kvm_system (support/sg2002) and check what the image
-# relies on: stack protector, no vector extension, no RPATH, musl's loader, libkvm's exports.
+# Build libkvm_mmf.so and libkvm.so (support/sg2002) and check what the image
+# relies on: stack protector, no vector extension, no RPATH, libkvm's exports.
 # Usage: build-sg2002-native.sh CROSS_PREFIX SDK_DIR OUT_DIR
 # CROSS_PREFIX: Buildroot's host/bin/riscv64-buildroot-linux-musl-
 set -euo pipefail
@@ -33,7 +33,7 @@ if grep -il -e maix -e opencv $deps; then
 fi
 
 mkdir -p "$OUT"
-for f in libkvm_mmf.so libkvm.so kvm_system; do
+for f in libkvm_mmf.so libkvm.so; do
 	"${PREFIX}strip" --strip-all -R .comment -o "$OUT/$f" "$BUILD/$f"
 done
 chmod 0755 "$OUT"/*
@@ -46,7 +46,7 @@ needed() {
 	"${PREFIX}readelf" -d "$1" | sed -n 's/.*(NEEDED).*\[\(.*\)\]/\1/p'
 }
 # readelf output is kept in variables: grep -q in a pipe would kill it early (pipefail).
-for f in libkvm_mmf.so libkvm.so kvm_system; do
+for f in libkvm_mmf.so libkvm.so; do
 	bin="$OUT/$f"
 	syms=$("${PREFIX}readelf" --dyn-syms -W "$bin")
 	dyn=$("${PREFIX}readelf" -d "$bin")
@@ -59,14 +59,6 @@ for f in libkvm_mmf.so libkvm.so kvm_system; do
 	! grep -Eiq 'opencv|gomp' <<<"$(needed "$bin")" || fail "$f: needs OpenCV or libgomp"
 done
 
-grep -q "interpreter: /lib/ld-musl-riscv64.so.1" <<<"$("${PREFIX}readelf" -l "$OUT/kvm_system")" ||
-	fail "kvm_system: wrong loader"
-for lib in $(needed "$OUT/kvm_system"); do
-	case "$lib" in
-	libstdc++.so.6 | libgcc_s.so.1 | libc.so) ;;
-	*) fail "unexpected NEEDED entry in kvm_system: $lib" ;;
-	esac
-done
 for lib in $(needed "$OUT/libkvm.so"); do
 	case "$lib" in
 	libkvm_mmf.so | libstdc++.so.6 | libgcc_s.so.1 | libc.so) ;;

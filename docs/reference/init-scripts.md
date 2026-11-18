@@ -20,7 +20,7 @@ The kernel keeps feeding the watchdog the FSBL armed until `S02watchdog` takes i
 Buildroot adds its own scripts between these (`S01seedrng`, `S02sysctl`, `S10udevd`,
 `S11modules`, `S35nftables`, `S40network`, `S50crond`); the table lists ours. `S10udevd`'s
 coldplug loads the AIC8800 Wi-Fi driver by the card's SDIO ID on boards that have one (options
-in `/etc/modprobe.d/aic8800.conf`), so `wlan0` exists before `kvm_system` looks for it.
+in `/etc/modprobe.d/aic8800.conf`), so `wlan0` exists before the server looks for it.
 
 | Script | Does |
 | --- | --- |

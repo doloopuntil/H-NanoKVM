@@ -5,7 +5,6 @@ workspaces = [
   "server-rust",
   "web",
   "scripts",
-  "support/sg2002/kvm_system/main",
   "support/sg2002/kvm_vision_test/main",
   "support/sg2002/additional/kvm",
   "support/sg2002/additional/kvm_mmf",

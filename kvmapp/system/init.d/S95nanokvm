@@ -18,9 +18,6 @@ INIT_SELF="$0"
 NANOKVM_NATIVE_LIBRARY_PATH=/kvmapp/server/dl_lib:/mnt/system/usr/lib:/mnt/system/usr/lib/3rd
 # Buildroot's musl 1.2.6 (the vendor T-Head loader misaligned thread stacks).
 NANOKVM_LOADER=/lib/ld-musl-riscv64.so.1
-KVM_SYSTEM_SOURCE_DIR=/kvmapp/kvm_system
-KVM_SYSTEM_LOG=/tmp/kvm_system.log
-KVM_SYSTEM_PID_FILE=/tmp/kvm-system.pid
 SYSTEM_UPDATE_WATCHDOG_PID_FILE=/tmp/system-update-watchdog.pid
 SYSTEM_UPDATE_LOG=/tmp/system-update-watchdog.log
 SYSTEM_VERSION_FILE=/etc/kvm/system-version.json
@@ -77,89 +74,6 @@ server_is_running() {
     [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
 }
 
-find_kvm_system_pids() {
-    for proc in /proc/[0-9]*; do
-        cmdline="$(tr '\0' ' ' < "$proc/cmdline" 2>/dev/null || true)"
-        case "$cmdline" in
-            /lib/ld-musl-riscv64.so.1*'/kvmapp/kvm_system/kvm_system'*)
-                printf '%s\n' "${proc##*/}"
-                ;;
-        esac
-    done
-}
-
-kvm_system_pid_matches() {
-    pid="$1"
-    [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null || return 1
-    cmdline="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)"
-    case "$cmdline" in
-        /lib/ld-musl-riscv64.so.1*'/kvmapp/kvm_system/kvm_system'*) return 0 ;;
-    esac
-    return 1
-}
-
-kvm_system_is_running() {
-    [ -f "$KVM_SYSTEM_PID_FILE" ] || return 1
-    pid="$(cat "$KVM_SYSTEM_PID_FILE" 2>/dev/null)"
-    kvm_system_pid_matches "$pid"
-}
-
-adopt_single_kvm_system_process() {
-    pids="$(find_kvm_system_pids)"
-    set -- $pids
-    [ "$#" -eq 1 ] || return 1
-    printf '%s\n' "$1" > "$KVM_SYSTEM_PID_FILE"
-    kvm_system_is_running
-}
-
-stop_kvm_system_process() {
-    pids="$(find_kvm_system_pids)"
-    for pid in $pids; do
-        kill "$pid" 2>/dev/null || true
-    done
-    for _ in 1 2 3 4 5; do
-        alive=0
-        for pid in $pids; do
-            kill -0 "$pid" 2>/dev/null && alive=1
-        done
-        [ "$alive" -eq 0 ] && break
-        sleep 1
-    done
-    for pid in $pids; do
-        kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null || true
-    done
-    rm -f "$KVM_SYSTEM_PID_FILE"
-    for pid in $pids; do
-        kill -0 "$pid" 2>/dev/null && return 1
-    done
-    return 0
-}
-
-start_kvm_system_runtime() {
-    [ -x "$KVM_SYSTEM_SOURCE_DIR/kvm_system" ] || {
-        runtime_log "kvm_system source is missing or not executable"
-        return 1
-    }
-    : > "$KVM_SYSTEM_LOG" 2>/dev/null || KVM_SYSTEM_LOG=/dev/null
-    nohup "$NANOKVM_LOADER" --library-path "$NANOKVM_NATIVE_LIBRARY_PATH" \
-        "$KVM_SYSTEM_SOURCE_DIR/kvm_system" >>"$KVM_SYSTEM_LOG" 2>&1 &
-    launched_pid=$!
-    rm -f "$KVM_SYSTEM_PID_FILE"
-    for _ in 1 2 3 4 5; do
-        pids="$(find_kvm_system_pids)"
-        set -- $pids
-        if [ "$#" -eq 1 ]; then
-            printf '%s\n' "$1" > "$KVM_SYSTEM_PID_FILE"
-            runtime_log "started kvm_system pid $1 (launcher $launched_pid)"
-            return 0
-        fi
-        sleep 1
-    done
-    runtime_log "kvm_system process count was not one after startup: $(find_kvm_system_pids | tr '\n' ' ')"
-    stop_kvm_system_process >/dev/null 2>&1 || true
-    return 1
-}
-
 stop_server_process() {
     pid="$(cat "$SERVER_PID_FILE" 2>/dev/null)"
     if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
@@ -197,7 +111,6 @@ trim_log() {
 
 trim_runtime_logs() {
     trim_log "$SERVER_LOG"
-    trim_log "$KVM_SYSTEM_LOG"
     trim_log /tmp/nanokvm-watchdog.log
 }
 
@@ -394,18 +307,6 @@ start_watchdog() {
         sleep 20
         while true; do
             trim_runtime_logs
-            if ! kvm_system_is_running; then
-                if adopt_single_kvm_system_process; then
-                    runtime_log "adopted live kvm_system pid $(cat "$KVM_SYSTEM_PID_FILE")"
-                else
-                    runtime_log "kvm_system is not running; restarting helper"
-                    stop_kvm_system_process >/dev/null 2>&1 || true
-                    if ! start_kvm_system_runtime; then
-                        runtime_log "failed to restart kvm_system helper"
-                    fi
-                fi
-            fi
-
             if ! server_is_running; then
                 runtime_log "NanoKVM-Server is not running; restarting in MJPEG safe mode"
                 restart_server_safe
@@ -497,7 +398,6 @@ system_update_boot_healthy() {
     [ -f /boot/ver ] || return 1
     [ -f /kvmapp/server/web/index.html ] || return 1
     system_update_version_matches || return 1
-    kvm_system_is_running || return 1
     health_check || return 1
     return 0
 }
@@ -656,7 +556,6 @@ stop_runtime() {
     stop_system_update_watchdog
     stop_watchdog
     stop_server_process || reboot_after_unrecoverable_server "runtime stop"
-    stop_kvm_system_process || true
 }
 
 start_runtime() {
@@ -664,8 +563,6 @@ start_runtime() {
     ensure_kvm_state_files
     install_system_update_public_key
     install_boot_scripts
-
-    start_kvm_system_runtime || runtime_log "continuing without kvm_system; watchdog will retry"
 
     start_server_runtime
     start_watchdog
