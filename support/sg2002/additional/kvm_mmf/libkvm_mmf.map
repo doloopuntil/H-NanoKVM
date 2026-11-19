@@ -1,0 +1,39 @@
+/* libkvm_mmf.so exports the C API in include/kvm_mmf.hpp, and the ISP stub the middleware
+ * imports from it. */
+{
+	global:
+		CVI_ISP_GetVDTimeOut;
+		mmf_add_venc_channel;
+		mmf_add_vi_channel;
+		mmf_deinit;
+		mmf_del_venc_channel;
+		mmf_del_venc_channel_all;
+		mmf_del_vi_channel;
+		mmf_del_vi_channel_all;
+		mmf_enc_jpg_deinit;
+		mmf_enc_jpg_free;
+		mmf_enc_jpg_init;
+		mmf_enc_jpg_pop;
+		mmf_enc_jpg_push_with_quality;
+		mmf_get_vi_unused_channel;
+		mmf_init;
+		mmf_invert_format_to_mmf;
+		mmf_is_init;
+		mmf_set_vi_hmirror;
+		mmf_set_vi_vflip;
+		mmf_try_deinit;
+		mmf_venc_free;
+		mmf_venc_pop;
+		mmf_venc_push;
+		mmf_venc_request_idr;
+		mmf_vi_aligned_width;
+		mmf_vi_chn_is_open;
+		mmf_vi_deinit;
+		mmf_vi_frame_free;
+		mmf_vi_frame_map;
+		mmf_vi_frame_pop;
+		mmf_vi_frame_release;
+		mmf_vi_init;
+	local:
+		*;
+};

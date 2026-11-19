@@ -1,10 +1,11 @@
-//! HDMI capture: the LT6911 bridge, input detection and the frame reads, ported from
-//! libkvm's C++ kvm_vision. The camera and encoders stay in libkvm (`ffi::kvm`).
+//! HDMI capture: the LT6911 bridge, input detection, the frame reads, the camera and the
+//! encoders, ported from libkvm's C++. The media pipeline below them is libkvm_mmf (`ffi::mmf`).
 
 mod bridge;
 mod detect;
 mod device;
 mod engine;
+pub mod media;
 pub mod platform;
 
 use std::{
@@ -17,7 +18,7 @@ use std::{
 pub use engine::{Engine, ReadResult};
 pub use platform::{Command, GpioHandle, Platform, ThreadHandle, ViState};
 
-use crate::{AppError, Result, ffi::kvm};
+use crate::{AppError, Result, ffi::mmf};
 use device::Device;
 
 pub const HDMI_DISABLE_FILE: &str = "/etc/kvm/hdmi_disable";
@@ -31,8 +32,8 @@ struct Capture {
 static CAPTURE: LazyLock<std::result::Result<Capture, String>> = LazyLock::new(load);
 
 fn load() -> std::result::Result<Capture, String> {
-    if !kvm::LINKED {
-        return Err("libkvm is linked only into the device build".to_string());
+    if !mmf::LINKED {
+        return Err("libkvm_mmf is linked only into the device build".to_string());
     }
     let engine = Engine::new(Device::new());
     engine.init();

@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
-last-checked: 2026-11-18
+last-checked: 2026-11-20
 source: .github/workflows/system-image-6x.yml
 ---
 
@@ -64,10 +64,11 @@ image.
   configures Buildroot and builds only its cross-compiler (GCC 14.4) and musl 1.2.6. That one
   toolchain then builds the Sophgo middleware (`scripts/build-sdk-middleware.sh`), and, after
   `scripts/stage-sg2002-sdk.sh` has staged its headers, sample code and the patched LT6911
-  driver, `libkvm.so` and `libkvm_mmf.so` with plain CMake
+  driver, `libkvm_mmf.so` with plain CMake
   (`support/sg2002/CMakeLists.txt`, `scripts/build-sg2002-native.sh`). That script checks the
-  stack protector, full RELRO, no RPATH, the T-Head scalar extensions and no vector code in
-  both, and that `libkvm.so` exports exactly the C API the server links. The Rust server links against the fresh `libkvm` and against `libc.so` and the
+  stack protector, full RELRO, no RPATH, the T-Head scalar extensions and no vector code, and
+  that `libkvm_mmf.so` exports exactly its map, which covers what the server binds. The Rust
+  server links against the fresh `libkvm_mmf` and against `libc.so` and the
   headers from the sysroot of Buildroot's compiler, the same musl it runs on. The job then runs
   `scripts/build-buildroot-6x-image.sh build` in the same output directory: Buildroot without
   the post-image step, followed by checks on the result (the kernel
@@ -151,8 +152,8 @@ scope" below). **The pipeline no longer fetches this archive at all.**
 | Content | How it's sourced now | Evidence |
 | --- | --- | --- |
 | All kernel modules (in-tree, external and media; the manifests list them and `scripts/expected-module-count.sh` adds them up) | Rebuilt from source: in-tree modules from this pipeline's own kernel build; the video, codec and other `interdrv` modules (including the media modules) from public `sophgo/osdrv` at `SOPHGO_OSDRV_SHA` with the `sophgo-osdrv-1b3a496-*.patch` set; WiFi/BT/touch (`3rd/`) from the vendor SDK's `osdrv/extdrv` | `support/sg2002/kernel/5.10.265/manifests/external-modules.txt`; workflow steps "Fetch public sophgo/osdrv source" through "Substitute freshly-built modules into the runtime staging dir" |
-| `libkvm.so` / `libkvm_mmf.so` | Built from source in the `build-buildroot` job: `support/sg2002` with plain CMake and Buildroot's own GCC 14.4 (the toolchain that builds the rootfs), at `-O2`. `libkvm_mmf.so` compiles in the vendor SDK's LT6911 driver with the chip-ID probe removed, starts capture without the ISP and links no ISP/3A library. `libkvm.so` talks to `libkvm_mmf.so` directly; MaixCDK's camera, image and I2C layers are gone. The Rust backend links against the result. Never depended on raw.12 either way | `scripts/build-sg2002-native.sh`; `server-rust/scripts/build-linked-libkvm.sh` |
-| OpenCV (`core`/`highgui`/`imgcodecs`/`imgproc`, and `video`/`dnn`/`calib3d`/`features2d`/`flann`/`protobuf` before them) | No longer shipped: only MaixCDK's image class used OpenCV, and `libkvm.so` no longer links it. `libgomp` went with them (only `opencv_core` needed it) | `support/sg2002/CMakeLists.txt` |
+| `libkvm_mmf.so` | Built from source in the `build-buildroot` job: `support/sg2002` with plain CMake and Buildroot's own GCC 14.4 (the toolchain that builds the rootfs), at `-O2`. `libkvm_mmf.so` compiles in the vendor SDK's LT6911 driver with the chip-ID probe removed, starts capture without the ISP and links no ISP/3A library. MaixCDK's camera, image and I2C layers are gone, and so is `libkvm.so`: the Rust backend links `libkvm_mmf.so` directly. Never depended on raw.12 either way | `scripts/build-sg2002-native.sh`; `server-rust/scripts/build-linked-libkvm.sh` |
+| OpenCV (`core`/`highgui`/`imgcodecs`/`imgproc`, and `video`/`dnn`/`calib3d`/`features2d`/`flann`/`protobuf` before them) | No longer shipped: only MaixCDK's image class used OpenCV, and nothing links it any more. `libgomp` went with them (only `opencv_core` needed it) | `support/sg2002/CMakeLists.txt` |
 | `/mnt/system/usr/bin` (49 CVITEK sample/test binaries) | Deleted entirely -- no static or `dlopen()` reference anywhere in tracked source | `server-rust/native/README.md` ("/mnt/system/usr") |
 | `/mnt/system/usr/lib` minus one file (32 files incl. `3rd/`) | Deleted entirely -- proven redundant against `dl_lib`'s search-path priority | same |
 | `libsys.so`, `libvenc.so`, `libvdec.so`, `libvi.so`, `libvpss.so`, `libvo.so`, `libgdc.so`, `librgn.so`, `libini.so` | Built from source in `build-buildroot` with Buildroot's GCC: public `sophgo/cvi_mpi` at `SOPHGO_CVI_MPI_SHA` (the same Sophgo release as the kernel modules), with its own flags but `-O2` instead of `-Os` and the T-Head scalar extensions and `support/sg2002/middleware-patches/`, by `scripts/build-sdk-middleware.sh`. The old `libvpu.so` is split into `libvi`/`libvpss`/`libvo`/`libgdc`/`librgn` and no longer ships. The sensor enum and names come from `sophgo/SensorSupportList` at `SOPHGO_SENSOR_LIST_SHA`. `libkvm_mmf.so` links against them, compiles against the same release's headers and sample code, and the image ships them | workflow steps "Fetch the Sophgo middleware source" through "Stage the headers, sample code and LT6911 driver for libkvm_mmf" |

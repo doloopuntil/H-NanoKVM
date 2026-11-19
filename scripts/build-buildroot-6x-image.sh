@@ -147,13 +147,13 @@ build_stage() {
 	for file in /etc/modprobe.d/aic8800.conf /lib/firmware/regulatory.db /lib/firmware/regulatory.db.p7s; do
 		debugfs -R "stat $file" "$ROOTFS" 2>/dev/null | grep -q "Type: regular" || die "rootfs lacks $file"
 	done
-	# libkvm's GCC runtime is Buildroot's, from the compiler that built it; dl_lib must not shadow it
+	# libkvm_mmf's GCC runtime is Buildroot's, from the compiler that built it; dl_lib must not shadow it
 	for lib in libstdc++.so.6 libgcc_s.so.1; do
 		debugfs -R "stat /usr/lib/$lib" "$ROOTFS" 2>/dev/null | grep -q "Type: symlink\|Type: regular" || \
 			die "rootfs lacks /usr/lib/$lib"
 	done
 	# dl_lib holds exactly what this pipeline builds from source: no prebuilt or runtime library
-	expected_dl_lib="libgdc.so libini.so libkvm.so libkvm_mmf.so librgn.so libsys.so libvdec.so \
+	expected_dl_lib="libgdc.so libini.so libkvm_mmf.so librgn.so libsys.so libvdec.so \
 libvenc.so libvi.so libvo.so libvpss.so"
 	shipped_dl_lib=$(debugfs -R "ls -p /kvmapp/server/dl_lib" "$ROOTFS" 2>/dev/null | \
 		awk -F/ '$6 != "" && $6 != "." && $6 != ".." {print $6}' | LC_ALL=C sort | xargs)

@@ -1,4 +1,4 @@
-# libkvm_mmf.so and libkvm.so for the SG2002.
+# libkvm_mmf.so for the SG2002; the server (server-rust/src/capture) links it directly.
 # cmake -S support/sg2002 -B build -DCMAKE_TOOLCHAIN_FILE=support/sg2002/cmake/buildroot-musl.cmake \
 #   -DSG2002_CROSS_PREFIX=... -DSG2002_SDK_DIR=...   (scripts/stage-sg2002-sdk.sh makes the SDK dir)
 cmake_minimum_required(VERSION 3.16)
@@ -49,19 +49,10 @@ target_compile_definitions(kvm_mmf PRIVATE
 	SENSOR_LONTIUM_LT6911 SENSOR2_TYPE=LONTIUM_LT6911_2M_60FPS_8BIT ARCH_CV181X __CV181X__)
 # Video path: speed over size.
 target_compile_options(kvm_mmf PRIVATE -O2)
-target_link_options(kvm_mmf PRIVATE -Wl,--gc-sections)
+target_link_options(kvm_mmf PRIVATE
+	-Wl,--gc-sections
+	-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/additional/kvm_mmf/libkvm_mmf.map)
+set_target_properties(kvm_mmf PROPERTIES
+	LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/additional/kvm_mmf/libkvm_mmf.map)
 target_link_directories(kvm_mmf PRIVATE "${SDK}/lib")
 target_link_libraries(kvm_mmf PRIVATE sys vdec venc vi vpss vo gdc rgn ini pthread)
-
-# libkvm.so: the camera and encoder C API the server links (kvm_media.h); libkvm.map lists
-# every export. HDMI detection and the reads are in server-rust/src/capture.
-add_library(kvm SHARED
-	additional/kvm/src/kvm_capture.cpp
-	additional/kvm/src/kvm_media.cpp)
-target_include_directories(kvm PRIVATE additional/kvm/include)
-target_compile_options(kvm PRIVATE -O2)
-target_link_options(kvm PRIVATE
-	-Wl,--as-needed
-	-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/additional/kvm/libkvm.map)
-set_target_properties(kvm PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/additional/kvm/libkvm.map)
-target_link_libraries(kvm PRIVATE kvm_mmf pthread)

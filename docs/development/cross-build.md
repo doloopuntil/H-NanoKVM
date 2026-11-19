@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-18
+last-checked: 2026-11-20
 ---
 
 # Build and deploy the server
@@ -17,7 +17,7 @@ binary to the device. That binary starts the web server, but video capture will
 fail with:
 
 ```text
-failed to initialize libkvm: libkvm is linked only into the device build
+failed to initialize capture: libkvm_mmf is linked only into the device build
 ```
 
 For hardware video, the Rust backend must be built with the `linked-libkvm`
@@ -28,8 +28,9 @@ server-rust/scripts/build-linked-libkvm.sh
 ```
 
 That script sets the NanoKVM dynamic loader, RPATH, sysroot libraries and headers,
-and the `linked-libkvm` feature expected by `server-rust/src/ffi/kvm.rs`. Without that feature
-(host builds and tests) the server has no video; it never loads `libkvm` at run time.
+and the `linked-libkvm` feature expected by `server-rust/src/ffi/mmf.rs`, which links
+`libkvm_mmf`. Without that feature (host builds and tests) the server has no video; it never
+loads `libkvm_mmf` at run time.
 
 ## Toolchain
 
@@ -98,7 +99,7 @@ This matches CI closely and needs no RISC-V toolchain on the host:
    bind-mounted target directory fails with "File exists (os error 17)" on macOS.
 
 Check the result: a PIE executable with interpreter
-`/lib/ld-musl-riscv64.so.1`, `NEEDED` entries `libkvm.so`, `libgcc_s.so.1`
+`/lib/ld-musl-riscv64.so.1`, `NEEDED` entries `libkvm_mmf.so`, `libgcc_s.so.1`
 and `libc.so`, and RUNPATH `/kvmapp/server/dl_lib`.
 
 ### Native prerequisites
@@ -135,10 +136,9 @@ Do not run `make rust-kvmapp` unless `RUST_TARGET` is explicitly set. Without
 that environment variable it can package an x86-64 host binary that installs
 successfully but fails on the device with `Exec format error`.
 
-## Rebuild Native libkvm
+## Rebuild Native libkvm_mmf
 
-Native video changes are not rebuilt by Cargo. `libkvm.so` and `libkvm_mmf.so`
-are plain CMake targets in `support/sg2002/CMakeLists.txt`
+Native video changes are not rebuilt by Cargo. `libkvm_mmf.so` is a plain CMake target in `support/sg2002/CMakeLists.txt`
 (`cmake/buildroot-musl.cmake`), built with Buildroot's own GCC, the toolchain
 that builds the rootfs. CI's `build-buildroot` job is the reference build;
 locally, run the same scripts on a Linux host or in a Linux container (on macOS,
@@ -162,7 +162,7 @@ keep the Buildroot output on a Docker volume, not a bind mount):
    Apply the patches in `support/sg2002/middleware-patches/` to cvi_mpi, in the order
    the workflow applies them.
 3. Build the middleware, stage the SDK directory, then build and check the
-   two libraries:
+   library:
 
    ```sh
    SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh cvi_mpi osdrv sdk mw "$CROSS"
@@ -171,17 +171,17 @@ keep the Buildroot output on a Docker volume, not a bind mount):
    ```
 
 `build-sg2002-native.sh` stops if an output lacks the stack protector, full
-RELRO or the T-Head extensions, has an RPATH or vector code, if `libkvm.so` needs
-an unexpected library, or if `libkvm.so` exports anything other than the
-functions in `support/sg2002/additional/kvm/libkvm.map`.
+RELRO or the T-Head extensions, has an RPATH or vector code, if `libkvm_mmf.so` exports
+anything other than `support/sg2002/additional/kvm_mmf/libkvm_mmf.map`, or lacks a function
+`server-rust/src/ffi/mmf.rs` binds.
 
-Copy `libkvm.so` and `libkvm_mmf.so` into `server-rust/native/dl_lib/` (not in git)
+Copy `libkvm_mmf.so` and the middleware into `server-rust/native/dl_lib/` (not in git)
 before running the linked Rust build and packaging. `scripts/package-rust-kvmapp.sh`
 packages that directory as `/kvmapp/server/dl_lib`. Never let packaging
-silently reuse an old `libkvm` after changing source.
+silently reuse an old `libkvm_mmf` after changing source.
 
-Review [`native-code-audit.md`](../archive/native-code-audit.md) before modifying either
-native component, and test native changes on a device.
+Review [`native-code-audit.md`](../archive/native-code-audit.md) before modifying the
+native code, and test native changes on a device.
 
 ## Build And Package Kvmapp
 

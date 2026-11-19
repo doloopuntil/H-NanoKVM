@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build libkvm_mmf.so and libkvm.so (support/sg2002) and check what the image
-# relies on: stack protector, no vector extension, no RPATH, libkvm's exports.
+# Build libkvm_mmf.so (support/sg2002) and check what the image relies on: stack
+# protector, no vector extension, no RPATH, its exports.
 # Usage: build-sg2002-native.sh CROSS_PREFIX SDK_DIR OUT_DIR
 # CROSS_PREFIX: Buildroot's host/bin/riscv64-buildroot-linux-musl-
 set -euo pipefail
@@ -33,7 +33,7 @@ if grep -il -e maix -e opencv $deps; then
 fi
 
 mkdir -p "$OUT"
-for f in libkvm_mmf.so libkvm.so; do
+for f in libkvm_mmf.so; do
 	"${PREFIX}strip" --strip-all -R .comment -o "$OUT/$f" "$BUILD/$f"
 done
 chmod 0755 "$OUT"/*
@@ -46,7 +46,7 @@ needed() {
 	"${PREFIX}readelf" -d "$1" | sed -n 's/.*(NEEDED).*\[\(.*\)\]/\1/p'
 }
 # readelf output is kept in variables: grep -q in a pipe would kill it early (pipefail).
-for f in libkvm_mmf.so libkvm.so; do
+for f in libkvm_mmf.so; do
 	bin="$OUT/$f"
 	syms=$("${PREFIX}readelf" --dyn-syms -W "$bin")
 	dyn=$("${PREFIX}readelf" -d "$bin")
@@ -59,22 +59,16 @@ for f in libkvm_mmf.so libkvm.so; do
 	! grep -Eiq 'opencv|gomp' <<<"$(needed "$bin")" || fail "$f: needs OpenCV or libgomp"
 done
 
-for lib in $(needed "$OUT/libkvm.so"); do
-	case "$lib" in
-	libkvm_mmf.so | libstdc++.so.6 | libgcc_s.so.1 | libc.so) ;;
-	*) fail "unexpected NEEDED entry in libkvm.so: $lib" ;;
-	esac
-done
-
-# libkvm.so exports exactly the C API the server links (server-rust/src/ffi/kvm.rs).
-exports=$("${PREFIX}readelf" --dyn-syms -W "$OUT/libkvm.so" |
+# libkvm_mmf.so exports exactly libkvm_mmf.map, which covers what the server links
+# (server-rust/src/ffi/mmf.rs).
+exports=$("${PREFIX}readelf" --dyn-syms -W "$OUT/libkvm_mmf.so" |
 	awk '$7 != "UND" && $5 == "GLOBAL" {print $8}' | sed 's/@.*//' | sort -u)
-expected=$(sed -n 's/^\t\t\([a-z_0-9]*\);$/\1/p' "$ROOT/support/sg2002/additional/kvm/libkvm.map" | sort)
-[ "$exports" = "$expected" ] || fail "libkvm.so exports differ from libkvm.map: $exports"
-for sym in $(awk '/#\[link\(name = "kvm"\)\]/ {f = 1; next} f && /^}/ {exit} f' \
-	"$ROOT/server-rust/src/ffi/kvm.rs" |
+expected=$(sed -n 's/^\t\t\([A-Za-z_0-9]*\);$/\1/p' "$ROOT/support/sg2002/additional/kvm_mmf/libkvm_mmf.map" | sort)
+[ "$exports" = "$expected" ] || fail "libkvm_mmf.so exports differ from libkvm_mmf.map: $exports"
+for sym in $(awk '/#\[link\(name = "kvm_mmf"\)\]/ {f = 1; next} f && /^    }/ {exit} f' \
+	"$ROOT/server-rust/src/ffi/mmf.rs" |
 	sed -n 's/^ *\(pub \)\{0,1\}fn \([a-z_0-9]*\)(.*/\2/p'); do
-	grep -qx "$sym" <<<"$exports" || fail "libkvm.so does not export $sym"
+	grep -qx "$sym" <<<"$exports" || fail "libkvm_mmf.so does not export $sym"
 done
 
 ls -l "$OUT"

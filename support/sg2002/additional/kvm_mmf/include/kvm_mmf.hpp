@@ -1,7 +1,12 @@
 #ifndef __KVM_MMF_HPP__
 #define __KVM_MMF_HPP__
 
-#include "stdint.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // Packs a returned frame may carry; H.264 frames carry 1 or 3.
 #define MMF_STREAM_MAX_PACKS 8
@@ -34,7 +39,6 @@ bool mmf_is_init(void);
 int mmf_get_vi_unused_channel(void);
 int mmf_vi_init(void);
 int mmf_vi_deinit(void);
-int mmf_add_vi_channel_with_enc(int ch, int width, int height, int format);
 int mmf_add_vi_channel(int ch, int width, int height, int format);
 int mmf_del_vi_channel(int ch);
 int mmf_del_vi_channel_all(void);
@@ -55,7 +59,6 @@ void mmf_vi_frame_release(int ch);
 
 // invert format; mmf_invert_format_to_mmf() takes these input codes
 #define MMF_INPUT_FMT_NV21 8
-int mmf_invert_format_to_maix(int mmf_format);
 int mmf_invert_format_to_mmf(int maix_format);
 
 // venc
@@ -66,11 +69,15 @@ int mmf_enc_jpg_pop(int ch, uint8_t **data, int *size);
 int mmf_enc_jpg_free(int ch);
 int mmf_add_venc_channel(int ch, mmf_venc_cfg_t *cfg);
 int mmf_del_venc_channel(int ch);
-int mmf_del_venc_channel_all();
+int mmf_del_venc_channel_all(void);
 int mmf_venc_push(int ch, uint8_t *data, int w, int h, int format);
 int mmf_venc_pop(int ch, mmf_stream_t *stream);
 int mmf_venc_free(int ch);
 // Next frame is an IDR; the channel keeps running.
 int mmf_venc_request_idr(int ch);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // __KVM_MMF_HPP__

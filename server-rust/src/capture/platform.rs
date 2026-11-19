@@ -61,7 +61,7 @@ pub trait Platform: Send + Sync + 'static {
     fn gpio_claim(&self, name: &str, consumer: &str, high: bool) -> Option<GpioHandle>;
     fn gpio_set(&self, line: GpioHandle, high: bool);
 
-    // The camera and encoders (libkvm's kvm_media.h).
+    // The camera and encoders (`media.rs`).
     fn cam_create(&self, w: u16, h: u16) -> bool;
     fn cam_restart(&self, w: u16, h: u16);
     fn cam_set_size(&self, w: u16, h: u16) -> bool;

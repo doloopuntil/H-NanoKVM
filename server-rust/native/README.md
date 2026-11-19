@@ -3,15 +3,15 @@
 This directory contains the native NanoKVM runtime pieces used by the Rust
 backend.
 
-- `dl_lib/` is not in git. CI fills it with that run's builds of `libkvm`, `libkvm_mmf` and
-  the nine middleware libraries; the server links against them and the package installs them
-  as `/kvmapp/server/dl_lib`, and the image build fails unless it holds exactly those. For a
-  local device build, copy `libkvm.so` and `libkvm_mmf.so` from a device or a CI run into it.
-The corresponding native sources are under `support/sg2002/additional/kvm` and
-`kvm_mmf`, built with plain CMake (`support/sg2002/CMakeLists.txt`,
-[cross-build](../../docs/development/cross-build.md)). `src/ffi/kvm.rs` binds libkvm's
-camera and encoder API (`support/sg2002/additional/kvm/include/kvm_media.h`); HDMI detection,
-the LT6911 and the frame reads run in the server (`src/capture`), which serialises every call.
+- `dl_lib/` is not in git. CI fills it with that run's builds of `libkvm_mmf` and the nine
+  middleware libraries; the server links against them and the package installs them as
+  `/kvmapp/server/dl_lib`, and the image build fails unless it holds exactly those. For a
+  local device build, copy `libkvm_mmf.so` and the middleware from a device or a CI run into it.
+The native source is `support/sg2002/additional/kvm_mmf`, built with plain CMake
+(`support/sg2002/CMakeLists.txt`, [cross-build](../../docs/development/cross-build.md)).
+`src/ffi/mmf.rs` binds its C API (`include/kvm_mmf.hpp`); HDMI detection, the LT6911, the
+frame reads, the camera and the encoder calls run in the server (`src/capture`), which
+serialises every call.
 Known native lifecycle, VENC, bounds, and hardware-error findings are tracked in
 [`docs/native-code-audit.md`](../../docs/archive/native-code-audit.md).
 
@@ -26,8 +26,8 @@ describe the 5.10 build, removed on 2026-11-13; git history keeps it. The 6.x wo
 `libkvm.so` used to link MaixCDK's camera, image and I2C classes, and through the image
 class four OpenCV modules (`core`, `imgcodecs`, `imgproc`, `highgui`; `libgomp` came with
 `core`), after six others (`video`, `dnn`, `calib3d`, `features2d`, `flann`, `protobuf`) had
-been dropped as unused. `libkvm` itself never called OpenCV. It now drives the VI channel
-and the JPEG encoder through `libkvm_mmf.so` directly (`src/kvm_capture.cpp`) and talks to
+been dropped as unused. `libkvm` itself never called OpenCV. libkvm is gone: the server drives
+the VI channel and the encoders through `libkvm_mmf.so` (`src/capture/media.rs`) and talks to
 the LT6911 over i2c-dev, and the image ships no OpenCV library.
 
 ## libkvm_mmf.so statically embeds its own copy of the LT6911 driver

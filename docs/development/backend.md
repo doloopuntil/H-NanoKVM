@@ -1,14 +1,14 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-18
+last-checked: 2026-11-20
 ---
 
 # Rust backend
 
 The Rust backend lives in `server-rust/`. It replaces upstream's Go `server/`
 and runs as `NanoKVM-Server`, keeping the rest of the NanoKVM runtime:
-`libkvm.so`, the USB gadget scripts, the Sophgo multimedia stack and
+`libkvm_mmf.so`, the USB gadget scripts, the Sophgo multimedia stack and
 the React frontend. Its routes are listed in [Backend API](../reference/api.md)
 and its configuration in [Server configuration](../reference/config.md).
 
@@ -54,10 +54,10 @@ cargo test --manifest-path server-rust/Cargo.toml
 make web-app
 ```
 
-For a video-enabled NanoKVM RISC-V binary, use the linked `libkvm` build. Copy
+For a video-enabled NanoKVM RISC-V binary, use the linked build. Copy
 the NanoKVM runtime libraries into `server-rust/sysroot/lib` or point
 `NANOKVM_SYSROOT_LIB` at a directory containing `libc.so` and `libgcc_s.so.1`,
-then run. Copy `libkvm.so` and `libkvm_mmf.so` from a device or a CI run into
+then run. Copy `libkvm_mmf.so` and the middleware from a device or a CI run into
 `server-rust/native/dl_lib`, which is not in git; CI fills it with its own builds.
 
 ```sh
@@ -111,8 +111,8 @@ The full SD image is built from source in CI; see
   access, Restricted local-only service allowlist, and Paranoid local-only HTTPS
   with online updates intentionally blocked. Restricted and Paranoid block
   H.264 WebRTC; use H.264 Direct or MJPEG in those modes.
-- MJPEG stream and frame-detect endpoints through `libkvm`. With frame
-  detection on, an unchanged screen (`libkvm` result 5) sends nothing and is
+- MJPEG stream and frame-detect endpoints through the capture module. With frame
+  detection on, an unchanged screen (read result 5) sends nothing and is
   not a capture failure, so the stream resumes at the next changed frame
   without the failure backoff.
 - H.264 Direct and H.264 WebRTC routes are implemented. Direct streaming is the

@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
-last-checked: 2026-11-18
+last-checked: 2026-11-20
 source: constants in server-rust/src and kvmapp/system/init.d
 ---
 
@@ -68,7 +68,7 @@ The boot files:
 | `wifi.ssid`, `wifi.pass` | Wi-Fi credentials. |
 | `hw` | Board, written by `S15kvmhwd` at first boot: `pcie` when an OLED answers at `0x3c` on I2C bus 5, otherwise `beta`. |
 | `hdmi_version` | HDMI bridge, written by `S15kvmhwd` from I2C bus 4: `c` (LT6911C), `ux` (LT6911UXC), `d` (LT6911D) or `ue` (no answer). |
-| `hdmi_mode` | How libkvm finds the input size: `0` reads it from the bridge on its interrupt, `1` tries a list of common sizes, `2` uses `/kvmapp/kvm/width` and `height`. libkvm writes it; it falls back to `1` when the bridge reports a size it does not know. |
+| `hdmi_mode` | How the server's capture module finds the input size: `0` reads it from the bridge on its interrupt, `1` tries a list of common sizes, `2` uses `/kvmapp/kvm/width` and `height`. the server writes it; it falls back to `1` when the bridge reports a size it does not know. |
 | `oled_exist`, `wifi_exist` | OLED and Wi-Fi present, written by the server's front panel. |
 | `.picoclaw_internal_token` | Token PicoClaw uses to call the server's internal routes. |
 
@@ -100,7 +100,7 @@ run. `/sys/kernel/debug/gpio` lists every line with its name, owner and level.
 | --- | --- | --- |
 | `atx-power`, `atx-reset` | server, output driven low | ATX power and reset buttons; a press drives the line high for about a second. |
 | `atx-power-led` | server, input | ATX power LED. |
-| `hdmi-reset` | libkvm, output high | HDMI bridge reset (PCIe board only). |
+| `hdmi-reset` | server (consumer `libkvm`), output high | HDMI bridge reset (PCIe board only). |
 | `oled-reset` | device tree hog, output high | Keeps the OLED out of reset. |
 | `wifi-enable` | `mmc-pwrseq-simple` (`sdhci1`), active low | AIC8800 Wi-Fi reset; the MMC core releases it before scanning for the card. |
 | `hdmi-bridge-int` | kernel (`cif`), interrupt | LT6911 interrupt on a mode change; edges are counted in `/proc/lt_int`. |
