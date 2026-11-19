@@ -5,8 +5,35 @@ use std::{collections::HashSet, collections::VecDeque, fs, path::Path};
 
 use nanokvm_rust_server::capture::media::{MAX_PACKS, Media, Mmf, Stream, VencCfg, ViFrame};
 
-/// Scenarios whose Rust trace differs from the C++ golden on purpose, with the reason.
-const EXPECTED_DIFFERENCES: &[(&str, &str)] = &[];
+/// Scenarios whose Rust trace differs from the C++ golden on purpose, with the reason; their
+/// Rust traces are checked against `tests/media/fixed`.
+const EXPECTED_DIFFERENCES: &[(&str, &str)] = &[
+    (
+        "copy",
+        "a frame smaller than the camera size is dropped, not read past its end",
+    ),
+    (
+        "full-hd",
+        "a frame smaller than the camera size is dropped, not read past its end",
+    ),
+    (
+        "jpeg",
+        "a frame smaller than the camera size is dropped, not read past its end",
+    ),
+    (
+        "venc",
+        "a frame smaller than the camera size is dropped, not read past its end",
+    ),
+    ("no-frame", "no encode without a leased frame"),
+    (
+        "channel",
+        "mirror and flip are set on the channel that opens; short padded frame dropped",
+    ),
+    (
+        "restart",
+        "a padded frame shorter than its rows is dropped, not read past its end",
+    ),
+];
 
 const NV21: i32 = 19;
 
@@ -527,8 +554,12 @@ fn media_matches_the_cxx_goldens() {
             fs::write(out.join(format!("{name}.trace")), &trace).unwrap();
         }
         let golden = fs::read_to_string(dir.join("golden").join(format!("{name}.trace"))).unwrap();
-        let expected = EXPECTED_DIFFERENCES.iter().any(|(n, _)| *n == name);
-        if (trace == golden) == expected {
+        if EXPECTED_DIFFERENCES.iter().any(|(n, _)| *n == name) {
+            let fixed = fs::read_to_string(dir.join("fixed").join(format!("{name}.trace")));
+            if trace == golden || fixed.ok().as_deref() != Some(trace.as_str()) {
+                failures.push(name);
+            }
+        } else if trace != golden {
             failures.push(name);
         }
     }

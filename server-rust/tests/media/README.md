@@ -5,7 +5,11 @@ lower edge: every `mmf_*` call into libkvm_mmf, and what each `kvmc_*` call retu
 recording harness compiled the unmodified C++ for a host against a recording fake of
 libkvm_mmf (`git log --diff-filter=D -- support/sg2002/additional/kvm/harness` finds it).
 
-- `scenarios/*.scn` are the inputs, `golden/*.trace` the outputs.
+- `scenarios/*.scn` are the inputs, `golden/*.trace` the outputs the C++ produced.
+- `fixed/*.trace` are the Rust traces of scenarios where the port fixes a C++ bug on purpose
+  (`EXPECTED_DIFFERENCES` in `../media_golden.rs` gives each reason); the test checks them
+  against these and that they still differ from the golden.
+- `MEDIA_TRACES_OUT=DIR` writes the Rust traces there.
 
 ## Scenario lines
 

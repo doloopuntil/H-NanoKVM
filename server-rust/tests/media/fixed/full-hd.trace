@@ -1,0 +1,44 @@
+> create 1920 1080
+mmf init -> 0
+mmf vi_init -> 0
+mmf get_vi_unused_channel -> 0
+mmf add_vi_channel 0 1920x1080 fmt=19 -> 0
+mmf vi_aligned_width 0 -> 64
+call create -> 0
+> pop 1920 1080 nv21 3110400
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=3110400 1920x1080 fmt=19
+mmf vi_frame_free 0
+call read -> 0 1920x1080 size=3110400
+> pixels 3110400
+mmf vi_frame_map 0 -> frame#1
+call pixels -> fedacfc5
+> jpeg 80
+mmf enc_jpg_push 0 data=null 1920x1080 fmt=19 q=80 -> 0
+mmf enc_jpg_pop 0 -> 0 size=100
+mmf enc_jpg_free 0
+call jpeg -> 0 size=100 f3c0f7a5
+> vadd 1 1920 1080 600 60 3000
+mmf add_venc_channel 1 type=2 1920x1080 fmt=19 q=0 gop=600 fps=60/60 bitrate=3000 -> 0
+call vadd -> 0
+> vpush 1
+mmf venc_push 1 data=null 1920x1080 fmt=19 -> 0
+call vpush -> 0
+> packs 30 10 70000
+> vpop 1 8
+mmf venc_pop 1 -> 0 packs=30,10,70000
+call vpop -> 3 30:428d1cae 10:40fb1cbe 70000:4dc5c975
+> vfree 1
+mmf venc_free 1 -> 0
+call vfree -> 0
+> pop 1280 720 nv21 1382400
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=1382400 1280x720 fmt=19
+mmf vi_frame_map 0 -> frame#2
+mmf vi_frame_release 0
+call read -> -1
+> pixels 3110400
+call pixels -> null
+end leaks=0

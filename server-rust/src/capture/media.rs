@@ -118,6 +118,10 @@ impl Frame {
         vi_ch: -1,
     };
 
+    fn leased(&self) -> bool {
+        self.data.is_some() || self.vi_ch >= 0
+    }
+
     fn data_ptr(&mut self) -> *mut u8 {
         self.data
             .as_mut()
@@ -185,9 +189,13 @@ impl<M: Mmf> Media<M> {
             return;
         }
         cam.close(&mut self.mmf);
-        self.mmf.set_vi_hmirror(cam.ch, true);
-        self.mmf.set_vi_vflip(cam.ch, true);
-        if !cam.open_channel(&mut self.mmf) {
+        // The flags belong to a channel and apply when it is added: set them on the one that opens.
+        let ch = self.mmf.get_vi_unused_channel();
+        if ch >= 0 {
+            self.mmf.set_vi_hmirror(ch, true);
+            self.mmf.set_vi_vflip(ch, true);
+        }
+        if !cam.open_channel_at(&mut self.mmf, ch) {
             tracing::warn!("camera reopen failed");
         }
     }
@@ -239,6 +247,10 @@ impl<M: Mmf> Media<M> {
 
     /// JPEG of the leased frame; `sink` takes the bytes and says whether it kept them.
     pub fn frame_jpeg(&mut self, quality: i32, sink: &mut dyn FnMut(&[u8]) -> bool) -> Option<u32> {
+        // With no frame leased, NULL data would hand the encoder whatever VPSS frame it held.
+        if !self.frame.leased() {
+            return None;
+        }
         let fmt = self.mmf.nv21_format();
         let data = self.frame.data_ptr();
         let (w, h) = (self.frame.width, self.frame.height);
@@ -277,6 +289,9 @@ impl<M: Mmf> Media<M> {
 
     /// Sends the leased frame to the H.264 channel.
     pub fn frame_venc_push(&mut self, ch: i32) -> i32 {
+        if !self.frame.leased() {
+            return -1;
+        }
         let fmt = self.mmf.nv21_format();
         let data = self.frame.data_ptr();
         let (w, h) = (self.frame.width, self.frame.height);
@@ -348,6 +363,10 @@ impl Camera {
 
     fn open_channel(&mut self, mmf: &mut impl Mmf) -> bool {
         let ch = mmf.get_vi_unused_channel();
+        self.open_channel_at(mmf, ch)
+    }
+
+    fn open_channel_at(&mut self, mmf: &mut impl Mmf, ch: i32) -> bool {
         if ch < 0 {
             tracing::warn!("no free vi channel");
             return false;
@@ -403,21 +422,39 @@ impl Camera {
             mmf.vi_frame_release(self.ch);
             return false;
         }
-        let mut copy = Vec::with_capacity(size);
+        // VPSS rows are padded to the aligned width; the copy reads `need` bytes.
         let width = self.width as usize;
-        if self.align_need {
-            // VPSS rows are padded to the aligned width.
+        let rows = (self.height * 3 / 2) as usize;
+        let pitch = if self.align_need {
             let align = mmf.vi_aligned_width(self.ch);
-            let pitch = ((vi.width + align - 1) / align * align) as usize;
-            for row in 0..(self.height * 3 / 2) as usize {
-                // SAFETY: as the C++ did, the mapped frame is taken to hold every padded row.
-                copy.extend_from_slice(unsafe {
-                    std::slice::from_raw_parts(buffer.add(row * pitch), width)
-                });
+            if align <= 0 {
+                mmf.vi_frame_release(self.ch);
+                return false;
+            }
+            ((vi.width + align - 1) / align * align) as usize
+        } else {
+            width
+        };
+        let need = if self.align_need {
+            rows.saturating_sub(1) * pitch + width
+        } else {
+            size
+        };
+        // A frame smaller than the camera size (VPSS not yet at a new size) is dropped, not
+        // read past its end.
+        if need > usize::try_from(vi.len).unwrap_or(0) {
+            mmf.vi_frame_release(self.ch);
+            return false;
+        }
+        // SAFETY: the mapping covers the frame's `len` bytes, checked above to hold `need`.
+        let frame_bytes = unsafe { std::slice::from_raw_parts(buffer, need) };
+        let mut copy = Vec::with_capacity(size);
+        if self.align_need {
+            for row in 0..rows {
+                copy.extend_from_slice(&frame_bytes[row * pitch..row * pitch + width]);
             }
         } else {
-            // SAFETY: as the C++ did, the mapped frame is taken to hold `size` bytes.
-            copy.extend_from_slice(unsafe { std::slice::from_raw_parts(buffer, size) });
+            copy.extend_from_slice(frame_bytes);
         }
         mmf.vi_frame_release(self.ch);
         *frame = Frame {

@@ -1,0 +1,59 @@
+> create 64 32
+mmf init -> 0
+mmf vi_init -> 0
+mmf get_vi_unused_channel -> 0
+mmf add_vi_channel 0 64x32 fmt=19 -> 0
+mmf vi_aligned_width 0 -> 64
+call create -> 0
+> pop 64 32 nv21 3072
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=3072 64x32 fmt=19
+mmf vi_frame_free 0
+call read -> 0 64x32 size=3072
+> fail jpg_push
+> jpeg 80
+mmf enc_jpg_push 0 data=null 64x32 fmt=19 q=80 -> -1
+call jpeg -> -1 size=0
+> fail jpg_pop
+> jpeg 80
+mmf enc_jpg_push 0 data=null 64x32 fmt=19 q=80 -> 0
+mmf enc_jpg_pop 0 -> -1
+call jpeg -> -1 size=0
+> jpg_size 0
+> jpeg 80
+mmf enc_jpg_push 0 data=null 64x32 fmt=19 q=80 -> 0
+mmf enc_jpg_pop 0 -> 0 size=0
+mmf enc_jpg_free 0
+call jpeg -> -1 size=0
+> jpg_size 0
+> jpg_null
+> jpeg 80
+mmf enc_jpg_push 0 data=null 64x32 fmt=19 q=80 -> 0
+mmf enc_jpg_pop 0 -> 0 size=0 data=null
+mmf enc_jpg_free 0
+call jpeg -> -1 size=0
+> jpg_size 5000
+> jpeg 99 refuse
+mmf enc_jpg_push 0 data=null 64x32 fmt=19 q=99 -> 0
+mmf enc_jpg_pop 0 -> 0 size=5000
+mmf enc_jpg_free 0
+call jpeg -> -1 size=0
+> jpeg 1
+mmf enc_jpg_push 0 data=null 64x32 fmt=19 q=1 -> 0
+mmf enc_jpg_pop 0 -> 0 size=5000
+mmf enc_jpg_free 0
+call jpeg -> 0 size=5000 d5d1a835
+> pop 32 16 nv21 768
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=768 32x16 fmt=19
+mmf vi_frame_map 0 -> frame#2
+mmf vi_frame_release 0
+call read -> -1
+> jpeg 50
+call jpeg -> -1 size=0
+> jpg_null
+> jpeg 80
+call jpeg -> -1 size=0
+end leaks=0
