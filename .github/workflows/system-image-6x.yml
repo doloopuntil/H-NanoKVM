@@ -1,7 +1,7 @@
 name: H-NanoKVM system image (Linux 6.18)
 
 # Manual only: builds one Buildroot tree with Linux 6.18, the Sophgo media modules, the FIPs,
-# U-Boot and the rootfs, and with its toolchain the middleware and libkvm; then the SD
+# U-Boot and the rootfs, and with its toolchain the middleware and libkvm_mmf; then the SD
 # image and an unsigned system-update archive. Multi-hour; do not run it on every push.
 on:
   workflow_dispatch: {}
