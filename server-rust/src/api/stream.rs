@@ -94,6 +94,10 @@ const MJPEG_DEMAND_RECHECK: Duration = Duration::from_secs(1);
 /// the direct stream and the WebRTC sender must share one reader.
 static H264_SOURCE: LazyLock<StreamFanout<H264Frame>> =
     LazyLock::new(|| StreamFanout::new("direct", 16));
+// Frames are allocated where they are read; one long-lived thread per stream lets mimalloc
+// reuse the memory the async side frees, which rotating blocking threads kept for good.
+static MJPEG_READER: ReadThread = ReadThread::new("mjpeg-read");
+static H264_READER: ReadThread = ReadThread::new("h264-read");
 static H264_DIRECT_CONSUMERS: AtomicUsize = AtomicUsize::new(0);
 static H264_WEBRTC_CONSUMERS: AtomicUsize = AtomicUsize::new(0);
 // What libkvm was last told to detect frame changes with: 0 is off, which it starts as. Everything
@@ -360,6 +364,61 @@ impl<T: Clone> StreamFanout<T> {
 
     fn send(&self, frame: T) {
         let _ = self.tx.send(frame);
+    }
+}
+
+type ReadJob = Box<dyn FnOnce() + Send>;
+
+/// A named thread that runs blocking reads in order, started on first use.
+struct ReadThread {
+    name: &'static str,
+    jobs: std::sync::OnceLock<std::sync::mpsc::Sender<ReadJob>>,
+}
+
+impl ReadThread {
+    const fn new(name: &'static str) -> Self {
+        Self {
+            name,
+            jobs: std::sync::OnceLock::new(),
+        }
+    }
+
+    /// Runs `work` on the thread; the receiver errs if it panicked or the thread is gone.
+    fn run<T, F>(&'static self, work: F) -> oneshot::Receiver<T>
+    where
+        T: Send + 'static,
+        F: FnOnce() -> T + Send + 'static,
+    {
+        let (tx, rx) = oneshot::channel();
+        let job: ReadJob = Box::new(move || {
+            if let Ok(value) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(work)) {
+                let _ = tx.send(value);
+            }
+        });
+        if let Some(jobs) = self.sender() {
+            let _ = jobs.send(job);
+        }
+        rx
+    }
+
+    fn sender(&'static self) -> Option<&'static std::sync::mpsc::Sender<ReadJob>> {
+        if let Some(jobs) = self.jobs.get() {
+            return Some(jobs);
+        }
+        let (tx, rx) = std::sync::mpsc::channel::<ReadJob>();
+        let spawned = std::thread::Builder::new()
+            .name(self.name.to_string())
+            .spawn(move || {
+                for job in rx {
+                    job();
+                }
+            });
+        if let Err(err) = spawned {
+            warn!(thread = self.name, error = %err, "failed to start read thread");
+            return None;
+        }
+        // A thread that loses a start race ends when its sender drops here.
+        Some(self.jobs.get_or_init(|| tx))
     }
 }
 
@@ -771,10 +830,9 @@ async fn run_mjpeg_producer() {
                 "reading first mjpeg frame"
             );
         }
-        let frame = tokio::task::spawn_blocking(move || {
-            capture::read_mjpeg(screen.width, screen.height, screen.quality)
-        })
-        .await;
+        let frame = MJPEG_READER
+            .run(move || capture::read_mjpeg(screen.width, screen.height, screen.quality))
+            .await;
 
         let (data, result) = match frame {
             Ok(Ok(frame)) => frame,
@@ -1221,7 +1279,7 @@ pub async fn read_h264_capture_frame(
         return None;
     }
 
-    let task = tokio::task::spawn_blocking(move || {
+    let task = H264_READER.run(move || {
         let fps = u8::try_from(screen.fps).unwrap_or(u8::MAX);
         capture::read_h264(
             screen.width,
@@ -1462,6 +1520,28 @@ fn validate_fps(fps: i32) -> u64 {
 
 #[cfg(test)]
 mod tests {
+    #[tokio::test]
+    async fn read_thread_runs_every_job_on_one_thread_and_survives_a_panic() {
+        use super::ReadThread;
+        static READER: ReadThread = ReadThread::new("test-read");
+        let name = || std::thread::current().name().map(str::to_string);
+
+        let first = READER.run(name).await.unwrap();
+        assert_eq!(first.as_deref(), Some("test-read"));
+        let id = READER.run(|| std::thread::current().id()).await.unwrap();
+        assert!(
+            READER
+                .run(|| -> u8 { panic!("read failed") })
+                .await
+                .is_err()
+        );
+        assert_eq!(
+            READER.run(|| std::thread::current().id()).await.unwrap(),
+            id
+        );
+        assert_ne!(id, std::thread::current().id());
+    }
+
     #[tokio::test]
     async fn frame_demand_reads_the_next_frame_once_the_last_is_taken() {
         use super::FrameDemand;
