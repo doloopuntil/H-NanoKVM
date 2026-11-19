@@ -1,0 +1,69 @@
+> create 64 32
+mmf init -> 0
+mmf vi_init -> 0
+mmf get_vi_unused_channel -> 0
+mmf add_vi_channel 0 64x32 fmt=19 -> 0
+mmf vi_aligned_width 0 -> 64
+call create -> 0
+> fail venc_add
+> vadd 1 64 32 600 60 3000
+mmf add_venc_channel 1 type=2 64x32 fmt=19 q=0 gop=600 fps=60/60 bitrate=3000 -> -1
+call vadd -> -1
+> vadd 1 64 32 0 1 1
+mmf add_venc_channel 1 type=2 64x32 fmt=19 q=0 gop=0 fps=1/1 bitrate=1 -> 0
+call vadd -> 0
+> pop 64 32 nv21 3072
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=3072 64x32 fmt=19
+mmf vi_frame_free 0
+call read -> 0 64x32 size=3072
+> fail venc_push
+> vpush 1
+mmf venc_push 1 data=null 64x32 fmt=19 -> -1
+call vpush -> -1
+> vpush 1
+mmf venc_push 1 data=null 64x32 fmt=19 -> 0
+call vpush -> 0
+> fail venc_pop
+> vpop 1 8
+mmf venc_pop 1 -> -1
+call vpop -> -1
+> packs 20 9 30000
+> vpop 1 2
+mmf venc_pop 1 -> 0 packs=20,9,30000
+call vpop -> 3 20:22e9aabd 9:e574df41
+> packs 0 5
+> vpop 1 8
+mmf venc_pop 1 -> 0 packs=0,5
+call vpop -> 2 0:null 5:572b62b6
+> packs
+> vpop 1 8
+mmf venc_pop 1 -> 0 packs=
+call vpop -> 0
+> fail venc_free
+> vfree 1
+mmf venc_free 1 -> -1
+call vfree -> -1
+> fail idr
+> vidr 1
+mmf venc_request_idr 1 -> -1
+call vidr -> -1
+> fail venc_del
+> vdel 1
+mmf del_venc_channel 1 -> -1
+call vdel -> -1
+> vdel 1
+mmf del_venc_channel 1 -> 0
+call vdel -> 0
+> pop 32 16 nv21 768
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=768 32x16 fmt=19
+mmf vi_frame_map 0 -> frame#2
+mmf vi_frame_release 0
+call read -> 0 64x32 size=3072
+> vpush 1
+mmf venc_push 1 data=206887c5 64x32 fmt=19 -> 0
+call vpush -> 0
+end leaks=0

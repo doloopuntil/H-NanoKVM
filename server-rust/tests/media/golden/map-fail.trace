@@ -1,0 +1,29 @@
+> create 64 32
+mmf init -> 0
+mmf vi_init -> 0
+mmf get_vi_unused_channel -> 0
+mmf add_vi_channel 0 64x32 fmt=19 -> 0
+mmf vi_aligned_width 0 -> 64
+call create -> 0
+> pop 32 16 nv21 768
+> map_fail
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=768 32x16 fmt=19
+mmf vi_frame_map 0 -> null
+mmf vi_frame_release 0
+call read -> -1
+> pop 64 32 nv21 3072
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=3072 64x32 fmt=19
+mmf vi_frame_free 0
+call read -> 0 64x32 size=3072
+> map_fail
+> pixels 3072
+mmf vi_frame_map 0 -> null
+call pixels -> null
+> pixels 3072
+mmf vi_frame_map 0 -> frame#2
+call pixels -> 206887c5
+end leaks=0

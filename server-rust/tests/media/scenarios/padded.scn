@@ -1,0 +1,16 @@
+# Width not a multiple of VPSS alignment: rows are copied from the padded pitch.
+align 48
+create 64 32
+pop 64 32 nv21 6144
+read
+pixels 3072
+vadd 0 64 32 600 60 3000
+vpush 0
+jpeg 90
+pop 80 32 nv21 7680
+read
+pixels 3072
+# A wider popped frame has a wider pitch.
+pop 100 32 nv21 14400
+read
+pixels 3072

@@ -1,0 +1,20 @@
+create 64 32
+pop 64 32 nv21 3072
+read
+fail jpg_push
+jpeg 80
+fail jpg_pop
+jpeg 80
+jpg_size 0
+jpeg 80
+jpg_size 0
+jpg_null
+jpeg 80
+jpg_size 5000
+jpeg 99 refuse
+jpeg 1
+pop 32 16 nv21 768
+read
+jpeg 50
+jpg_null
+jpeg 80

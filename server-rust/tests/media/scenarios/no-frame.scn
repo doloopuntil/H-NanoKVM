@@ -1,0 +1,11 @@
+# Reads and encodes with no camera, no frame or a failing pop.
+read
+pixels 8
+jpeg 80
+vpush 1
+create 64 32
+read
+pop fail
+read
+jpeg 80
+vpush 1

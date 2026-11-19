@@ -1,0 +1,50 @@
+> align 48
+> create 64 32
+mmf init -> 0
+mmf vi_init -> 0
+mmf get_vi_unused_channel -> 0
+mmf add_vi_channel 0 64x32 fmt=19 -> 0
+mmf vi_aligned_width 0 -> 48
+call create -> 0
+> pop 64 32 nv21 6144
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=6144 64x32 fmt=19
+mmf vi_frame_map 0 -> frame#1
+mmf vi_aligned_width 0 -> 48
+mmf vi_frame_release 0
+call read -> 0 64x32 size=3072
+> pixels 3072
+call pixels -> e8e3ac05
+> vadd 0 64 32 600 60 3000
+mmf add_venc_channel 0 type=2 64x32 fmt=19 q=0 gop=600 fps=60/60 bitrate=3000 -> 0
+call vadd -> 0
+> vpush 0
+mmf venc_push 0 data=e8e3ac05 64x32 fmt=19 -> 0
+call vpush -> 0
+> jpeg 90
+mmf enc_jpg_push 0 data=e8e3ac05 64x32 fmt=19 q=90 -> 0
+mmf enc_jpg_pop 0 -> 0 size=100
+mmf enc_jpg_free 0
+call jpeg -> 0 size=100 f3c0f7a5
+> pop 80 32 nv21 7680
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=7680 80x32 fmt=19
+mmf vi_frame_map 0 -> frame#2
+mmf vi_aligned_width 0 -> 48
+mmf vi_frame_release 0
+call read -> 0 64x32 size=3072
+> pixels 3072
+call pixels -> 58d61485
+> pop 100 32 nv21 14400
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=14400 100x32 fmt=19
+mmf vi_frame_map 0 -> frame#3
+mmf vi_aligned_width 0 -> 48
+mmf vi_frame_release 0
+call read -> 0 64x32 size=3072
+> pixels 3072
+call pixels -> 653464a5
+end leaks=0

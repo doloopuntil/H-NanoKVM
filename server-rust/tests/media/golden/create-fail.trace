@@ -1,0 +1,37 @@
+> fail init
+> create 64 32
+mmf init -> -1
+mmf vi_deinit -> 0
+mmf try_deinit 1
+call create -> -1
+> read
+call read -> -1
+> restart 64 32
+> size 32 16
+call size -> -1
+> mirror
+> close
+> fail vi_init
+> fail add_vi
+> create 64 32
+mmf init -> 0
+mmf vi_init -> -1
+mmf get_vi_unused_channel -> 0
+mmf add_vi_channel 0 64x32 fmt=19 -> -1
+call create -> 0
+> read
+call read -> -1
+> size 64 32
+mmf get_vi_unused_channel -> 0
+mmf add_vi_channel 0 64x32 fmt=19 -> 0
+mmf vi_aligned_width 0 -> 64
+call size -> 0
+> pop 64 32 nv21 3072
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=3072 64x32 fmt=19
+mmf vi_frame_free 0
+call read -> 0 64x32 size=3072
+> create 32 16
+call create -> 0
+end leaks=0
