@@ -1,0 +1,20 @@
+create 64 32
+pop 64 32 nv21 3072
+read
+restart 32 16
+pixels 768
+pop 32 16 nv21 768
+read
+fail init
+restart 64 32
+read
+restart 64 32
+pop 64 32 nv21 3072
+read
+fail vi_deinit
+restart 64 32
+isinit
+set_init 0
+isinit
+deinit 0
+deinit 1

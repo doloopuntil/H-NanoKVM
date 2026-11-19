@@ -1,0 +1,82 @@
+> create 64 32
+mmf init -> 0
+mmf vi_init -> 0
+mmf get_vi_unused_channel -> 0
+mmf add_vi_channel 0 64x32 fmt=19 -> 0
+mmf vi_aligned_width 0 -> 64
+call create -> 0
+> pop 64 32 nv21 3072
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=3072 64x32 fmt=19
+mmf vi_frame_free 0
+call read -> 0 64x32 size=3072
+> restart 32 16
+mmf vi_chn_is_open 0 -> 1
+mmf del_vi_channel 0 -> 0
+mmf vi_deinit -> 0
+mmf try_deinit 1
+mmf init -> 0
+mmf vi_init -> 0
+mmf get_vi_unused_channel -> 0
+mmf add_vi_channel 0 32x16 fmt=19 -> 0
+mmf vi_aligned_width 0 -> 64
+> pixels 768
+mmf vi_frame_map 0 -> frame#1
+call pixels -> fc1842c5
+> pop 32 16 nv21 768
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=768 32x16 fmt=19
+mmf vi_frame_map 0 -> frame#2
+mmf vi_aligned_width 0 -> 64
+mmf vi_frame_release 0
+call read -> 0 32x16 size=768
+> fail init
+> restart 64 32
+mmf vi_chn_is_open 0 -> 1
+mmf del_vi_channel 0 -> 0
+mmf vi_deinit -> 0
+mmf try_deinit 1
+mmf init -> -1
+> read
+mmf vi_chn_is_open 0 -> 0
+call read -> -1
+> restart 64 32
+mmf vi_chn_is_open 0 -> 0
+mmf vi_deinit -> 0
+mmf try_deinit 1
+mmf init -> 0
+mmf vi_init -> 0
+mmf get_vi_unused_channel -> 0
+mmf add_vi_channel 0 64x32 fmt=19 -> 0
+mmf vi_aligned_width 0 -> 64
+> pop 64 32 nv21 3072
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> 0 len=3072 64x32 fmt=19
+mmf vi_frame_free 0
+call read -> 0 64x32 size=3072
+> fail vi_deinit
+> restart 64 32
+mmf vi_chn_is_open 0 -> 1
+mmf del_vi_channel 0 -> 0
+mmf vi_deinit -> -1
+mmf try_deinit 1
+mmf init -> 0
+mmf vi_init -> 0
+mmf get_vi_unused_channel -> 0
+mmf add_vi_channel 0 64x32 fmt=19 -> 0
+mmf vi_aligned_width 0 -> 64
+> isinit
+mmf is_init -> 1
+call isinit -> 1
+> set_init 0
+> isinit
+mmf is_init -> 0
+call isinit -> 0
+> deinit 0
+mmf try_deinit 0
+> deinit 1
+mmf try_deinit 1
+end leaks=0

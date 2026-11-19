@@ -1,0 +1,20 @@
+# Frame matches the camera: leased from VPSS without a copy, encoders take it with data NULL.
+create 64 32
+pop 64 32 nv21 3072
+read
+pixels 3072
+jpeg 80
+vadd 1 64 32 600 60 3000
+vpush 1
+packs 12 8 400
+vpop 1 8
+vfree 1
+vidr 1
+release
+pixels 3072
+read
+pop 64 32 nv21 4000
+read
+pixels 3072
+pixels 3072
+read

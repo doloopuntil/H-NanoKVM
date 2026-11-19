@@ -1,0 +1,21 @@
+# Size, format or length differ: the frame is mapped and copied.
+create 64 32
+pop 32 16 nv21 768
+read
+pixels 3072
+jpeg 75
+vadd 1 64 32 600 30 2000
+vpush 1
+pop 64 32 7 3072
+read
+pixels 3072
+pop 64 32 nv21 3071
+read
+pixels 3072
+release
+pixels 16
+# Each read frees the copy it replaces.
+pop 32 16 nv21 768
+read
+pop 32 16 nv21 768
+read

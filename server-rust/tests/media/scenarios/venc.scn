@@ -1,0 +1,27 @@
+create 64 32
+fail venc_add
+vadd 1 64 32 600 60 3000
+vadd 1 64 32 0 1 1
+pop 64 32 nv21 3072
+read
+fail venc_push
+vpush 1
+vpush 1
+fail venc_pop
+vpop 1 8
+packs 20 9 30000
+vpop 1 2
+packs 0 5
+vpop 1 8
+packs
+vpop 1 8
+fail venc_free
+vfree 1
+fail idr
+vidr 1
+fail venc_del
+vdel 1
+vdel 1
+pop 32 16 nv21 768
+read
+vpush 1

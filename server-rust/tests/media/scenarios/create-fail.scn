@@ -1,0 +1,15 @@
+fail init
+create 64 32
+read
+restart 64 32
+size 32 16
+mirror
+close
+fail vi_init
+fail add_vi
+create 64 32
+read
+size 64 32
+pop 64 32 nv21 3072
+read
+create 32 16
