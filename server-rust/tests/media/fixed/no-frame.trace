@@ -1,0 +1,29 @@
+> read
+call read -> -1
+> pixels 8
+call pixels -> null
+> jpeg 80
+call jpeg -> -1 size=0
+> vpush 1
+call vpush -> -1
+> create 64 32
+mmf init -> 0
+mmf vi_init -> 0
+mmf get_vi_unused_channel -> 0
+mmf add_vi_channel 0 64x32 fmt=19 -> 0
+mmf vi_aligned_width 0 -> 64
+call create -> 0
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> -1
+call read -> -1
+> pop fail
+> read
+mmf vi_chn_is_open 0 -> 1
+mmf vi_frame_pop 0 -> -1
+call read -> -1
+> jpeg 80
+call jpeg -> -1 size=0
+> vpush 1
+call vpush -> -1
+end leaks=0
