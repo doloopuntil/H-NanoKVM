@@ -158,16 +158,16 @@ jobs:
 
       # Plain CMake (support/sg2002/CMakeLists.txt) with Buildroot's GCC: scalar xthead, stack
       # protector, full RELRO.
-      # The script also checks SSP, RPATH, the loader, NEEDED entries and libkvm's exports.
-      - name: Build libkvm.so and libkvm_mmf.so
+      # The script also checks SSP, RPATH, the loader and libkvm_mmf's exports.
+      - name: Build libkvm_mmf.so
         run: |
           # The sources must carry the native changes this image relies on.
           grep -q "no stale sys state to release" support/sg2002/additional/kvm_mmf/src/kvm_mmf.cpp
           grep -q "mmf_vi_frame_release" support/sg2002/additional/kvm_mmf/src/kvm_mmf.cpp
-          grep -q "kvmc_frame_venc_push" support/sg2002/additional/kvm/src/kvm_media.cpp
+          grep -q 'extern "C"' support/sg2002/additional/kvm_mmf/include/kvm_mmf.hpp
           scripts/build-sg2002-native.sh "$CROSS_PREFIX" "$RUNNER_TEMP/sg2002-sdk" \
             "$GITHUB_WORKSPACE/build/native-libkvm"
-          file build/native-libkvm/libkvm.so build/native-libkvm/libkvm_mmf.so
+          file build/native-libkvm/libkvm_mmf.so
 
       # The server links against the same musl it runs on.
       - name: Stage the server's link-time sysroot from Buildroot
@@ -178,10 +178,9 @@ jobs:
           cp -R "$SYSROOT/usr/include" server-rust/sysroot/include
 
       # dl_lib is not in git: the server links against and packages this run's builds only.
-      - name: Use freshly-built libkvm.so, libkvm_mmf.so and middleware
+      - name: Use freshly-built libkvm_mmf.so and middleware
         run: |
           mkdir -p server-rust/native/dl_lib
-          cp build/native-libkvm/libkvm.so server-rust/native/dl_lib/libkvm.so
           cp build/native-libkvm/libkvm_mmf.so server-rust/native/dl_lib/libkvm_mmf.so
           for lib in libsys.so libvenc.so libvdec.so libvi.so libvpss.so libvo.so libgdc.so librgn.so \
             libini.so; do

@@ -1,4 +1,4 @@
-//! The board side of the capture engine: i2c-dev, GPIO, files, commands and libkvm.
+//! The board side of the capture engine: i2c-dev, GPIO, files, commands and libkvm_mmf.
 
 use std::{
     fs::{self, File, OpenOptions},
@@ -23,9 +23,10 @@ use nix::{
 use tokio::runtime::Handle;
 use tracing::warn;
 
+use super::media::{MAX_PACKS, Media};
 use super::platform::{Command, GpioHandle, Platform, ThreadHandle, ViState};
 use crate::{
-    ffi::kvm,
+    ffi::mmf::LinkedMmf,
     system::{
         command::{AllowedCommand, run_allowed},
         gpio::{Direction, Line},
@@ -59,8 +60,7 @@ pub(super) struct Device {
     gpio: Mutex<Vec<Line>>,
     held: Mutex<bool>,
     released: Condvar,
-    /// Bytes of the leased frame, for frame_pixels.
-    frame_size: Mutex<usize>,
+    media: Mutex<Media<LinkedMmf>>,
 }
 
 impl Device {
@@ -72,7 +72,7 @@ impl Device {
             gpio: Mutex::new(Vec::new()),
             held: Mutex::new(false),
             released: Condvar::new(),
-            frame_size: Mutex::new(0),
+            media: Mutex::new(Media::new(LinkedMmf)),
         }
     }
 
@@ -296,74 +296,100 @@ impl Platform for Device {
     }
 
     fn cam_create(&self, w: u16, h: u16) -> bool {
-        kvm::cam_create(w, h)
+        lock(&self.media).cam_create(w.into(), h.into())
     }
 
     fn cam_restart(&self, w: u16, h: u16) {
-        kvm::cam_restart(w, h)
+        lock(&self.media).cam_restart(w.into(), h.into())
     }
 
     fn cam_set_size(&self, w: u16, h: u16) -> bool {
-        kvm::cam_set_size(w, h)
+        lock(&self.media).cam_set_size(w.into(), h.into())
     }
 
     fn cam_mirror_flip(&self) {
-        kvm::cam_mirror_flip()
+        lock(&self.media).cam_mirror_flip()
     }
 
     fn cam_close(&self) {
-        kvm::cam_close()
+        lock(&self.media).cam_close()
     }
 
     fn mmf_is_init(&self) -> bool {
-        kvm::mmf_is_init()
+        lock(&self.media).mmf_is_init()
     }
 
     fn mmf_deinit(&self, force: bool) {
-        kvm::mmf_deinit(force)
+        lock(&self.media).mmf_deinit(force)
     }
 
     fn frame_read(&self) -> Option<(u16, u16, usize)> {
-        let frame = kvm::frame_read();
-        *lock(&self.frame_size) = frame.map_or(0, |f| f.2);
-        frame
+        let (w, h, size) = lock(&self.media).frame_read()?;
+        Some((w as u16, h as u16, size))
     }
 
     fn frame_pixels(&self, f: &mut dyn FnMut(Option<&[u8]>)) {
-        kvm::frame_pixels(*lock(&self.frame_size), f)
+        f(lock(&self.media).frame_pixels())
     }
 
     fn frame_release(&self) {
-        kvm::frame_release();
-        *lock(&self.frame_size) = 0;
+        lock(&self.media).frame_release();
     }
 
     fn frame_jpeg(&self, quality: u8, out: &mut Vec<u8>, headroom: usize) -> Option<u32> {
-        kvm::frame_jpeg(quality, out, headroom)
+        let mut keep = |jpeg: &[u8]| {
+            if out.try_reserve_exact(headroom + jpeg.len()).is_err() {
+                return false;
+            }
+            out.clear();
+            out.resize(headroom, 0);
+            out.extend_from_slice(jpeg);
+            true
+        };
+        lock(&self.media).frame_jpeg(quality.into(), &mut keep)
     }
 
     fn venc_add(&self, ch: u8, w: u16, h: u16, gop: u32, fps: u32, bitrate: u32) -> bool {
-        kvm::venc_add(ch, w, h, gop, fps, bitrate)
+        let (gop, fps, bitrate) = (gop as i32, fps as i32, bitrate as i32);
+        lock(&self.media).venc_add(ch.into(), w.into(), h.into(), gop, fps, bitrate) == 0
     }
 
     fn venc_del(&self, ch: u8) {
-        kvm::venc_del(ch)
+        lock(&self.media).venc_del(ch.into());
     }
 
     fn frame_venc_push(&self, ch: u8) -> bool {
-        kvm::frame_venc_push(ch)
+        lock(&self.media).frame_venc_push(ch.into()) == 0
     }
 
     fn venc_pop(&self, ch: u8, f: &mut dyn FnMut(&[&[u8]])) -> bool {
-        kvm::venc_pop(ch, f)
+        let mut media = lock(&self.media);
+        let mut raw = Vec::with_capacity(MAX_PACKS);
+        if media.venc_pop(ch.into(), MAX_PACKS, &mut raw) < 0 {
+            return false;
+        }
+        let packs: Vec<&[u8]> = raw
+            .iter()
+            .map(|&(data, size)| {
+                if data.is_null() || size <= 0 {
+                    &[][..]
+                } else {
+                    // SAFETY: the encoder's packs stay mapped until venc_free, which needs
+                    // the media lock held here.
+                    unsafe { std::slice::from_raw_parts(data, size as usize) }
+                }
+            })
+            .collect();
+        f(&packs);
+        true
     }
 
     fn venc_free(&self, ch: u8) {
-        kvm::venc_free(ch)
+        lock(&self.media).venc_free(ch.into());
     }
 
     fn venc_request_idr(&self, ch: u8) -> bool {
-        kvm::venc_request_idr(ch)
+        lock(&self.media).venc_request_idr(ch.into()) == 0
     }
 }
 
@@ -391,7 +417,7 @@ mod tests {
             gpio: Mutex::new(Vec::new()),
             held: Mutex::new(false),
             released: Condvar::new(),
-            frame_size: Mutex::new(0),
+            media: Mutex::new(Media::new(LinkedMmf)),
         };
         assert!(device.write_atomic(path.to_str().unwrap(), b"1\n"));
         assert_eq!(fs::read(&path).unwrap(), b"1\n");

@@ -35,8 +35,8 @@ if [ ! -x "$RUST_BINARY" ]; then
   exit 1
 fi
 
-if [ ! -f "$NATIVE_LIB_DIR/libkvm.so" ]; then
-  echo "missing NanoKVM native runtime libraries: $NATIVE_LIB_DIR/libkvm.so" >&2
+if [ ! -f "$NATIVE_LIB_DIR/libkvm_mmf.so" ]; then
+  echo "missing NanoKVM native runtime libraries: $NATIVE_LIB_DIR/libkvm_mmf.so" >&2
   exit 1
 fi
 
@@ -68,7 +68,7 @@ rm -f "$KVMAPP_STAGE/server/dl_lib/libz.so" \
   "$KVMAPP_STAGE/server/dl_lib/libz.so.1" \
   "$KVMAPP_STAGE/server/dl_lib/libz.so.1.3"
 
-for library in libkvm.so libkvm_mmf.so; do
+for library in libkvm_mmf.so; do
   if readelf -d "$KVMAPP_STAGE/server/dl_lib/$library" 2>/dev/null | grep -Eq '\((RPATH|RUNPATH)\)'; then
     echo "$library must not contain a build-host RPATH/RUNPATH" >&2
     exit 1

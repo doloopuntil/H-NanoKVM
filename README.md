@@ -81,11 +81,11 @@ repository.
 ## Repository layout
 
 ```text
-server-rust/        Rust web server; native/ holds the libkvm runtime libraries
+server-rust/        Rust web server; native/ holds the native runtime libraries
 web/                React web UI
 kvmapp/             The application package installed to /kvmapp: init scripts, keys, PicoClaw files
 buildroot-external/ Buildroot external tree for the SG2002 image
-support/sg2002/     Native code: libkvm, kvm_mmf, kernel patches
+support/sg2002/     Native code: kvm_mmf, kernel patches
 scripts/            Build, packaging and release scripts
 tools/              EDID and logo utilities
 docs/               Documentation

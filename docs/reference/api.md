@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-07
+last-checked: 2026-11-20
 source: server-rust/src/http/routes.rs
 ---
 
@@ -179,7 +179,7 @@ is handled the same way. Authenticated routes keep the detailed message.
 | Method      | Path                            | Rust Status                                                                                                                                                                  |
 | ----------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GET         | `/api/ws`                       | Implemented HID keyboard/mouse WebSocket plus capture-status events.                                                                                                         |
-| GET         | `/api/stream/mjpeg`             | Implemented through `libkvm` with shared fanout.                                                                                                                             |
+| GET         | `/api/stream/mjpeg`             | Implemented through the capture module with shared fanout.                                                                                                                             |
 | POST        | `/api/stream/mjpeg/detect`      | Implemented.                                                                                                                                                                 |
 | POST        | `/api/stream/mjpeg/detect/stop` | Implemented. Frame detection is paused for the given seconds in a task of its own, so a lost client cannot leave it off; libkvm calls run on a blocking thread.               |
 | GET         | `/api/stream/h264/direct`       | Implemented NanoKVM-compatible direct H.264 binary frame WebSocket.                                                                                                          |
@@ -254,11 +254,12 @@ See [Server configuration](config.md).
 
 ## External Components To Preserve
 
-- `libkvm.so` and `libkvm_mmf.so` remain the native video boundary; the Rust
-  server calls them through FFI. They are built from `support/sg2002` in CI.
+- `libkvm_mmf.so` remains the native video boundary; the Rust server calls it through
+  FFI (`src/ffi/mmf.rs`). It is built from `support/sg2002` in CI.
 - Init scripts under `/etc/init.d/` remain the service-control boundary
   ([Init scripts](init-scripts.md)).
-- The video capture and encoder pipeline is not rewritten in Rust.
+- The media pipeline below `libkvm_mmf` (VI, VPSS, VENC and the Sophgo middleware) is not
+  rewritten in Rust.
 
 ## Current Gaps
 

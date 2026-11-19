@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
-last-checked: 2026-11-18
+last-checked: 2026-11-20
 ---
 
 # Security model
@@ -158,10 +158,10 @@ Known exceptions:
   hardware initialization and factory-compatible control paths. The 2026-07-11
   audit of that code and its remediation are in
   [`native-code-audit.md`](../archive/native-code-audit.md).
-- The native code built in CI (the Sophgo middleware, `libkvm.so`, `libkvm_mmf.so`) is
+- The native code built in CI (the Sophgo middleware and `libkvm_mmf.so`) is
   compiled with `-fstack-protector-strong`, and the build fails if a library does not call
-  the stack check. `libkvm.so` and `libkvm_mmf.so` are also linked with full RELRO
-  (`-z relro -z now`), and `libkvm.so` exports only its C API (`libkvm.map`). They are built with plain CMake from
+  the stack check. `libkvm_mmf.so` is also linked with full RELRO (`-z relro -z now`) and
+  exports only its C API (`libkvm_mmf.map`). They are built with plain CMake from
   this repository and the Sophgo middleware by Buildroot's GCC, the toolchain that builds the
   rest of the rootfs, so they load the `libstdc++` and musl Buildroot maintains; no MaixCDK or
   OpenCV code is linked in or shipped, and `dl_lib` carries no GCC runtime of its own.

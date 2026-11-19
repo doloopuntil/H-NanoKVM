@@ -45,7 +45,7 @@ for setting in 'fs.protected_symlinks = 1' 'fs.protected_hardlinks = 1' 'fs.prot
 	require_line "$setting" "$SYSCTL_FS"
 done
 require_line 'BR2_ROOTFS_POST_FAKEROOT_SCRIPT="$(BR2_EXTERNAL_HARDENED_SG2002_PATH)/board/sg2002/post-fakeroot.sh"' "$DEFCONFIG"
-require_line 'BR2_STRIP_EXCLUDE_FILES="NanoKVM-Server libkvm.so libkvm_mmf.so soph_vcodec.ko soph_jpeg.ko soph_vc_driver.ko"' "$DEFCONFIG"
+require_line 'BR2_STRIP_EXCLUDE_FILES="NanoKVM-Server libkvm_mmf.so soph_vcodec.ko soph_jpeg.ko soph_vc_driver.ko"' "$DEFCONFIG"
 require_line '# BR2_TARGET_ENABLE_ROOT_LOGIN is not set' "$DEFCONFIG"
 reject_text 'BR2_TARGET_GENERIC_ROOT_PASSWD=' "$DEFCONFIG"
 require_line 'BR2_ROOTFS_POST_BUILD_SCRIPT="$(BR2_EXTERNAL_HARDENED_SG2002_PATH)/board/sg2002/post-build.sh"' "$DEFCONFIG"
