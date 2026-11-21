@@ -115,6 +115,7 @@ this repository's issue tracker, not to Sipeed support.
 
 ## Credits and license
 
-Based on [sipeed/NanoKVM](https://github.com/sipeed/NanoKVM) by Sipeed and on
-[woffko/Hardened_NanoKVM](https://github.com/woffko/Hardened_NanoKVM) by woffko.
+Based on [sipeed/NanoKVM](https://github.com/sipeed/NanoKVM) by Sipeed,
+[woffko/Hardened_NanoKVM](https://github.com/woffko/Hardened_NanoKVM) by woffko, and
+[dormancygrace/NanoKVM-OS](https://github.com/dormancygrace/NanoKVM-OS) by dormancygrace.
 Licensed under the GPL-3.0; see [LICENSE](LICENSE).
