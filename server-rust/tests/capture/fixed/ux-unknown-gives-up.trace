@@ -370,7 +370,8 @@
 @72140 vi_state seq=132 dev_fps=60 fps=0 width_gt=1 width_ls=0 height_gt=1 height_ls=0
 @72140 write /etc/kvm/hdmi_mode "0\n"
 @72150 write /proc/lt_int "0\n"
-@72150..@72160 write /kvmapp/kvm/state "0\n" x2
+@72150 write /kvmapp/kvm/state "0\n"
+@72160 write /kvmapp/kvm/state "1\n"
 @76100..@79100 call mjpeg 1920 1080 80 -> -1 x2
 @80000 > src 1920 1080
 @80000 > int fall
@@ -381,7 +382,6 @@
 @80000..@80000 i2c 2b w ff 86 x2
 @80000 i2c 2b w a3
 @80000 i2c 2b r 55
-@80000 write /kvmapp/kvm/state "1\n"
 @80000 i2c 2b w ff 85
 @80000 i2c 2b w f0
 @80000 i2c 2b r 04 38

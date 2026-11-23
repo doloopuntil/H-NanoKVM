@@ -217,8 +217,10 @@ impl<P: Platform> Engine<P> {
     fn set_hdmi_capture_enabled(&self, enabled: bool) {
         let _g = lock(&self.signal);
         self.s.capture_enabled.store(enabled, Release);
-        self.s.signal_active.store(false, Release);
-        self.write_hdmi_signal_file(false);
+        // Re-enabling keeps the last known cable state instead of 0 until the next VI check.
+        let active = enabled && self.s.cable_present.load(Acquire);
+        self.s.signal_active.store(active, Release);
+        self.write_hdmi_signal_file(active);
     }
 
     pub(super) fn set_hdmi_detection_state(&self, active: bool) {
