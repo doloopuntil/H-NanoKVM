@@ -456,6 +456,7 @@ impl<P: Platform> Engine<P> {
                     return;
                 }
                 if self.refresh_vi_state(d) == 1 {
+                    self.s.res_err.store(NORMAL_RES, Relaxed);
                     self.s.detect_state.store(2, Relaxed);
                 }
             }
@@ -491,6 +492,10 @@ impl<P: Platform> Engine<P> {
         );
         while !self.s.stop_threads.load(Acquire) {
             let mode_changed = self.get_hdmi_mode(&mut d);
+            if mode_changed && d.hdmi_mode == HDMI_MODE_BRIDGE {
+                // A scan that gave up must not block reads once the bridge reports sizes.
+                self.s.res_err.store(NORMAL_RES, Relaxed);
+            }
             let detect_state = self.s.detect_state.load(Relaxed);
             let last = self.s.last_vi_refresh_ms.load(Relaxed) as u32;
             let vi_state_due =
