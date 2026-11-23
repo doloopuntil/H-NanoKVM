@@ -15,8 +15,18 @@ use std::{
 
 use nanokvm_rust_server::capture::{Command, Engine, GpioHandle, Platform, ThreadHandle, ViState};
 
-/// Scenarios where the port deliberately differs from the C++, and why.
-const EXPECTED_DIFFERENCES: &[(&str, &str)] = &[];
+/// Scenarios where the port deliberately differs from the C++, and why; their traces are
+/// checked against `tests/capture/fixed`.
+const EXPECTED_DIFFERENCES: &[(&str, &str)] = &[
+    (
+        "ue-manual-recovers",
+        "#8: a working manual size clears the scan error",
+    ),
+    (
+        "ux-unknown-gives-up",
+        "#8: the scan error clears on falling back to bridge mode",
+    ),
+];
 
 const BASE_MS: u64 = 5_000_000;
 const GPIO_OFFSET: u32 = 3;
@@ -1062,7 +1072,19 @@ fn capture_matches_the_cpp_goldens() {
         }
         let golden = fs::read_to_string(base.join("golden").join(format!("{name}.trace"))).unwrap();
         let expected_diff = EXPECTED_DIFFERENCES.iter().any(|(n, _)| n == name);
-        if (trace == golden) == expected_diff {
+        let reference = if expected_diff {
+            if trace == golden {
+                failures.push(format!(
+                    "{name}: listed as a deliberate difference, but matches the C++"
+                ));
+                continue;
+            }
+            fs::read_to_string(base.join("fixed").join(format!("{name}.trace"))).unwrap_or_default()
+        } else {
+            golden
+        };
+        if trace != reference {
+            let golden = reference;
             let first = trace
                 .lines()
                 .zip(golden.lines())

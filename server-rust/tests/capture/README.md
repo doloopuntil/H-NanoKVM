@@ -7,7 +7,9 @@ commands, GPIO, camera and encoder calls, return codes), recorded so the Rust ca
 - `scenarios/*.scn` are the inputs, `golden/*.trace` the outputs the C++ produced.
 - `../capture_golden.rs` replays every scenario against the Rust engine through a simulated
   `Platform` and compares the traces. `CAPTURE_TRACES_OUT=DIR` writes the Rust traces there.
-  A deliberate difference goes into its `EXPECTED_DIFFERENCES` with the reason.
+  A deliberate difference goes into its `EXPECTED_DIFFERENCES` with the reason, and its
+  reviewed Rust trace into `fixed/`; the test checks it against that and that it still
+  differs from the C++.
 
 The goldens were recorded by a harness that compiled the unmodified C++ for a Linux host and
 replaced every libc call that touches the outside with a fake, the camera and encoders with
