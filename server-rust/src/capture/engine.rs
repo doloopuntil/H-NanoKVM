@@ -585,6 +585,10 @@ impl<P: Platform> Engine<P> {
         if !self.s.cam.load(Acquire) {
             return -1;
         }
+        // Capture off (HDMI disabled or idle) answers as no signal instead of streaming on.
+        if !self.s.capture_enabled.load(Acquire) {
+            return IMG_NOT_EXIST;
+        }
         let deadline = self.p.now_ms() + READ_LOCK_MS;
         let Some(mut vi) = self.vi_lock(Some(deadline)) else {
             return -5;
