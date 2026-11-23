@@ -18,14 +18,16 @@ use nanokvm_rust_server::capture::{Command, Engine, GpioHandle, Platform, Thread
 /// Scenarios where the port deliberately differs from the C++, and why; their traces are
 /// checked against `tests/capture/fixed`.
 const EXPECTED_DIFFERENCES: &[(&str, &str)] = &[
-    (
-        "ue-manual-recovers",
-        "#8: a working manual size clears the scan error",
-    ),
+    ("alpha-hdmi-disable", "#9 re-enable keeps the known signal"),
+    ("pcie-hdmi", "#9 re-enable keeps the known signal"),
+    ("pcie-nogpio", "#9 re-enable keeps the known signal"),
+    ("ue-manual-recovers", "#8 manual size clears the scan error"),
+    ("ux-beta-stream", "#9 re-enable keeps the known signal"),
     (
         "ux-unknown-gives-up",
-        "#8: the scan error clears on falling back to bridge mode",
+        "#8 scan error cleared in bridge mode; #9",
     ),
+    ("ux-unknown-scan", "#9 re-enable keeps the known signal"),
 ];
 
 const BASE_MS: u64 = 5_000_000;
