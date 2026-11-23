@@ -521,6 +521,22 @@ impl<P: Platform> Engine<P> {
         changed
     }
 
+    /// Takes one frame of the discard count; false when none is left.
+    fn take_fresh_frame(&self) -> bool {
+        let mut n = self.s.fresh_frames.load(Acquire);
+        while n != 0 {
+            match self
+                .s
+                .fresh_frames
+                .compare_exchange_weak(n, n - 1, AcqRel, Acquire)
+            {
+                Ok(_) => return true,
+                Err(now) => n = now,
+            }
+        }
+        false
+    }
+
     fn check_kvmv(&self, vi: &mut Vi, try_num: u8) -> bool {
         if !self.s.cable_present.load(Acquire) || try_num >= MAX_TRY_NUM {
             return false;
@@ -627,22 +643,12 @@ impl<P: Platform> Engine<P> {
             self.p.cam_mirror_flip();
             vi.reinit = false;
         }
-        let (fw, fh, size) = self.p.frame_read()?;
-        let mut pending = self.s.fresh_frames.load(Acquire);
-        while pending != 0 {
-            match self
-                .s
-                .fresh_frames
-                .compare_exchange_weak(pending, pending - 1, AcqRel, Acquire)
-            {
-                Ok(_) => break,
-                Err(now) => pending = now,
-            }
-        }
-        if pending != 0 {
-            // Drop frames queued while HDMI was idle instead of reopening the channel.
+        let (mut fw, mut fh, mut size) = self.p.frame_read()?;
+        // Drop the frames queued while HDMI was idle, all in this read: each used to cost
+        // one of its two retries, so the first read after re-enabling failed.
+        while self.take_fresh_frame() {
             self.p.frame_release();
-            return None;
+            (fw, fh, size) = self.p.frame_read()?;
         }
         let detect = self.s.frame_detect.load(Relaxed);
         if kind == VENC_MJPEG && detect != 0 {

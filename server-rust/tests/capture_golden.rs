@@ -19,7 +19,7 @@ use nanokvm_rust_server::capture::{Command, Engine, GpioHandle, Platform, Thread
 /// checked against `tests/capture/fixed`.
 const EXPECTED_DIFFERENCES: &[(&str, &str)] = &[
     ("alpha-hdmi-disable", "#9 re-enable keeps the known signal"),
-    ("pcie-hdmi", "#9 re-enable keeps the known signal"),
+    ("pcie-hdmi", "#9 known signal; #10 discard in one read"),
     ("pcie-nogpio", "#9 re-enable keeps the known signal"),
     ("ue-manual-recovers", "#8 manual size clears the scan error"),
     ("ux-beta-stream", "#9 re-enable keeps the known signal"),
