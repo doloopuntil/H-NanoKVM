@@ -203,6 +203,12 @@ impl<P: Platform> Engine<P> {
         d.last_vi_state_code
     }
 
+    /// What the VI reads as its input size when the camera starts.
+    pub(super) fn camera_input_size(&self) -> Option<(u16, u16)> {
+        let read = |path| self.p.read(path, 36).and_then(|data| parse_u16_file(&data));
+        Some((read(WIDTH_FILE)?, read(HEIGHT_FILE)?))
+    }
+
     pub(super) fn write_res_to_file(&self, w: u16, h: u16) {
         self.p.write(WIDTH_FILE, format!("{w}\n").as_bytes());
         self.p.write(HEIGHT_FILE, format!("{h}\n").as_bytes());

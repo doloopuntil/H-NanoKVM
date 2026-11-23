@@ -55,12 +55,10 @@
 @3000 run sync
 @3000 i2c 2b w ff 80
 @3000 i2c 2b w ee 00
+@3100 cam restart 1920x1080 in=1280x720
 @3100 cam size 1280x720
 @3100 cam mirror_flip
-@4100 cam restart 1920x1080 in=1280x720
-@4100 cam size 1280x720
-@4100 cam mirror_flip
-@4116..@5987 call mjpeg 0 0 80 -> 0 jpeg 1280x720 q80 size=1080 x88
+@3116..@5987 call mjpeg 0 0 80 -> 0 jpeg 1280x720 q80 size=1080 x88
 @6000 > src off
 @6000 > int fall
 @6000 write /proc/lt_int "0"

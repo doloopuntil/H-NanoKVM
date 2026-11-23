@@ -142,10 +142,8 @@
 @40000 run sync
 @40000 i2c 2b w ff 80
 @40000 i2c 2b w ee 00
+@40100 cam restart 1920x1080 in=1280x720
 @40100 cam size 1280x720
 @40100 cam mirror_flip
-@41100 cam restart 1920x1080 in=1280x720
-@41100 cam size 1280x720
-@41100 cam mirror_flip
-@41116..@44916 call mjpeg 1280 720 80 -> 0 jpeg 1280x720 q80 size=1080 x25
+@40116..@44916 call mjpeg 1280 720 80 -> 0 jpeg 1280x720 q80 size=1080 x25
 @45000 end
