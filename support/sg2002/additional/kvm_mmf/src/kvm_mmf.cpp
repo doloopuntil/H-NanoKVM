@@ -313,6 +313,8 @@ static int _create_vb_pool(char *name, mmf_mod_type_t mod, uint32_t size, uint32
 static int _destroy_vb_pool(uint32_t pool_id)
 {
 	CVI_S32 s32Ret;
+	if (pool_id >= VB_MAX_COMM_POOLS)
+		return 0;
 	mmf_vb_pool_t *info = (mmf_vb_pool_t *)&priv.vb_pool[pool_id];
 	if (info->is_used) {
 		s32Ret =  CVI_VB_DestroyPool(pool_id);
@@ -400,7 +402,7 @@ static int _free_leak_memory_of_ion(void)
 			int res = ionFree(&ion_data);
 			if (res) {
 				printf("ionFree failed! res:%#x\r\n", res);
-				mmf_deinit();
+				fclose(fp);
 				return -1;
 			}
 
@@ -485,18 +487,26 @@ static inline CVI_VOID VENC_GetPicBufferConfig2(CVI_U32 u32Width, CVI_U32 u32Hei
 		enBitWidth, enCmpMode, u32Align, pstVbCfg);
 }
 
+// A frame from _mmf_alloc_frame, with the size it mapped (more than the planes' lengths).
+typedef struct {
+	VIDEO_FRAME_INFO_S info;
+	CVI_U32 map_size;
+} mmf_alloc_frame_t;
+
 static VIDEO_FRAME_INFO_S *_mmf_alloc_frame(int id, SIZE_S stSize, PIXEL_FORMAT_E enPixelFormat)
 {
+	mmf_alloc_frame_t *alloc;
 	VIDEO_FRAME_INFO_S *pstVideoFrame;
 	VIDEO_FRAME_S *pstVFrame;
 	VB_BLK blk;
 	VB_CAL_CONFIG_S stVbCfg;
 
-	pstVideoFrame = (VIDEO_FRAME_INFO_S *)calloc(sizeof(*pstVideoFrame), 1);
-	if (pstVideoFrame == NULL) {
+	alloc = (mmf_alloc_frame_t *)calloc(sizeof(*alloc), 1);
+	if (alloc == NULL) {
 		SAMPLE_PRT("Failed to allocate VIDEO_FRAME_INFO_S\n");
 		return NULL;
 	}
+	pstVideoFrame = &alloc->info;
 
 	memset(&stVbCfg, 0, sizeof(stVbCfg));
 	VENC_GetPicBufferConfig2(stSize.u32Width,
@@ -521,7 +531,7 @@ static VIDEO_FRAME_INFO_S *_mmf_alloc_frame(int id, SIZE_S stSize, PIXEL_FORMAT_
 	blk = CVI_VB_GetBlock(id, stVbCfg.u32VBSize);
 	if (blk == VB_INVALID_HANDLE) {
 		SAMPLE_PRT("Can't acquire vb block. id: %d size:%d\n", id, stVbCfg.u32VBSize);
-		free(pstVideoFrame);
+		free(alloc);
 		return NULL;
 	}
 
@@ -534,9 +544,10 @@ static VIDEO_FRAME_INFO_S *_mmf_alloc_frame(int id, SIZE_S stSize, PIXEL_FORMAT_
 		pstVFrame->pu8VirAddr[0] == reinterpret_cast<CVI_U8 *>(MAP_FAILED)) {
 		SAMPLE_PRT("Failed to map VIDEO_FRAME_INFO_S buffer\n");
 		CVI_VB_ReleaseBlock(blk);
-		free(pstVideoFrame);
+		free(alloc);
 		return NULL;
 	}
+	alloc->map_size = stVbCfg.u32VBSize;
 
 	if (stVbCfg.plane_num > 1) {
 		pstVFrame->u64PhyAddr[1] = ALIGN(pstVFrame->u64PhyAddr[0] + stVbCfg.u32MainYSize, stVbCfg.u16AddrAlign);
@@ -565,13 +576,13 @@ static CVI_S32 _mmf_free_frame(VIDEO_FRAME_INFO_S *pstVideoFrame)
 	if (!pstVideoFrame) {
 		return CVI_FAILURE;
 	}
+	// Only frames from _mmf_alloc_frame come here.
+	mmf_alloc_frame_t *alloc = reinterpret_cast<mmf_alloc_frame_t *>(pstVideoFrame);
 	VIDEO_FRAME_S *pstVFrame = &pstVideoFrame->stVFrame;
 	VB_BLK blk;
 
-	size_t mapped_size = static_cast<size_t>(pstVFrame->u32Length[0]) +
-		pstVFrame->u32Length[1] + pstVFrame->u32Length[2];
-	if (pstVFrame->pu8VirAddr[0] && mapped_size > 0) {
-		CVI_SYS_Munmap((CVI_VOID *)pstVFrame->pu8VirAddr[0], mapped_size);
+	if (pstVFrame->pu8VirAddr[0] && alloc->map_size > 0) {
+		CVI_SYS_Munmap((CVI_VOID *)pstVFrame->pu8VirAddr[0], alloc->map_size);
 	}
 
 	blk = CVI_VB_PhysAddr2Handle(pstVFrame->u64PhyAddr[0]);
@@ -579,9 +590,24 @@ static CVI_S32 _mmf_free_frame(VIDEO_FRAME_INFO_S *pstVideoFrame)
 		CVI_VB_ReleaseBlock(blk);
 	}
 
-	free(pstVideoFrame);
+	free(alloc);
 
 	return CVI_SUCCESS;
+}
+
+// The CPU wrote the frame through a cached mapping; the encoder and VPSS read DRAM.
+static void _mmf_flush_frame(VIDEO_FRAME_INFO_S *frame)
+{
+	VIDEO_FRAME_S *f = &frame->stVFrame;
+	CVI_U64 end = f->u64PhyAddr[0];
+
+	// Planes start aligned: flush up to the end of the last one.
+	for (int i = 0; i < 3; i++) {
+		if (f->u32Length[i] && f->u64PhyAddr[i] + f->u32Length[i] > end)
+			end = f->u64PhyAddr[i] + f->u32Length[i];
+	}
+	if (f->pu8VirAddr[0] && end > f->u64PhyAddr[0])
+		CVI_SYS_IonFlushCache(f->u64PhyAddr[0], f->pu8VirAddr[0], (CVI_U32)(end - f->u64PhyAddr[0]));
 }
 
 #include <sys/ioctl.h>
@@ -786,7 +812,7 @@ static int _try_release_sys(void)
 	SAMPLE_INI_CFG_S	   	stIniCfg;
 	SAMPLE_VI_CONFIG_S 		stViConfig;
 	if (SAMPLE_COMM_VI_ParseIni(&stIniCfg)) {
-		SAMPLE_PRT("Parse complete\n");
+		SAMPLE_PRT("sensor ini not parsed\n");
 		return s32Ret;
 	}
 
@@ -1077,8 +1103,9 @@ static CVI_S32 _mmf_init(bool check_stale)
 	CVI_LOG_SetLevelConf(&log_conf);
 
 	// Get config from ini if found.
+	// On failure ParseIni leaves its default config in stIniCfg.
 	if (SAMPLE_COMM_VI_ParseIni(&stIniCfg)) {
-		SAMPLE_PRT("Parse complete\n");
+		SAMPLE_PRT("sensor ini not parsed, using the default config\n");
 	}
 
 	//Set sensor number
@@ -1474,6 +1501,7 @@ int mmf_vi_deinit(void)
 static int _mmf_add_vi_channel(int ch, int width, int height, int format) {
 	uint32_t pool_size_out = 0;
 	int pool_id = -1;
+	bool bound = false;
 	if (ch < 0 || ch >= MMF_VI_MAX_CHN) {
 		printf("[%d] invalid ch %d\n", __LINE__, ch);
 		return -1;
@@ -1539,6 +1567,7 @@ static int _mmf_add_vi_channel(int ch, int width, int height, int format) {
 		SAMPLE_PRT("vi bind vpss failed. s32Ret: 0x%x !\n", s32Ret);
 		goto _need_deinit_vpss_chn;
 	}
+	bound = true;
 
 	char name[20];
 	snprintf(name, 20, "vi_vpss%.1d", ch);
@@ -1570,7 +1599,11 @@ static int _mmf_add_vi_channel(int ch, int width, int height, int format) {
 
 	return 0;
 _need_deinit_vpss_chn:
+	if (bound)
+		SAMPLE_COMM_VI_UnBind_VPSS(0, ch, 0);
 	_mmf_vpss_chn_deinit(0, ch);
+	if (pool_id >= 0)
+		_destroy_vb_pool(pool_id);
 	return -1;
 }
 
@@ -1605,7 +1638,8 @@ int mmf_del_vi_channel(int ch) {
 
 	priv.vi_chn_pool_id[ch] = -1;
 	priv.vi_chn_is_inited[ch] = false;
-	return s32Ret;
+	// The channel is gone either way; an unbind failure was logged above.
+	return 0;
 }
 
 int mmf_del_vi_channel_all() {
@@ -1728,17 +1762,38 @@ int mmf_enc_jpg_init(int ch, int w, int h, int format, int quality)
 		return -1;
 	}
 
+	if (format != PIXEL_FORMAT_RGB_888 && format != PIXEL_FORMAT_NV21) {
+		printf("unknown format!\n");
+		return -1;
+	}
+
 	if (mmf_init()) {
 		return -1;
 	}
 
-	// if ((format == PIXEL_FORMAT_RGB_888 && w * h * 3 > 640 * 640 * 3)
-	// 	|| (format == PIXEL_FORMAT_RGB_888 && w * h * 3 / 2 > 2560 * 1440 * 3 / 2)) {
-	// 	printf("image size is too large, for NV21, maximum resolution 2560x1440, for RGB888, maximum resolution 640x640!\n");
-	// 	return -1;
-	// }
-
 	CVI_S32 s32Ret = CVI_SUCCESS;
+	bool channel_created = false;
+	bool vpss_started = false;
+	bool vpss_bound = false;
+	int input_pool_id = -1;
+	int output_pool_id = -1;
+	// Undoes what this call set up, including its MMF reference.
+	auto rollback = [&]() {
+		if (vpss_bound)
+			SAMPLE_COMM_VPSS_UnBind_VENC(2, ch, ch);
+		if (vpss_started)
+			_mmf_vpss_deinit(2, ch);
+		if (output_pool_id >= 0)
+			_destroy_vb_pool(output_pool_id);
+		if (input_pool_id >= 0)
+			_destroy_vb_pool(input_pool_id);
+		if (channel_created) {
+			CVI_VENC_StopRecvFrame(ch);
+			CVI_VENC_ResetChn(ch);
+			CVI_VENC_DestroyChn(ch);
+		}
+		mmf_deinit();
+	};
 
 	VENC_CHN_ATTR_S stVencChnAttr;
 	memset(&stVencChnAttr, 0, sizeof(VENC_CHN_ATTR_S));
@@ -1752,18 +1807,14 @@ int mmf_enc_jpg_init(int ch, int w, int h, int format, int quality)
 	stVencChnAttr.stVencAttr.bByFrame = 1;
 	stVencChnAttr.stRcAttr.enRcMode = VENC_RC_MODE_MJPEGFIXQP;
 
+	// Create, reset and destroy once to clear a channel a crashed process left behind.
 	s32Ret = CVI_VENC_CreateChn(ch, &stVencChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("CVI_VENC_CreateChn [%d] failed with %#x\n", ch, s32Ret);
+		rollback();
 		return s32Ret;
 	}
-
-	s32Ret = CVI_VENC_ResetChn(ch);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("CVI_VENC_CreateChn [%d] failed with %#x\n", ch, s32Ret);
-		return s32Ret;
-	}
-
+	CVI_VENC_ResetChn(ch);
 	s32Ret = CVI_VENC_DestroyChn(ch);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("CVI_VENC_destroyChn [%d] failed with %#x\n", ch, s32Ret);
@@ -1772,87 +1823,73 @@ int mmf_enc_jpg_init(int ch, int w, int h, int format, int quality)
 	s32Ret = CVI_VENC_CreateChn(ch, &stVencChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("CVI_VENC_CreateChn [%d] failed with %#x\n", ch, s32Ret);
+		rollback();
 		return s32Ret;
 	}
+	channel_created = true;
 
 	VENC_JPEG_PARAM_S stJpegParam;
 	memset(&stJpegParam, 0, sizeof(VENC_JPEG_PARAM_S));
 	s32Ret = CVI_VENC_GetJpegParam(ch, &stJpegParam);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("CVI_VENC_GetJpegParam failed with %#x\n", s32Ret);
-		CVI_VENC_DestroyChn(ch);
+		rollback();
 		return s32Ret;
 	}
 	stJpegParam.u32Qfactor = quality;
 	s32Ret = CVI_VENC_SetJpegParam(ch, &stJpegParam);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("CVI_VENC_SetJpegParam failed with %#x\n", s32Ret);
-		CVI_VENC_DestroyChn(ch);
+		rollback();
 		return s32Ret;
 	}
 
-	switch (format) {
-	case PIXEL_FORMAT_RGB_888:
-		{
-			s32Ret = _mmf_vpss_init(2, ch, (SIZE_S){(CVI_U32)w, (CVI_U32)h}, (SIZE_S){(CVI_U32)w, (CVI_U32)h}, PIXEL_FORMAT_RGB_888, PIXEL_FORMAT_YUV_PLANAR_420, 30, 0, CVI_FALSE, CVI_FALSE, 0);
-			if (s32Ret != CVI_SUCCESS) {
-				printf("VPSS init failed with %#x\n", s32Ret);
-				CVI_VENC_StopRecvFrame(ch);
-				CVI_VENC_DestroyChn(ch);
-				return s32Ret;
-			}
-
-			s32Ret = SAMPLE_COMM_VPSS_Bind_VENC(2, ch, ch);
-			if (s32Ret != CVI_SUCCESS) {
-				printf("VPSS bind VENC failed with %#x\n", s32Ret);
-				_mmf_vpss_deinit(2, ch);
-				CVI_VENC_StopRecvFrame(ch);
-				CVI_VENC_DestroyChn(ch);
-				return s32Ret;
-			}
-
-			uint32_t input_size = 0, output_size = 0;
-			input_size = COMMON_GetPicBufferSize(w, h, (PIXEL_FORMAT_E)format, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, DEFAULT_ALIGN);
-			output_size = COMMON_GetPicBufferSize(w, h, (PIXEL_FORMAT_E)PIXEL_FORMAT_YUV_PLANAR_420, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, DEFAULT_ALIGN);
-			int pool_id = _create_vb_pool((char *)"enc_jpeg_in", MMF_MOD_VENC, input_size, 1);
-			if (pool_id < 0) {
-				printf("[%s][%d]_create_vb_pool failed, id %d\n", __func__, __LINE__, pool_id);
-				return -1;
-			}
-			priv.enc_jpg_input_pool_id = pool_id;
-
-			pool_id = _create_vb_pool((char *)"enc_jpeg_out", MMF_MOD_VENC, output_size, 1);
-			if (pool_id < 0) {
-				printf("[%s][%d]_create_vb_pool failed, id %d\n", __func__, __LINE__, pool_id);
-				return -1;
-			}
-			priv.enc_jpg_output_pool_id = pool_id;
-
-			s32Ret = CVI_VPSS_AttachVbPool(2, ch, priv.enc_jpg_output_pool_id);
-			if (s32Ret != CVI_SUCCESS) {
-				SAMPLE_PRT("CVI_VPSS_AttachVbPool failed. s32Ret: 0x%x !\n", s32Ret);
-				_destroy_vb_pool(priv.enc_jpg_output_pool_id);
-				_destroy_vb_pool(priv.enc_jpg_input_pool_id);
-				return CVI_FAILURE;
-			}
+	if (format == PIXEL_FORMAT_RGB_888) {
+		s32Ret = _mmf_vpss_init(2, ch, (SIZE_S){(CVI_U32)w, (CVI_U32)h}, (SIZE_S){(CVI_U32)w, (CVI_U32)h}, PIXEL_FORMAT_RGB_888, PIXEL_FORMAT_YUV_PLANAR_420, 30, 0, CVI_FALSE, CVI_FALSE, 0);
+		if (s32Ret != CVI_SUCCESS) {
+			printf("VPSS init failed with %#x\n", s32Ret);
+			rollback();
+			return s32Ret;
 		}
-		break;
-	case PIXEL_FORMAT_NV21:
-		{
-			uint32_t size = COMMON_GetPicBufferSize(w, h, (PIXEL_FORMAT_E)format, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, DEFAULT_ALIGN);
-			int pool_id = _create_vb_pool((char *)"enc_jpeg_in", MMF_MOD_VENC, size, 1);
-			if (pool_id < 0) {
-				printf("[%s][%d]_create_vb_pool failed, id %d\n", __func__, __LINE__, pool_id);
-				return -1;
-			}
-			priv.enc_jpg_input_pool_id = pool_id;
+		vpss_started = true;
+
+		s32Ret = SAMPLE_COMM_VPSS_Bind_VENC(2, ch, ch);
+		if (s32Ret != CVI_SUCCESS) {
+			printf("VPSS bind VENC failed with %#x\n", s32Ret);
+			rollback();
+			return s32Ret;
 		}
-		break;
-	default:
-		printf("unknown format!\n");
-		CVI_VENC_StopRecvFrame(ch);
-		CVI_VENC_DestroyChn(ch);
-		return -1;
+		vpss_bound = true;
+
+		uint32_t input_size = COMMON_GetPicBufferSize(w, h, (PIXEL_FORMAT_E)format, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, DEFAULT_ALIGN);
+		uint32_t output_size = COMMON_GetPicBufferSize(w, h, (PIXEL_FORMAT_E)PIXEL_FORMAT_YUV_PLANAR_420, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, DEFAULT_ALIGN);
+		input_pool_id = _create_vb_pool((char *)"enc_jpeg_in", MMF_MOD_VENC, input_size, 1);
+		if (input_pool_id < 0) {
+			printf("[%s][%d]_create_vb_pool failed, id %d\n", __func__, __LINE__, input_pool_id);
+			rollback();
+			return -1;
+		}
+		output_pool_id = _create_vb_pool((char *)"enc_jpeg_out", MMF_MOD_VENC, output_size, 1);
+		if (output_pool_id < 0) {
+			printf("[%s][%d]_create_vb_pool failed, id %d\n", __func__, __LINE__, output_pool_id);
+			rollback();
+			return -1;
+		}
+
+		s32Ret = CVI_VPSS_AttachVbPool(2, ch, output_pool_id);
+		if (s32Ret != CVI_SUCCESS) {
+			SAMPLE_PRT("CVI_VPSS_AttachVbPool failed. s32Ret: 0x%x !\n", s32Ret);
+			rollback();
+			return CVI_FAILURE;
+		}
+	} else {
+		uint32_t size = COMMON_GetPicBufferSize(w, h, (PIXEL_FORMAT_E)format, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, DEFAULT_ALIGN);
+		input_pool_id = _create_vb_pool((char *)"enc_jpeg_in", MMF_MOD_VENC, size, 1);
+		if (input_pool_id < 0) {
+			printf("[%s][%d]_create_vb_pool failed, id %d\n", __func__, __LINE__, input_pool_id);
+			rollback();
+			return -1;
+		}
 	}
 
 	VENC_RECV_PIC_PARAM_S stRecvParam;
@@ -1860,6 +1897,7 @@ int mmf_enc_jpg_init(int ch, int w, int h, int format, int quality)
 	s32Ret = CVI_VENC_StartRecvFrame(ch, &stRecvParam);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("CVI_VENC_StartRecvPic failed with %#x\n", s32Ret);
+		rollback();
 		return CVI_FAILURE;
 	}
 
@@ -1868,6 +1906,8 @@ int mmf_enc_jpg_init(int ch, int w, int h, int format, int quality)
 		priv.enc_jpg_frame = NULL;
 	}
 
+	priv.enc_jpg_input_pool_id = input_pool_id;
+	priv.enc_jpg_output_pool_id = output_pool_id;
 	priv.enc_jpg_frame_w = w;
 	priv.enc_jpg_frame_h = h;
 	priv.enc_jpg_frame_fmt = format;
@@ -1934,11 +1974,11 @@ int mmf_enc_jpg_deinit(int ch)
 		_destroy_vb_pool(priv.enc_jpg_output_pool_id);
 		priv.enc_jpg_output_pool_id = -1;
 		_destroy_vb_pool(priv.enc_jpg_input_pool_id);
-		priv.enc_jpg_output_pool_id = -1;
+		priv.enc_jpg_input_pool_id = -1;
 		break;
 	case PIXEL_FORMAT_NV21:
 		_destroy_vb_pool(priv.enc_jpg_input_pool_id);
-		priv.enc_jpg_output_pool_id = -1;
+		priv.enc_jpg_input_pool_id = -1;
 		break;
 	default:
 		break;
@@ -1975,7 +2015,10 @@ int mmf_enc_jpg_push_with_quality(int ch, uint8_t *data, int w, int h, int forma
 	if (priv.enc_jpg_frame == NULL || priv.enc_jpg_frame_w != w || priv.enc_jpg_frame_h != h || priv.enc_jpg_frame_fmt != format
 	|| priv.enc_jpg_quality != quality) {
 		mmf_enc_jpg_deinit(ch);
-		mmf_enc_jpg_init(ch, w, h, format, quality);
+		if (mmf_enc_jpg_init(ch, w, h, format, quality) != 0) {
+			printf("jpeg encoder init failed\r\n");
+			return -1;
+		}
 		priv.enc_jpg_frame_w = w;
 		priv.enc_jpg_frame_h = h;
 		priv.enc_jpg_frame_fmt = format;
@@ -2026,9 +2069,7 @@ int mmf_enc_jpg_push_with_quality(int ch, uint8_t *data, int w, int h, int forma
 				memcpy(priv.enc_jpg_frame->stVFrame.pu8VirAddr[0], ((uint8_t *)data), w * h);
 				memset(priv.enc_jpg_frame->stVFrame.pu8VirAddr[0] + w * h, 128, w * h / 2);
 			}
-			CVI_SYS_IonFlushCache(priv.enc_jpg_frame->stVFrame.u64PhyAddr[0],
-								priv.enc_jpg_frame->stVFrame.pu8VirAddr[0],
-								priv.enc_jpg_frame->stVFrame.u32Stride[0] * h * 3 / 2);
+			_mmf_flush_frame(priv.enc_jpg_frame);
 			s32Ret = CVI_VENC_SendFrame(ch, priv.enc_jpg_frame, 1000);
 			if (s32Ret != CVI_SUCCESS) {
 				printf("CVI_VENC_SendFrame failed with %d\n", s32Ret);
@@ -2045,6 +2086,7 @@ int mmf_enc_jpg_push_with_quality(int ch, uint8_t *data, int w, int h, int forma
 				memcpy(priv.enc_jpg_frame->stVFrame.pu8VirAddr[0], data, w * h * 3);
 			}
 
+			_mmf_flush_frame(priv.enc_jpg_frame);
 			s32Ret = CVI_VPSS_SendFrame(2, priv.enc_jpg_frame, 1000);
 			if (s32Ret != CVI_SUCCESS) {
 				printf("CVI_VPSS_SendFrame failed with %#x\n", s32Ret);
@@ -2062,6 +2104,7 @@ int mmf_enc_jpg_push_with_quality(int ch, uint8_t *data, int w, int h, int forma
 				memcpy(priv.enc_jpg_frame->stVFrame.pu8VirAddr[0], ((uint8_t *)data), w * h * 3 / 2);
 			}
 
+			_mmf_flush_frame(priv.enc_jpg_frame);
 			s32Ret = CVI_VENC_SendFrame(ch, priv.enc_jpg_frame, 1000);
 			if (s32Ret != CVI_SUCCESS) {
 				printf("CVI_VENC_SendFrame failed with %d\n", s32Ret);
@@ -2139,7 +2182,8 @@ int mmf_enc_jpg_free(int ch)
 		s32Ret = CVI_VENC_ReleaseStream(ch, &priv.enc_jpeg_frame);
 		if (s32Ret != CVI_SUCCESS) {
 			printf("CVI_VENC_ReleaseStream failed with %#x\n", s32Ret);
-			return s32Ret;
+			// Rebuild the encoder on the next push instead of refusing every frame.
+			priv.enc_jpg_quality = -1;
 		}
 		priv.enc_jpg_stream_acquired = 0;
 	}
@@ -2500,6 +2544,7 @@ int mmf_venc_push(int ch, uint8_t *data, int w, int h, int format) {
 			return -1;
 	}
 
+	_mmf_flush_frame(frame_info);
 	s32Ret = CVI_VENC_SendFrame(ch, frame_info, 1000);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("CVI_VENC_SendFrame failed with %#x\n", s32Ret);
