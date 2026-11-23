@@ -58,6 +58,7 @@
 @8100 write /kvmapp/kvm/state "0\n"
 @8100 call hdmi 0 -> 255
 @8100 call signal -> 0
+@8100 call mjpeg 1280 720 80 -> -1
 @9000 > src 1920 1080
 @9000 > int fall
 @9000 write /proc/lt_int "0"
@@ -77,19 +78,18 @@
 @9000 run sync
 @9000 i2c 2b w ff 80
 @9000 i2c 2b w ee 00
-@9100 cam restart 1920x1080 in=1920x1080
-@9100 cam size 1280x720
-@9100 cam mirror_flip
-@9116 call mjpeg 1280 720 80 -> 0 jpeg 1280x720 q80 size=1080
 @9500 call hdmi 1
 @9500 write /kvmapp/kvm/state "1\n"
 @9500 call hdmi 1 -> 255
-@9516..@10968 call mjpeg 1280 720 80 -> 0 jpeg 1280x720 q80 size=1080 x45
+@10500 cam restart 1920x1080 in=1920x1080
+@10500 cam size 1280x720
+@10500 cam mirror_flip
+@10516..@10996 call mjpeg 1280 720 80 -> 0 jpeg 1280x720 q80 size=1080 x31
 @11000 vi_state seq=4 dev_fps=60 fps=60 width_gt=0 width_ls=0 height_gt=0 height_ls=0
-@11001 call mjpeg 1280 720 80 -> 0 jpeg 1280x720 q80 size=1080
-@11001 cam size 1920x1080
-@11001 cam mirror_flip
-@11017..@13014 call mjpeg 1920 1080 80 -> 0 jpeg 1920x1080 q80 size=1080 x107
+@11012 call mjpeg 1280 720 80 -> 0 jpeg 1280x720 q80 size=1080
+@11012 cam size 1920x1080
+@11012 cam mirror_flip
+@11028..@13014 call mjpeg 1920 1080 80 -> 0 jpeg 1920x1080 q80 size=1080 x107
 @13014 call signal -> 1
 @13014 call deinit
 @13100 write /kvmapp/kvm/state "0\n"

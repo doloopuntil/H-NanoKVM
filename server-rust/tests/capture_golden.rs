@@ -18,12 +18,15 @@ use nanokvm_rust_server::capture::{Command, Engine, GpioHandle, Platform, Thread
 /// Scenarios where the port deliberately differs from the C++, and why; their traces are
 /// checked against `tests/capture/fixed`.
 const EXPECTED_DIFFERENCES: &[(&str, &str)] = &[
-    ("alpha-hdmi-disable", "#9 re-enable keeps the known signal"),
+    (
+        "alpha-hdmi-disable",
+        "#9 known signal; #13 no reads while off",
+    ),
     ("pcie-hdmi", "#9 known signal; #10 discard in one read"),
     ("pcie-nogpio", "#9 re-enable keeps the known signal"),
     ("ue-manual-recovers", "#8 manual size clears the scan error"),
     ("ux-auto-size", "#12 0x0 reads follow every size change"),
-    ("ux-beta-stream", "#9 re-enable keeps the known signal"),
+    ("ux-beta-stream", "#9 known signal; #13 no reads while off"),
     ("ux-h264", "#11 IDR on switching back to H.264"),
     (
         "ux-unknown-gives-up",
