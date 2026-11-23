@@ -668,11 +668,9 @@ impl<P: Platform> Engine<P> {
             }
         }
 
-        if vi.venc_type == VENC_MJPEG && kind != VENC_MJPEG {
-            vi.h264.init = true;
-        }
-        if vi.venc_type == VENC_H264 && kind != VENC_H264 {
-            vi.h264.init = false;
+        // The H.264 channel lives on through MJPEG; coming back, a decoder needs an IDR.
+        if kind == VENC_H264 && vi.venc_type != VENC_H264 {
+            self.s.keyframe_requested.store(true, Relaxed);
         }
         vi.venc_type = kind;
         if kind == VENC_MJPEG {
