@@ -96,7 +96,8 @@ struct Vi {
     vpss_height: u16,
     venc_type: u8,
     reinit: bool,
-    auto_res: bool,
+    /// The input size applied while following it (0 x 0 reads).
+    auto_res: Option<(u16, u16)>,
     frame_undetect_count: u8,
     sample: Vec<u8>,
     sample_raw_size: usize,
@@ -166,7 +167,7 @@ impl<P: Platform> Engine<P> {
                 vpss_height: DEFAULT_HEIGHT,
                 venc_type: VENC_MJPEG,
                 reinit: true,
-                auto_res: false,
+                auto_res: None,
                 frame_undetect_count: 0,
                 sample: vec![0; FRAME_SAMPLE_SIZE],
                 sample_raw_size: 0,
@@ -247,6 +248,7 @@ impl<P: Platform> Engine<P> {
             // The restart resets the output size; the next read applies the requested one
             vi.vpss_width = DEFAULT_WIDTH;
             vi.vpss_height = DEFAULT_HEIGHT;
+            vi.auto_res = None;
             return true;
         }
         false
@@ -547,6 +549,7 @@ impl<P: Platform> Engine<P> {
             self.p.cam_restart(DEFAULT_WIDTH, DEFAULT_HEIGHT);
             vi.vpss_width = DEFAULT_WIDTH;
             vi.vpss_height = DEFAULT_HEIGHT;
+            vi.auto_res = None;
         }
         true
     }
@@ -626,13 +629,14 @@ impl<P: Platform> Engine<P> {
                 // Follow the HDMI input
                 vi.vpss_width = self.s.vi_width.load(Relaxed);
                 vi.vpss_height = self.s.vi_height.load(Relaxed);
-                if !vi.auto_res {
-                    vi.auto_res = true;
-                    self.p.cam_set_size(vi.vpss_width, vi.vpss_height);
+                let input = (vi.vpss_width, vi.vpss_height);
+                if vi.auto_res != Some(input) {
+                    vi.auto_res = Some(input);
+                    self.p.cam_set_size(input.0, input.1);
                     vi.reinit = true;
                 }
             } else {
-                vi.auto_res = false;
+                vi.auto_res = None;
                 vi.vpss_width = width;
                 vi.vpss_height = height;
                 self.p.cam_set_size(width, height);

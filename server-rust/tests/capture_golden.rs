@@ -22,6 +22,7 @@ const EXPECTED_DIFFERENCES: &[(&str, &str)] = &[
     ("pcie-hdmi", "#9 known signal; #10 discard in one read"),
     ("pcie-nogpio", "#9 re-enable keeps the known signal"),
     ("ue-manual-recovers", "#8 manual size clears the scan error"),
+    ("ux-auto-size", "#12 0x0 reads follow every size change"),
     ("ux-beta-stream", "#9 re-enable keeps the known signal"),
     ("ux-h264", "#11 IDR on switching back to H.264"),
     (
