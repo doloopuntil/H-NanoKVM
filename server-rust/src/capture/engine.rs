@@ -98,6 +98,8 @@ struct Vi {
     reinit: bool,
     /// The input size applied while following it (0 x 0 reads).
     auto_res: Option<(u16, u16)>,
+    /// The input size the camera started with (the width/height files it read).
+    cam_input: Option<(u16, u16)>,
     frame_undetect_count: u8,
     sample: Vec<u8>,
     sample_raw_size: usize,
@@ -168,6 +170,7 @@ impl<P: Platform> Engine<P> {
                 venc_type: VENC_MJPEG,
                 reinit: true,
                 auto_res: None,
+                cam_input: None,
                 frame_undetect_count: 0,
                 sample: vec![0; FRAME_SAMPLE_SIZE],
                 sample_raw_size: 0,
@@ -245,6 +248,7 @@ impl<P: Platform> Engine<P> {
         };
         if self.s.cam.load(Acquire) && !self.s.stop_threads.load(Acquire) {
             self.p.cam_restart(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+            vi.cam_input = self.camera_input_size();
             // The restart resets the output size; the next read applies the requested one
             vi.vpss_width = DEFAULT_WIDTH;
             vi.vpss_height = DEFAULT_HEIGHT;
@@ -281,7 +285,8 @@ impl<P: Platform> Engine<P> {
             life.state = Lifecycle::Running;
             return;
         }
-        if let Some(_vi) = self.vi_lock(None) {
+        if let Some(mut vi) = self.vi_lock(None) {
+            vi.cam_input = self.camera_input_size();
             self.p.cam_mirror_flip();
         }
         let engine = Arc::clone(self);
@@ -543,15 +548,28 @@ impl<P: Platform> Engine<P> {
         if !self.s.cable_present.load(Acquire) || try_num >= MAX_TRY_NUM {
             return false;
         }
+        self.reopen_if_pending(vi, true);
+        true
+    }
+
+    /// Restarts the camera when the bridge reported a new input size; unless `always` (a
+    /// read failed), not when the camera already started at that size.
+    fn reopen_if_pending(&self, vi: &mut Vi, always: bool) {
         if self.s.reopen_cam.load(Relaxed) && self.s.cam.load(Acquire) {
-            // The input size changed
             self.s.reopen_cam.store(false, Relaxed);
+            let input = (
+                self.s.vi_width.load(Relaxed),
+                self.s.vi_height.load(Relaxed),
+            );
+            if !always && vi.cam_input == Some(input) {
+                return;
+            }
             self.p.cam_restart(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+            vi.cam_input = self.camera_input_size();
             vi.vpss_width = DEFAULT_WIDTH;
             vi.vpss_height = DEFAULT_HEIGHT;
             vi.auto_res = None;
         }
-        true
     }
 
     /// One encoded frame at `width` x `height` (0 x 0: the input size). `kind` 0 is MJPEG
@@ -602,6 +620,8 @@ impl<P: Platform> Engine<P> {
         if self.s.detect_state.load(Relaxed) == 1 {
             return -4;
         }
+        // Before reading, not after a read times out on the old size.
+        self.reopen_if_pending(&mut vi, false);
         let mut try_num = 0;
         loop {
             if let Some(code) = self.read_once(&mut vi, width, height, kind, quality, out, headroom)
