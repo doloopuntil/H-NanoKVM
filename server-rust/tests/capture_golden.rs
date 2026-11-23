@@ -23,6 +23,7 @@ const EXPECTED_DIFFERENCES: &[(&str, &str)] = &[
     ("pcie-nogpio", "#9 re-enable keeps the known signal"),
     ("ue-manual-recovers", "#8 manual size clears the scan error"),
     ("ux-beta-stream", "#9 re-enable keeps the known signal"),
+    ("ux-h264", "#11 IDR on switching back to H.264"),
     (
         "ux-unknown-gives-up",
         "#8 scan error cleared in bridge mode; #9",
