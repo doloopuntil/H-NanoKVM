@@ -12,8 +12,6 @@
 #include "cvi_comm_sns.h"
 #include "cvi_isp.h"
 #include "cvi_sns_ctrl.h"
-#include "lt6911_cmos_ex.h"
-#include "lt6911_cmos_param.h"
 
 #define KVM_MIPI_DEV "/dev/cvi-mipi-rx"
 #define KVM_MIPI_MAX_PIPE 5
@@ -110,14 +108,46 @@ void *get_vpssbindata_addr(void)
 	return CVI_NULL;
 }
 
-// LT6911 sensor object without ISP/AE/AWB callbacks; replaces lt6911_cmos.c.
+// LT6911 sensor object without ISP/AE/AWB callbacks. The bridge runs its own firmware and the
+// server drives its I2C; the device tree muxes the MIPI RX pads.
+#define LT6911_WIDTH 1920
+#define LT6911_HEIGHT 1080
+
+// Not the live resolution: _mmf_vi_set_snr_info sends the size read from the bridge.
+static const ISP_WDR_SIZE_S lt6911_img = {
+	.stSnsSize = { .u32Width = LT6911_WIDTH, .u32Height = LT6911_HEIGHT },
+	.stWndRect = { .s32X = 0, .s32Y = 0, .u32Width = LT6911_WIDTH, .u32Height = LT6911_HEIGHT },
+	.stMaxSize = { .u32Width = LT6911_WIDTH, .u32Height = LT6911_HEIGHT },
+};
+
+// sensor_cfg.ini's lane_id, pn_swap and mipi_dev replace the lanes and devno (patch_rx_attr).
+static struct combo_dev_attr_s lt6911_rx_attr = {
+	.input_mode = INPUT_MODE_MIPI,
+	.mac_clk = RX_MAC_CLK_600M,
+	.mipi_attr = {
+		.raw_data_type = YUV422_8BIT,
+		.lane_id = {2, 4, 3, 1, 0},
+		.pn_swap = {0, 0, 0, 0, 0},
+		.wdr_mode = CVI_MIPI_WDR_MODE_NONE,
+		.dphy = {
+			.enable = 1,
+			.hs_settle = 8,
+		},
+	},
+	.mclk = {
+		.cam = 0,
+		.freq = CAMPLL_FREQ_NONE,
+	},
+	.devno = 1,
+};
+
 static CVI_S32 lt6911_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *info)
 {
 	(void)ViPipe;
 	if (info == CVI_NULL)
 		return CVI_FAILURE;
 	info->ispCfg.frm_num = 1;
-	info->ispCfg.img_size[0] = g_astLt6911_mode[LT6911_MODE_NORMAL].astImg[0];
+	info->ispCfg.img_size[0] = lt6911_img;
 	return CVI_SUCCESS;
 }
 
@@ -144,8 +174,6 @@ static CVI_S32 lt6911_exp_sensor_cb(ISP_SENSOR_EXP_FUNC_S *funcs)
 	if (funcs == CVI_NULL)
 		return CVI_FAILURE;
 	memset(funcs, 0, sizeof(*funcs));
-	funcs->pfn_cmos_sensor_init = lt6911_init;
-	funcs->pfn_cmos_sensor_exit = lt6911_exit;
 	funcs->pfn_cmos_sensor_global_init = lt6911_global_init;
 	funcs->pfn_cmos_set_image_mode = lt6911_set_image_mode;
 	funcs->pfn_cmos_set_wdr_mode = lt6911_set_wdr_mode;
@@ -159,9 +187,9 @@ static CVI_S32 lt6911_rx_attr_get(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *attr)
 	if (attr == CVI_NULL)
 		return CVI_FAILURE;
 	*attr = lt6911_rx_attr;
-	// lt6911_cmos.c reads mode 0, which is empty: the size goes out as 0x0.
-	attr->img_size.width = g_astLt6911_mode[0].astImg[LT6911_MODE_NORMAL].stSnsSize.u32Width;
-	attr->img_size.height = g_astLt6911_mode[0].astImg[LT6911_MODE_NORMAL].stSnsSize.u32Height;
+	// 0x0, as the vendor driver sent it (it read an empty mode); the CSI size comes later.
+	attr->img_size.width = 0;
+	attr->img_size.height = 0;
 	return CVI_SUCCESS;
 }
 
@@ -208,8 +236,8 @@ ISP_SNS_OBJ_S stSnsLT6911_Obj = {
 	.pfnStandby = CVI_NULL,
 	.pfnRestart = CVI_NULL,
 	.pfnMirrorFlip = CVI_NULL,
-	.pfnWriteReg = lt6911_write,
-	.pfnReadReg = lt6911_read,
+	.pfnWriteReg = CVI_NULL,
+	.pfnReadReg = CVI_NULL,
 	.pfnSetBusInfo = lt6911_set_bus_info,
 	.pfnSetInit = lt6911_set_init,
 	.pfnPatchRxAttr = lt6911_patch_rx_attr,
@@ -217,5 +245,5 @@ ISP_SNS_OBJ_S stSnsLT6911_Obj = {
 	.pfnGetRxAttr = lt6911_rx_attr_get,
 	.pfnExpSensorCb = lt6911_exp_sensor_cb,
 	.pfnExpAeCb = CVI_NULL,
-	.pfnSnsProbe = lt6911_probe,
+	.pfnSnsProbe = CVI_NULL,
 };

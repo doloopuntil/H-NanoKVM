@@ -156,9 +156,8 @@ keep the Buildroot output on a Docker volume, not a bind mount):
 
    `scripts/build-buildroot-6x-image.sh build` later continues in the same output.
 2. Fetch the sources the job fetches, at the SHAs in the workflow's `env`:
-   `sophgo/cvi_mpi`, `sophgo/osdrv` (`interdrv/include`),
-   `sophgo/SensorSupportList` (`common`) and `sipeed/LicheeRV-Nano-Build`
-   (`middleware/v2/component/isp/sensor/cv182x/lontium_lt6911`).
+   `sophgo/cvi_mpi`, `sophgo/osdrv` (`interdrv/include`) and
+   `sophgo/SensorSupportList` (`common`).
    Apply the patches in `support/sg2002/middleware-patches/` to cvi_mpi, in the order
    the workflow applies them.
 3. Build the middleware, stage the SDK directory, then build and check the
@@ -166,7 +165,7 @@ keep the Buildroot output on a Docker volume, not a bind mount):
 
    ```sh
    SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh cvi_mpi osdrv mw "$CROSS"
-   scripts/stage-sg2002-sdk.sh cvi_mpi osdrv sensor-list sdk mw sg2002-sdk
+   scripts/stage-sg2002-sdk.sh cvi_mpi osdrv sensor-list mw sg2002-sdk
    scripts/build-sg2002-native.sh "$CROSS" sg2002-sdk build/native-libkvm
    ```
 

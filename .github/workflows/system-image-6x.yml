@@ -13,7 +13,6 @@ concurrency:
 env:
   BUILDROOT_VERSION: "2026.05.1"
   RUST_VERSION: "1.99.0"
-  LICHEERV_NANO_SDK_SHA: d88d58feca49ef15f4cc7bd1f27dbf17dc25f85e
   # sophgo/fsbl sg200x-dev, weekly release 2026-11-06.
   SOPHGO_FSBL_SHA: 5a80c127cf614dea7f534d5b5352886a1c720d37
   # One Sophgo weekly release (2026-08-24) for every video kernel module and middleware library,
@@ -97,8 +96,7 @@ jobs:
           LICHEERV_EXTERNAL_SHA="$LICHEERV_EXTERNAL_SHA" scripts/fetch-licheerv-external.sh
           SOPHGO_FSBL_SHA="$SOPHGO_FSBL_SHA" scripts/fetch-sg2002-boot-source.sh
 
-      # The middleware, the uapi headers of the same Sophgo release, the sensor list, and from
-      # the vendor SDK the LT6911 sensor driver.
+      # The middleware, the uapi headers of the same Sophgo release, and the sensor list.
       - name: Fetch the Sophgo middleware source
         run: |
           sparse_fetch() {
@@ -121,8 +119,6 @@ jobs:
             "$SOPHGO_OSDRV_SHA" /interdrv/include/
           sparse_fetch "$RUNNER_TEMP/sensor-list" https://github.com/sophgo/SensorSupportList.git \
             "$SOPHGO_SENSOR_LIST_SHA" /common/
-          sparse_fetch "$RUNNER_TEMP/sdk" https://github.com/sipeed/LicheeRV-Nano-Build.git \
-            "$LICHEERV_NANO_SDK_SHA" /middleware/v2/component/isp/sensor/cv182x/lontium_lt6911/
           patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
             < support/sg2002/middleware-patches/cvi-mpi-693a72a-no-vi-dbg-thread.patch
           ! grep -q vi_dbg_handler "$RUNNER_TEMP/cvi_mpi/modules/vi/src/cvi_vi.c"
@@ -151,10 +147,10 @@ jobs:
             "$GITHUB_WORKSPACE/build/native-libkvm/middleware" "$CROSS_PREFIX"
 
       # kvm_mmf compiles against these headers and sample code, so they match the libraries above.
-      - name: Stage the headers, sample code and LT6911 driver for libkvm_mmf
+      - name: Stage the headers and sample code for libkvm_mmf
         run: |
           scripts/stage-sg2002-sdk.sh "$RUNNER_TEMP/cvi_mpi" "$RUNNER_TEMP/osdrv-uapi" \
-            "$RUNNER_TEMP/sensor-list" "$RUNNER_TEMP/sdk" \
+            "$RUNNER_TEMP/sensor-list" \
             "$GITHUB_WORKSPACE/build/native-libkvm/middleware" "$RUNNER_TEMP/sg2002-sdk"
 
       # Plain CMake (support/sg2002/CMakeLists.txt) with Buildroot's GCC: scalar xthead, stack

@@ -63,8 +63,8 @@ image.
 - **`build-buildroot`**: runs `scripts/build-buildroot-6x-image.sh toolchain` first, which
   configures Buildroot and builds only its cross-compiler (GCC 14.4) and musl 1.2.6. That one
   toolchain then builds the Sophgo middleware (`scripts/build-sdk-middleware.sh`), and, after
-  `scripts/stage-sg2002-sdk.sh` has staged its headers, sample code and the patched LT6911
-  driver, `libkvm_mmf.so` with plain CMake
+  `scripts/stage-sg2002-sdk.sh` has staged its headers and sample code, `libkvm_mmf.so` with
+  plain CMake
   (`support/sg2002/CMakeLists.txt`, `scripts/build-sg2002-native.sh`). That script checks the
   stack protector, full RELRO, no RPATH, the T-Head scalar extensions and no vector code, and
   that `libkvm_mmf.so` exports exactly its map, which covers what the server binds. The Rust
@@ -158,7 +158,7 @@ scope" below). **The pipeline no longer fetches this archive at all.**
 | OpenCV (`core`/`highgui`/`imgcodecs`/`imgproc`, and `video`/`dnn`/`calib3d`/`features2d`/`flann`/`protobuf` before them) | No longer shipped: only MaixCDK's image class used OpenCV, and nothing links it any more. `libgomp` went with them (only `opencv_core` needed it) | `support/sg2002/CMakeLists.txt` |
 | `/mnt/system/usr/bin` (49 CVITEK sample/test binaries) | Deleted entirely -- no static or `dlopen()` reference anywhere in tracked source | `server-rust/native/README.md` ("/mnt/system/usr") |
 | `/mnt/system/usr/lib` minus one file (32 files incl. `3rd/`) | Deleted entirely -- proven redundant against `dl_lib`'s search-path priority | same |
-| `libsys.so`, `libvenc.so`, `libvdec.so`, `libvi.so`, `libvpss.so`, `libvo.so`, `libgdc.so`, `librgn.so`, `libini.so` | Built from source in `build-buildroot` with Buildroot's GCC: public `sophgo/cvi_mpi` at `SOPHGO_CVI_MPI_SHA` (the same Sophgo release as the kernel modules), with its own flags but `-O2` instead of `-Os` and the T-Head scalar extensions and `support/sg2002/middleware-patches/`, by `scripts/build-sdk-middleware.sh`. The old `libvpu.so` is split into `libvi`/`libvpss`/`libvo`/`libgdc`/`librgn` and no longer ships. The sensor enum and names come from `sophgo/SensorSupportList` at `SOPHGO_SENSOR_LIST_SHA`. `libkvm_mmf.so` links against them, compiles against the same release's headers and sample code, and the image ships them | workflow steps "Fetch the Sophgo middleware source" through "Stage the headers, sample code and LT6911 driver for libkvm_mmf" |
+| `libsys.so`, `libvenc.so`, `libvdec.so`, `libvi.so`, `libvpss.so`, `libvo.so`, `libgdc.so`, `librgn.so`, `libini.so` | Built from source in `build-buildroot` with Buildroot's GCC: public `sophgo/cvi_mpi` at `SOPHGO_CVI_MPI_SHA` (the same Sophgo release as the kernel modules), with its own flags but `-O2` instead of `-Os` and the T-Head scalar extensions and `support/sg2002/middleware-patches/`, by `scripts/build-sdk-middleware.sh`. The old `libvpu.so` is split into `libvi`/`libvpss`/`libvo`/`libgdc`/`librgn` and no longer ships. The sensor enum and names come from `sophgo/SensorSupportList` at `SOPHGO_SENSOR_LIST_SHA`. `libkvm_mmf.so` links against them, compiles against the same release's headers and sample code, and the image ships them | workflow steps "Fetch the Sophgo middleware source" through "Stage the headers and sample code for libkvm_mmf" |
 | The ~19 other CVI/audio middleware libraries `dl_lib` carried (`libcvi_*`, `libaac*`, `libcli.so`, etc.) and the 8 closed ISP/3A libraries (`libisp*`, `libae`/`af`/`awb`, `libcvi_bin*`, `libcvi_ispd2`) | Removed: nothing loads them. The image build fails unless `dl_lib` holds exactly `libkvm`, `libkvm_mmf` and the nine source-built middleware libraries | `scripts/build-buildroot-6x-image.sh`; `server-rust/native/README.md` ("dl_lib's prebuilt middleware") |
 | GCC runtime libs (`libstdc++`, `libgcc_s`) | Buildroot installs its own into `/usr/lib`, from the GCC that builds `libkvm` and the middleware. The T-Head GCC 10.2 copies (`libstdc++.so.6.0.28`, `libgcc_s.so.1`, `libatomic.so.1.2.0`) that `dl_lib` carried are gone, and the build fails if `dl_lib` ships any GCC runtime library. The vendor `libc.so` is no longer shipped: musl's loader serves `libc.so` itself | `scripts/build-buildroot-6x-image.sh` |
 | T-Head musl loader (`ld-musl-riscv64xthead.so.1`) | No longer shipped: its riscv64 `__clone` misaligns thread stacks, so everything runs on Buildroot's musl 1.2.6 loader ([riscv64 thread stack alignment](riscv-musl-stack-alignment.md)) | same |
@@ -253,7 +253,6 @@ Every external source the 6.18 build fetches, all pinned to a commit or a releas
 | `buildroot.org` | The Buildroot release, and through it the cross-compiler (GCC 14.4, musl 1.2.6) that builds the whole image, native code included, and the Linux 6.18 source from kernel.org |
 | `lone0/buildroot-external-licheervnano` | The licheerv patch series and board files for Linux 6.18 |
 | `sophgo/fsbl` | The FSBL source |
-| `sipeed/LicheeRV-Nano-Build` | The LT6911 sensor driver `libkvm_mmf.so` compiles in |
 | `sophgo/osdrv` and `sophgo/cvi_mpi` (one dated release) | The media kernel modules and the middleware libraries; one release for both keeps the user/kernel structs consistent |
 | `sophgo/SensorSupportList` | The sensor list the middleware build needs |
 

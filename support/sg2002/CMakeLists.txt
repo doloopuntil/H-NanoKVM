@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(hnanokvm_native C CXX)
 
-set(SG2002_SDK_DIR "" CACHE PATH "Sophgo headers, sample code, LT6911 driver and middleware libraries")
+set(SG2002_SDK_DIR "" CACHE PATH "Sophgo headers, sample code and middleware libraries")
 if(NOT EXISTS "${SG2002_SDK_DIR}/include/cvi_sys.h")
 	message(FATAL_ERROR "SG2002_SDK_DIR does not hold the staged Sophgo SDK: '${SG2002_SDK_DIR}'")
 endif()
@@ -18,15 +18,14 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_SKIP_RPATH ON)
 add_compile_options(-Wall)
 
-# libkvm_mmf.so: the media pipeline over the Sophgo middleware, with the LT6911 sensor driver.
+# libkvm_mmf.so: the media pipeline over the Sophgo middleware, LT6911 input only.
 file(GLOB mw_sample_srcs "${SDK}/sample/common/*.c")
 # No ISP: kvm_mmf_noisp.c stands in for lt6911_cmos.c; our sample_common_sensor.c replaces Sophgo's.
 list(FILTER mw_sample_srcs EXCLUDE REGEX "/(sample_common_bin|sample_common_platform|sample_common_sensor)\\.c$")
 set(mw_srcs
 	${mw_sample_srcs}
 	additional/sophgo-middleware/v2/sample/common/sample_common_sensor.c
-	"${SDK}/component/isp/common/sensor_list.c"
-	"${SDK}/component/isp/sensor/lontium_lt6911/lt6911_sensor_ctl.c")
+	"${SDK}/component/isp/common/sensor_list.c")
 set_source_files_properties(${mw_srcs} PROPERTIES COMPILE_OPTIONS
 	"-ffunction-sections;-fdata-sections;-fvisibility=hidden")
 
@@ -43,8 +42,7 @@ target_include_directories(kvm_mmf
 		"${SDK}/sample/common"
 		"${SDK}/uapi"
 		"${SDK}/3rdparty/inih"
-		"${SDK}/component/isp/common"
-		"${SDK}/component/isp/sensor/lontium_lt6911")
+		"${SDK}/component/isp/common")
 target_compile_definitions(kvm_mmf PRIVATE
 	SENSOR_LONTIUM_LT6911 SENSOR2_TYPE=LONTIUM_LT6911_2M_60FPS_8BIT ARCH_CV181X __CV181X__)
 # Video path: speed over size.

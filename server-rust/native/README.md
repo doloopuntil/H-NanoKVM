@@ -30,47 +30,25 @@ been dropped as unused. `libkvm` itself never called OpenCV. libkvm is gone: the
 the VI channel and the encoders through `libkvm_mmf.so` (`src/capture/media.rs`) and talks to
 the LT6911 over i2c-dev, and the image ships no OpenCV library.
 
-## libkvm_mmf.so statically embeds its own copy of the LT6911 driver
+## LT6911: no vendor driver
 
-The LT6911 patch applied to `vendor-sdk-stock`'s checkout of
-`sipeed/LicheeRV-Nano-Build`
-(`buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/lt6911-sensor-id-probe-removed.patch`)
-does not reach the code actually driving HDMI capture by itself. `libkvm_mmf.so` was
-built by MaixCDK
-against a *second*, independent copy of the same upstream sensor source --
-`sipeed/MaixCDK`'s own `components/3rd_party/sophgo-middleware/` checkout
--- compiled directly into `libkvm_mmf.so` as source, not linked against
-`/mnt/system/usr/lib/libsns_lt6911.so` (confirmed: `libkvm_mmf.so`'s
-`NEEDED` entries don't include it, and the compiled-in `__FILE__` string
-in `libkvm_mmf.so` points at `.../MaixCDK/components/3rd_party/...`, not
-the vendor-sdk-stock path). Diffed MaixCDK's copy of `lt6911_sensor_ctl.c`
-against vendor-sdk-stock's: byte-for-byte identical, same probe. `/mnt/system/usr/lib/libsns_lt6911.so` is real and
-correctly patched, but nothing in the running process tree (`kvm_system`,
-`libkvm.so`, `libkvm_mmf.so`) loads it.
+`libkvm_mmf.so` carries no LT6911 driver code. The middleware only needs a sensor object
+that describes the MIPI receiver setup (YUV422 8-bit, lane order, D-PHY settle, 1080p mode
+table); `support/sg2002/additional/kvm_mmf/src/kvm_mmf_noisp.c` defines it, and
+`sensor_cfg.ini` supplies the lane order, polarity and MIPI device that replace its defaults.
 
-`.github/workflows/system-image-6x.yml`'s `build-buildroot` job
-builds `libkvm.so`/`libkvm_mmf.so` from this repository's own
-`support/sg2002/additional/` sources instead of reusing the
-prebuilt app 2.0.42 archive copies. Since MaixCDK left the build,
-`scripts/stage-sg2002-sdk.sh` takes the driver from the pinned
-`sipeed/LicheeRV-Nano-Build` commit (the same bytes as MaixCDK's copy) and applies the
-patch there. Those sources carry the native changes the image relies on
-(zero-copy capture, shared VI state, HDMI signal, the skipped stale-state
-release on a fresh boot), and the job checks for them before building.
-`woffko/Hardened_NanoKVM`'s own published `libkvm_mmf.so` still contains the
-same unpatched `read sensor id error.`/`Sensor ID Mismatch!` strings.
+The vendor driver (`lontium_lt6911/lt6911_sensor_ctl.c`, taken from
+`sipeed/LicheeRV-Nano-Build` until 2026-11-24) added nothing on this path:
 
-On real hardware the chip-ID I2C read never succeeds on this board, at any
-timing, while HDMI capture works without it.
-`lt6911-sensor-id-probe-removed.patch` therefore removes the probe from
-`lt6911_probe()` entirely (PinMux only); verified on hardware: no LT6911
-errors in syslog and no boot delay.
+- its init and exit hooks only opened `/dev/i2c-4`, and only the ISP, which is not built, or
+  the sample code's suspend/resume path called them;
+- its register read and write hooks are called only by the ISP;
+- its probe read the chip ID at `0x56`, the 8-bit form of the bridge's 7-bit address `0x2b`,
+  so it never succeeded, and set the MIPI RX pinmux through `devmem` (`0x0300116C` to
+  `0x03001190`, MIPIRX4N to MIPIRX0P, function 3). A patch had already removed it.
 
-Since 2026-11-12 the patch also drops the probe's ten `system("devmem …")` pinmux writes,
-which set the MIPI RX pads (`0x0300116C`-`0x03001190`, MIPIRX4N-MIPIRX0P) to GPIO. The
-Linux 6.18 DTS (`mipi-rx-pins`) sets them instead; before, it put `CAM_MCLK1` on MIPIRX0N,
-a live data lane, which only these writes undid when the server started. The 5.10 image,
-whose device tree does not set these pads, no longer gets them from libkvm either.
+The bridge runs its own firmware; the server reads and controls it over i2c-dev
+(`src/capture/bridge.rs`), and the 6.18 device tree (`mipi-rx-pins`) sets the pinmux.
 
 ## /mnt/system/usr: pruned to the one file dl_lib doesn't cover
 
