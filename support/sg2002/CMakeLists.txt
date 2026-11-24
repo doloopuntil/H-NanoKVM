@@ -20,11 +20,10 @@ add_compile_options(-Wall)
 
 # libkvm_mmf.so: the media pipeline over the Sophgo middleware, LT6911 input only.
 file(GLOB mw_sample_srcs "${SDK}/sample/common/*.c")
-# No ISP: kvm_mmf_noisp.c stands in for lt6911_cmos.c; our sample_common_sensor.c replaces Sophgo's.
-list(FILTER mw_sample_srcs EXCLUDE REGEX "/(sample_common_bin|sample_common_platform|sample_common_sensor)\\.c$")
+# No ISP: kvm_mmf_noisp.c stands in for lt6911_cmos.c.
+list(FILTER mw_sample_srcs EXCLUDE REGEX "/(sample_common_bin|sample_common_platform)\\.c$")
 set(mw_srcs
 	${mw_sample_srcs}
-	additional/sophgo-middleware/v2/sample/common/sample_common_sensor.c
 	"${SDK}/component/isp/common/sensor_list.c")
 set_source_files_properties(${mw_srcs} PROPERTIES COMPILE_OPTIONS
 	"-ffunction-sections;-fdata-sections;-fvisibility=hidden")

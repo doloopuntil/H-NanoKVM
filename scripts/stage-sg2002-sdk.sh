@@ -15,7 +15,6 @@ UAPI=$2/interdrv/include
 SENSOR_LIST=$3/common
 MIDDLEWARE=$4
 OUT=$5
-ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 
 for path in "$MPI/include/cvi_sys.h" "$UAPI/chip/cv181x/uapi/linux" "$SENSOR_LIST/sensor_list.c" \
 	"$MIDDLEWARE/libsys.so"; do
@@ -45,10 +44,10 @@ cp "$SENSOR_LIST"/sensor_list.[ch] "$OUT/component/isp/common/"
 
 cp "$MIDDLEWARE"/lib{sys,venc,vdec,vi,vpss,vo,gdc,rgn,ini}.so "$OUT/lib/"
 
-# Sensor names come from sensor_list.c, indexed by its own enum: the override must not
-# carry a table of its own.
-! grep -q "snsr_type_name\[SAMPLE_SNS_TYPE_BUTT\] =" \
-	"$ROOT/support/sg2002/additional/sophgo-middleware/v2/sample/common/sample_common_sensor.c"
+# The LT6911 capture size comes from the server (our patch to sample_common_sensor.c). Sensor
+# names come from sensor_list.c, indexed by its own enum: the sample code must not carry a table.
+grep -q kvm_read_dimension "$OUT/sample/common/sample_common_sensor.c"
+! grep -q "snsr_type_name\[SAMPLE_SNS_TYPE_BUTT\] =" "$OUT/sample/common/sample_common_sensor.c"
 # Sophgo's name table has drifted from its enum before: check LT6911's slot.
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT

@@ -1,0 +1,87 @@
+diff --git a/sample/common/sample_common_sensor.c b/sample/common/sample_common_sensor.c
+index 41e1e87..73e2b9b 100644
+--- a/sample/common/sample_common_sensor.c
++++ b/sample/common/sample_common_sensor.c
+@@ -253,7 +253,6 @@ CVI_S32 SAMPLE_COMM_SNS_GetSize(SAMPLE_SNS_TYPE_E enMode, PIC_SIZE_E *penSize)
+ 	case VIVO_MM308M2_2M_25FPS_8BIT:
+ 	case IMGDS_MIS2008_MIPI_2M_1080P_30FPS_12BIT:
+ 	case IMGDS_MIS2008_1L_MIPI_2M_1080P_30FPS_12BIT:
+-	case LONTIUM_LT6911_2M_60FPS_8BIT:
+ 	case LONTIUM_LT7911_2M_60FPS_8BIT:
+ 	case CVSENS_CV2002_MIPI_2M_1080P_30FPS_10BIT:
+ 	case CVSENS_CV2002_MIPI_2M_1080P_30FPS_WDR2TO1:
+@@ -263,6 +262,9 @@ CVI_S32 SAMPLE_COMM_SNS_GetSize(SAMPLE_SNS_TYPE_E enMode, PIC_SIZE_E *penSize)
+ 	case CVSENS_CV2003_1L_SLAVE1_MIPI_2M_1080P_30FPS_10BIT:
+ 		*penSize = PIC_1080P;
+ 		break;
++	case LONTIUM_LT6911_2M_60FPS_8BIT:
++		*penSize = PIC_CUSTOMIZE;
++		break;
+ 	case GCORE_GC4023_MIPI_4M_30FPS_10BIT:
+ 	case GCORE_GC4653_MIPI_4M_30FPS_10BIT:
+ 	case GCORE_GC4653_SLAVE_MIPI_4M_30FPS_10BIT:
+@@ -407,6 +409,26 @@ CVI_S32 SAMPLE_COMM_SNS_GetSize(SAMPLE_SNS_TYPE_E enMode, PIC_SIZE_E *penSize)
+ /*
+  * Brief: get picture size(w*h), according enPicSize
+  */
++/* One decimal dimension from a file the server writes; the fallback when missing or invalid. */
++static CVI_U32 kvm_read_dimension(const char *path, CVI_U32 fallback)
++{
++	char buf[16];
++	char *end;
++	unsigned long value;
++	size_t len;
++	FILE *fp = fopen(path, "r");
++
++	if (!fp)
++		return fallback;
++	len = fread(buf, 1, sizeof(buf) - 1, fp);
++	fclose(fp);
++	buf[len] = '\0';
++	value = strtoul(buf, &end, 10);
++	if (end == buf || value == 0 || value > 8192)
++		return fallback;
++	return (CVI_U32)value;
++}
++
+ CVI_S32 SAMPLE_COMM_SNS_GetPicSize(PIC_SIZE_E enPicSize, SIZE_S *pstSize)
+ {
+ 	switch (enPicSize) {
+@@ -568,6 +590,15 @@ CVI_S32 SAMPLE_COMM_SNS_GetPicSize(PIC_SIZE_E enPicSize, SIZE_S *pstSize)
+ 		pstSize->u32Width = 1024;
+ 		pstSize->u32Height = 1280;
+ 		break;
++	case PIC_CUSTOMIZE:
++	{
++		pstSize->u32Width = kvm_read_dimension("/kvmapp/kvm/width", 1920);
++		pstSize->u32Height = kvm_read_dimension("/kvmapp/kvm/height", 1080);
++		printf("pstSize->u32Width = %d\n", pstSize->u32Width);
++		printf("pstSize->u32Height = %d\n", pstSize->u32Height);
++		break;
++	}
++		
+ 	default:
+ 		return CVI_FAILURE;
+ 	}
+@@ -1947,6 +1978,10 @@ static int parse_lane_id(CVI_S16 *LaneId, const char *value)
+ 				SAMPLE_PRT("lane_id parse error, is the format correct?\n");
+ 				return -1;
+ 			}
++			if ((size_t)(k - offset) >= sizeof(buf)) {
++				SAMPLE_PRT("lane_id token is too long\n");
++				return -1;
++			}
+ 			memset(buf, 0, sizeof(buf));
+ 			memcpy(buf, &value[offset], k - offset);
+ 			buf[k-offset] = '\0';
+@@ -1978,6 +2013,10 @@ static int parse_pn_swap(CVI_S8 *PNSwap, const char *value)
+ 				SAMPLE_PRT("lane_id parse error, is the format correct?\n");
+ 				return -1;
+ 			}
++			if ((size_t)(k - offset) >= sizeof(buf)) {
++				SAMPLE_PRT("pn_swap token is too long\n");
++				return -1;
++			}
+ 			memset(buf, 0, sizeof(buf));
+ 			memcpy(buf, &value[offset], k - offset);
+ 			buf[k-offset] = '\0';
