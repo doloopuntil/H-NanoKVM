@@ -159,11 +159,13 @@ All on the main core or in fixed-function blocks; none needs the C906L.
 
 - **Ethernet interrupt coalescing.** The MAC (`st_gmac`, 100 Mbit) already offloads checksums and
   scatter-gather; TSO is fixed off in hardware. NAPI batching (`gro_flush_timeout` 200 us,
-  `napi_defer_hard_irqs` 2) cut receive interrupts from ~2150 to ~170 a second and changed neither
-  the frame rate nor the CPU: the softirq time is per-packet TCP work (~2200 ACKs in, ~5700
-  segments out a second), not interrupt entry. `rx-usecs` above 136 is rejected by the driver.
-  Uploads are different: there the batching saves about 14% of the CPU per MB received, so it is
-  on by default (2026-11-16).
+  `napi_defer_hard_irqs` 2) cut receive interrupts from ~2150 to ~170 a second, and `rx-usecs`
+  above 136 is rejected by the driver. Measured again on 2026-11-18 (MJPEG over HTTPS, 11.7 MB/s,
+  43 fps): the interrupt deferral raises a stream's server CPU from 43 to 60 ms per MB; for a
+  trickle of ACKs the timer-driven polls cost more than the interrupts they save. The timeout
+  alone costs nothing there. During an ISO upload with the stream open, the timeout alone moves
+  4 to 12% more data than no batching, and the deferral about 2% more again. So the default is
+  `gro_flush_timeout` 200 µs with `napi_defer_hard_irqs` 0.
 - **Zero-copy sends for plain HTTP** (`MSG_ZEROCOPY`). A kernel copy runs at ~640 MB/s here, so the
   copy it saves costs under 2% of the CPU at the 100 Mbit link rate, before its own page pinning and
   completion handling, and it would need the MJPEG response written around hyper.

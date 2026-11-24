@@ -25,7 +25,7 @@ The boot files:
 
 | Path | Holds |
 | --- | --- |
-| `fip.bin` | What the boot ROM loads: FSBL, DDR parameters, OpenSBI and U-Boot. A copy of `fip.std.bin` or `fip.od.bin`. |
+| `fip.bin` | What the boot ROM loads: FSBL, OpenSBI and U-Boot. A copy of `fip.std.bin` or `fip.od.bin`. |
 | `fip.std.bin`, `fip.od.bin` | The same with the standard and the overdrive clock tables. |
 | `boot.scr` | U-Boot script: sets the kernel command line, loads `boot.itb` and boots it. |
 | `boot.itb` | FIT image with the LZ4 kernel, the device tree and the recovery initramfs. U-Boot checks each part's SHA-256 hash before booting. |
@@ -49,7 +49,7 @@ The boot files:
 | `usb_management` | An empty file the operator creates to let the computer under control open connections to the NanoKVM over `usb0`; without it the firewall drops them in every mode. |
 | `wireguard/kvm.conf`, `wireguard/private.key` | WireGuard settings and private key (0600). |
 | `network/dns.mode`, `network/dns.servers` | DNS mode (`dhcp`/`manual`) and fixed DNS servers. |
-| `network/eth.rx-batching-off` | An empty file the operator creates to turn off Ethernet receive batching, which is on by default (fewer receive interrupts, less CPU per packet during uploads). `S30eth` reads it at the next start. |
+| `network/eth.rx-batching-off` | An empty file the operator creates to turn off Ethernet receive batching (`gro_flush_timeout` 200 µs, no interrupt deferral), which is on by default; uploads move more data with it. `S30eth` reads it at the next start. |
 | `time.json` | NTP servers and time zone. |
 | `syslog.json` | Remote syslog and log buffer settings. |
 | `system-update-signing.pub.pem` | Key that update metadata must be signed with. |

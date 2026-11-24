@@ -14,6 +14,8 @@ env:
   BUILDROOT_VERSION: "2026.05.1"
   RUST_VERSION: "1.99.0"
   LICHEERV_NANO_SDK_SHA: d88d58feca49ef15f4cc7bd1f27dbf17dc25f85e
+  # sophgo/fsbl sg200x-dev, weekly release 2026-11-06.
+  SOPHGO_FSBL_SHA: 5a80c127cf614dea7f534d5b5352886a1c720d37
   # One Sophgo weekly release (2026-08-24) for every video kernel module and middleware library,
   # and the sensor list (enum and names) that release's sample code reads.
   SOPHGO_OSDRV_SHA: 1b3a49649d18488ecf54fb4fcb6c27599e433fdc
@@ -93,7 +95,7 @@ jobs:
       - name: Fetch the licheerv external tree and the FSBL source
         run: |
           LICHEERV_EXTERNAL_SHA="$LICHEERV_EXTERNAL_SHA" scripts/fetch-licheerv-external.sh
-          LICHEERV_NANO_SDK_SHA="$LICHEERV_NANO_SDK_SHA" scripts/fetch-sg2002-boot-source.sh
+          SOPHGO_FSBL_SHA="$SOPHGO_FSBL_SHA" scripts/fetch-sg2002-boot-source.sh
 
       # The middleware, the uapi headers of the same Sophgo release, the sensor list, and from
       # the vendor SDK our kernel's ION uapi and the LT6911 sensor driver.
