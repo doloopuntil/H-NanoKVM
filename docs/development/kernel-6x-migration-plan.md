@@ -1619,6 +1619,11 @@ MaixCDK left the build on 2026-11-15, but `libkvm_mmf` still carries its names: 
 `kvm_mmf` pixel format) in the same sweep; `scripts/build-sg2002-native.sh` greps the build's
 headers for `maix`, so keep that check meaningful.
 
+`buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/` now holds only
+`fsbl-boot-guard.patch`, our patch against `sophgo/fsbl`: no vendor SDK is patched any more
+(2026-11-24). Rename the directory to what it holds (FSBL patches) in the same sweep, with the
+`hardened-sg2002-fip` package that applies it and the docs that name the path.
+
 ## 8. File-level work list
 
 This repo (`Hardened_NanoKVM`):
