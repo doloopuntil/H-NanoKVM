@@ -26,7 +26,7 @@ env:
 jobs:
   # The long part: Buildroot without its post-image step. Its handoff artifact lets
   # assemble-image be rerun on its own in minutes. Buildroot's toolchain is built first: the
-  # same GCC and musl build the Sophgo middleware and libkvm and link the server.
+  # same GCC and musl build the Sophgo middleware and libkvm_mmf and link the server.
   build-buildroot:
     runs-on: ubuntu-24.04
     # 360 minutes is the hard cap on GitHub-hosted runners.
