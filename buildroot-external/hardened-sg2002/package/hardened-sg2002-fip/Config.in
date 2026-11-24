@@ -6,14 +6,14 @@ config BR2_PACKAGE_HARDENED_SG2002_FIP
 	select BR2_PACKAGE_HOST_PYTHON3
 	select BR2_PACKAGE_HOST_PYTHON3_XZ # fiptool.py compresses U-Boot with lzma
 	help
-	  Build the vendor FSBL from the pinned LicheeRV Nano SDK twice
-	  (standard and overdrive clock tables) with the boot guard,
-	  and pack fip.std.bin and fip.od.bin with the Buildroot OpenSBI
-	  and U-Boot. fip.bin is a copy of the standard one.
+	  Build Sophgo's FSBL (sophgo/fsbl, sg200x-dev) twice (standard
+	  and overdrive clock tables) with the boot guard, and pack
+	  fip.std.bin and fip.od.bin with the Buildroot OpenSBI and
+	  U-Boot. fip.bin is a copy of the standard one.
 
-	  The source is a sparse SDK checkout made by
-	  scripts/fetch-sg2002-boot-source.sh. ddr_param.bin is the
-	  vendor's checked-in DDR training blob; no source exists.
+	  The source is a checkout made by
+	  scripts/fetch-sg2002-boot-source.sh; the board memory map is
+	  the checked-in cvi_board_memmap.h.
 
 if BR2_PACKAGE_HARDENED_SG2002_FIP
 
