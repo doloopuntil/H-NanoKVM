@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 0.4.0 / app 2.1.0
-last-checked: 2026-11-20
+last-checked: 2026-11-24
 ---
 
 # Build and deploy the server
@@ -158,14 +158,14 @@ keep the Buildroot output on a Docker volume, not a bind mount):
 2. Fetch the sources the job fetches, at the SHAs in the workflow's `env`:
    `sophgo/cvi_mpi`, `sophgo/osdrv` (`interdrv/include`),
    `sophgo/SensorSupportList` (`common`) and `sipeed/LicheeRV-Nano-Build`
-   (the ION uapi and `middleware/v2/component/isp/sensor/cv182x/lontium_lt6911`).
+   (`middleware/v2/component/isp/sensor/cv182x/lontium_lt6911`).
    Apply the patches in `support/sg2002/middleware-patches/` to cvi_mpi, in the order
    the workflow applies them.
 3. Build the middleware, stage the SDK directory, then build and check the
    library:
 
    ```sh
-   SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh cvi_mpi osdrv sdk mw "$CROSS"
+   SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh cvi_mpi osdrv mw "$CROSS"
    scripts/stage-sg2002-sdk.sh cvi_mpi osdrv sensor-list sdk mw sg2002-sdk
    scripts/build-sg2002-native.sh "$CROSS" sg2002-sdk build/native-libkvm
    ```

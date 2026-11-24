@@ -253,7 +253,7 @@ Every external source the 6.18 build fetches, all pinned to a commit or a releas
 | `buildroot.org` | The Buildroot release, and through it the cross-compiler (GCC 14.4, musl 1.2.6) that builds the whole image, native code included, and the Linux 6.18 source from kernel.org |
 | `lone0/buildroot-external-licheervnano` | The licheerv patch series and board files for Linux 6.18 |
 | `sophgo/fsbl` | The FSBL source |
-| `sipeed/LicheeRV-Nano-Build` | The LT6911 sensor driver `libkvm_mmf.so` compiles in, and the 5.10 ION uapi headers |
+| `sipeed/LicheeRV-Nano-Build` | The LT6911 sensor driver `libkvm_mmf.so` compiles in |
 | `sophgo/osdrv` and `sophgo/cvi_mpi` (one dated release) | The media kernel modules and the middleware libraries; one release for both keeps the user/kernel structs consistent |
 | `sophgo/SensorSupportList` | The sensor list the middleware build needs |
 

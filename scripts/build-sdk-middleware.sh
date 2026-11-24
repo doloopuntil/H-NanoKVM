@@ -1,25 +1,24 @@
 #!/usr/bin/env bash
 # Build libsys, libvenc, libvdec, libvi, libvpss, libvo, libgdc, librgn and libini from
 # sophgo/cvi_mpi, with the flags its Makefiles use for musl_riscv64 on CV181X.
-# Usage: build-sdk-middleware.sh MPI_DIR OSDRV_DIR SDK_DIR OUTPUT_DIR CROSS_PREFIX
-# OSDRV_DIR: sophgo/osdrv of the same release (uapi headers). SDK_DIR: ION uapi of our kernel.
+# Usage: build-sdk-middleware.sh MPI_DIR OSDRV_DIR OUTPUT_DIR CROSS_PREFIX
+# OSDRV_DIR: sophgo/osdrv of the same release (uapi headers).
 # CROSS_PREFIX: Buildroot's host/bin/riscv64-buildroot-linux-musl-.
 set -euo pipefail
 
-[ "$#" -eq 5 ] || {
-	echo "usage: $0 MPI_DIR OSDRV_DIR SDK_DIR OUTPUT_DIR CROSS_PREFIX" >&2
+[ "$#" -eq 4 ] || {
+	echo "usage: $0 MPI_DIR OSDRV_DIR OUTPUT_DIR CROSS_PREFIX" >&2
 	exit 2
 }
 MW=$1
 OSDRV_DIR=$2
-SDK_DIR=$3
-OUTPUT_DIR=$4
-PREFIX=$5
+OUTPUT_DIR=$3
+PREFIX=$4
 OPT_FLAGS=${SDK_MIDDLEWARE_OPT_FLAGS:--Os}
 UAPI="$OSDRV_DIR/interdrv/include"
 
 for path in "$MW/Makefile.param" "$UAPI/common/uapi/linux" "$UAPI/chip/cv181x/uapi/linux" \
-	"$SDK_DIR/linux_5.10/drivers/staging/android/uapi/ion_cvitek.h" "${PREFIX}gcc"; do
+	"${PREFIX}gcc"; do
 	[ -e "$path" ] || {
 		echo "missing: $path" >&2
 		exit 1
@@ -38,7 +37,6 @@ KINC="$WORK/kinc"
 mkdir -p "$KINC/linux"
 cp "$UAPI"/common/uapi/linux/* "$KINC/linux/"
 cp "$UAPI"/chip/cv181x/uapi/linux/* "$KINC/linux/"
-cp "$SDK_DIR"/linux_5.10/drivers/staging/android/uapi/ion*.h "$KINC/linux/"
 
 # The T-Head scalar extensions (as support/sg2002/cmake/buildroot-musl.cmake), no vector.
 CFLAGS="$OPT_FLAGS -march=rv64imafdc_zicsr_zifencei_xtheadba_xtheadbb_xtheadbs_xtheadcondmov"
