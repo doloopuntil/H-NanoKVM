@@ -1588,6 +1588,28 @@ modules, so measure module signing and lockdown alongside. Remaining users, in o
    the loader's defaults remain, and change the line `test-latest-buildroot-security-policy.sh`
    requires to match.
 
+### Open before Phase 7 (2026-11-25)
+
+The build fetches nothing from Sipeed's SDK any more: the FSBL comes from `sophgo/fsbl`, the
+middleware builds without the SDK's ION headers, and `libkvm_mmf` has no vendor LT6911 driver
+(`kvm_mmf_noisp.c` holds the receiver settings). All of it is tested on the Lite: both FIPs
+boot, reboot restarts on both clock profiles, MJPEG and H.264 show a picture. Left:
+
+1. Flash the image with `dfa05678` (`sample_common_sensor.c` as a `cvi_mpi` patch instead of
+   a copy) and check MJPEG, H.264 and one `reboot`. A local build matched the copy's library.
+2. LT6911C address: `S15kvmhwd` reads an answer at `0x2c` as an LT6911C, but the server, like
+   libkvm before it, always talks to the bridge at `0x2b`. Needs a Full or PCIe board with that
+   chip. A chip-ID check would also need the UXC's and D's IDs: the vendor probe knew only
+   `0x1605` (LT6911C).
+3. The raw system update's stop list names `/etc/init.d/S10udev`
+   (`server-rust/src/api/system_update.rs`); the 6.18 image has `S10udevd`.
+4. The update channels still point at `woffko/Hardened_NanoKVM`: an open decision
+   ([Updates](../guide/updates.md)), not a bug.
+5. Open the pull request from `kernel-6x-migration` to `main`.
+
+Never build the FSBL with `SWITCH_32K_XTAL`: with the RTC on XTAL32K (`RTC_CTRL0` bit 10) a
+reboot powers the Lite off (`b2ae6f74`).
+
 ### Phase 7: naming sweep
 
 Last, once 5.10 is gone: one sweep that renames symbols, files and identifiers to a
