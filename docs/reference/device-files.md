@@ -25,7 +25,7 @@ The boot files:
 
 | Path | Holds |
 | --- | --- |
-| `fip.bin` | What the boot ROM loads: FSBL, DDR parameters, OpenSBI and U-Boot. A copy of `fip.std.bin` or `fip.od.bin`. |
+| `fip.bin` | What the boot ROM loads: FSBL, OpenSBI and U-Boot. A copy of `fip.std.bin` or `fip.od.bin`. |
 | `fip.std.bin`, `fip.od.bin` | The same with the standard and the overdrive clock tables. |
 | `boot.scr` | U-Boot script: sets the kernel command line, loads `boot.itb` and boots it. |
 | `boot.itb` | FIT image with the LZ4 kernel, the device tree and the recovery initramfs. U-Boot checks each part's SHA-256 hash before booting. |

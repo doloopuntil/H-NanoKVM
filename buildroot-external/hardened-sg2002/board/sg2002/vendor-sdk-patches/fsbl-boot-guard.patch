@@ -1,8 +1,6 @@
-diff --git a/fsbl/plat/cv181x/bl2/bl2_main.c b/fsbl/plat/cv181x/bl2/bl2_main.c
-index a4f1aec18..a05fef283 100644
---- a/fsbl/plat/cv181x/bl2/bl2_main.c
-+++ b/fsbl/plat/cv181x/bl2/bl2_main.c
-@@ -46,9 +46,43 @@ int dec_verify_image(const void *image, size_t size, size_t dec_skip, struct fip
+--- a/plat/cv181x/bl2/bl2_main.c
++++ b/plat/cv181x/bl2/bl2_main.c
+@@ -47,8 +47,42 @@
  }
  #endif
  
@@ -41,12 +39,11 @@ index a4f1aec18..a05fef283 100644
 +
  void bl2_main(void)
  {
- 	enum CHIP_CLK_MODE mode;
 +	uint32_t boot_count;
  	uint32_t v = p_rom_api_get_boot_src();
  
  	if (v == BOOT_SRC_UART) {
-@@ -75,6 +109,12 @@ void bl2_main(void)
+@@ -77,6 +111,12 @@
  
  	set_rtc_en_registers();
  
@@ -56,17 +53,17 @@ index a4f1aec18..a05fef283 100644
 +	else
 +		NOTICE("boot guard: %u unconfirmed boots, watchdog left off\n", boot_count);
 +
- 	load_ddr();
- 
  #ifdef OD_CLK_SEL
-@@ -86,6 +126,10 @@ void bl2_main(void)
- 	mode = CLK_ND;
+ 	chip_clk_mode = CLK_OD;
+ #else
+@@ -84,6 +124,10 @@
+ 	chip_clk_mode = CLK_VC_OD;
  #endif
  #endif
-+	if (mode == CLK_OD && boot_count >= BOOT_GUARD_OD_TRIES) {
++	if (chip_clk_mode == CLK_OD && boot_count >= BOOT_GUARD_OD_TRIES) {
 +		NOTICE("boot guard: %u unconfirmed boots, standard clocks\n", boot_count);
-+		mode = CLK_ND;
++		chip_clk_mode = CLK_ND;
 +	}
- 	load_rest(mode);
- 	NOTICE("BL2 end.\n");
  
+ #ifdef CONFIG_SUSPEND
+ #ifndef NO_DDR_CFG //for fpga

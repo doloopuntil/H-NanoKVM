@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
-last-checked: 2026-11-18
+last-checked: 2026-11-24
 source: .github/workflows/system-image-6x.yml
 ---
 
@@ -43,7 +43,7 @@ set them).
   `sg2002-nanokvm-lite.dts` device tree;
 - the 11 Sophgo media modules (`hardened-soph-media`, `sophgo/osdrv` at `SOPHGO_OSDRV_SHA`);
 - OpenSBI 1.8.1 (licheerv's reset driver with our warm-reset patch), U-Boot 2025.10, and the
-  FSBL from the pinned LicheeRV Nano SDK, packed into
+  FSBL from `sophgo/fsbl` (branch `sg200x-dev`, pinned as `SOPHGO_FSBL_SHA`), packed into
   `fip.std.bin` and `fip.od.bin` (`hardened-sg2002-fip`; `fip.bin` is a copy of the standard
   one);
 - the root filesystem with the `kvmapp` package.
@@ -100,14 +100,16 @@ All jobs run in the `sg2002-image-build-6x` concurrency group
 | Toolchain for kernel and modules | `sophgo/host-tools` GCC | Buildroot's own musl GCC |
 | Kernel | vendor 5.10 rehydrated to 5.10.265 from `git.kernel.org` stable | Linux 6.18.29 from kernel.org through Buildroot, licheerv patches plus 0001-0007 |
 | Kernel modules | 57 in-tree, external and media modules into the `/mnt/system/ko` skeleton | built in except the 11 media modules (`hardened-soph-media`) and the Wi-Fi/BT modules |
-| FSBL, OpenSBI, U-Boot | vendor SDK stock build (U-Boot 2021.10) | FSBL from the SDK source, OpenSBI 1.8.1 and U-Boot 2025.10 from Buildroot |
+| FSBL, OpenSBI, U-Boot | vendor SDK stock build (U-Boot 2021.10) | FSBL from `sophgo/fsbl`, OpenSBI 1.8.1 and U-Boot 2025.10 from Buildroot |
 | Boot payload | `boot.sd` | `boot.scr` and the verified FIT `boot.itb` |
 | Media middleware and `libkvm` | `build-native-libkvm`, T-Head GCC 10.2 | Buildroot's GCC 14.4, in `build-buildroot` |
 | GCC runtime | `vendor-sdk-stock` | Buildroot's, in `/usr/lib` |
 | `libsns_lt6911.so` | `vendor-sdk-stock` | not shipped: nothing loads it |
 
-`ddr_param.bin` is the one vendor blob inside the FIPs: no source exists for it anywhere,
-and the SDK, licheerv and varyhin carry the same file.
+The FIPs hold no vendor blob: Sophgo's FSBL sets up the DDR from its own source and no
+longer packs `ddr_param.bin`. The board's memory map, `cvi_board_memmap.h` in the
+`hardened-sg2002-fip` package, holds the seven addresses our BL2 build reads, taken from the
+LicheeRV Nano SDK's `memmap.py`; the 5.10 carveouts (ION, ISP, boot logo) are left out.
 
 ## The 5.10 pipeline (removed)
 
@@ -249,7 +251,8 @@ Every external source the 6.18 build fetches, all pinned to a commit or a releas
 | --- | --- |
 | `buildroot.org` | The Buildroot release, and through it the cross-compiler (GCC 14.4, musl 1.2.6) that builds the whole image, native code included, and the Linux 6.18 source from kernel.org |
 | `lone0/buildroot-external-licheervnano` | The licheerv patch series and board files for Linux 6.18 |
-| `sipeed/LicheeRV-Nano-Build` | The FSBL source and the LT6911 sensor driver `libkvm_mmf.so` compiles in |
+| `sophgo/fsbl` | The FSBL source |
+| `sipeed/LicheeRV-Nano-Build` | The LT6911 sensor driver `libkvm_mmf.so` compiles in, and the 5.10 ION uapi headers |
 | `sophgo/osdrv` and `sophgo/cvi_mpi` (one dated release) | The media kernel modules and the middleware libraries; one release for both keeps the user/kernel structs consistent |
 | `sophgo/SensorSupportList` | The sensor list the middleware build needs |
 
