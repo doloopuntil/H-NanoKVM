@@ -1,6 +1,6 @@
 //! The local-tool policy of the PicoClaw runtime, which runs as root on the
 //! NanoKVM. Pure: no I/O. Control of the connected computer goes through the
-//! `nanokvm` MCP server and is untouched. What stays closed is the NanoKVM's
+//! `hnanokvm` MCP server and is untouched. What stays closed is the NanoKVM's
 //! own shell, its hardware buses, local MCP commands and every file outside
 //! the runtime's workspace.
 use crate::{AppError, Result};
@@ -8,7 +8,7 @@ use serde_json::{Map as JsonMap, Value as JsonValue};
 use std::path::{Component, Path, PathBuf};
 
 /// The MCP server the Startup job configures; the policy never disables it.
-const NANOKVM_SERVER: &str = "nanokvm";
+const HNANOKVM_MCP_SERVER: &str = "hnanokvm";
 /// Tools that act on the NanoKVM itself rather than on the connected computer.
 const DISABLED: [&str; 4] = ["exec", "serial", "spi", "i2c"];
 /// Upstream serves these allowlists by raw host access outside the workspace.
@@ -160,7 +160,7 @@ pub(crate) fn enforce(config: &mut JsonValue, home: &Path) -> Result<()> {
     {
         for (name, server) in servers.iter_mut() {
             if let Some(server) = server.as_object_mut()
-                && name != NANOKVM_SERVER
+                && name != HNANOKVM_MCP_SERVER
                 && local_command(server)
             {
                 server.insert("enabled".into(), JsonValue::Bool(false));

@@ -792,7 +792,7 @@ pub async fn mcp(headers: HeaderMap, body: Bytes) -> Result<Response> {
             json!({
                 "protocolVersion": "2024-11-05",
                 "capabilities": { "tools": {} },
-                "serverInfo": { "name": "nanokvm", "version": "1.0.0" }
+                "serverInfo": { "name": "hnanokvm", "version": "1.0.0" }
             }),
         ),
         "tools/list" => json_rpc_result(req.id, json!({ "tools": mcp_tool_definitions() })),
@@ -3372,14 +3372,14 @@ fn ensure_startup_defaults() -> Result<()> {
     );
     ensure_object_path(raw, &["tools", "mcp"]).insert("enabled".to_string(), JsonValue::Bool(true));
     let token = internal_token()?;
-    let server = ensure_object_path(raw, &["tools", "mcp", "servers", "nanokvm"]);
+    let server = ensure_object_path(raw, &["tools", "mcp", "servers", "hnanokvm"]);
     server.insert("enabled".to_string(), JsonValue::Bool(true));
     server.insert("type".to_string(), JsonValue::String("http".to_string()));
     server.insert(
         "url".to_string(),
         JsonValue::String("http://127.0.0.1:80/api/picoclaw/mcp".to_string()),
     );
-    let headers = ensure_object_path(raw, &["tools", "mcp", "servers", "nanokvm", "headers"]);
+    let headers = ensure_object_path(raw, &["tools", "mcp", "servers", "hnanokvm", "headers"]);
     headers.insert(INTERNAL_TOKEN_HEADER.to_string(), JsonValue::String(token));
     // The runtime is root: it keeps no shell, no hardware buses and no file outside its workspace.
     picoclaw_policy::enforce(&mut doc.raw, &picoclaw_home(&doc.config_path))?;
@@ -3982,12 +3982,12 @@ mod tests {
             json!({
                 "protocolVersion": "2024-11-05",
                 "capabilities": { "tools": {} },
-                "serverInfo": { "name": "nanokvm", "version": "1.0.0" }
+                "serverInfo": { "name": "hnanokvm", "version": "1.0.0" }
             }),
         );
         let value = serde_json::to_value(response).unwrap();
         assert_eq!(value["jsonrpc"], "2.0");
-        assert_eq!(value["result"]["serverInfo"]["name"], "nanokvm");
+        assert_eq!(value["result"]["serverInfo"]["name"], "hnanokvm");
     }
 
     #[test]

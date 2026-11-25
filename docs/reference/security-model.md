@@ -233,7 +233,7 @@ Known exceptions:
 - PicoClaw runs as root, so the backend enforces a local tool policy on its
   configuration at every start and at backend start: workspace restriction on, every
   workspace inside `<home>/workspace`, and the `exec`, serial, SPI and I2C tools,
-  cron commands, path allowlists and local-command MCP servers off. The `nanokvm`
+  cron commands, path allowlists and local-command MCP servers off. The `hnanokvm`
   MCP server, which controls the host, is untouched. `S96picoclaw` does not launch
   the runtime until the backend has applied the policy.
 - WireGuard: `/etc/kvm/wireguard/kvm.conf` holds only validated values, one

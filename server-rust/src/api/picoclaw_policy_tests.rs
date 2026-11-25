@@ -28,7 +28,7 @@ fn legacy() -> JsonValue {
             "mcp": {
                 "enabled": true,
                 "servers": {
-                    "nanokvm": {"enabled": true, "type": "http", "url": "http://127.0.0.1:80/api/picoclaw/mcp"},
+                    "hnanokvm": {"enabled": true, "type": "http", "url": "http://127.0.0.1:80/api/picoclaw/mcp"},
                     "shell": {"enabled": true, "command": "/bin/sh", "args": ["-c", "id"]},
                     "stdio": {"enabled": true, "type": "stdio"},
                     "remote": {"enabled": true, "type": "sse", "url": "https://mcp.invalid/sse"}
@@ -63,7 +63,7 @@ fn enforcement_closes_every_local_tool_and_keeps_remote_and_unrelated_settings()
     assert_eq!(tools["allow_write_paths"], json!([]));
     assert_eq!(tools["web"]["enabled"], true);
     let servers = &tools["mcp"]["servers"];
-    assert_eq!(servers["nanokvm"]["enabled"], true);
+    assert_eq!(servers["hnanokvm"]["enabled"], true);
     assert_eq!(servers["shell"]["enabled"], false);
     assert_eq!(servers["shell"]["args"], json!(["-c", "id"]));
     assert_eq!(servers["stdio"]["enabled"], false);
@@ -207,18 +207,18 @@ fn upstream_null_path_lists_are_accepted_and_stay_empty() {
 }
 
 #[test]
-fn only_the_nanokvm_server_is_exempt_by_name() {
+fn only_the_hnanokvm_server_is_exempt_by_name() {
     let mut config = json!({
         "tools": {"mcp": {"servers": {
-            "nanokvm": {"enabled": true, "type": "http"},
-            "nanokvm-copy": {"enabled": true, "command": "nanokvm"},
+            "hnanokvm": {"enabled": true, "type": "http"},
+            "hnanokvm-copy": {"enabled": true, "command": "hnanokvm"},
             "blank": {"enabled": true, "command": "  "}
         }}}
     });
     enforce(&mut config, home()).unwrap();
     let servers = &config["tools"]["mcp"]["servers"];
-    assert_eq!(servers["nanokvm"]["enabled"], true);
-    assert_eq!(servers["nanokvm-copy"]["enabled"], false);
+    assert_eq!(servers["hnanokvm"]["enabled"], true);
+    assert_eq!(servers["hnanokvm-copy"]["enabled"], false);
     assert_eq!(
         servers["blank"]["enabled"], true,
         "a blank command starts nothing"
