@@ -66,10 +66,10 @@ const SYSTEM_LAST_BACKUP_FILE: &str = "/etc/kvm/system-update-last-backup.json";
 const SYSTEM_BOOT_GOOD_FILE: &str = "/etc/kvm/system-update-boot-good.json";
 const SYSTEM_ROLLBACK_SCRIPT_FILE: &str = "/etc/kvm/system-update-rollback.sh";
 const SYSTEM_ROLLBACK_ATTEMPT_FILE: &str = "/etc/kvm/system-update-rollback-attempted";
-const SYSTEM_RAW_INSTALL_MARKER: &str = "/data/hardened-system-raw-update-pending.json";
+const SYSTEM_RAW_INSTALL_MARKER: &str = "/data/hnanokvm-system-raw-update-pending.json";
 // Runs the copied loader and BusyBox while the root file system is rewritten: /tmp is noexec.
 const SYSTEM_RAW_INSTALL_RUN_DIR: &str = "/run/hnanokvm-system-raw-update";
-const SYSTEM_RAW_INSTALL_LOG: &str = "/data/hardened-system-raw-update.log";
+const SYSTEM_RAW_INSTALL_LOG: &str = "/data/hnanokvm-system-raw-update.log";
 const SYSTEM_RAW_RUNTIME_LOADER: &str = "ld-musl-system-update.so.1";
 const SYSTEM_RAW_RUNTIME_LIBC: &str = "libc.so";
 const RAW_BOOT_DEVICE: &str = "/dev/mmcblk0p1";
@@ -1542,12 +1542,12 @@ RAW_WRITE_STARTED=0\n\
 SERVICES_STOPPED=0\n\
 RAW_PRESERVE_DIR=\"$PROGRESS_DIR/preserve\"\n\
 BOOT_PRESERVE_DIR=\"$RAW_PRESERVE_DIR/boot\"\n\
-BOOT_TMP_MOUNT=/tmp/hardened-boot-preserve-mount\n\
+BOOT_TMP_MOUNT=/tmp/hnanokvm-boot-preserve-mount\n\
 ROOT_PRESERVE_DIR=\"$RAW_PRESERVE_DIR/root\"\n\
 ROOT_RESTORE_DONE=\"$PROGRESS_DIR/root-restore-done\"\n\
-ROOT_TMP_MOUNT=/tmp/hardened-root-preserve-mount\n\
+ROOT_TMP_MOUNT=/tmp/hnanokvm-root-preserve-mount\n\
 kmsg() {{\n\
-  [ -w /dev/kmsg ] && $BB printf 'hardened-system-update: %s\\n' \"$1\" > /dev/kmsg || true\n\
+  [ -w /dev/kmsg ] && $BB printf 'hnanokvm-system-update: %s\\n' \"$1\" > /dev/kmsg || true\n\
 }}\n\
 log() {{\n\
   NOW=$($BB date '+%Y-%m-%d %H:%M:%S' 2>/dev/null || $BB echo unknown)\n\
@@ -1917,7 +1917,7 @@ force_root_readonly\n"
         let payload = shell_quote_path(&payload)?;
         let device = shell_quote_path(Path::new(&image.device))?;
         let message = format!("writing {}", image.label);
-        let dd_log = format!("/tmp/hardened-dd-{}.log", image.label);
+        let dd_log = format!("/tmp/hnanokvm-dd-{}.log", image.label);
         let dev_name = image.device.rsplit('/').next().unwrap_or_default();
         // dd counts whole megabytes; a size that is not a multiple of one is not checked
         let expected_records = if image.size % (1024 * 1024) == 0 {
@@ -2833,7 +2833,7 @@ fn path_arg(path: &Path) -> Result<&str> {
 fn temp_verify_path(kind: &str) -> Result<PathBuf> {
     validate_token("temporary file kind", kind)?;
     Ok(PathBuf::from(format!(
-        "/tmp/hardened-system-update-{}-{}-{kind}.tmp",
+        "/tmp/hnanokvm-system-update-{}-{}-{kind}.tmp",
         std::process::id(),
         now_unix_nanos()
     )))
@@ -3387,7 +3387,7 @@ fn temp_install_path(target: &Path) -> Result<PathBuf> {
         .and_then(|value| value.to_str())
         .ok_or_else(|| AppError::BadRequest("install filename is not UTF-8".to_string()))?;
     Ok(parent.join(format!(
-        ".hardened-system-update.{}.{}.tmp",
+        ".hnanokvm-system-update.{}.{}.tmp",
         std::process::id(),
         filename
     )))
@@ -3884,8 +3884,8 @@ mod tests {
         assert!(script.contains("ROOT_PRESERVE_DIR=\"$RAW_PRESERVE_DIR/root\""));
         assert!(script.contains("ROOT_RESTORE_DONE=\"$PROGRESS_DIR/root-restore-done\""));
         assert!(script.contains("$BB rm -f \"$ROOT_RESTORE_DONE\""));
-        assert!(!script.contains("BOOT_PRESERVE_DIR=/tmp/hardened-boot-preserve"));
-        assert!(!script.contains("ROOT_PRESERVE_DIR=/tmp/hardened-root-preserve"));
+        assert!(!script.contains("BOOT_PRESERVE_DIR=/tmp/hnanokvm-boot-preserve"));
+        assert!(!script.contains("ROOT_PRESERVE_DIR=/tmp/hnanokvm-root-preserve"));
         assert!(
             script.contains("preserve_boot_config\npreserve_root_config\nprepare_boot_readonly")
         );
@@ -3911,7 +3911,7 @@ mod tests {
         assert!(script.contains("/root/.picoclaw"));
         assert!(script.contains("drop_unsafe_preserved_kvm_state"));
         assert!(script.contains("$BB rm -f"));
-        assert!(script.contains("/data/hardened-system-raw-update-pending.json"));
+        assert!(script.contains("/data/hnanokvm-system-raw-update-pending.json"));
         assert!(script.contains("/etc/kvm/system-update-pending.json"));
         assert!(script.contains("$BB cp -a \"$SRC/.\" \"$DEST/\""));
         assert!(!script.contains("$ROOT_TMP_MOUNT/etc/kvm/system-version.json"));

@@ -205,7 +205,7 @@ impl Default for Paths {
             session_secret_file: PathBuf::from(DEFAULT_SECRET_PATH),
             web_root: PathBuf::from("/kvmapp/server/web"),
             image_directory: PathBuf::from("/data"),
-            update_cache_dir: PathBuf::from("/data/.hardened-kvmcache"),
+            update_cache_dir: PathBuf::from("/data/.hnanokvm-cache"),
             system_update_public_key: PathBuf::from("/etc/kvm/system-update-signing.pub.pem"),
             system_update_local_public_key: PathBuf::from("/etc/kvm/system-update-local.pub.pem"),
             ssh_authorized_keys: PathBuf::from("/root/.ssh/authorized_keys"),

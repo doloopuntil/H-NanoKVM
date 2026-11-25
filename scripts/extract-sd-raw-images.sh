@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat >&2 <<'USAGE'
-usage: scripts/extract-sd-raw-images.sh <hardened-sd.img|hardened-sd.img.xz> <output-dir>
+usage: scripts/extract-sd-raw-images.sh <hnanokvm-sd.img|hnanokvm-sd.img.xz> <output-dir>
 
 Extracts the boot and rootfs partitions from a full H-NanoKVM SD image
 for the experimental raw system-update bundle.

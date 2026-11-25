@@ -123,7 +123,7 @@ loss) as nvmem devices under `/sys/bus/nvmem/devices/`, in little-endian 32-bit 
 | --- | --- |
 | `/kvmapp/` | The application: `server/hnanokvm-server`, `server/web/`, `server/dl_lib/` (native libraries), `system/init.d/`, `system/keys/`, `version`. Replaced by an application update. |
 | `/kvmapp/kvm/` | Runtime state shared with the native video code: the HDMI input size (`width`, `height`), whether a signal is captured (`state`), frame rate, quality, Wi-Fi state. |
-| `/data/.hardened-kvmcache/` | Downloaded and staged updates. |
+| `/data/.hnanokvm-cache/` | Downloaded and staged updates. |
 | `/root/.picoclaw/` | PicoClaw configuration, `.security.yml` with the model API key, and `workspace/sessions/`. |
 | `/root/.tailscale/` | Tailscale state. |
 | `/tmp/hnanokvm-syslog/messages` | Local log buffer (tmpfs, lost on reboot). |

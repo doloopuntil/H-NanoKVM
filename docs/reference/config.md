@@ -66,7 +66,7 @@ are still accepted.
 | `paths.session_secret_file` | `/etc/kvm/session_secret` (unused, no longer created) |
 | `paths.web_root` | `/kvmapp/server/web` |
 | `paths.image_directory` | `/data` |
-| `paths.update_cache_dir` | `/data/.hardened-kvmcache` |
+| `paths.update_cache_dir` | `/data/.hnanokvm-cache` |
 | `paths.system_update_local_public_key` | `/etc/kvm/system-update-local.pub.pem` (set from the UI; trusted only for uploaded system bundles) |
 | `paths.system_update_public_key` | `/etc/kvm/system-update-signing.pub.pem` (copied from `/kvmapp/system/keys/` by `S95nanokvm`) |
 

@@ -5,10 +5,10 @@ then
         DATA_DEVICE=/dev/mmcblk0p3
         DATA_MOUNT=/data
         DATA_LOG=/tmp/data-mount.log
-        RAW_UPDATE_MARKER="$DATA_MOUNT/hardened-system-raw-update-pending.json"
-        RAW_RESTORE_ROOT="$DATA_MOUNT/.hardened-kvmcache/system-update/preserve/root"
-        RAW_RESTORE_DONE="$DATA_MOUNT/.hardened-kvmcache/system-update/root-restore-done"
-        RAW_RESTORE_LOG="$DATA_MOUNT/hardened-system-raw-update.log"
+        RAW_UPDATE_MARKER="$DATA_MOUNT/hnanokvm-system-raw-update-pending.json"
+        RAW_RESTORE_ROOT="$DATA_MOUNT/.hnanokvm-cache/system-update/preserve/root"
+        RAW_RESTORE_DONE="$DATA_MOUNT/.hnanokvm-cache/system-update/root-restore-done"
+        RAW_RESTORE_LOG="$DATA_MOUNT/hnanokvm-system-raw-update.log"
 
         log_data() {
                 echo "$(date '+%Y-%m-%d %H:%M:%S') $1" >> "$RAW_RESTORE_LOG" 2>/dev/null || true

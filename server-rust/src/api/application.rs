@@ -666,7 +666,7 @@ fn temp_verify_path(kind: &str) -> Result<PathBuf> {
         }
     }
     Ok(PathBuf::from(format!(
-        "/tmp/hardened-app-update-{}-{}-{kind}.tmp",
+        "/tmp/hnanokvm-app-update-{}-{}-{kind}.tmp",
         std::process::id(),
         now_unix_nanos()
     )))

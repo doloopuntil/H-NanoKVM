@@ -60,7 +60,7 @@ the Buildroot userspace or the init scripts installed in the root filesystem.
   such as the 32 MiB `/boot` that replaced the old 16 MiB one, is refused with a size error;
   the card has to be flashed once with the new image.
 - **Download and verify** fetches the system bundle into
-  `/data/.hardened-kvmcache`, checks its signed metadata, the archive digest and
+  `/data/.hnanokvm-cache`, checks its signed metadata, the archive digest and
   every payload hash, and stages it.
 - **Swap** is turned off for the write and made again afterwards: the chosen size is kept in
   `/boot/swap.size`, and the swap file is recreated at the first boot of the new system.

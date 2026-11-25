@@ -60,7 +60,7 @@ const HARDWARE_VERSION_FILE: &str = "/etc/kvm/hw";
 const ETC_HOSTNAME_FILE: &str = "/etc/hostname";
 const BOOT_HOSTNAME_FILE: &str = "/boot/hostname";
 // Volatile, so a reboot clears it: the name the services started with.
-const HOSTNAME_BOOT_NAME_FILE: &str = "/tmp/hardened-hostname-boot-name";
+const HOSTNAME_BOOT_NAME_FILE: &str = "/tmp/hnanokvm-hostname-boot-name";
 const ETC_HOSTS_FILE: &str = "/etc/hosts";
 const WEB_TITLE_FILE: &str = "/etc/kvm/web-title";
 const HDMI_DISABLE_FILE: &str = "/etc/kvm/hdmi_disable";

@@ -3398,7 +3398,7 @@ fn picoclaw_home(config_path: &Path) -> PathBuf {
 
 // S96picoclaw does not launch the runtime until this file exists, so a boot cannot start it on a
 // configuration from before the policy.
-const POLICY_MARKER: &str = "/tmp/hardened-picoclaw-policy";
+const POLICY_MARKER: &str = "/tmp/hnanokvm-picoclaw-policy";
 
 fn mark_policy_applied() {
     let _ = fs::write(POLICY_MARKER, b"ok\n");

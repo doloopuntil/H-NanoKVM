@@ -106,7 +106,7 @@ sync_agent_profile() {
 
 # The backend brings the configuration under the local tool policy first and then creates this
 # file. Without it the runtime is not started: it runs as root.
-POLICY_MARKER=/tmp/hardened-picoclaw-policy
+POLICY_MARKER=/tmp/hnanokvm-picoclaw-policy
 
 wait_for_policy() {
   tries=0

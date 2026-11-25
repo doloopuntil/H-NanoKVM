@@ -187,7 +187,7 @@ case "$BUNDLE_NAME" in
   *) die "invalid system update bundle name: $BUNDLE_NAME" ;;
 esac
 
-STAGE_DIR=$(mktemp -d "${TMPDIR:-/tmp}/hardened-raw-system-update.XXXXXX")
+STAGE_DIR=$(mktemp -d "${TMPDIR:-/tmp}/hnanokvm-raw-system-update.XXXXXX")
 trap 'rm -rf "$STAGE_DIR"' EXIT INT TERM
 
 mkdir -p "$STAGE_DIR/payload/images" "$STAGE_DIR/raw" "$OUT_DIR"

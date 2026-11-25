@@ -356,7 +356,7 @@ SDK image build is established. The selected SDK bootstrap path is documented in
 The Rust backend currently supports manual download, verification, install,
 rollback, and boot-watchdog rollback:
 
-The default update cache root is `/data/.hardened-kvmcache`. Application
+The default update cache root is `/data/.hnanokvm-cache`. Application
 updates use the `application-update` subdirectory; system updates use the
 `system-update` subdirectory so large rootfs images and rollback backups do not
 consume the root filesystem.
