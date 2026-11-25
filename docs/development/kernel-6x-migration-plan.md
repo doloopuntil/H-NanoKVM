@@ -1676,8 +1676,8 @@ the word: `bootstrap-buildroot.sh`, `configure-buildroot.sh`, `build-buildroot-r
 Later the same day: the `/data` and `/tmp` names lost `hardened-` as well (no compatibility
 with the old ones), and the `NANOKVM_*` environment variables became `HNANOKVM_*` (build
 paths, the `HNANOKVM_CONFIG` server override, the picoclaw bridge settings). The include guard
-of `nanokvm_update_edid.h` and the picoclaw policy constant `NANOKVM_SERVER` are not variables
-and stay.
+of `nanokvm_update_edid.h` is `UPDATE_EDID_H`, the picoclaw MCP server is `hnanokvm`
+(`HNANOKVM_MCP_SERVER`), and the Cargo crate is `hnanokvm-server`; no `NANOKVM_` name is left.
 
 ## 8. File-level work list
 

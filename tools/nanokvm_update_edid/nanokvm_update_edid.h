@@ -1,5 +1,5 @@
-#ifndef NANOKVM_UPDATE_EDID_H
-#define NANOKVM_UPDATE_EDID_H
+#ifndef UPDATE_EDID_H
+#define UPDATE_EDID_H
 
 #define I2C_DEVICE          "/dev/i2c-4"    // I2C 设备文件
 #define EDID_BUFFER_SIZE    256             // 最大支持的字节数
@@ -42,4 +42,4 @@ typedef enum {
     PRODUCT_UNKNOWN,
 } product_version_t;
 
-#endif  // NANOKVM_UPDATE_EDID_H
+#endif  // UPDATE_EDID_H
