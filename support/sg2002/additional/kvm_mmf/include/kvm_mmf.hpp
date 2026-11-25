@@ -59,7 +59,7 @@ void mmf_vi_frame_release(int ch);
 
 // invert format; mmf_invert_format_to_mmf() takes these input codes
 #define MMF_INPUT_FMT_NV21 8
-int mmf_invert_format_to_mmf(int maix_format);
+int mmf_invert_format_to_mmf(int input_format);
 
 // venc
 int mmf_enc_jpg_init(int ch, int w, int h, int format, int quality);

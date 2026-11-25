@@ -39,7 +39,7 @@ mod linked {
         pub fn mmf_vi_frame_map(ch: c_int) -> *mut c_void;
         pub fn mmf_vi_frame_free(ch: c_int);
         pub fn mmf_vi_frame_release(ch: c_int);
-        pub fn mmf_invert_format_to_mmf(maix_format: c_int) -> c_int;
+        pub fn mmf_invert_format_to_mmf(input_format: c_int) -> c_int;
         pub fn mmf_enc_jpg_push_with_quality(
             ch: c_int,
             data: *mut u8,

@@ -1091,12 +1091,12 @@ static CVI_S32 _mmf_init(bool check_stale)
 		if (_is_module_in_use("soph_vi") == 0) {
 			reinit_soph_vb();
 		} else {
-			printf("You may have repeatedly initialized maix multi-media!");
+			printf("You may have repeatedly initialized kvm_mmf!");
 		}
 	}
 
 	CVI_SYS_GetVersion(&stVersion);
-	SAMPLE_PRT("maix multi-media version:%s\n", stVersion.version);
+	SAMPLE_PRT("kvm_mmf version:%s\n", stVersion.version);
 
 	log_conf.enModId = CVI_ID_LOG;
 	log_conf.s32Level = CVI_DBG_DEBUG;
@@ -1196,7 +1196,7 @@ int mmf_init(void)
 {
     if (priv.mmf_used_cnt) {
 		priv.mmf_used_cnt ++;
-        // printf("maix multi-media already inited(cnt:%d)\n", priv.mmf_used_cnt);
+        // printf("kvm_mmf already inited(cnt:%d)\n", priv.mmf_used_cnt);
         return 0;
     }
 
@@ -1218,10 +1218,10 @@ int mmf_init(void)
 		close(marker_fd);
 
     if (_mmf_init(check_stale) != CVI_SUCCESS) {
-        printf("maix multi-media init failed\n");
+        printf("kvm_mmf init failed\n");
         return -1;
     } else {
-		printf("maix multi-media init ok\n");
+		printf("kvm_mmf init ok\n");
 	}
 
 	priv.mmf_used_cnt = 1;
@@ -1255,14 +1255,14 @@ int mmf_try_deinit(bool force) {
 
 	if (force) {
 		priv.mmf_used_cnt = 0;
-		printf("maix multi-media driver destroyed.\n");
+		printf("kvm_mmf driver destroyed.\n");
 		_mmf_deinit();
 	} else {
 		priv.mmf_used_cnt --;
 		if (priv.mmf_used_cnt) {
 			return 0;
 		} else {
-			printf("maix multi-media driver destroyed.\n");
+			printf("kvm_mmf driver destroyed.\n");
 			_mmf_deinit();
 		}
 	}
@@ -1508,7 +1508,7 @@ static int _mmf_add_vi_channel(int ch, int width, int height, int format) {
 	}
 
 	if (!priv.mmf_used_cnt) {
-		printf("%s: maix multi-media or vi not inited\n", __func__);
+		printf("%s: kvm_mmf or vi not inited\n", __func__);
 		return -1;
 	}
 
@@ -2198,8 +2198,8 @@ int mmf_enc_jpg_free(int ch)
 	return s32Ret;
 }
 
-int mmf_invert_format_to_mmf(int maix_format) {
-	switch (maix_format) {
+int mmf_invert_format_to_mmf(int input_format) {
+	switch (input_format) {
 		case 0:
 			return PIXEL_FORMAT_RGB_888;
 		case 1:

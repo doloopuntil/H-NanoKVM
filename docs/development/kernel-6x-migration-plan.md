@@ -1641,11 +1641,11 @@ and externals, scripts and variables, CI, image and archive names, server consta
 docs), keeping anything a deployed device reads (update target, `/kvmapp`, `/etc/kvm`
 files) stable or migrated on purpose.
 
-MaixCDK left the build on 2026-11-15, but `libkvm_mmf` still carries its names: the
-"maix multi-media" log messages and `mmf_invert_format_to_maix()` in
-`support/sg2002/additional/kvm_mmf/`. Rename them to what they are (the Sophgo media stack, a
-`kvm_mmf` pixel format) in the same sweep; `scripts/build-sg2002-native.sh` greps the build's
-headers for `maix`, so keep that check meaningful.
+MaixCDK left the build on 2026-11-15; the last `maix` names in `libkvm_mmf` are gone too
+(2026-11-25): the log messages say `kvm_mmf`, and `mmf_invert_format_to_mmf()` takes an
+`input_format`. `scripts/build-sg2002-native.sh` still greps the build's dependency files for
+`maix`, and no source of ours matches it any more, so a MaixCDK header in the build would
+still fail the check.
 
 `buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/` now holds only
 `fsbl-boot-guard.patch`, our patch against `sophgo/fsbl`: no vendor SDK is patched any more
