@@ -1,4 +1,4 @@
-# Hardened NanoKVM provisions the root password through the authenticated web
+# H-NanoKVM provisions the root password through the authenticated web
 # account setup/change flow. Permit that managed root account to use SSH while
 # continuing to reject empty passwords.
 PermitRootLogin yes

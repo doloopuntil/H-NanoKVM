@@ -263,7 +263,7 @@ cat /etc/kvm/backend
 cat /kvmapp/kvm/type
 pidof hnanokvm-server
 curl -kfsS --max-time 6 https://127.0.0.1/api/health
-tail -n 80 /tmp/nanokvm-server.log
+tail -n 80 /tmp/hnanokvm-server.log
 ```
 
 The log must include:

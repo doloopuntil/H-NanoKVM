@@ -1,6 +1,6 @@
 import type { Resolution } from '@/types';
 
-export const MOBILE_CURSOR_EVENT = 'hardened:nanokvm:mobile-cursor';
+export const MOBILE_CURSOR_EVENT = 'hnanokvm:mobile-cursor';
 
 export type MobileCursorEventDetail =
   | {

@@ -73,7 +73,7 @@ require_line 'NANOKVM_NATIVE_LIBRARY_PATH=/kvmapp/server/dl_lib:/mnt/system/usr/
 FSTAB="$ROOT/buildroot-external/hnanokvm/board/sg2002/overlay/etc/fstab"
 require_line 'tmpfs		/tmp		tmpfs	mode=1777,nosuid,nodev,noexec	0	0' "$FSTAB"
 require_line 'tmpfs		/dev/shm	tmpfs	mode=1777,nosuid,nodev,noexec	0	0' "$FSTAB"
-reject_text 'mktemp -d /tmp/nanokvm-server' "$ROOT/kvmapp/system/init.d/S95nanokvm"
+reject_text 'mktemp -d /tmp/hnanokvm-server' "$ROOT/kvmapp/system/init.d/S95nanokvm"
 reject_text 'KVM_SYSTEM_RUNTIME_DIR' "$ROOT/kvmapp/system/init.d/S95nanokvm"
 reject_text '"/tmp/hardened-system-raw-update"' "$ROOT/server-rust/src/api/system_update.rs"
 test -f "$ROOT/kvmapp/system/keys/update-keys/README.md"

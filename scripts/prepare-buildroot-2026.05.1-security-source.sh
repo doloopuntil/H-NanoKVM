@@ -37,15 +37,15 @@ verify_sha256 "$PATCH_DIR/0003-hostapd-disable-11be.patch" \
 	"hostapd 11be removal patch"
 
 if [ -e "$OUTPUT_DIR" ]; then
-	[ -f "$OUTPUT_DIR/.hardened-security-backports" ] || {
+	[ -f "$OUTPUT_DIR/.hnanokvm-security-backports" ] || {
 		echo "refusing unknown existing security source: $OUTPUT_DIR" >&2
 		exit 1
 	}
-	grep -qx 'buildroot=2026.05.1' "$OUTPUT_DIR/.hardened-security-backports"
-	grep -qx 'openssh=10.6p2' "$OUTPUT_DIR/.hardened-security-backports"
-	grep -qx 'hostapd=2.12-no-11be' "$OUTPUT_DIR/.hardened-security-backports"
+	grep -qx 'buildroot=2026.05.1' "$OUTPUT_DIR/.hnanokvm-security-backports"
+	grep -qx 'openssh=10.6p2' "$OUTPUT_DIR/.hnanokvm-security-backports"
+	grep -qx 'hostapd=2.12-no-11be' "$OUTPUT_DIR/.hnanokvm-security-backports"
 	for patch_file in "$PATCH_DIR"/*.patch; do
-		grep -Fqx "$(sha256sum "$patch_file")" "$OUTPUT_DIR/.hardened-security-backports" || {
+		grep -Fqx "$(sha256sum "$patch_file")" "$OUTPUT_DIR/.hnanokvm-security-backports" || {
 			echo "existing security source was prepared with a different patch series" >&2
 			exit 1
 		}
@@ -106,7 +106,7 @@ ln -s "$SHARED_DL_DIR" "$SOURCE/dl"
 	printf 'openssh=10.6p2\n'
 	printf 'hostapd=2.12-no-11be\n'
 	sha256sum "$PATCH_DIR"/*.patch
-} > "$SOURCE/.hardened-security-backports"
+} > "$SOURCE/.hnanokvm-security-backports"
 
 mv "$SOURCE" "$OUTPUT_DIR"
 printf 'Prepared Buildroot security source: %s\n' "$OUTPUT_DIR"

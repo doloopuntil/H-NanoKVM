@@ -21,10 +21,10 @@ use crate::{
 const CONFIG_FILE: &str = "/etc/kvm/syslog.json";
 const SYSLOGD_DEFAULT_FILE: &str = "/etc/default/syslogd";
 const KLOGD_DEFAULT_FILE: &str = "/etc/default/klogd";
-const LOG_DIR: &str = "/tmp/hardened-syslog";
-const LOG_FILE: &str = "/tmp/hardened-syslog/messages";
+const LOG_DIR: &str = "/tmp/hnanokvm-syslog";
+const LOG_FILE: &str = "/tmp/hnanokvm-syslog/messages";
 const FALLBACK_LOG_FILES: &[&str] = &["/var/log/messages", "/tmp/messages"];
-const BACKEND_LOG_FILE: &str = "/tmp/nanokvm-server.log";
+const BACKEND_LOG_FILE: &str = "/tmp/hnanokvm-server.log";
 const MAX_LOG_VIEW_BYTES: usize = 256 * 1024;
 const DEFAULT_LINES: usize = 200;
 const MAX_LINES: usize = 1000;
@@ -373,7 +373,7 @@ mod tests {
     fn renders_local_syslogd_args_in_tmpfs() {
         let args = build_syslogd_args(&SystemLogConfig::default());
 
-        assert!(args.contains("-O /tmp/hardened-syslog/messages"));
+        assert!(args.contains("-O /tmp/hnanokvm-syslog/messages"));
         assert!(args.contains("-s 200"));
         assert!(!args.contains("-R"));
     }

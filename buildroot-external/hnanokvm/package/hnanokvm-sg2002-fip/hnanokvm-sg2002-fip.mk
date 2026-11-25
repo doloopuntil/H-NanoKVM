@@ -25,12 +25,12 @@ HNANOKVM_SG2002_FIP_PATCH_FILES = \
 	$(BR2_EXTERNAL_HNANOKVM_PATH)/board/sg2002/fsbl-patches/fsbl-boot-guard.patch
 
 define HNANOKVM_SG2002_FIP_APPLY_PATCHES
-	if [ ! -e $(@D)/.stamp_hardened_patched ]; then \
+	if [ ! -e $(@D)/.stamp_hnanokvm_patched ]; then \
 		$(foreach p,$(HNANOKVM_SG2002_FIP_SDK_PATCH_FILES),\
 			patch -d $(@D) -p2 --forward --batch -F 0 -i $(p) &&) \
 		$(foreach p,$(HNANOKVM_SG2002_FIP_PATCH_FILES),\
 			patch -d $(@D) -p1 --forward --batch -F 0 -i $(p) &&) \
-		touch $(@D)/.stamp_hardened_patched; \
+		touch $(@D)/.stamp_hnanokvm_patched; \
 	fi
 endef
 HNANOKVM_SG2002_FIP_POST_RSYNC_HOOKS += HNANOKVM_SG2002_FIP_APPLY_PATCHES

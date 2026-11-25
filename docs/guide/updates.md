@@ -6,7 +6,7 @@ last-checked: 2026-10-28
 
 # Updates
 
-Hardened NanoKVM has two kinds of update, and they are kept apart on purpose:
+H-NanoKVM has two kinds of update, and they are kept apart on purpose:
 replacing the application is safe to retry, while a system update rewrites SD-card
 partitions and can leave a device that does not boot.
 

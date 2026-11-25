@@ -835,7 +835,7 @@ mod tests {
     }
 
     #[test]
-    fn validates_hardened_update_filenames() {
+    fn validates_kvmapp_update_filenames() {
         assert!(validate_update_filename("hardened-nanokvm-kvmapp-0.1.1.tar.gz").is_ok());
         assert!(validate_update_filename("nanokvm_1.2.3.tar.gz").is_ok());
         assert!(validate_update_filename("../hardened-nanokvm-kvmapp-0.1.1.tar.gz").is_err());

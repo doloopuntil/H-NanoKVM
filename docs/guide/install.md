@@ -6,7 +6,7 @@ last-checked: 2026-11-13
 
 # Install: flash an SD card
 
-This guide writes a complete Hardened NanoKVM image to a microSD card and takes
+This guide writes a complete H-NanoKVM image to a microSD card and takes
 the device through its first boot. A fresh card is also the recovery path: there
 is no password reset, so lost credentials mean reflashing.
 
@@ -45,7 +45,7 @@ Balena Etcher is the safest default option on Windows because it handles `.xz`
 images and reduces the chance of selecting the wrong disk.
 
 1. Download and install Balena Etcher from <https://etcher.balena.io/>.
-2. Download the Hardened NanoKVM `.img.xz` SD-card image.
+2. Download the H-NanoKVM `.img.xz` SD-card image.
 3. Insert the microSD card into your card reader.
 4. Open Balena Etcher.
 5. Click **Flash from file** and select the downloaded `.img.xz`.

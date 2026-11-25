@@ -186,7 +186,7 @@ The full SD image is built from source in CI; see
   pending/backup markers. `/api/system-update/confirm` writes a boot-good
   marker after basic health checks. `/api/system-update/rollback` restores the
   latest backup manually. These routes do not reboot automatically.
-- UI branding for Hardened NanoKVM, About-page app version display from
+- UI branding for H-NanoKVM, About-page app version display from
   `/kvmapp/version`, and an unauthenticated current-version endpoint used by
   the login screen.
 - Guarded raw system-update switch in System updates. Raw boot/rootfs writes

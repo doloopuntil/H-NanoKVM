@@ -25,7 +25,7 @@ use crate::{
 };
 
 /// Issuer shown in the authenticator app's account list.
-const TOTP_ISSUER: &str = "Hardened NanoKVM";
+const TOTP_ISSUER: &str = "H-NanoKVM";
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]

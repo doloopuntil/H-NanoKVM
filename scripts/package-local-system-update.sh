@@ -50,7 +50,7 @@ REQUIRED_APP_VERSION=$REQUIRED_APP_VERSION
 EOF
 
 cat > "$OUT_DIR/README.txt" <<EOF
-Unsigned Hardened NanoKVM system update $SYSTEM_VERSION (raw boot and rootfs images).
+Unsigned H-NanoKVM system update $SYSTEM_VERSION (raw boot and rootfs images).
 
 Sign it with the private key whose public half you set under Settings > System > Updates >
 Local update key, then upload the result with "Upload system bundle":

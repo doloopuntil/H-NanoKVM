@@ -2,11 +2,11 @@
 
 DAEMON=/sbin/syslogd
 PIDFILE=/var/run/syslogd.pid
-LOG_DIR=/tmp/hardened-syslog
+LOG_DIR=/tmp/hnanokvm-syslog
 
 SYSLOGD_ARGS=
 [ -r /etc/default/syslogd ] && . /etc/default/syslogd
-SYSLOGD_ARGS="${SYSLOGD_ARGS:--O /tmp/hardened-syslog/messages -s 200 -b 1 -l 8}"
+SYSLOGD_ARGS="${SYSLOGD_ARGS:--O /tmp/hnanokvm-syslog/messages -s 200 -b 1 -l 8}"
 
 start() {
     printf 'Starting syslogd: '

@@ -365,7 +365,7 @@ fn write_config(config: &TimeConfig) -> Result<()> {
 
 fn write_ntp_conf(servers: &[String]) -> Result<()> {
     let mut content = String::new();
-    content.push_str("# Managed by Hardened NanoKVM.\n");
+    content.push_str("# Managed by H-NanoKVM.\n");
     content.push_str("driftfile /var/lib/ntp/ntp.drift\n\n");
     for server in servers {
         content.push_str("server ");

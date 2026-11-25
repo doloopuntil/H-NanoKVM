@@ -12,7 +12,7 @@ last-checked: 2026-10-26
 > `woffko/Hardened_NanoKVM` at RC12. Channels for 0.4.0 are not set up yet; see
 > [Updates](../guide/updates.md).
 
-Hardened NanoKVM system updates are published separately from `kvmapp`
+H-NanoKVM system updates are published separately from `kvmapp`
 application updates. Application updates continue to use signed `latest.json`
 metadata from the GitHub latest-release endpoint.
 System updates use their own channel metadata so that a kernel/rootfs release

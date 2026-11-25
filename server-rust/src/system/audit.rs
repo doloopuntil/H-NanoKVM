@@ -1,13 +1,13 @@
 use std::os::unix::net::UnixDatagram;
 
 const SYSLOG_SOCKET: &str = "/dev/log";
-const TAG: &str = "hardened-nanokvm-auth";
+const TAG: &str = "hnanokvm-auth";
 
 pub fn test_message(source: &str) {
     emit(
         14,
         &format!(
-            "hardened-nanokvm: test syslog message source={}",
+            "hnanokvm: test syslog message source={}",
             sanitize(source)
         ),
     );

@@ -68,7 +68,7 @@ const SYSTEM_ROLLBACK_SCRIPT_FILE: &str = "/etc/kvm/system-update-rollback.sh";
 const SYSTEM_ROLLBACK_ATTEMPT_FILE: &str = "/etc/kvm/system-update-rollback-attempted";
 const SYSTEM_RAW_INSTALL_MARKER: &str = "/data/hardened-system-raw-update-pending.json";
 // Runs the copied loader and BusyBox while the root file system is rewritten: /tmp is noexec.
-const SYSTEM_RAW_INSTALL_RUN_DIR: &str = "/run/hardened-system-raw-update";
+const SYSTEM_RAW_INSTALL_RUN_DIR: &str = "/run/hnanokvm-system-raw-update";
 const SYSTEM_RAW_INSTALL_LOG: &str = "/data/hardened-system-raw-update.log";
 const SYSTEM_RAW_RUNTIME_LOADER: &str = "ld-musl-system-update.so.1";
 const SYSTEM_RAW_RUNTIME_LIBC: &str = "libc.so";

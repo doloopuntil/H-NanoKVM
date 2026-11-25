@@ -1,4 +1,4 @@
-# Hardened NanoKVM documentation
+# H-NanoKVM documentation
 
 Current for **system 0.4.0 / application 2.1.0**. Every current page starts with
 a small header: `status`, the release it `applies-to`, and when it was

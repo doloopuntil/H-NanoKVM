@@ -336,10 +336,10 @@ mod tests {
 
     #[test]
     fn otpauth_uri_escapes_the_label() {
-        let uri = otpauth_uri("Hardened NanoKVM", "admin@kvm", "ABCD");
-        assert!(uri.starts_with("otpauth://totp/Hardened%20NanoKVM:admin%40kvm?"));
+        let uri = otpauth_uri("Example Co", "admin@kvm", "ABCD");
+        assert!(uri.starts_with("otpauth://totp/Example%20Co:admin%40kvm?"));
         assert!(uri.contains("secret=ABCD"));
-        assert!(uri.contains("issuer=Hardened%20NanoKVM"));
+        assert!(uri.contains("issuer=Example%20Co"));
         assert!(uri.contains("algorithm=SHA1"));
         assert!(uri.contains("digits=6"));
         assert!(uri.contains("period=30"));

@@ -82,7 +82,7 @@ ntp_servers() {
 write_ntp_conf() {
     tmp=/etc/.ntp.conf.tmp
     {
-        echo "# Managed by Hardened NanoKVM."
+        echo "# Managed by H-NanoKVM."
         echo "driftfile /var/lib/ntp/ntp.drift"
         echo
         ntp_servers | while read -r server; do

@@ -12,8 +12,8 @@ WATCHDOG_PID_FILE=/tmp/nanokvm-watchdog.pid
 TRANSFER_MARKER=/tmp/.download_in_progress
 H264_SAFE_MODE_FILE=/etc/kvm/h264_safe_mode
 SERVER_SOURCE_DIR=/kvmapp/server
-SERVER_LOG=/tmp/nanokvm-server.log
-SERVER_PID_FILE=/tmp/nanokvm-server.pid
+SERVER_LOG=/tmp/hnanokvm-server.log
+SERVER_PID_FILE=/tmp/hnanokvm-server.pid
 INIT_SELF="$0"
 NANOKVM_NATIVE_LIBRARY_PATH=/kvmapp/server/dl_lib:/mnt/system/usr/lib:/mnt/system/usr/lib/3rd
 # Buildroot's musl 1.2.6 (the vendor T-Head loader misaligned thread stacks).

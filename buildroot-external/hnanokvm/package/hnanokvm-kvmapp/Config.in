@@ -1,8 +1,8 @@
 config BR2_PACKAGE_HNANOKVM_KVMAPP
-	bool "Hardened NanoKVM application payload"
+	bool "H-NanoKVM application payload"
 	depends on BR2_RISCV_64
 	help
-	  Install the locally built Hardened NanoKVM Rust application, native
+	  Install the locally built H-NanoKVM Rust application, native
 	  runtime libraries, web assets, hardware helper, init scripts, and
 	  system-update public key into the SG2002 rootfs.
 

@@ -126,5 +126,5 @@ loss) as nvmem devices under `/sys/bus/nvmem/devices/`, in little-endian 32-bit 
 | `/data/.hardened-kvmcache/` | Downloaded and staged updates. |
 | `/root/.picoclaw/` | PicoClaw configuration, `.security.yml` with the model API key, and `workspace/sessions/`. |
 | `/root/.tailscale/` | Tailscale state. |
-| `/tmp/hardened-syslog/messages` | Local log buffer (tmpfs, lost on reboot). |
-| `/tmp/nanokvm-server.log`, `/tmp/picoclaw.log` | Server and PicoClaw logs. |
+| `/tmp/hnanokvm-syslog/messages` | Local log buffer (tmpfs, lost on reboot). |
+| `/tmp/hnanokvm-server.log`, `/tmp/picoclaw.log` | Server and PicoClaw logs. |

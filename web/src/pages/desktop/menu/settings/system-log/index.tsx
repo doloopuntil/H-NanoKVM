@@ -12,7 +12,7 @@ import { SectionDivider, SettingRow } from '@/components/setting-rows.tsx';
 
 import type { SystemActionHandle, SystemActionState } from '../system/action.ts';
 
-const defaultLogFile = '/tmp/hardened-syslog/messages';
+const defaultLogFile = '/tmp/hnanokvm-syslog/messages';
 
 const defaultConfig: SystemLogConfig = {
   remoteEnabled: false,

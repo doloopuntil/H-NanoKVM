@@ -175,6 +175,6 @@ if [ "$EXPECTED_BACKEND" != "any" ] && [ "$backend" != "$EXPECTED_BACKEND" ]; th
   die "unexpected /etc/kvm/backend: $backend, expected $EXPECTED_BACKEND"
 fi
 
-echo "validated Hardened NanoKVM rootfs: $IMAGE"
+echo "validated H-NanoKVM rootfs: $IMAGE"
 echo "kvmapp version: $version"
 echo "backend: $backend"
