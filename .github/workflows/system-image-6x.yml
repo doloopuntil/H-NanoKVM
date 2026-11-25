@@ -195,7 +195,7 @@ jobs:
           corepack pnpm --dir web build
           HNANOKVM_XTHEADVECTOR_PREFIX="$CROSS_PREFIX" server-rust/scripts/build-linked-libkvm.sh
           grep -q "Poly1305 for RISC-V, CRYPTOGAMS" \
-            server-rust/target/riscv64gc-unknown-linux-musl/release/nanokvm-rust-server
+            server-rust/target/riscv64gc-unknown-linux-musl/release/hnanokvm-server
           RUST_TARGET=riscv64gc-unknown-linux-musl \
             APP_VERSION="$(cat kvmapp/version)" \
             scripts/package-rust-kvmapp.sh

@@ -8,7 +8,7 @@ use std::fs;
 use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 
-use nanokvm_rust_server::front_panel::{Command, IfaceFlags, KeyEvent, Platform, System};
+use hnanokvm_server::front_panel::{Command, IfaceFlags, KeyEvent, Platform, System};
 
 /// Scenarios where the port deliberately differs from the C++, and why.
 const EXPECTED_DIFFERENCES: &[(&str, &str)] = &[(

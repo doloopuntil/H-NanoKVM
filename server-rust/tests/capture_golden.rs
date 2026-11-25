@@ -13,7 +13,7 @@ use std::{
     thread::{self, JoinHandle},
 };
 
-use nanokvm_rust_server::capture::{Command, Engine, GpioHandle, Platform, ThreadHandle, ViState};
+use hnanokvm_server::capture::{Command, Engine, GpioHandle, Platform, ThreadHandle, ViState};
 
 /// Scenarios where the port deliberately differs from the C++, and why; their traces are
 /// checked against `tests/capture/fixed`.

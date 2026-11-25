@@ -3,7 +3,7 @@
 
 use std::{collections::HashSet, collections::VecDeque, fs, path::Path};
 
-use nanokvm_rust_server::capture::media::{MAX_PACKS, Media, Mmf, Stream, VencCfg, ViFrame};
+use hnanokvm_server::capture::media::{MAX_PACKS, Media, Mmf, Stream, VencCfg, ViFrame};
 
 /// Scenarios whose Rust trace differs from the C++ golden on purpose, with the reason; their
 /// Rust traces are checked against `tests/media/fixed`.

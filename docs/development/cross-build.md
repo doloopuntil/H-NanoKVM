@@ -206,7 +206,7 @@ build/artifacts/nanokvm-kvmapp-rust.tar.gz.sha256
 The binary should be a dynamic RISC-V executable using the NanoKVM loader:
 
 ```sh
-file server-rust/target/riscv64gc-unknown-linux-musl/release/nanokvm-rust-server
+file server-rust/target/riscv64gc-unknown-linux-musl/release/hnanokvm-server
 file build/kvmapp-rust/kvmapp/server/hnanokvm-server
 ```
 

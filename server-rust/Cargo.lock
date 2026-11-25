@@ -910,6 +910,55 @@ dependencies = [
 ]
 
 [[package]]
+name = "hnanokvm-server"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "async-stream",
+ "async-trait",
+ "axum",
+ "base64 0.23.1",
+ "bytes",
+ "chacha20",
+ "cipher 0.4.4",
+ "data-encoding",
+ "flate2",
+ "futures-util",
+ "getrandom 0.4.3",
+ "hmac",
+ "hyper",
+ "hyper-util",
+ "instant-acme",
+ "mimalloc",
+ "nix",
+ "poly1305",
+ "qrcodegen",
+ "rcgen",
+ "rtc",
+ "rustix",
+ "serde",
+ "serde_json",
+ "serde_norway",
+ "sha1",
+ "sha2",
+ "subtle",
+ "tar",
+ "tempfile",
+ "thiserror 2.0.21",
+ "time",
+ "tokio",
+ "tokio-rustls",
+ "tokio-tungstenite",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "urlencoding",
+ "webrtc",
+]
+
+[[package]]
 name = "http"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1425,55 +1474,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
-]
-
-[[package]]
-name = "nanokvm-rust-server"
-version = "0.1.0"
-dependencies = [
- "argon2",
- "async-stream",
- "async-trait",
- "axum",
- "base64 0.23.1",
- "bytes",
- "chacha20",
- "cipher 0.4.4",
- "data-encoding",
- "flate2",
- "futures-util",
- "getrandom 0.4.3",
- "hmac",
- "hyper",
- "hyper-util",
- "instant-acme",
- "mimalloc",
- "nix",
- "poly1305",
- "qrcodegen",
- "rcgen",
- "rtc",
- "rustix",
- "serde",
- "serde_json",
- "serde_norway",
- "sha1",
- "sha2",
- "subtle",
- "tar",
- "tempfile",
- "thiserror 2.0.21",
- "time",
- "tokio",
- "tokio-rustls",
- "tokio-tungstenite",
- "tower",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "url",
- "urlencoding",
- "webrtc",
 ]
 
 [[package]]

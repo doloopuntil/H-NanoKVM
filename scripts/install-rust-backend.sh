@@ -2,7 +2,7 @@
 set -eu
 
 if [ "${1:-}" = "" ]; then
-  echo "usage: $0 /path/to/nanokvm-rust-server" >&2
+  echo "usage: $0 /path/to/hnanokvm-server" >&2
   exit 2
 fi
 

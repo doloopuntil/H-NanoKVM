@@ -355,7 +355,7 @@ over the account.
 Manual deployment to a test device:
 
 ```sh
-scp server-rust/target/riscv64gc-unknown-linux-musl/release/nanokvm-rust-server root@nanokvm:/tmp/hnanokvm-server.rust
+scp server-rust/target/riscv64gc-unknown-linux-musl/release/hnanokvm-server root@nanokvm:/tmp/hnanokvm-server.rust
 scp scripts/install-rust-backend.sh root@nanokvm:/tmp/install-rust-backend.sh
 ssh root@nanokvm 'sh /tmp/install-rust-backend.sh /tmp/hnanokvm-server.rust'
 ```

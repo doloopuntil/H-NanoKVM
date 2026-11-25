@@ -3,7 +3,7 @@ use axum::{
     http::{HeaderMap, StatusCode, Uri, header},
     response::{IntoResponse, Redirect, Response},
 };
-use nanokvm_rust_server::{
+use hnanokvm_server::{
     api::{compatibility, cpu_clock, monitor, picoclaw, ssh_keys, system_firewall, tls_switch, vm},
     capture,
     config::Config,

@@ -23,9 +23,9 @@ esac
 
 if [ -z "$RUST_BINARY" ]; then
   if [ -n "$RUST_TARGET" ]; then
-    RUST_BINARY="$ROOT_DIR/server-rust/target/$RUST_TARGET/release/nanokvm-rust-server"
+    RUST_BINARY="$ROOT_DIR/server-rust/target/$RUST_TARGET/release/hnanokvm-server"
   else
-    RUST_BINARY="$ROOT_DIR/server-rust/target/release/nanokvm-rust-server"
+    RUST_BINARY="$ROOT_DIR/server-rust/target/release/hnanokvm-server"
   fi
 fi
 
