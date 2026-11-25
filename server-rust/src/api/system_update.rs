@@ -1657,7 +1657,7 @@ stop_update_runtime() {{\n\
     /etc/init.d/S40bluetoothd \\\n\
     /etc/init.d/S30dbus \\\n\
     /etc/init.d/S21haveged \\\n\
-    /etc/init.d/S10udev \\\n\
+    /etc/init.d/S10udevd \\\n\
     /etc/init.d/S02klogd \\\n\
     /etc/init.d/S01syslogd; do\n\
     [ -x \"$INIT\" ] && \"$INIT\" stop >> \"$LOG\" 2>&1 || true\n\

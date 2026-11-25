@@ -1601,11 +1601,9 @@ boot, reboot restarts on both clock profiles, MJPEG and H.264 show a picture. Le
    libkvm before it, always talks to the bridge at `0x2b`. Needs a Full or PCIe board with that
    chip. A chip-ID check would also need the UXC's and D's IDs: the vendor probe knew only
    `0x1605` (LT6911C).
-3. The raw system update's stop list names `/etc/init.d/S10udev`
-   (`server-rust/src/api/system_update.rs`); the 6.18 image has `S10udevd`.
-4. The update channels still point at `woffko/Hardened_NanoKVM`: an open decision
+3. The update channels still point at `woffko/Hardened_NanoKVM`: an open decision
    ([Updates](../guide/updates.md)), not a bug.
-5. Open the pull request from `kernel-6x-migration` to `main`.
+4. Open the pull request from `kernel-6x-migration` to `main`.
 
 Never build the FSBL with `SWITCH_32K_XTAL`: with the RTC on XTAL32K (`RTC_CTRL0` bit 10) a
 reboot powers the Lite off (`b2ae6f74`).
