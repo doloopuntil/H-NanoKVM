@@ -47,8 +47,8 @@ const cz = {
       setupRecovery: 'Pokud toto heslo ztratíte, obnova vyžaduje přepsání SD karty',
       setupButtonText: 'Vytvořit účet',
       tips: {
-        hardenedRecovery:
-          'Tento Hardened image nepodporuje reset hesla tlačítkem BOOT. Pokud heslo ztratíte, přepište SD kartu a vytvořte nový účet.',
+        noPasswordReset:
+          'Tento H-NanoKVM image nepodporuje reset hesla tlačítkem BOOT. Pokud heslo ztratíte, přepište SD kartu a vytvořte nový účet.',
         change1: 'Upozorňujeme, že tato akce změní následující hesla:',
         change2: 'Heslo pro webové přihlášení',
         change3: 'Heslo systémového uživatele root pro přihlášení přes SSH'

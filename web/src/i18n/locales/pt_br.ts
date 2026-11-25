@@ -47,8 +47,8 @@ const pt_br = {
       setupRecovery: 'Se esta senha for perdida, a recuperação exige regravar o cartão SD',
       setupButtonText: 'Criar conta',
       tips: {
-        hardenedRecovery:
-          'Esta imagem Hardened não permite redefinir a senha pelo botão BOOT. Se a senha for perdida, regrave o cartão SD e crie uma nova conta.',
+        noPasswordReset:
+          'Esta imagem H-NanoKVM não permite redefinir a senha pelo botão BOOT. Se a senha for perdida, regrave o cartão SD e crie uma nova conta.',
         change1: 'Por favor, note que esta ação irá alterar as seguintes senhas:',
         change2: 'Senha de login da Web',
         change3: 'Senha root do sistema para login SSH'

@@ -47,8 +47,8 @@ const id = {
       setupRecovery: 'Jika kata sandi ini hilang, pemulihan memerlukan penulisan ulang kartu SD',
       setupButtonText: 'Buat akun',
       tips: {
-        hardenedRecovery:
-          'Image Hardened ini tidak mendukung reset kata sandi dari tombol BOOT. Jika kata sandi hilang, tulis ulang kartu SD dan buat akun baru.',
+        noPasswordReset:
+          'Image H-NanoKVM ini tidak mendukung reset kata sandi dari tombol BOOT. Jika kata sandi hilang, tulis ulang kartu SD dan buat akun baru.',
         change1: 'Perhatikan bahwa tindakan ini akan mengubah kata sandi berikut:',
         change2: 'Kata sandi login web',
         change3: 'Kata sandi root sistem untuk login SSH'

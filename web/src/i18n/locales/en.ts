@@ -47,8 +47,8 @@ const en = {
       setupRecovery: 'If this password is lost, recovery requires reflashing the SD card',
       setupButtonText: 'Create account',
       tips: {
-        hardenedRecovery:
-          'This Hardened image does not support password reset from the BOOT button. If the password is lost, reflash the SD card and create a new account.',
+        noPasswordReset:
+          'This H-NanoKVM image does not support password reset from the BOOT button. If the password is lost, reflash the SD card and create a new account.',
         change1: 'Please note that this action will change the following passwords:',
         change2: 'Web login password',
         change3: 'System root password for SSH login'

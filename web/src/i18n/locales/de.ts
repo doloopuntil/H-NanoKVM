@@ -48,8 +48,8 @@ const de = {
         'Wenn dieses Passwort verloren geht, muss zur Wiederherstellung die SD-Karte neu geschrieben werden',
       setupButtonText: 'Konto erstellen',
       tips: {
-        hardenedRecovery:
-          'Dieses Hardened-Image unterstützt keinen Passwort-Reset über die BOOT-Taste. Wenn das Passwort verloren geht, schreiben Sie die SD-Karte neu und erstellen Sie ein neues Konto.',
+        noPasswordReset:
+          'Dieses H-NanoKVM-Image unterstützt keinen Passwort-Reset über die BOOT-Taste. Wenn das Passwort verloren geht, schreiben Sie die SD-Karte neu und erstellen Sie ein neues Konto.',
         change1: 'Bitte beachten Sie, dass diese Aktion folgende Passwörter ändert:',
         change2: 'Web Anmelde-Passwort',
         change3: 'System-Root-Passwort für die SSH-Anmeldung'

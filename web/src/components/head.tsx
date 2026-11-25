@@ -3,7 +3,7 @@ import { useAtom } from 'jotai';
 
 import { getWebTitle } from '@/api/vm.ts';
 import { existToken } from '@/lib/cookie.ts';
-import { HARDENED_NAME } from '@/lib/hardened.ts';
+import { HNANOKVM_NAME } from '@/lib/hnanokvm.ts';
 import { webTitleAtom } from '@/jotai/settings.ts';
 
 type HeadProps = {
@@ -23,7 +23,7 @@ export const Head = ({ title = '' }: HeadProps = {}) => {
     });
   }, [setWebTitle]);
 
-  const pageTitle = webTitle || (title ? `${title} - ${HARDENED_NAME}` : '');
+  const pageTitle = webTitle || (title ? `${title} - ${HNANOKVM_NAME}` : '');
   useEffect(() => {
     if (pageTitle) document.title = pageTitle;
   }, [pageTitle]);

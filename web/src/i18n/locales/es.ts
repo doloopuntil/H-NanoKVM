@@ -49,8 +49,8 @@ const es = {
         'Si se pierde esta contraseña, la recuperación requiere volver a grabar la tarjeta SD',
       setupButtonText: 'Crear cuenta',
       tips: {
-        hardenedRecovery:
-          'Esta imagen Hardened no permite restablecer la contraseña con el botón BOOT. Si se pierde la contraseña, vuelve a grabar la tarjeta SD y crea una cuenta nueva.',
+        noPasswordReset:
+          'Esta imagen H-NanoKVM no permite restablecer la contraseña con el botón BOOT. Si se pierde la contraseña, vuelve a grabar la tarjeta SD y crea una cuenta nueva.',
         change1: 'Ten en cuenta que esta acción cambiará las siguientes contraseñas:',
         change2: 'Contraseña de acceso web',
         change3: 'Contraseña root del sistema para el acceso por SSH'

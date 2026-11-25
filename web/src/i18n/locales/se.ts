@@ -47,8 +47,8 @@ const se = {
       setupRecovery: 'Om lösenordet förloras kräver återställning att SD-kortet skrivs om',
       setupButtonText: 'Skapa konto',
       tips: {
-        hardenedRecovery:
-          'Denna Hardened-image stöder inte lösenordsåterställning via BOOT-knappen. Om lösenordet förloras, skriv om SD-kortet och skapa ett nytt konto.',
+        noPasswordReset:
+          'Denna H-NanoKVM-image stöder inte lösenordsåterställning via BOOT-knappen. Om lösenordet förloras, skriv om SD-kortet och skapa ett nytt konto.',
         change1: 'Observera att denna åtgärd ändrar följande lösenord:',
         change2: 'Webbinloggningslösenord',
         change3: 'Systemets root-lösenord för SSH-inloggning'

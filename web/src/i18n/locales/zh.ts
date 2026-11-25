@@ -45,8 +45,8 @@ const zh = {
       setupRecovery: '如果此密码丢失，恢复需要重新写入 SD 卡',
       setupButtonText: '创建账户',
       tips: {
-        hardenedRecovery:
-          '此 Hardened 镜像不支持通过 BOOT 按钮重置密码。如果密码丢失，请重新写入 SD 卡并创建新账户。',
+        noPasswordReset:
+          '此 H-NanoKVM 镜像不支持通过 BOOT 按钮重置密码。如果密码丢失，请重新写入 SD 卡并创建新账户。',
         change1: '请注意，此操作将同时更新以下密码：',
         change2: '网页的登录密码',
         change3: '用于 SSH 登录的系统 root 用户密码'

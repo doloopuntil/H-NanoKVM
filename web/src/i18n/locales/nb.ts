@@ -49,8 +49,8 @@ const nb = {
         'Hvis dette passordet mistes, krever gjenoppretting at SD-kortet skrives på nytt',
       setupButtonText: 'Opprett konto',
       tips: {
-        hardenedRecovery:
-          'Dette Hardened-imaget støtter ikke passordtilbakestilling med BOOT-knappen. Hvis passordet mistes, skriv SD-kortet på nytt og opprett en ny konto.',
+        noPasswordReset:
+          'Dette H-NanoKVM-imaget støtter ikke passordtilbakestilling med BOOT-knappen. Hvis passordet mistes, skriv SD-kortet på nytt og opprett en ny konto.',
         change1: 'Merk at denne handlingen endrer følgende passord:',
         change2: 'Passord for webinnlogging',
         change3: 'Systemets root-passord for SSH-innlogging'

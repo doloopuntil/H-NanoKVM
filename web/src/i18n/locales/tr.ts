@@ -47,8 +47,8 @@ const tr = {
       setupRecovery: 'Bu parola kaybolursa kurtarma için SD kartın yeniden yazılması gerekir',
       setupButtonText: 'Hesap oluştur',
       tips: {
-        hardenedRecovery:
-          'Bu Hardened imajı BOOT düğmesinden parola sıfırlamayı desteklemez. Parola kaybolursa SD kartı yeniden yazın ve yeni hesap oluşturun.',
+        noPasswordReset:
+          'Bu H-NanoKVM imajı BOOT düğmesinden parola sıfırlamayı desteklemez. Parola kaybolursa SD kartı yeniden yazın ve yeni hesap oluşturun.',
         change1: 'Bu işlem şu şifreleri değiştiricektir:',
         change2: 'Arayüz giriş şifresi',
         change3: 'SSH girişi için root sistem şifresi'

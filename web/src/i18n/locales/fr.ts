@@ -49,8 +49,8 @@ const fr = {
         'Si ce mot de passe est perdu, la récupération nécessite de réécrire la carte SD',
       setupButtonText: 'Créer le compte',
       tips: {
-        hardenedRecovery:
-          'Cette image Hardened ne permet pas de réinitialiser le mot de passe avec le bouton BOOT. Si le mot de passe est perdu, réécrivez la carte SD et créez un nouveau compte.',
+        noPasswordReset:
+          'Cette image H-NanoKVM ne permet pas de réinitialiser le mot de passe avec le bouton BOOT. Si le mot de passe est perdu, réécrivez la carte SD et créez un nouveau compte.',
         change1: 'Veuillez noter que cette action modifiera les mots de passe suivants :',
         change2: 'Mot de passe de connexion Web',
         change3: 'Mot de passe racine du système pour la connexion SSH'

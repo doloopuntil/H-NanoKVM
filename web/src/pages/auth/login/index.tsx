@@ -9,11 +9,11 @@ import * as totpApi from '@/api/auth-totp.ts';
 import * as api from '@/api/auth.ts';
 import { existToken, setCsrfToken } from '@/lib/cookie.ts';
 import {
-  formatHardenedVersion,
-  HARDENED_LOGO_SRC,
-  HARDENED_NAME,
-  HARDENED_VERSION
-} from '@/lib/hardened.ts';
+  formatHNanoKvmVersion,
+  HNANOKVM_LOGO_SRC,
+  HNANOKVM_NAME,
+  HNANOKVM_VERSION
+} from '@/lib/hnanokvm.ts';
 import { Head } from '@/components/head.tsx';
 
 import { Tips } from './tips.tsx';
@@ -27,7 +27,7 @@ export const Login = (): ReactElement => {
   const [setupRequired, setSetupRequired] = useState<boolean | null>(null);
   const [totpRequired, setTotpRequired] = useState(false);
   const [useBackupCode, setUseBackupCode] = useState(false);
-  const [displayVersion, setDisplayVersion] = useState(HARDENED_VERSION);
+  const [displayVersion, setDisplayVersion] = useState(HNANOKVM_VERSION);
   const [logoPressed, setLogoPressed] = useState(false);
   const logoTimerRef = useRef<number | null>(null);
 
@@ -53,7 +53,7 @@ export const Login = (): ReactElement => {
     getCurrentVersion()
       .then((rsp: any) => {
         if (rsp.code === 0) {
-          setDisplayVersion(formatHardenedVersion(rsp.data?.current));
+          setDisplayVersion(formatHNanoKvmVersion(rsp.data?.current));
         }
       })
       .catch(() => undefined);
@@ -243,15 +243,15 @@ export const Login = (): ReactElement => {
         >
           <div className="flex flex-col items-center justify-center pb-5">
             <div
-              className={`hardened-login-logo flex h-18 w-75 cursor-pointer items-center justify-center rounded-sm ${
-                logoPressed ? 'hardened-login-logo--active' : ''
+              className={`hnanokvm-login-logo flex h-18 w-75 cursor-pointer items-center justify-center rounded-sm ${
+                logoPressed ? 'hnanokvm-login-logo--active' : ''
               }`}
               onClick={pressLogo}
             >
               <img
                 id="logo"
-                src={HARDENED_LOGO_SRC}
-                alt={HARDENED_NAME}
+                src={HNANOKVM_LOGO_SRC}
+                alt={HNANOKVM_NAME}
                 className="size-full object-contain"
               />
             </div>

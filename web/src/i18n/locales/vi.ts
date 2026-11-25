@@ -47,8 +47,8 @@ const vi = {
       setupRecovery: 'Nếu mất mật khẩu này, việc khôi phục cần ghi lại thẻ SD',
       setupButtonText: 'Tạo tài khoản',
       tips: {
-        hardenedRecovery:
-          'Image Hardened này không hỗ trợ đặt lại mật khẩu bằng nút BOOT. Nếu mất mật khẩu, hãy ghi lại thẻ SD và tạo tài khoản mới.',
+        noPasswordReset:
+          'Image H-NanoKVM này không hỗ trợ đặt lại mật khẩu bằng nút BOOT. Nếu mất mật khẩu, hãy ghi lại thẻ SD và tạo tài khoản mới.',
         change1: 'Lưu ý rằng thao tác này sẽ thay đổi các mật khẩu sau:',
         change2: 'Mật khẩu đăng nhập web',
         change3: 'Mật khẩu root hệ thống để đăng nhập SSH'

@@ -48,8 +48,8 @@ const ca = {
         'Si es perd aquesta contrasenya, la recuperació requereix tornar a gravar la targeta SD',
       setupButtonText: 'Crea el compte',
       tips: {
-        hardenedRecovery:
-          'Aquesta imatge Hardened no admet restablir la contrasenya amb el botó BOOT. Si es perd la contrasenya, torna a gravar la targeta SD i crea un compte nou.',
+        noPasswordReset:
+          'Aquesta imatge H-NanoKVM no admet restablir la contrasenya amb el botó BOOT. Si es perd la contrasenya, torna a gravar la targeta SD i crea un compte nou.',
         change1: 'Aquesta acció canviarà les següents contrasenyes:',
         change2: "Contrasenya d'inici de sessió web",
         change3: "Contrasenya root del sistema per a l'inici de sessió SSH"

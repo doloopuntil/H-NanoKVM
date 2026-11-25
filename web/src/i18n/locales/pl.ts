@@ -48,8 +48,8 @@ const pl = {
         'Jeśli to hasło zostanie utracone, odzyskanie dostępu wymaga ponownego zapisania karty SD',
       setupButtonText: 'Utwórz konto',
       tips: {
-        hardenedRecovery:
-          'Ten obraz Hardened nie obsługuje resetu hasła przyciskiem BOOT. Jeśli hasło zostanie utracone, zapisz ponownie kartę SD i utwórz nowe konto.',
+        noPasswordReset:
+          'Ten obraz H-NanoKVM nie obsługuje resetu hasła przyciskiem BOOT. Jeśli hasło zostanie utracone, zapisz ponownie kartę SD i utwórz nowe konto.',
         change1: 'Pamiętaj, że ta operacja zmieni następujące hasła:',
         change2: 'Hasło logowania web',
         change3: 'Hasło roota systemu do logowania przez SSH'

@@ -49,8 +49,8 @@ const it = {
         'Se questa password viene persa, il recupero richiede la riscrittura della scheda SD',
       setupButtonText: 'Crea account',
       tips: {
-        hardenedRecovery:
-          'Questa immagine Hardened non supporta il reset della password dal pulsante BOOT. Se la password viene persa, riscrivi la scheda SD e crea un nuovo account.',
+        noPasswordReset:
+          'Questa immagine H-NanoKVM non supporta il reset della password dal pulsante BOOT. Se la password viene persa, riscrivi la scheda SD e crea un nuovo account.',
         change1: 'Tieni presente che questa azione modificherà le seguenti password:',
         change2: 'Password di accesso web',
         change3: "Password root di sistema per l'accesso SSH"

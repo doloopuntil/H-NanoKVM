@@ -2,8 +2,8 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="web/public/hardened-logo-dark.svg">
-    <img src="web/public/hardened-logo.svg" alt="H-NanoKVM logo" width="720">
+    <source media="(prefers-color-scheme: dark)" srcset="web/public/hnanokvm-logo-dark.svg">
+    <img src="web/public/hnanokvm-logo.svg" alt="H-NanoKVM logo" width="720">
   </picture>
 </p>
 

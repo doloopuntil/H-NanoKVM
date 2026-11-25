@@ -46,8 +46,8 @@ const ko = {
       setupRecovery: '이 비밀번호를 잃어버리면 복구를 위해 SD 카드를 다시 기록해야 합니다',
       setupButtonText: '계정 만들기',
       tips: {
-        hardenedRecovery:
-          '이 Hardened 이미지는 BOOT 버튼을 통한 암호 재설정을 지원하지 않습니다. 암호를 잃어버리면 SD 카드를 다시 기록하고 새 계정을 만드세요.',
+        noPasswordReset:
+          '이 H-NanoKVM 이미지는 BOOT 버튼을 통한 암호 재설정을 지원하지 않습니다. 암호를 잃어버리면 SD 카드를 다시 기록하고 새 계정을 만드세요.',
         change1: '이 작업을 수행하면 다음 비밀번호가 변경됩니다:',
         change2: '웹 로그인 비밀번호',
         change3: 'SSH 로그인용 시스템 루트 비밀번호'

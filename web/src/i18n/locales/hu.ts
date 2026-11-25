@@ -47,8 +47,8 @@ const hu = {
       setupRecovery: 'Ha ez a jelszó elveszik, a helyreállításhoz újra kell írni az SD-kártyát',
       setupButtonText: 'Fiók létrehozása',
       tips: {
-        hardenedRecovery:
-          'Ez a Hardened image nem támogatja a jelszó visszaállítását a BOOT gombbal. Ha a jelszó elveszik, írja újra az SD-kártyát és hozzon létre új fiókot.',
+        noPasswordReset:
+          'Ez a H-NanoKVM image nem támogatja a jelszó visszaállítását a BOOT gombbal. Ha a jelszó elveszik, írja újra az SD-kártyát és hozzon létre új fiókot.',
         change1: 'Vegye figyelembe, hogy ez a művelet a következő jelszavakat módosítja:',
         change2: 'Webes bejelentkezési jelszó',
         change3: 'Rendszer root jelszava az SSH-bejelentkezéshez'

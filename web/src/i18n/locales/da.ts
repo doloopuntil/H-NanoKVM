@@ -47,8 +47,8 @@ const da = {
       setupRecovery: 'Hvis adgangskoden mistes, kræver gendannelse at SD-kortet skrives igen',
       setupButtonText: 'Opret konto',
       tips: {
-        hardenedRecovery:
-          'Dette Hardened image understøtter ikke nulstilling af adgangskode med BOOT-knappen. Hvis adgangskoden mistes, skriv SD-kortet igen og opret en ny konto.',
+        noPasswordReset:
+          'Dette H-NanoKVM image understøtter ikke nulstilling af adgangskode med BOOT-knappen. Hvis adgangskoden mistes, skriv SD-kortet igen og opret en ny konto.',
         change1: 'Bemærk, at denne handling ændrer følgende adgangskoder:',
         change2: 'Adgangskode til weblogin',
         change3: 'Systemets root-adgangskode til SSH-login'

@@ -123,12 +123,12 @@ body {
   }
 }
 
-.hardened-login-logo {
+.hnanokvm-login-logo {
   position: relative;
   transform: translateZ(0);
 }
 
-.hardened-login-logo::after {
+.hnanokvm-login-logo::after {
   content: '';
   position: absolute;
   inset: 4px;
@@ -139,15 +139,15 @@ body {
   transform: scale(0.98);
 }
 
-.hardened-login-logo--active {
-  animation: hardened-login-logo-press 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+.hnanokvm-login-logo--active {
+  animation: hnanokvm-login-logo-press 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.hardened-login-logo--active::after {
-  animation: hardened-login-logo-pulse 680ms ease-out;
+.hnanokvm-login-logo--active::after {
+  animation: hnanokvm-login-logo-pulse 680ms ease-out;
 }
 
-@keyframes hardened-login-logo-press {
+@keyframes hnanokvm-login-logo-press {
   0% {
     transform: translateZ(0) scale(1);
   }
@@ -162,7 +162,7 @@ body {
   }
 }
 
-@keyframes hardened-login-logo-pulse {
+@keyframes hnanokvm-login-logo-pulse {
   0% {
     opacity: 0.55;
     transform: scale(0.98);
@@ -174,12 +174,12 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hardened-login-logo--active,
-  .hardened-login-logo--active::after {
+  .hnanokvm-login-logo--active,
+  .hnanokvm-login-logo--active::after {
     animation: none;
   }
 
-  .hardened-login-logo--active::after {
+  .hnanokvm-login-logo--active::after {
     opacity: 0.35;
     transform: scale(1);
   }

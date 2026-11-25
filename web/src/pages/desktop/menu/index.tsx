@@ -5,7 +5,7 @@ import { useAtomValue } from 'jotai';
 import { GripVerticalIcon } from 'lucide-react';
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 
-import { HARDENED_MARK_SRC, HARDENED_NAME, HARDENED_SHORT_NAME } from '@/lib/hardened.ts';
+import { HNANOKVM_MARK_SRC, HNANOKVM_NAME, HNANOKVM_SHORT_NAME } from '@/lib/hnanokvm.ts';
 import { keyboardLedStatusVisibleAtom, menuDisabledItemsAtom } from '@/jotai/settings.ts';
 import { useMenuBounds } from '@/hooks/useMenuBounds.ts';
 import { useMenuVisibility } from '@/hooks/useMenuVisibility.ts';
@@ -109,9 +109,9 @@ export const Menu = () => {
 
               <div
                 className="flex size-7.5 items-center justify-center select-none"
-                title={HARDENED_NAME}
+                title={HNANOKVM_NAME}
               >
-                <img src={HARDENED_MARK_SRC} alt={HARDENED_SHORT_NAME} className="size-6" />
+                <img src={HNANOKVM_MARK_SRC} alt={HNANOKVM_SHORT_NAME} className="size-6" />
               </div>
               <Divider orientation="vertical" />
 

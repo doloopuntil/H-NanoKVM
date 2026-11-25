@@ -47,8 +47,8 @@ const fi = {
       setupRecovery: 'Jos tämä salasana katoaa, palautus vaatii SD-kortin kirjoittamisen uudelleen',
       setupButtonText: 'Luo tili',
       tips: {
-        hardenedRecovery:
-          'Tämä Hardened-image ei tue salasanan palautusta BOOT-painikkeella. Jos salasana katoaa, kirjoita SD-kortti uudelleen ja luo uusi tili.',
+        noPasswordReset:
+          'Tämä H-NanoKVM-image ei tue salasanan palautusta BOOT-painikkeella. Jos salasana katoaa, kirjoita SD-kortti uudelleen ja luo uusi tili.',
         change1: 'Huomaa, että tämä toiminto muuttaa seuraavat salasanat:',
         change2: 'Verkkokirjautumisen salasana',
         change3: 'Järjestelmän root-salasana SSH-kirjautumiseen'

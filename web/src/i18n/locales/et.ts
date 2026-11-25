@@ -47,8 +47,8 @@ const et = {
       setupRecovery: 'Kui see parool kaob, nõuab taastamine SD-kaardi uuesti kirjutamist',
       setupButtonText: 'Loo konto',
       tips: {
-        hardenedRecovery:
-          'See Hardened image ei toeta parooli lähtestamist BOOT-nupuga. Kui parool kaob, kirjuta SD-kaart uuesti ja loo uus konto.',
+        noPasswordReset:
+          'See H-NanoKVM image ei toeta parooli lähtestamist BOOT-nupuga. Kui parool kaob, kirjuta SD-kaart uuesti ja loo uus konto.',
         change1: 'Pane tähele, et see toiming muudab järgmisi paroole:',
         change2: 'Veebi sisselogimise parool',
         change3: 'Süsteemi root-parool SSH-sisselogimiseks'

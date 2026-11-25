@@ -49,8 +49,8 @@ const nl = {
         'Als dit wachtwoord verloren gaat, moet de SD-kaart opnieuw worden geschreven voor herstel',
       setupButtonText: 'Account maken',
       tips: {
-        hardenedRecovery:
-          'Deze Hardened-image ondersteunt geen wachtwoordreset via de BOOT-knop. Als het wachtwoord verloren gaat, schrijf de SD-kaart opnieuw en maak een nieuw account.',
+        noPasswordReset:
+          'Deze H-NanoKVM-image ondersteunt geen wachtwoordreset via de BOOT-knop. Als het wachtwoord verloren gaat, schrijf de SD-kaart opnieuw en maak een nieuw account.',
         change1: 'Houd er rekening mee dat deze actie de volgende wachtwoorden zal wijzigen:',
         change2: 'Web login wachtwoord',
         change3: 'Systeem root-wachtwoord voor SSH-inlog'

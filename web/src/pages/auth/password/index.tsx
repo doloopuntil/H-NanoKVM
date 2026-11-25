@@ -173,9 +173,9 @@ export const Password = () => {
               <li>{t('auth.tips.change3')}</li>
             </ul>
             <div className="text-red-500">
-              {t('auth.tips.hardenedRecovery', {
+              {t('auth.tips.noPasswordReset', {
                 defaultValue:
-                  'This Hardened image does not support password reset from the BOOT button. If the password is lost, reflash the SD card and create a new account.'
+                  'This H-NanoKVM image does not support password reset from the BOOT button. If the password is lost, reflash the SD card and create a new account.'
               })}
             </div>
           </div>
