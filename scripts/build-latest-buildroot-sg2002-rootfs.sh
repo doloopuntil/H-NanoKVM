@@ -47,7 +47,7 @@ fi
 if [ "$TOOLCHAIN_ONLY" = 1 ]; then
   EXTRA_MAKE_ARGS="$EXTRA_MAKE_ARGS toolchain"
 elif grep -qx 'BR2_PACKAGE_HARDENED_NANOKVM_KVMAPP=y' "$OUTPUT_DIR/.config"; then
-  [ -x "$KVMAPP_DIR/server/NanoKVM-Server" ] || {
+  [ -x "$KVMAPP_DIR/server/hnanokvm-server" ] || {
     echo "missing built Hardened NanoKVM payload: $KVMAPP_DIR" >&2
     exit 1
   }

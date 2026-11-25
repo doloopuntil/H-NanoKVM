@@ -207,7 +207,7 @@ The binary should be a dynamic RISC-V executable using the NanoKVM loader:
 
 ```sh
 file server-rust/target/riscv64gc-unknown-linux-musl/release/nanokvm-rust-server
-file build/kvmapp-rust/kvmapp/server/NanoKVM-Server
+file build/kvmapp-rust/kvmapp/server/hnanokvm-server
 ```
 
 Expected shape:
@@ -217,7 +217,7 @@ ELF 64-bit LSB pie executable, UCB RISC-V, dynamically linked,
 interpreter /lib/ld-musl-riscv64.so.1
 ```
 
-If `file build/kvmapp-rust/kvmapp/server/NanoKVM-Server` reports `x86-64`, stop
+If `file build/kvmapp-rust/kvmapp/server/hnanokvm-server` reports `x86-64`, stop
 and rebuild before publishing or installing the archive.
 
 ## Manual Device Install
@@ -239,8 +239,8 @@ tar xf /tmp/nanokvm-kvmapp-rust.tar -C /
 cp /kvmapp/system/init.d/S95nanokvm /etc/init.d/S95nanokvm
 chmod 0755 /etc/init.d/S95nanokvm \
   /kvmapp/system/init.d/S95nanokvm \
-  /kvmapp/server/NanoKVM-Server \
-  /kvmapp/backends/NanoKVM-Server.rust
+  /kvmapp/server/hnanokvm-server \
+  /kvmapp/backends/hnanokvm-server.rust
 mkdir -p /etc/kvm /kvmapp/kvm
 printf 'rust\n' > /etc/kvm/backend
 printf 'mjpeg\n' > /kvmapp/kvm/type
@@ -261,7 +261,7 @@ On the device:
 cat /kvmapp/version
 cat /etc/kvm/backend
 cat /kvmapp/kvm/type
-pidof NanoKVM-Server
+pidof hnanokvm-server
 curl -kfsS --max-time 6 https://127.0.0.1/api/health
 tail -n 80 /tmp/nanokvm-server.log
 ```
@@ -301,7 +301,7 @@ HTTP/TLS responses.
 
 The init script also starts a local health watchdog. If `/api/health` fails
 repeatedly, it writes `/etc/kvm/h264_safe_mode`, forces `/kvmapp/kvm/type` to
-`mjpeg`, and restarts only `NanoKVM-Server`.
+`mjpeg`, and restarts only `hnanokvm-server`.
 
 ## SD And Raw System Update Builds
 

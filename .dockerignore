@@ -1,7 +1,7 @@
 Dockerfile
 !server/go.mod
 server/go.sum
-server/NanoKVM-Server
+server/hnanokvm-server
 web
 
 support/sg2002/kvm_vision_test/build

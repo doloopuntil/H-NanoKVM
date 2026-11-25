@@ -608,7 +608,7 @@ contained musl (1.2.5) all have the bug; Buildroot 2026.05.1's musl is 1.2.6.
 
 **State on `main` [V]** (commits `0a8281e` and `2db2d56`, first developed on
 `rust-dependency-updates`):
-`NanoKVM-Server`, `nanokvm-hwmon` and `kvm_system` run on
+`hnanokvm-server`, `nanokvm-hwmon` and `kvm_system` run on
 `/lib/ld-musl-riscv64.so.1` (Buildroot musl 1.2.6); `kvm_system`'s interpreter is
 set with `patchelf` in CI; the vendor loader and `dl_lib/libc.so` are no longer
 shipped. The vendor-built native libraries (`libkvm`, `libkvm_mmf`, cvi_mpi, closed
@@ -1651,6 +1651,12 @@ headers for `maix`, so keep that check meaningful.
 `fsbl-boot-guard.patch`, our patch against `sophgo/fsbl`: no vendor SDK is patched any more
 (2026-11-24). Rename the directory to what it holds (FSBL patches) in the same sweep, with the
 `hardened-sg2002-fip` package that applies it and the docs that name the path.
+
+Decided 2026-11-25: the update target stays `sg2002-hnanokvm-sd` (SoC plus product already
+follows the convention, and a rename would strand installed systems), and the `sg2002`
+directories (`board/sg2002/`, `support/sg2002/`) stay. The server binary is now
+`hnanokvm-server` (branch `phase7/hnanokvm-server`), with the Go backend and backend-switch
+leftovers removed. Still on the old lower-case form: `/tmp/nanokvm-server.log` and `.pid`.
 
 ## 8. File-level work list
 

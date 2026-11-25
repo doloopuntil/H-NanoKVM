@@ -322,25 +322,14 @@ fn resolve_update_root(extracted: &Path) -> Result<PathBuf> {
 
 fn validate_update_root(root: &Path) -> Result<()> {
     for relative in [
-        "server/NanoKVM-Server",
+        "server/hnanokvm-server",
         "system/init.d/S95nanokvm",
-        "backends/NanoKVM-Server.rust",
+        "backends/hnanokvm-server.rust",
     ] {
         let path = root.join(relative);
         if !path.is_file() {
             return Err(AppError::BadRequest(format!(
                 "update archive is missing {relative}"
-            )));
-        }
-    }
-    for relative in [
-        "backends/NanoKVM-Server.go",
-        "server/NanoKVM-Server.go",
-        "server/NanoKVM-Server.go.bak",
-    ] {
-        if root.join(relative).exists() {
-            return Err(AppError::BadRequest(format!(
-                "update archive contains forbidden legacy Go backend file: {relative}"
             )));
         }
     }
@@ -607,16 +596,6 @@ fn verify_sha512(path: &Path, expected: &str) -> Result<()> {
 fn validate_update_tree_has_no_symlinks(root: &Path) -> Result<()> {
     let mut stack = vec![root.to_path_buf()];
     while let Some(path) = stack.pop() {
-        if matches!(
-            path.file_name().and_then(OsStr::to_str),
-            Some("switch-backend-go.sh" | "switch-backend-rust.sh")
-        ) {
-            let relative = path.strip_prefix(root).unwrap_or(&path);
-            return Err(AppError::BadRequest(format!(
-                "update archive contains forbidden backend switch script: {}",
-                relative.display()
-            )));
-        }
         let metadata = fs::symlink_metadata(&path)?;
         if metadata.file_type().is_symlink() {
             let relative = path.strip_prefix(root).unwrap_or(&path);
@@ -895,22 +874,6 @@ mod tests {
     }
 
     #[test]
-    fn rejects_go_backend_in_update_root() {
-        let dir = tempfile::tempdir().unwrap();
-        let root = dir.path();
-        fs::create_dir_all(root.join("server")).unwrap();
-        fs::create_dir_all(root.join("system/init.d")).unwrap();
-        fs::create_dir_all(root.join("backends")).unwrap();
-        fs::write(root.join("server/NanoKVM-Server"), b"rust").unwrap();
-        fs::write(root.join("system/init.d/S95nanokvm"), b"init").unwrap();
-        fs::write(root.join("backends/NanoKVM-Server.rust"), b"rust").unwrap();
-        fs::write(root.join("backends/NanoKVM-Server.go"), b"go").unwrap();
-
-        let err = validate_update_root(root).unwrap_err();
-        assert!(err.to_string().contains("legacy Go backend"));
-    }
-
-    #[test]
     fn rejects_legacy_app_migration_artifacts_in_update_root() {
         for relative in [
             "kvm_new_app",
@@ -923,9 +886,9 @@ mod tests {
             fs::create_dir_all(root.join("server")).unwrap();
             fs::create_dir_all(root.join("system/init.d")).unwrap();
             fs::create_dir_all(root.join("backends")).unwrap();
-            fs::write(root.join("server/NanoKVM-Server"), b"rust").unwrap();
+            fs::write(root.join("server/hnanokvm-server"), b"rust").unwrap();
             fs::write(root.join("system/init.d/S95nanokvm"), b"init").unwrap();
-            fs::write(root.join("backends/NanoKVM-Server.rust"), b"rust").unwrap();
+            fs::write(root.join("backends/hnanokvm-server.rust"), b"rust").unwrap();
             if relative == "jpg_stream" {
                 fs::create_dir(root.join(relative)).unwrap();
             } else {
@@ -940,36 +903,15 @@ mod tests {
     }
 
     #[test]
-    fn rejects_backend_switch_script_in_update_root() {
-        let dir = tempfile::tempdir().unwrap();
-        let root = dir.path();
-        fs::create_dir_all(root.join("server")).unwrap();
-        fs::create_dir_all(root.join("system/init.d")).unwrap();
-        fs::create_dir_all(root.join("backends")).unwrap();
-        fs::create_dir_all(root.join("system/scripts")).unwrap();
-        fs::write(root.join("server/NanoKVM-Server"), b"rust").unwrap();
-        fs::write(root.join("system/init.d/S95nanokvm"), b"init").unwrap();
-        fs::write(root.join("backends/NanoKVM-Server.rust"), b"rust").unwrap();
-        fs::write(
-            root.join("system/scripts/switch-backend-rust.sh"),
-            b"switch",
-        )
-        .unwrap();
-
-        let err = validate_update_root(root).unwrap_err();
-        assert!(err.to_string().contains("backend switch"));
-    }
-
-    #[test]
     fn rejects_symlink_in_update_root() {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path();
         fs::create_dir_all(root.join("server")).unwrap();
         fs::create_dir_all(root.join("system/init.d")).unwrap();
         fs::create_dir_all(root.join("backends")).unwrap();
-        fs::write(root.join("server/NanoKVM-Server"), b"rust").unwrap();
+        fs::write(root.join("server/hnanokvm-server"), b"rust").unwrap();
         fs::write(root.join("system/init.d/S95nanokvm"), b"init").unwrap();
-        fs::write(root.join("backends/NanoKVM-Server.rust"), b"rust").unwrap();
+        fs::write(root.join("backends/hnanokvm-server.rust"), b"rust").unwrap();
         symlink("/etc/shadow", root.join("server/web")).unwrap();
 
         let err = validate_update_root(root).unwrap_err();

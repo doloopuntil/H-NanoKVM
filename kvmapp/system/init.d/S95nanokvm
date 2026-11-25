@@ -88,13 +88,13 @@ stop_server_process() {
         fi
     fi
     rm -f "$SERVER_PID_FILE"
-    killall NanoKVM-Server 2>/dev/null || true
+    killall hnanokvm-server 2>/dev/null || true
     [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null
 }
 
 reboot_after_unrecoverable_server() {
     reason="$1"
-    runtime_log "NanoKVM-Server did not exit during $reason; rebooting to recover vendor video driver"
+    runtime_log "hnanokvm-server did not exit during $reason; rebooting to recover vendor video driver"
     sync
     reboot
     exit 1
@@ -145,7 +145,7 @@ cleanup_server_backups() {
         /kvmapp/server/web.backup-* \
         /kvmapp/server/web.before-* \
         /kvmapp/server/web.after-* \
-        /kvmapp/server/NanoKVM-Server.before-* \
+        /kvmapp/server/hnanokvm-server.before-* \
         /kvmapp/server/*.before-* 2>/dev/null || true
 }
 
@@ -241,10 +241,10 @@ restore_sensor_configs() {
 
 start_server_runtime() {
     # Runs in place: /tmp is noexec. Updates replace /kvmapp by renaming, never in place.
-    server_bin="$SERVER_SOURCE_DIR/NanoKVM-Server"
+    server_bin="$SERVER_SOURCE_DIR/hnanokvm-server"
 
     : > "$SERVER_LOG" 2>/dev/null || SERVER_LOG=/dev/null
-    runtime_log "starting NanoKVM-Server from $server_bin"
+    runtime_log "starting hnanokvm-server from $server_bin"
     nohup "$NANOKVM_LOADER" --library-path "$NANOKVM_NATIVE_LIBRARY_PATH" \
         "$server_bin" >>"$SERVER_LOG" 2>&1 &
     echo $! > "$SERVER_PID_FILE"
@@ -308,7 +308,7 @@ start_watchdog() {
         while true; do
             trim_runtime_logs
             if ! server_is_running; then
-                runtime_log "NanoKVM-Server is not running; restarting in MJPEG safe mode"
+                runtime_log "hnanokvm-server is not running; restarting in MJPEG safe mode"
                 restart_server_safe
                 failures=0
                 sleep 10
@@ -336,18 +336,18 @@ start_watchdog() {
                 confirm_boot
             elif [ "$in_transfer" = 1 ] && [ "$(cat "$TRANSFER_MARKER" 2>/dev/null)" != "$marker_before" ]; then
                 # The server moved the transfer on during the check, so it is not hung.
-                runtime_log "NanoKVM-Server health check missed during an active transfer; not counted"
+                runtime_log "hnanokvm-server health check missed during an active transfer; not counted"
             else
                 failures=$((failures + 1))
-                runtime_log "NanoKVM-Server health check failed ($failures/$max_failures)"
+                runtime_log "hnanokvm-server health check failed ($failures/$max_failures)"
             fi
             check_secs=$(( $(date +%s) - check_start ))
             if [ "$check_secs" -ge 3 ]; then
-                runtime_log "NanoKVM-Server health check took ${check_secs}s (limit ${check_time}s)"
+                runtime_log "hnanokvm-server health check took ${check_secs}s (limit ${check_time}s)"
             fi
 
             if [ "$failures" -ge "$max_failures" ]; then
-                runtime_log "restarting NanoKVM-Server in MJPEG safe mode"
+                runtime_log "restarting hnanokvm-server in MJPEG safe mode"
                 restart_server_safe
                 failures=0
                 sleep 10

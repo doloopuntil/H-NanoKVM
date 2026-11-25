@@ -7,7 +7,7 @@ last-checked: 2026-11-20
 # Rust backend
 
 The Rust backend lives in `server-rust/`. It replaces upstream's Go `server/`
-and runs as `NanoKVM-Server`, keeping the rest of the NanoKVM runtime:
+and runs as `hnanokvm-server`, keeping the rest of the NanoKVM runtime:
 `libkvm_mmf.so`, the USB gadget scripts, the Sophgo multimedia stack and
 the React frontend. Its routes are listed in [Backend API](../reference/api.md)
 and its configuration in [Server configuration](../reference/config.md).
@@ -131,7 +131,7 @@ The full SD image is built from source in CI; see
   for 30 seconds, and closes a socket that cannot take a frame within 2 seconds.
   The player reconnects with a growing delay.
 - Device startup uses an idempotent `S95nanokvm`: stale `S95nanokvm.*` backup
-  scripts are moved out of boot autostart, an old `NanoKVM-Server` process is
+  scripts are moved out of boot autostart, an old `hnanokvm-server` process is
   stopped before the server starts, stale web backup directories
   are removed from `/kvmapp/server`, and port 443 is explicitly allowed for
   HTTPS.
@@ -355,9 +355,9 @@ over the account.
 Manual deployment to a test device:
 
 ```sh
-scp server-rust/target/riscv64gc-unknown-linux-musl/release/nanokvm-rust-server root@nanokvm:/tmp/NanoKVM-Server.rust
+scp server-rust/target/riscv64gc-unknown-linux-musl/release/nanokvm-rust-server root@nanokvm:/tmp/hnanokvm-server.rust
 scp scripts/install-rust-backend.sh root@nanokvm:/tmp/install-rust-backend.sh
-ssh root@nanokvm 'sh /tmp/install-rust-backend.sh /tmp/NanoKVM-Server.rust'
+ssh root@nanokvm 'sh /tmp/install-rust-backend.sh /tmp/hnanokvm-server.rust'
 ```
 
 The manual installer also removes stale backend backups and development helper

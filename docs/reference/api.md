@@ -12,7 +12,7 @@ This document maps the current Rust backend surface in `server-rust/`.
 
 ## Runtime And Serving Model
 
-- Active backend binary on device: `/kvmapp/server/NanoKVM-Server`.
+- Active backend binary on device: `/kvmapp/server/hnanokvm-server`.
 - Rust backend source: `server-rust/`.
 - Native Rust backend runtime assets: `server-rust/native/`, packaged to
   `/kvmapp/server/dl_lib` where needed.

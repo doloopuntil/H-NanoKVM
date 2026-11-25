@@ -49,8 +49,8 @@ restore_rust_elf() {
 	install -m 0755 "$source_path" "$target_path"
 }
 
-restore_rust_elf server/NanoKVM-Server kvmapp/server/NanoKVM-Server
-restore_rust_elf backends/NanoKVM-Server.rust kvmapp/backends/NanoKVM-Server.rust
+restore_rust_elf server/hnanokvm-server kvmapp/server/hnanokvm-server
+restore_rust_elf backends/hnanokvm-server.rust kvmapp/backends/hnanokvm-server.rust
 
 # Packages that copy their .ko files instead of running modules_install (aic8800-modules)
 # leave them unsigned: sign them with the kernel build's key, on kernels that sign modules.

@@ -107,8 +107,8 @@ require_dir /etc/kvm
 require_dir /mnt/data
 
 require_regular /kvmapp/version
-require_regular /kvmapp/server/NanoKVM-Server
-require_regular /kvmapp/backends/NanoKVM-Server.rust
+require_regular /kvmapp/server/hnanokvm-server
+require_regular /kvmapp/backends/hnanokvm-server.rust
 require_regular /kvmapp/system/keys/system-update-signing.pub.pem
 if [ -n "$EXPECTED_UPDATE_KEY_ID" ]; then
   [ -n "$EXPECTED_UPDATE_PUBLIC_KEY_DER_SHA256" ] || \
@@ -128,15 +128,10 @@ for script in $BOOT_INIT_SCRIPTS; do
   require_regular "/etc/init.d/$script"
 done
 
-reject_path /kvmapp/backends/NanoKVM-Server.go
-reject_path /kvmapp/server/NanoKVM-Server.go
-reject_path /kvmapp/server/NanoKVM-Server.go.bak
 reject_path /kvmapp/jpg_stream
 reject_path /kvmapp/kvm_system
 reject_path /kvmapp/kvm_new_app
 reject_path /kvmapp/kvm_new_img
-reject_path /etc/kvm/scripts/switch-backend-go.sh
-reject_path /etc/kvm/scripts/switch-backend-rust.sh
 reject_path /etc/init.d/S02udisk
 reject_path /etc/init.d/S04backlight
 reject_path /etc/init.d/S05tp

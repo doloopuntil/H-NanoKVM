@@ -20,7 +20,7 @@ web/web
 .idea
 .vscode
 
-NanoKVM-Server
+hnanokvm-server
 
 support/sg2002/kvm_vision_test/build
 support/sg2002/kvm_vision_test/dist

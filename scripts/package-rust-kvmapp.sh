@@ -50,14 +50,10 @@ elif [ ! -f "$KVMAPP_STAGE/version" ]; then
   printf '0.1.0\n' > "$KVMAPP_STAGE/version"
 fi
 
-cp "$RUST_BINARY" "$KVMAPP_STAGE/server/NanoKVM-Server"
-chmod 0755 "$KVMAPP_STAGE/server/NanoKVM-Server"
-cp "$RUST_BINARY" "$KVMAPP_STAGE/backends/NanoKVM-Server.rust"
-chmod 0755 "$KVMAPP_STAGE/backends/NanoKVM-Server.rust"
-
-rm -f "$KVMAPP_STAGE/backends/NanoKVM-Server.go" \
-  "$KVMAPP_STAGE/server/NanoKVM-Server.go" \
-  "$KVMAPP_STAGE/server/NanoKVM-Server.go.bak"
+cp "$RUST_BINARY" "$KVMAPP_STAGE/server/hnanokvm-server"
+chmod 0755 "$KVMAPP_STAGE/server/hnanokvm-server"
+cp "$RUST_BINARY" "$KVMAPP_STAGE/backends/hnanokvm-server.rust"
+chmod 0755 "$KVMAPP_STAGE/backends/hnanokvm-server.rust"
 
 mkdir -p "$KVMAPP_STAGE/server/dl_lib"
 cp -R "$NATIVE_LIB_DIR/." "$KVMAPP_STAGE/server/dl_lib/"
@@ -91,8 +87,8 @@ fi
 {
   printf 'artifact: kvmapp-rust\n'
   printf 'source: %s\n' "$(git -C "$ROOT_DIR" rev-parse --short HEAD 2>/dev/null || printf unknown)"
-  printf 'rust_binary: kvmapp/server/NanoKVM-Server\n'
-  printf 'rust_binary_sha256: %s\n' "$(sha256sum "$KVMAPP_STAGE/server/NanoKVM-Server" | awk '{print $1}')"
+  printf 'rust_binary: kvmapp/server/hnanokvm-server\n'
+  printf 'rust_binary_sha256: %s\n' "$(sha256sum "$KVMAPP_STAGE/server/hnanokvm-server" | awk '{print $1}')"
   printf 'rust_target: %s\n' "${RUST_TARGET:-host}"
   printf 'web_dist: kvmapp/server/web\n'
   printf 'app_version: %s\n' "$(cat "$KVMAPP_STAGE/version")"
@@ -105,8 +101,8 @@ if grep -Fq "$ROOT_DIR" "$STAGE_DIR/MANIFEST.txt"; then
   exit 1
 fi
 
-if find "$KVMAPP_STAGE" \( -name 'NanoKVM-Server.go' -o -name 'NanoKVM-Server.go.bak' -o -name 'switch-backend-go.sh' -o -name 'switch-backend-rust.sh' -o -name 'jpg_stream' -o -name 'kvm_stream' -o -name 'kvm_new_app' -o -name 'kvm_new_img' \) | grep -q .; then
-  echo "legacy backend switch, Go backend, or legacy app migration artifact found in staged kvmapp" >&2
+if find "$KVMAPP_STAGE" \( -name 'jpg_stream' -o -name 'kvm_stream' -o -name 'kvm_new_app' -o -name 'kvm_new_img' \) | grep -q .; then
+  echo "legacy app migration artifact found in staged kvmapp" >&2
   exit 1
 fi
 

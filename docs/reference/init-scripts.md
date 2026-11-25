@@ -38,7 +38,7 @@ in `/etc/modprobe.d/aic8800.conf`), so `wlan0` exists before the server looks fo
 | `S49ntp` | Sets the clock with NTP at boot and keeps it in sync. |
 | `S50avahi-daemon` | mDNS, when enabled. |
 | `S50sshd` | SSH, unless `/etc/kvm/ssh_stop` exists. |
-| `S95nanokvm` | Starts the Rust server (`/kvmapp/server/NanoKVM-Server`), restores configuration after a system update, runs the health watchdog, the boot watchdog that confirms or rolls back a system update, and the check after an application update that restores the previous application when the new server never answers. |
+| `S95nanokvm` | Starts the Rust server (`/kvmapp/server/hnanokvm-server`), restores configuration after a system update, runs the health watchdog, the boot watchdog that confirms or rolls back a system update, and the check after an application update that restores the previous application when the new server never answers. |
 | `S96picoclaw` | The PicoClaw agent, when installed. |
 | `S98tailscaled` | Tailscale, when installed and enabled. |
 
