@@ -1,4 +1,4 @@
-config BR2_PACKAGE_HARDENED_SG2002_FIP
+config BR2_PACKAGE_HNANOKVM_SG2002_FIP
 	bool "SG2002 FSBL and FIPs (standard and overdrive clocks)"
 	depends on BR2_riscv
 	depends on BR2_TARGET_OPENSBI
@@ -15,9 +15,9 @@ config BR2_PACKAGE_HARDENED_SG2002_FIP
 	  scripts/fetch-sg2002-boot-source.sh; the board memory map is
 	  the checked-in cvi_board_memmap.h.
 
-if BR2_PACKAGE_HARDENED_SG2002_FIP
+if BR2_PACKAGE_HNANOKVM_SG2002_FIP
 
-config BR2_PACKAGE_HARDENED_SG2002_FIP_C906L_IMAGE
+config BR2_PACKAGE_HNANOKVM_SG2002_FIP_C906L_IMAGE
 	string "C906L firmware image"
 	help
 	  Binary loaded onto the C906L core by the FSBL. Empty leaves

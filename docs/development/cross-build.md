@@ -150,7 +150,7 @@ keep the Buildroot output on a Docker volume, not a bind mount):
    ```sh
    make latest-buildroot-bootstrap latest-buildroot-security-source
    LICHEERV_EXTERNAL_SHA=<from the workflow> scripts/fetch-licheerv-external.sh
-   HARDENED_SG2002_6X_OUTPUT_DIR=/work/br scripts/build-buildroot-6x-image.sh toolchain
+   HNANOKVM_6X_OUTPUT_DIR=/work/br scripts/build-buildroot-6x-image.sh toolchain
    CROSS=/work/br/host/bin/riscv64-buildroot-linux-musl-
    ```
 

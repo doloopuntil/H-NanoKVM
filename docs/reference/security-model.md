@@ -52,7 +52,7 @@ behaviour is in the guides ([sign-in](../guide/sign-in.md),
 ## Kernel (Linux 6.18)
 
 The kernel config is `board/sg2002/linux-6.18/nanokvm_defconfig` plus `nanokvm.fragment`
-in `buildroot-external/hardened-sg2002`. Everything the system needs is built in; only the
+in `buildroot-external/hnanokvm`. Everything the system needs is built in; only the
 media drivers and the Wi-Fi/BT stack are modules.
 
 | | Settings |

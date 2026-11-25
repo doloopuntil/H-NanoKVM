@@ -137,7 +137,7 @@ jobs:
 
       - name: Build Buildroot's cross-compiler and musl
         run: |
-          HARDENED_SG2002_6X_OUTPUT_DIR="$RUN_ROOT/buildroot" \
+          HNANOKVM_6X_OUTPUT_DIR="$RUN_ROOT/buildroot" \
             scripts/build-buildroot-6x-image.sh toolchain
           echo "CROSS_PREFIX=$RUN_ROOT/buildroot/host/bin/riscv64-buildroot-linux-musl-" >> "$GITHUB_ENV"
 
@@ -202,8 +202,8 @@ jobs:
 
       - name: Build the kernel, media modules, FIPs and rootfs with Buildroot
         run: |
-          HARDENED_SG2002_6X_OUTPUT_DIR="$RUN_ROOT/buildroot" \
-          HARDENED_SG2002_6X_REPORT_DIR="$RUN_ROOT/_reports/build" \
+          HNANOKVM_6X_OUTPUT_DIR="$RUN_ROOT/buildroot" \
+          HNANOKVM_6X_REPORT_DIR="$RUN_ROOT/_reports/build" \
           HNANOKVM_6X_HANDOFF="$RUN_ROOT/buildroot-6x-handoff.tar.zst" \
             scripts/build-buildroot-6x-image.sh build
           df -h /
@@ -287,8 +287,8 @@ jobs:
 
       - name: Assemble the boot partition and the SD image
         run: |
-          HARDENED_SG2002_6X_OUTPUT_DIR="$RUN_ROOT/buildroot" \
-          HARDENED_SG2002_6X_REPORT_DIR="$RUN_ROOT/_reports/image" \
+          HNANOKVM_6X_OUTPUT_DIR="$RUN_ROOT/buildroot" \
+          HNANOKVM_6X_REPORT_DIR="$RUN_ROOT/_reports/image" \
             scripts/build-buildroot-6x-image.sh assemble
 
       # The unsigned raw update archive, plus the script that signs it with a local key.

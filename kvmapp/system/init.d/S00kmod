@@ -4,7 +4,7 @@ if [ "$1" = "start" ]
 then
 	. /etc/profile
 	printf "load kernel module: "
-	# Media modules from hardened-soph-media, in dependency order.
+	# Media modules from hnanokvm-soph-media, in dependency order.
 	cd "/lib/modules/$(uname -r)/extra" || exit 1
 	for m in soph_sys soph_base soph_mipi_rx soph_vi soph_vpss soph_dwa soph_vo soph_rgn soph_vcodec soph_jpeg
 	do

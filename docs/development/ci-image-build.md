@@ -24,8 +24,8 @@ The run takes about 40 minutes with warm caches and longer from cold. When it fi
 Flash the `.img.xz` as described in [Install](../guide/install.md).
 
 Three places must carry the same version or the build fails: `kvmapp/version`,
-`HARDENED_NANOKVM_KVMAPP_VERSION` in
-`buildroot-external/hardened-sg2002/package/hardened-nanokvm-kvmapp/hardened-nanokvm-kvmapp.mk`,
+`HNANOKVM_KVMAPP_VERSION` in
+`buildroot-external/hnanokvm/package/hnanokvm-kvmapp/hnanokvm-kvmapp.mk`,
 and `EXPECTED_SYSTEM_VERSION` / `EXPECTED_KVMAPP_VERSION` in the workflow (both jobs that
 set them).
 
@@ -33,8 +33,8 @@ set them).
 
 `.github/workflows/system-image-6x.yml` builds the SD image from source on
 `ubuntu-latest`, `workflow_dispatch` only. One Buildroot tree, configured from
-`hardened_sg2002_nanokvm_6x_defconfig` with two external trees (this repository's
-`buildroot-external/hardened-sg2002` and the pinned licheerv tree fetched by
+`hnanokvm_6x_defconfig` with two external trees (this repository's
+`buildroot-external/hnanokvm` and the pinned licheerv tree fetched by
 `scripts/fetch-licheerv-external.sh`), builds:
 
 - the musl toolchain and the userland;
@@ -44,10 +44,10 @@ set them).
   Moving to a newer 6.18.x means the version in the defconfig, the two hash directories under
   `board/sg2002/patches`, `EXPECTED_KERNEL_RELEASE` in the workflow and the build script, and a
   check that every patch still applies, including licheerv's, which come from our fork;
-- the 11 Sophgo media modules (`hardened-soph-media`, `sophgo/osdrv` at `SOPHGO_OSDRV_SHA`);
+- the 11 Sophgo media modules (`hnanokvm-soph-media`, `sophgo/osdrv` at `SOPHGO_OSDRV_SHA`);
 - OpenSBI 1.8.1 (licheerv's reset driver with our warm-reset patch), U-Boot 2025.10, and the
   FSBL from `sophgo/fsbl` (branch `sg200x-dev`, pinned as `SOPHGO_FSBL_SHA`), packed into
-  `fip.std.bin` and `fip.od.bin` (`hardened-sg2002-fip`; `fip.bin` is a copy of the standard
+  `fip.std.bin` and `fip.od.bin` (`hnanokvm-sg2002-fip`; `fip.bin` is a copy of the standard
   one);
 - the root filesystem with the `kvmapp` package.
 
@@ -103,7 +103,7 @@ All jobs run in the `sg2002-image-build-6x` concurrency group
 | --- | --- | --- |
 | Toolchain for kernel and modules | `sophgo/host-tools` GCC | Buildroot's own musl GCC |
 | Kernel | vendor 5.10 rehydrated to 5.10.265 from `git.kernel.org` stable | Linux 6.18.65 from kernel.org through Buildroot, licheerv patches plus 0001-0007 |
-| Kernel modules | 57 in-tree, external and media modules into the `/mnt/system/ko` skeleton | built in except the 11 media modules (`hardened-soph-media`) and the Wi-Fi/BT modules |
+| Kernel modules | 57 in-tree, external and media modules into the `/mnt/system/ko` skeleton | built in except the 11 media modules (`hnanokvm-soph-media`) and the Wi-Fi/BT modules |
 | FSBL, OpenSBI, U-Boot | vendor SDK stock build (U-Boot 2021.10) | FSBL from `sophgo/fsbl`, OpenSBI 1.8.1 and U-Boot 2025.10 from Buildroot |
 | Boot payload | `boot.sd` | `boot.scr` and the verified FIT `boot.itb` |
 | Media middleware and `libkvm` | `build-native-libkvm`, T-Head GCC 10.2 | Buildroot's GCC 14.4, in `build-buildroot` |
@@ -112,7 +112,7 @@ All jobs run in the `sg2002-image-build-6x` concurrency group
 
 The FIPs hold no vendor blob: Sophgo's FSBL sets up the DDR from its own source and no
 longer packs `ddr_param.bin`. The board's memory map, `cvi_board_memmap.h` in the
-`hardened-sg2002-fip` package, holds the seven addresses our BL2 build reads, taken from the
+`hnanokvm-sg2002-fip` package, holds the seven addresses our BL2 build reads, taken from the
 LicheeRV Nano SDK's `memmap.py`; the 5.10 carveouts (ION, ISP, boot logo) are left out.
 
 ## The 5.10 pipeline (removed)
@@ -165,8 +165,8 @@ scope" below). **The pipeline no longer fetches this archive at all.**
 | The ~19 other CVI/audio middleware libraries `dl_lib` carried (`libcvi_*`, `libaac*`, `libcli.so`, etc.) and the 8 closed ISP/3A libraries (`libisp*`, `libae`/`af`/`awb`, `libcvi_bin*`, `libcvi_ispd2`) | Removed: nothing loads them. The image build fails unless `dl_lib` holds exactly `libkvm`, `libkvm_mmf` and the nine source-built middleware libraries | `scripts/build-buildroot-6x-image.sh`; `server-rust/native/README.md` ("dl_lib's prebuilt middleware") |
 | GCC runtime libs (`libstdc++`, `libgcc_s`) | Buildroot installs its own into `/usr/lib`, from the GCC that builds `libkvm` and the middleware. The T-Head GCC 10.2 copies (`libstdc++.so.6.0.28`, `libgcc_s.so.1`, `libatomic.so.1.2.0`) that `dl_lib` carried are gone, and the build fails if `dl_lib` ships any GCC runtime library. The vendor `libc.so` is no longer shipped: musl's loader serves `libc.so` itself | `scripts/build-buildroot-6x-image.sh` |
 | T-Head musl loader (`ld-musl-riscv64xthead.so.1`) | No longer shipped: its riscv64 `__clone` misaligns thread stacks, so everything runs on Buildroot's musl 1.2.6 loader ([riscv64 thread stack alignment](riscv-musl-stack-alignment.md)) | same |
-| `libsns_lt6911.so` (LT6911 HDMI sensor plugin) | Sourced from `vendor-sdk-stock` too, from real checked-in C source in the pinned vendor SDK commit (`middleware/v2/component/isp/sensor/cv182x/lontium_lt6911/`, `sg200x` symlinked to `cv182x`). No longer byte-identical to an unmodified vendor build, deliberately: `vendor-sdk-patches/lt6911-sensor-id-probe-removed.patch` removes the chip-ID probe, which never succeeds on this board while HDMI capture works without it. The other files `vendor-sdk-stock` produces are untouched, except `fip.bin` (next row) | `server-rust/native/README.md` ("libc.so, GCC runtime, loaders, and libsns_lt6911.so"); `buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/lt6911-sensor-id-probe-removed.patch` |
-| `fip.bin`, `fip.std.bin`, `fip.od.bin` (FSBL, OpenSBI, U-Boot) | `vendor-sdk-stock` builds with `vendor-sdk-patches/fsbl-overdrive-clocks.patch`, which sets `CONFIG_OD_CLK_SEL=y` in the board defconfig: the FSBL's overdrive table runs the C906 at 1050 MHz instead of 850 MHz, the video encoder at 515 MHz instead of 396 MHz, and raises VDDC from 0.96 V to 1.00 V. That build is kept as `fip.od.bin`; `build-vendor-sdk-stock.sh` then rebuilds only the FSBL with `CONFIG_OD_CLK_SEL=n` for the standard-clock `fip.bin`. The boot partition carries both, plus `fip.std.bin` as the standard copy; the server copies one over `fip.bin` (Settings > System > Performance). New images boot with standard clocks. System updates ship all three | `fsbl/plat/cv181x/platform.c` (`sys_pll_od`) in the pinned vendor SDK; `scripts/build-vendor-sdk-stock.sh`; `buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/fsbl-overdrive-clocks.patch` |
+| `libsns_lt6911.so` (LT6911 HDMI sensor plugin) | Sourced from `vendor-sdk-stock` too, from real checked-in C source in the pinned vendor SDK commit (`middleware/v2/component/isp/sensor/cv182x/lontium_lt6911/`, `sg200x` symlinked to `cv182x`). No longer byte-identical to an unmodified vendor build, deliberately: `fsbl-patches/lt6911-sensor-id-probe-removed.patch` removes the chip-ID probe, which never succeeds on this board while HDMI capture works without it. The other files `vendor-sdk-stock` produces are untouched, except `fip.bin` (next row) | `server-rust/native/README.md` ("libc.so, GCC runtime, loaders, and libsns_lt6911.so"); `buildroot-external/hnanokvm/board/sg2002/fsbl-patches/lt6911-sensor-id-probe-removed.patch` |
+| `fip.bin`, `fip.std.bin`, `fip.od.bin` (FSBL, OpenSBI, U-Boot) | `vendor-sdk-stock` builds with `fsbl-patches/fsbl-overdrive-clocks.patch`, which sets `CONFIG_OD_CLK_SEL=y` in the board defconfig: the FSBL's overdrive table runs the C906 at 1050 MHz instead of 850 MHz, the video encoder at 515 MHz instead of 396 MHz, and raises VDDC from 0.96 V to 1.00 V. That build is kept as `fip.od.bin`; `build-vendor-sdk-stock.sh` then rebuilds only the FSBL with `CONFIG_OD_CLK_SEL=n` for the standard-clock `fip.bin`. The boot partition carries both, plus `fip.std.bin` as the standard copy; the server copies one over `fip.bin` (Settings > System > Performance). New images boot with standard clocks. System updates ship all three | `fsbl/plat/cv181x/platform.c` (`sys_pll_od`) in the pinned vendor SDK; `scripts/build-vendor-sdk-stock.sh`; `buildroot-external/hnanokvm/board/sg2002/fsbl-patches/fsbl-overdrive-clocks.patch` |
 
 **No file shipped in the final image still comes from raw.12.** The
 kernel/rootfs closure work, the `dl_lib` middleware closure, and this last
@@ -187,7 +187,7 @@ and the middleware are compiled by Buildroot's GCC 14.4 with the same
 `-march` as musl (`rv64gc` plus `xtheadba`, `xtheadbb`, `xtheadbs`,
 `xtheadcondmov`, `xtheadmemidx`, `xtheadmempair`, `xtheadmac`) and
 `-mtune=thead-c906`. Buildroot builds musl with the same T-Head scalar extensions as the
-Rust server (`MUSL_EXTRA_CFLAGS` in `buildroot-external/hardened-sg2002/external.mk`),
+Rust server (`MUSL_EXTRA_CFLAGS` in `buildroot-external/hnanokvm/external.mk`),
 and the rootfs validator checks `/usr/lib/libc.so`'s architecture tag; the rest of
 Buildroot's userspace is plain `rv64gc`. Under QEMU's C906 model this musl runs
 25–36% fewer instructions in `memcpy`, `memmove` and `memset` on 4 KB and larger

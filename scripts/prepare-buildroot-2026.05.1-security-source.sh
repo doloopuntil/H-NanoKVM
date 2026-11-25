@@ -6,7 +6,7 @@ VERSION=2026.05.1
 ARCHIVE="${BUILDROOT_ARCHIVE:-$ROOT/build/downloads/buildroot-${VERSION}.tar.xz}"
 PROBE_ROOT="${LATEST_BUILDROOT_PROBE_ROOT:-$ROOT/build/latestbuildroot}"
 OUTPUT_DIR="${LATEST_BUILDROOT_SECURITY_SOURCE_DIR:-$PROBE_ROOT/buildroot-${VERSION}-raw11-security}"
-PATCH_DIR="$ROOT/buildroot-external/hardened-sg2002/buildroot-patches/${VERSION}"
+PATCH_DIR="$ROOT/buildroot-external/hnanokvm/buildroot-patches/${VERSION}"
 SHARED_DL_DIR="${BUILDROOT_SECURITY_DL_DIR:-$PROBE_ROOT/buildroot-${VERSION}/dl}"
 EXPECTED_ARCHIVE_SHA256=ae7f706f087b9ae9083a10a587368dfbf53103c28bf81c2d690198dc4090cb58
 

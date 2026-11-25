@@ -1658,6 +1658,16 @@ directories (`board/sg2002/`, `support/sg2002/`) stay. The server binary is now
 `hnanokvm-server` (branch `phase7/hnanokvm-server`), with the Go backend and backend-switch
 leftovers removed. Still on the old lower-case form: `/tmp/nanokvm-server.log` and `.pid`.
 
+The Buildroot external is renamed too (2026-11-25): `buildroot-external/hnanokvm` with
+external name `HNANOKVM` (`BR2_EXTERNAL_HNANOKVM_PATH`), the defconfig `hnanokvm_6x_defconfig`,
+the packages `hnanokvm-*` (`hnanokvm-sg2002-fip`, `hnanokvm-sg2002-codec-firmware`,
+`hnanokvm-soph-media`, `hnanokvm-kvmapp`, ...) with their `HNANOKVM_*` variables, the script
+variables `HNANOKVM_6X_*` and `fsbl-patches/` for the FSBL patch. The sections above that
+describe the 5.10 work keep the names of their time. Left for the CI and image step: the image
+name `hardened-sg2002-6x.img` (`genimage.cfg`, `post-image.sh`, the workflow, scripts and docs)
+and the `rc12-run` path. Left alone on purpose: release and key names (`hardened-system-*`,
+`hardened-nanokvm-kvmapp-<version>.tar.gz`) that devices and the update channel read.
+
 ## 8. File-level work list
 
 This repo (`Hardened_NanoKVM`):

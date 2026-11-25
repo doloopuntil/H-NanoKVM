@@ -1,4 +1,4 @@
-include $(sort $(wildcard $(BR2_EXTERNAL_HARDENED_SG2002_PATH)/package/*/*.mk))
+include $(sort $(wildcard $(BR2_EXTERNAL_HNANOKVM_PATH)/package/*/*.mk))
 
 # Build musl for the C906's T-Head scalar extensions, the set the Rust server uses.
 # A package -march replaces the toolchain wrapper's; the rest of userspace stays rv64gc.

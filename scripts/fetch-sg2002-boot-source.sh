@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 FSBL_REPO="${SOPHGO_FSBL_REPO:-https://github.com/sophgo/fsbl.git}"
 FSBL_EXPECTED_SHA="${SOPHGO_FSBL_SHA:-5a80c127cf614dea7f534d5b5352886a1c720d37}"
-DIR="${HARDENED_SG2002_BOOT_SOURCE_DIR:-$ROOT/build/sg2002-boot-source}"
+DIR="${HNANOKVM_BOOT_SOURCE_DIR:-$ROOT/build/sg2002-boot-source}"
 
 if [ ! -d "$DIR/.git" ]; then
   git init -q "$DIR"

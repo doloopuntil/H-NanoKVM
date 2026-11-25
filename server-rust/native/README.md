@@ -148,7 +148,7 @@ user space and the drivers agree on every shared struct. Our changes on top:
   on the LT6911 YUV bypass pipe, the `soph_sys` media-memory allocator that
   replaces ION, an `mmap` on `/dev/cvi-sys` limited to its buffers, video encoder
   packets kept in that carveout, and the 5.10.265 build fixes
-  (`buildroot-external/hardened-sg2002/board/sg2002/kernel/patches/sophgo-osdrv-1b3a496-*.patch`).
+  (`buildroot-external/hnanokvm/board/sg2002/kernel/patches/sophgo-osdrv-1b3a496-*.patch`).
 
 ## dl_lib's prebuilt middleware: removed
 
@@ -241,7 +241,7 @@ That was true when this file was first traced. It no longer is, deliberately:
 `lt6911_probe()`'s chip-ID I2C read never succeeded on real hardware and
 logged a scary-looking (if already
 non-fatal; both its own failure paths were already dead code) error on
-every cold boot. `buildroot-external/hardened-sg2002/board/sg2002/vendor-sdk-patches/lt6911-sensor-id-probe-removed.patch`
+every cold boot. `buildroot-external/hnanokvm/board/sg2002/fsbl-patches/lt6911-sensor-id-probe-removed.patch`
 removes that I2C probe entirely, applied to the vendor SDK checkout before
 `make vendor-sdk-stock` builds it. `vendor-sdk-stock`'s `libsns_lt6911.so`
 is therefore no longer byte-identical to a truly unmodified vendor build --

@@ -1,4 +1,4 @@
-config BR2_PACKAGE_HARDENED_SG2002_CODEC_FIRMWARE
+config BR2_PACKAGE_HNANOKVM_SG2002_CODEC_FIRMWARE
 	bool "SG2002 codec firmware (vendor port input)"
 	depends on BR2_riscv
 	help

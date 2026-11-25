@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the Linux 6.18 SD image (hardened_sg2002_nanokvm_6x_defconfig) and checks what it holds.
+# Builds the Linux 6.18 SD image (hnanokvm_6x_defconfig) and checks what it holds.
 #   toolchain configure and build only Buildroot's cross-compiler and musl, which then build
 #             the native code and link the server; build continues in the same output
 #   build     Buildroot make without the post-image step, kernel and rootfs checks, and
@@ -12,12 +12,12 @@ set -euo pipefail
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 STAGE="${1:-all}"
 BUILDROOT_SOURCE="${LATEST_BUILDROOT_SOURCE_DIR:-$ROOT/build/latestbuildroot/buildroot-2026.05.1-raw11-security}"
-OUTPUT_DIR="${HARDENED_SG2002_6X_OUTPUT_DIR:-$ROOT/build/latestbuildroot/sg2002-6x}"
-REPORT_DIR="${HARDENED_SG2002_6X_REPORT_DIR:-$ROOT/build/latestbuildroot/sg2002-6x-report}"
+OUTPUT_DIR="${HNANOKVM_6X_OUTPUT_DIR:-$ROOT/build/latestbuildroot/sg2002-6x}"
+REPORT_DIR="${HNANOKVM_6X_REPORT_DIR:-$ROOT/build/latestbuildroot/sg2002-6x-report}"
 HANDOFF="${HNANOKVM_6X_HANDOFF:-$OUTPUT_DIR.handoff.tar.zst}"
 KVMAPP_DIR="${NANOKVM_KVMAPP_SOURCE_DIR:-$ROOT/build/kvmapp-rust/kvmapp}"
 LICHEERV_DIR="${LICHEERV_EXTERNAL_DIR:-$ROOT/build/buildroot-external-licheervnano}"
-BOARD_DIR="$ROOT/buildroot-external/hardened-sg2002/board/sg2002/linux-6.18"
+BOARD_DIR="$ROOT/buildroot-external/hnanokvm/board/sg2002/linux-6.18"
 EXPECTED_KERNEL_RELEASE="${EXPECTED_KERNEL_RELEASE:-6.18.65}"
 EXPECTED_TARGET="${EXPECTED_SYSTEM_TARGET:-sg2002-hnanokvm-sd}"
 MEDIA_MODULES="soph_sys soph_base soph_mipi_rx soph_vi soph_vpss soph_dwa soph_vo soph_rgn soph_vcodec soph_jpeg soph_vc_driver"
@@ -44,16 +44,16 @@ configure() {
 	[ -f "$LICHEERV_DIR/external.desc" ] || die "missing licheerv external: run scripts/fetch-licheerv-external.sh"
 	[ -e "$OUTPUT_DIR" ] && die "refusing to reuse Buildroot output: $OUTPUT_DIR"
 	LATEST_BUILDROOT_SOURCE_DIR="$BUILDROOT_SOURCE" \
-	HARDENED_SG2002_BUILDROOT_OUTPUT_DIR="$OUTPUT_DIR" \
-	HARDENED_SG2002_DEFCONFIG=hardened_sg2002_nanokvm_6x_defconfig \
-	HARDENED_SG2002_EXTRA_EXTERNALS="$LICHEERV_DIR" \
+	HNANOKVM_BUILDROOT_OUTPUT_DIR="$OUTPUT_DIR" \
+	HNANOKVM_DEFCONFIG=hnanokvm_6x_defconfig \
+	HNANOKVM_EXTRA_EXTERNALS="$LICHEERV_DIR" \
 		"$ROOT/scripts/configure-latest-buildroot-sg2002.sh"
 }
 
 toolchain_stage() {
 	configure
 	LATEST_BUILDROOT_SOURCE_DIR="$BUILDROOT_SOURCE" \
-	HARDENED_SG2002_BUILDROOT_OUTPUT_DIR="$OUTPUT_DIR" \
+	HNANOKVM_BUILDROOT_OUTPUT_DIR="$OUTPUT_DIR" \
 	BUILDROOT_PORT_TOOLCHAIN_ONLY=1 \
 		"$ROOT/scripts/build-latest-buildroot-sg2002-rootfs.sh"
 	"$OUTPUT_DIR/host/bin/riscv64-buildroot-linux-musl-gcc" --version | head -n 1
@@ -76,11 +76,11 @@ build_stage() {
 
 	# post-image.sh runs in the assemble stage
 	LATEST_BUILDROOT_SOURCE_DIR="$BUILDROOT_SOURCE" \
-	HARDENED_SG2002_BUILDROOT_OUTPUT_DIR="$OUTPUT_DIR" \
+	HNANOKVM_BUILDROOT_OUTPUT_DIR="$OUTPUT_DIR" \
 	NANOKVM_KVMAPP_SOURCE_DIR="$KVMAPP_DIR" \
-	HARDENED_SG2002_RUNTIME_SYSTEM_VERSION="$EXPECTED_SYSTEM_VERSION" \
-	HARDENED_SG2002_RUNTIME_KERNEL_VERSION="$EXPECTED_KERNEL_RELEASE" \
-	HARDENED_SG2002_RUNTIME_SECURITY_PATCH_LEVEL="$EXPECTED_SECURITY_PATCH_LEVEL" \
+	HNANOKVM_RUNTIME_SYSTEM_VERSION="$EXPECTED_SYSTEM_VERSION" \
+	HNANOKVM_RUNTIME_KERNEL_VERSION="$EXPECTED_KERNEL_RELEASE" \
+	HNANOKVM_RUNTIME_SECURITY_PATCH_LEVEL="$EXPECTED_SECURITY_PATCH_LEVEL" \
 	BUILDROOT_PORT_MAKE_ARGS="BR2_ROOTFS_POST_IMAGE_SCRIPT=" \
 		"$ROOT/scripts/build-latest-buildroot-sg2002-rootfs.sh"
 

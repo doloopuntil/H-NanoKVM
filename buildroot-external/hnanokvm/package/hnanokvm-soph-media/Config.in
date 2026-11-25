@@ -1,4 +1,4 @@
-config BR2_PACKAGE_HARDENED_SOPH_MEDIA
+config BR2_PACKAGE_HNANOKVM_SOPH_MEDIA
 	bool "Sophgo media kernel modules (osdrv)"
 	depends on BR2_LINUX_KERNEL
 	help

@@ -1,4 +1,4 @@
-config BR2_PACKAGE_HARDENED_AIC8800_SDIO_FIRMWARE
+config BR2_PACKAGE_HNANOKVM_AIC8800_SDIO_FIRMWARE
 	bool "AIC8800 SDIO Wi-Fi firmware (vendor port input)"
 	depends on BR2_riscv
 	help

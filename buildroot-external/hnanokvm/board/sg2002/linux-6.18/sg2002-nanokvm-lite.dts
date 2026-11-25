@@ -383,7 +383,7 @@
 };
 
 /*
- * Media blocks for the osdrv modules (hardened-soph-media), from the vendor
+ * Media blocks for the osdrv modules (hnanokvm-soph-media), from the vendor
  * soph_base.dtsi and soph_base_riscv.dtsi with mainline clock and reset IDs.
  * Vendor interrupt numbers are PLIC numbers: SOC_PERIPHERAL_IRQ(n - 16).
  */

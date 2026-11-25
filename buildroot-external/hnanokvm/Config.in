@@ -1,0 +1,18 @@
+menu "H-NanoKVM options"
+
+config BR2_HNANOKVM_VENDOR_ABI_READY
+	bool "allow the vendor multimedia ABI in a lab image"
+	help
+	  This acknowledgement does not prove compatibility. It only permits a
+	  non-release, recoverable-media image to carry the pinned vendor runtime
+	  so that loader and hardware compatibility can be tested on SG2002.
+
+source "$BR2_EXTERNAL_HNANOKVM_PATH/package/hnanokvm-sg2002-codec-firmware/Config.in"
+source "$BR2_EXTERNAL_HNANOKVM_PATH/package/hnanokvm-aic8800-sdio-firmware/Config.in"
+source "$BR2_EXTERNAL_HNANOKVM_PATH/package/hnanokvm-cvitek-riscv64-musl-sysroot/Config.in"
+source "$BR2_EXTERNAL_HNANOKVM_PATH/package/hnanokvm-kvmapp/Config.in"
+source "$BR2_EXTERNAL_HNANOKVM_PATH/package/hnanokvm-sg2002-fip/Config.in"
+source "$BR2_EXTERNAL_HNANOKVM_PATH/package/hnanokvm-soph-media/Config.in"
+source "$BR2_EXTERNAL_HNANOKVM_PATH/package/hnanokvm-fit-tools/Config.in"
+
+endmenu

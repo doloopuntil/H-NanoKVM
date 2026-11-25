@@ -1,0 +1,2 @@
+# Buildroot git archive of the pinned commit; the archive prefix holds the package name, so a rename changes it
+sha256  d29bb5afeaa2729d2cbc818a130fe4aa68e270723a68d70eb3e130f11ecf98df  hnanokvm-soph-media-1b3a49649d18488ecf54fb4fcb6c27599e433fdc-git4.tar.gz

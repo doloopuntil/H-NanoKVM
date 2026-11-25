@@ -1,24 +1,24 @@
 ################################################################################
 #
-# hardened-nanokvm-kvmapp
+# hnanokvm-kvmapp
 #
 ################################################################################
 
-HARDENED_NANOKVM_KVMAPP_VERSION = 3.0.0
+HNANOKVM_KVMAPP_VERSION = 3.0.0
 NANOKVM_KVMAPP_SOURCE_DIR ?= \
-	$(abspath $(BR2_EXTERNAL_HARDENED_SG2002_PATH)/../../build/kvmapp-rust/kvmapp)
-HARDENED_NANOKVM_KVMAPP_SITE = $(NANOKVM_KVMAPP_SOURCE_DIR)
-HARDENED_NANOKVM_KVMAPP_SITE_METHOD = local
-HARDENED_NANOKVM_KVMAPP_LICENSE = GPL-3.0-only, PROPRIETARY
-HARDENED_NANOKVM_KVMAPP_REDISTRIBUTE = NO
-HARDENED_NANOKVM_KVMAPP_DEPENDENCIES = \
+	$(abspath $(BR2_EXTERNAL_HNANOKVM_PATH)/../../build/kvmapp-rust/kvmapp)
+HNANOKVM_KVMAPP_SITE = $(NANOKVM_KVMAPP_SOURCE_DIR)
+HNANOKVM_KVMAPP_SITE_METHOD = local
+HNANOKVM_KVMAPP_LICENSE = GPL-3.0-only, PROPRIETARY
+HNANOKVM_KVMAPP_REDISTRIBUTE = NO
+HNANOKVM_KVMAPP_DEPENDENCIES = \
 	avahi \
 	hostapd \
 	openssh \
 	wpa_supplicant
 
-define HARDENED_NANOKVM_KVMAPP_INSTALL_TARGET_CMDS
-	test "$$(cat $(@D)/version)" = "$(HARDENED_NANOKVM_KVMAPP_VERSION)"
+define HNANOKVM_KVMAPP_INSTALL_TARGET_CMDS
+	test "$$(cat $(@D)/version)" = "$(HNANOKVM_KVMAPP_VERSION)"
 	$(INSTALL) -d $(TARGET_DIR)/kvmapp $(TARGET_DIR)/etc/kvm \
 		$(TARGET_DIR)/etc/init.d $(TARGET_DIR)/mnt/data
 	cp -a $(@D)/. $(TARGET_DIR)/kvmapp/

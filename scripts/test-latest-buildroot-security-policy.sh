@@ -2,12 +2,12 @@
 set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
-DEFCONFIG="$ROOT/buildroot-external/hardened-sg2002/configs/hardened_sg2002_nanokvm_6x_defconfig"
-PATCH_ROOT="$ROOT/buildroot-external/hardened-sg2002/board/sg2002/patches"
+DEFCONFIG="$ROOT/buildroot-external/hnanokvm/configs/hnanokvm_6x_defconfig"
+PATCH_ROOT="$ROOT/buildroot-external/hnanokvm/board/sg2002/patches"
 PREPARE="$ROOT/scripts/prepare-buildroot-2026.05.1-security-source.sh"
 PACKAGE_SCRIPT="$ROOT/scripts/package-rust-kvmapp.sh"
-AVAHI_CONFIG="$ROOT/buildroot-external/hardened-sg2002/board/sg2002/overlay/etc/avahi/avahi-daemon.conf"
-POST_BUILD="$ROOT/buildroot-external/hardened-sg2002/board/sg2002/post-build.sh"
+AVAHI_CONFIG="$ROOT/buildroot-external/hnanokvm/board/sg2002/overlay/etc/avahi/avahi-daemon.conf"
+POST_BUILD="$ROOT/buildroot-external/hnanokvm/board/sg2002/post-build.sh"
 NATIVE_CMAKE="$ROOT/support/sg2002/CMakeLists.txt"
 
 require_line() {
@@ -38,17 +38,17 @@ verify_prepare_hash() {
 }
 
 require_line 'BR2_REPRODUCIBLE=y' "$DEFCONFIG"
-require_line 'BR2_PACKAGE_HARDENED_NANOKVM_KVMAPP=y' "$DEFCONFIG"
+require_line 'BR2_PACKAGE_HNANOKVM_KVMAPP=y' "$DEFCONFIG"
 # Links, files and FIFOs in shared directories are protected from the first boot.
-SYSCTL_FS="$ROOT/buildroot-external/hardened-sg2002/board/sg2002/overlay/etc/sysctl.d/10-hardened-fs.conf"
+SYSCTL_FS="$ROOT/buildroot-external/hnanokvm/board/sg2002/overlay/etc/sysctl.d/10-hardened-fs.conf"
 for setting in 'fs.protected_symlinks = 1' 'fs.protected_hardlinks = 1' 'fs.protected_regular = 2' 'fs.protected_fifos = 2'; do
 	require_line "$setting" "$SYSCTL_FS"
 done
-require_line 'BR2_ROOTFS_POST_FAKEROOT_SCRIPT="$(BR2_EXTERNAL_HARDENED_SG2002_PATH)/board/sg2002/post-fakeroot.sh"' "$DEFCONFIG"
+require_line 'BR2_ROOTFS_POST_FAKEROOT_SCRIPT="$(BR2_EXTERNAL_HNANOKVM_PATH)/board/sg2002/post-fakeroot.sh"' "$DEFCONFIG"
 require_line 'BR2_STRIP_EXCLUDE_FILES="hnanokvm-server libkvm_mmf.so soph_vcodec.ko soph_jpeg.ko soph_vc_driver.ko"' "$DEFCONFIG"
 require_line '# BR2_TARGET_ENABLE_ROOT_LOGIN is not set' "$DEFCONFIG"
 reject_text 'BR2_TARGET_GENERIC_ROOT_PASSWD=' "$DEFCONFIG"
-require_line 'BR2_ROOTFS_POST_BUILD_SCRIPT="$(BR2_EXTERNAL_HARDENED_SG2002_PATH)/board/sg2002/post-build.sh"' "$DEFCONFIG"
+require_line 'BR2_ROOTFS_POST_BUILD_SCRIPT="$(BR2_EXTERNAL_HNANOKVM_PATH)/board/sg2002/post-build.sh"' "$DEFCONFIG"
 require_line '# BR2_PACKAGE_LIBOPENSSL_ENABLE_QUIC is not set' "$DEFCONFIG"
 require_line '# BR2_PACKAGE_HOSTAPD_DRIVER_HOSTAP is not set' "$DEFCONFIG"
 require_line 'BR2_PACKAGE_HOSTAPD_DRIVER_NL80211=y' "$DEFCONFIG"
@@ -70,7 +70,7 @@ reject_text '/tmp/server/dl_lib' "$ROOT/kvmapp/system/init.d/S95nanokvm"
 require_line 'NANOKVM_NATIVE_LIBRARY_PATH=/kvmapp/server/dl_lib:/mnt/system/usr/lib:/mnt/system/usr/lib/3rd' \
 	"$ROOT/kvmapp/system/init.d/S95nanokvm"
 # /tmp and /dev/shm are noexec: nothing may be staged there to run.
-FSTAB="$ROOT/buildroot-external/hardened-sg2002/board/sg2002/overlay/etc/fstab"
+FSTAB="$ROOT/buildroot-external/hnanokvm/board/sg2002/overlay/etc/fstab"
 require_line 'tmpfs		/tmp		tmpfs	mode=1777,nosuid,nodev,noexec	0	0' "$FSTAB"
 require_line 'tmpfs		/dev/shm	tmpfs	mode=1777,nosuid,nodev,noexec	0	0' "$FSTAB"
 reject_text 'mktemp -d /tmp/nanokvm-server' "$ROOT/kvmapp/system/init.d/S95nanokvm"
@@ -92,7 +92,7 @@ test -f "$PATCH_ROOT/busybox/1.38.0/0012-CVE-2026-38753-fix-awk-sub-use-after-fr
 test -f "$PATCH_ROOT/busybox/1.38.0/0013-CVE-2026-38755-limit-ash-function-recursion.patch"
 test -f "$PATCH_ROOT/busybox/1.38.0/0014-CVE-2026-38754-clear-stale-ifs-regions.patch"
 
-for patch in "$ROOT"/buildroot-external/hardened-sg2002/buildroot-patches/2026.05.1/*.patch; do
+for patch in "$ROOT"/buildroot-external/hnanokvm/buildroot-patches/2026.05.1/*.patch; do
 	verify_prepare_hash "$patch"
 done
 

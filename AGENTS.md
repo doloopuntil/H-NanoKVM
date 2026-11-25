@@ -31,8 +31,8 @@ Details and known failures: [docs/development/testing.md](docs/development/testi
 ## Rules that are easy to break
 
 - **Versions** live in three places that must agree, or the image build fails:
-  `kvmapp/version`, `HARDENED_NANOKVM_KVMAPP_VERSION` in
-  `buildroot-external/hardened-sg2002/package/hardened-nanokvm-kvmapp/hardened-nanokvm-kvmapp.mk`,
+  `kvmapp/version`, `HNANOKVM_KVMAPP_VERSION` in
+  `buildroot-external/hnanokvm/package/hnanokvm-kvmapp/hnanokvm-kvmapp.mk`,
   and `EXPECTED_SYSTEM_VERSION`/`EXPECTED_KVMAPP_VERSION` in the workflow. The
   application version is plain `x.y.z`.
 - **Boot scripts** are listed in `kvmapp/system/init.d/S95nanokvm`, the kvmapp

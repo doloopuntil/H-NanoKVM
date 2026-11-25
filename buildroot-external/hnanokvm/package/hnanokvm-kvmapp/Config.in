@@ -1,4 +1,4 @@
-config BR2_PACKAGE_HARDENED_NANOKVM_KVMAPP
+config BR2_PACKAGE_HNANOKVM_KVMAPP
 	bool "Hardened NanoKVM application payload"
 	depends on BR2_RISCV_64
 	help

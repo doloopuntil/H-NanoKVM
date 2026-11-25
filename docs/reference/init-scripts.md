@@ -44,7 +44,7 @@ in `/etc/modprobe.d/aic8800.conf`), so `wlan0` exists before the server looks fo
 
 ## Rules for changing them
 
-- `S95nanokvm`, the kvmapp package (`buildroot-external/.../hardened-nanokvm-kvmapp.mk`)
+- `S95nanokvm`, the kvmapp package (`buildroot-external/.../hnanokvm-kvmapp.mk`)
   and `main.rs` each list the boot scripts. A new script must be added to all
   three.
 - Scripts that read server-written files (`S40firewall`, `S45wireguard`) parse

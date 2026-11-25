@@ -9,7 +9,7 @@ set -euo pipefail
 
 ROOT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 S50SSHD="$ROOT_DIR/kvmapp/system/init.d/S50sshd"
-SSHD_CONFIG="$ROOT_DIR/buildroot-external/hardened-sg2002/board/sg2002/overlay/etc/ssh/sshd_config"
+SSHD_CONFIG="$ROOT_DIR/buildroot-external/hnanokvm/board/sg2002/overlay/etc/ssh/sshd_config"
 
 if [ "${1:-}" != --inside ]; then
     for tool in busybox unshare "${SSHD_BIN:-}" "${SSH_KEYGEN_BIN:-}"; do

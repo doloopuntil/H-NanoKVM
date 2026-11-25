@@ -28,7 +28,7 @@ image
 if "$ROOT/scripts/check-busybox-mode.sh" "$T/rootfs.ext4" 2>/dev/null; then
 	fail "a setuid busybox passed"
 fi
-sh "$ROOT/buildroot-external/hardened-sg2002/board/sg2002/post-fakeroot.sh" "$tree"
+sh "$ROOT/buildroot-external/hnanokvm/board/sg2002/post-fakeroot.sh" "$tree"
 [ "$(stat -c %a "$tree/usr/bin/busybox")" = 755 ] || fail "the hook left another mode"
 [ "$(cut -d: -f1,2 "$tree/etc/shadow" | tr '\n' ' ')" = 'root:* daemon:!* sshd:! user:$5$salt$hash ' ] || \
 	fail "the hook locked the wrong accounts: $(cut -d: -f1,2 "$tree/etc/shadow" | tr '\n' ' ')"
