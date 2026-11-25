@@ -9,7 +9,7 @@ GENIMAGE_TMP="${BUILD_DIR:-$BINARIES_DIR/..}/genimage-boot.tmp"
 INPUT="$BINARIES_DIR/boot-input"
 FIT_DIR="$BINARIES_DIR/fit"
 # lz4 boots fastest on the Lite (5.9 s to the kernel, against 6.7 s lzma, 6.9 s none)
-KERNEL_COMPRESSION="${NANOKVM_KERNEL_COMPRESSION:-lz4}"
+KERNEL_COMPRESSION="${HNANOKVM_KERNEL_COMPRESSION:-lz4}"
 
 rm -rf "$GENIMAGE_TMP" "$INPUT" "$FIT_DIR"
 mkdir -p "$INPUT" "$FIT_DIR"

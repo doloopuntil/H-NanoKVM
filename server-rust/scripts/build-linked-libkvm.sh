@@ -8,12 +8,12 @@ case " $* " in
   *" --locked "* | *" --frozen "*) ;;
   *) set -- --locked "$@" ;;
 esac
-SYSROOT_LIB="${NANOKVM_SYSROOT_LIB:-$ROOT/sysroot/lib}"
-SYSROOT_INCLUDE="${NANOKVM_SYSROOT_INCLUDE:-$ROOT/sysroot/include}"
+SYSROOT_LIB="${HNANOKVM_SYSROOT_LIB:-$ROOT/sysroot/lib}"
+SYSROOT_INCLUDE="${HNANOKVM_SYSROOT_INCLUDE:-$ROOT/sysroot/include}"
 
 if [[ ! -f "$SYSROOT_LIB/libc.so" ]]; then
   echo "missing $SYSROOT_LIB/libc.so" >&2
-  echo "copy NanoKVM runtime libs into server-rust/sysroot/lib or set NANOKVM_SYSROOT_LIB" >&2
+  echo "copy NanoKVM runtime libs into server-rust/sysroot/lib or set HNANOKVM_SYSROOT_LIB" >&2
   exit 1
 fi
 
@@ -29,7 +29,7 @@ fi
 # mimalloc's C code needs the C library headers.
 if [[ ! -f "$SYSROOT_INCLUDE/stdlib.h" ]]; then
   echo "missing $SYSROOT_INCLUDE/stdlib.h" >&2
-  echo "copy the musl headers into server-rust/sysroot/include or set NANOKVM_SYSROOT_INCLUDE" >&2
+  echo "copy the musl headers into server-rust/sysroot/include or set HNANOKVM_SYSROOT_INCLUDE" >&2
   exit 1
 fi
 
@@ -43,7 +43,7 @@ for obj in Scrt1.o crti.o crtbeginS.o crtendS.o crtn.o; do
   fi
 done
 
-export NANOKVM_SYSROOT_LIB="$SYSROOT_LIB"
+export HNANOKVM_SYSROOT_LIB="$SYSROOT_LIB"
 export RUSTC_BOOTSTRAP="${RUSTC_BOOTSTRAP:-1}"
 export CC_riscv64gc_unknown_linux_musl="${CC_riscv64gc_unknown_linux_musl:-clang}"
 # The SG2002's C906 core has the T-Head extensions; LLVM has no C906 CPU model,

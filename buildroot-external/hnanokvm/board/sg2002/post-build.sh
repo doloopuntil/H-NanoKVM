@@ -8,7 +8,7 @@ TARGET_DIR=$1
 }
 
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/../../../.." && pwd)"
-KVMAPP_SOURCE="${NANOKVM_KVMAPP_SOURCE_DIR:-$ROOT/build/kvmapp-rust/kvmapp}"
+KVMAPP_SOURCE="${HNANOKVM_KVMAPP_SOURCE_DIR:-$ROOT/build/kvmapp-rust/kvmapp}"
 PATCHELF="${HOST_DIR:-}/bin/patchelf"
 EXPECTED_RUST_RUNPATH='/kvmapp/server/dl_lib'
 RUNTIME_KERNEL_VERSION="${HNANOKVM_RUNTIME_KERNEL_VERSION:-}"

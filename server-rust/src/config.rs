@@ -220,7 +220,7 @@ impl Config {
     }
 
     pub fn read() -> Result<Self> {
-        let path = std::env::var("NANOKVM_CONFIG")
+        let path = std::env::var("HNANOKVM_CONFIG")
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from(DEFAULT_CONFIG_PATH));
         if !path.exists() {
@@ -232,7 +232,7 @@ impl Config {
     }
 
     pub fn write(&self) -> Result<()> {
-        let path = std::env::var("NANOKVM_CONFIG")
+        let path = std::env::var("HNANOKVM_CONFIG")
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from(DEFAULT_CONFIG_PATH));
         let data = serde_norway::to_string(self)

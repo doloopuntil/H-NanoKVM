@@ -1673,6 +1673,12 @@ the word: `bootstrap-buildroot.sh`, `configure-buildroot.sh`, `build-buildroot-r
 `HNANOKVM_BUILDROOT_ROOT`, `HNANOKVM_BUILDROOT_SOURCE_DIR`, `build/buildroot`. Left alone on purpose: release and key names (`hardened-system-*`,
 `hardened-nanokvm-kvmapp-<version>.tar.gz`) that devices and the update channel read.
 
+Later the same day: the `/data` and `/tmp` names lost `hardened-` as well (no compatibility
+with the old ones), and the `NANOKVM_*` environment variables became `HNANOKVM_*` (build
+paths, the `HNANOKVM_CONFIG` server override, the picoclaw bridge settings). The include guard
+of `nanokvm_update_edid.h` and the picoclaw policy constant `NANOKVM_SERVER` are not variables
+and stay.
+
 ## 8. File-level work list
 
 This repo (`Hardened_NanoKVM`):

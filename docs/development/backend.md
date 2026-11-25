@@ -56,7 +56,7 @@ make web-app
 
 For a video-enabled NanoKVM RISC-V binary, use the linked build. Copy
 the NanoKVM runtime libraries into `server-rust/sysroot/lib` or point
-`NANOKVM_SYSROOT_LIB` at a directory containing `libc.so` and `libgcc_s.so.1`,
+`HNANOKVM_SYSROOT_LIB` at a directory containing `libc.so` and `libgcc_s.so.1`,
 then run. Copy `libkvm_mmf.so` and the middleware from a device or a CI run into
 `server-rust/native/dl_lib`, which is not in git; CI fills it with its own builds.
 

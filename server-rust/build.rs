@@ -4,7 +4,7 @@ fn main() {
     let target = env::var("TARGET").unwrap_or_default();
     let linked_libkvm = env::var_os("CARGO_FEATURE_LINKED_LIBKVM").is_some();
 
-    println!("cargo:rerun-if-env-changed=NANOKVM_SYSROOT_LIB");
+    println!("cargo:rerun-if-env-changed=HNANOKVM_SYSROOT_LIB");
     println!("cargo:rustc-check-cfg=cfg(hnk_xtheadvector)");
 
     if target.contains("riscv64") {
@@ -17,7 +17,7 @@ fn main() {
 
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR"));
     let lib_dir = manifest_dir.join("native/dl_lib");
-    let sysroot_lib_dir = env::var_os("NANOKVM_SYSROOT_LIB")
+    let sysroot_lib_dir = env::var_os("HNANOKVM_SYSROOT_LIB")
         .map(PathBuf::from)
         .unwrap_or_else(|| manifest_dir.join("sysroot/lib"));
 
@@ -41,13 +41,13 @@ fn build_vector_chacha() {
     for src in [CHACHA, POLY_PL, POLY, POLY_VX] {
         println!("cargo:rerun-if-changed={src}");
     }
-    println!("cargo:rerun-if-env-changed=NANOKVM_XTHEADVECTOR_PREFIX");
-    let prefix = env::var("NANOKVM_XTHEADVECTOR_PREFIX")
+    println!("cargo:rerun-if-env-changed=HNANOKVM_XTHEADVECTOR_PREFIX");
+    let prefix = env::var("HNANOKVM_XTHEADVECTOR_PREFIX")
         .unwrap_or_else(|_| "riscv64-linux-gnu-".to_string());
     let out = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR"));
     let run = |what: &str, cmd: &mut Command| match cmd.status() {
         Ok(status) if status.success() => {}
-        Ok(status) => panic!("{what} failed ({status}); see NANOKVM_XTHEADVECTOR_PREFIX"),
+        Ok(status) => panic!("{what} failed ({status}); see HNANOKVM_XTHEADVECTOR_PREFIX"),
         Err(err) => panic!("{what}: {err}; the vector TLS code needs perl and {prefix}gcc"),
     };
 

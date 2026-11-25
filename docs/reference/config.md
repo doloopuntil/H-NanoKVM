@@ -7,7 +7,7 @@ source: server-rust/src/config.rs
 
 # Server configuration (`/etc/kvm/server.yaml`)
 
-The server reads `/etc/kvm/server.yaml`, or the file named by `NANOKVM_CONFIG`.
+The server reads `/etc/kvm/server.yaml`, or the file named by `HNANOKVM_CONFIG`.
 Every field is optional; a missing field takes the default below. Most of them
 are changed from the web UI, which rewrites the file. Edit it by hand only with
 the server stopped, and restart it afterwards (`/etc/init.d/S95nanokvm restart`).

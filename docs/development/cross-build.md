@@ -66,12 +66,12 @@ longer links with the non-PIC `crt1.o`.
   binary grows by about 120 KB. It is built in secure mode (guard pages, encoded and
   randomised free lists, freed memory checked for double frees), which measured under 1%
   more CPU per MB on MJPEG over HTTPS. mimalloc's C code needs the musl headers in
-  `server-rust/sysroot/include` (`NANOKVM_SYSROOT_INCLUDE`); CI copies them from
+  `server-rust/sysroot/include` (`HNANOKVM_SYSROOT_INCLUDE`); CI copies them from
   Buildroot's sysroot. Host builds and tests keep the system allocator.
 - **Vector TLS code.** The device build assembles the XTheadVector ChaCha20 and the
   CRYPTOGAMS Poly1305 in `server-rust/native/` with GNU binutils (LLVM has no XTheadVector)
   and generates the scalar Poly1305 from its perlasm. `build.rs` runs
-  `${NANOKVM_XTHEADVECTOR_PREFIX}gcc` (default `riscv64-linux-gnu-`; CI passes Buildroot's
+  `${HNANOKVM_XTHEADVECTOR_PREFIX}gcc` (default `riscv64-linux-gnu-`; CI passes Buildroot's
   prefix) and `perl`, and stops if either is missing. Debian trixie's binutils 2.44 works.
   Host builds and tests use RustCrypto stand-ins for the assembly.
 
@@ -111,7 +111,7 @@ rustup target add riscv64gc-unknown-linux-musl
 ```
 
 The linked build needs NanoKVM runtime libraries in `server-rust/sysroot/lib`,
-or `NANOKVM_SYSROOT_LIB` must point at a directory with at least:
+or `HNANOKVM_SYSROOT_LIB` must point at a directory with at least:
 
 ```text
 libc.so
@@ -124,12 +124,12 @@ checkout does not have `server-rust/sysroot/lib`, point the build at such a
 sysroot explicitly:
 
 ```sh
-NANOKVM_SYSROOT_LIB=/path/to/nanokvm/sysroot/lib \
+HNANOKVM_SYSROOT_LIB=/path/to/nanokvm/sysroot/lib \
   server-rust/scripts/build-linked-libkvm.sh
 ```
 
 It also needs the musl C headers (for mimalloc) in `server-rust/sysroot/include`,
-or `NANOKVM_SYSROOT_INCLUDE` pointing at them; the script stops if `stdlib.h` is
+or `HNANOKVM_SYSROOT_INCLUDE` pointing at them; the script stops if `stdlib.h` is
 missing.
 
 Do not run `make rust-kvmapp` unless `RUST_TARGET` is explicitly set. Without

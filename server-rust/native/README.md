@@ -68,7 +68,7 @@ since.
 
 `/etc/init.d/S95nanokvm` does wire `/mnt/system/usr/lib` and
 `/mnt/system/usr/lib/3rd` into the native library search path
-(`NANOKVM_NATIVE_LIBRARY_PATH`, passed to the musl loader's
+(`HNANOKVM_NATIVE_LIBRARY_PATH`, passed to the musl loader's
 `--library-path` when launching the server) -- so it's not simply
 unreferenced, it's a deliberate fallback. But `/kvmapp/server/dl_lib` is checked first in that same path
 and already contains every file `/mnt/system/usr/lib` and its `3rd/`

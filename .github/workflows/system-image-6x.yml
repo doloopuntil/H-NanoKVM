@@ -36,7 +36,7 @@ jobs:
       EXPECTED_KVMAPP_VERSION: 3.0.0
       EXPECTED_KERNEL_RELEASE: 6.18.65
       EXPECTED_SECURITY_PATCH_LEVEL: Buildroot 2026.05.1 security maintenance Linux 6.18.65
-      NANOKVM_KVMAPP_SOURCE_DIR: ${{ github.workspace }}/build/kvmapp-rust/kvmapp
+      HNANOKVM_KVMAPP_SOURCE_DIR: ${{ github.workspace }}/build/kvmapp-rust/kvmapp
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -193,7 +193,7 @@ jobs:
           cargo test --manifest-path server-rust/Cargo.toml
           corepack pnpm --dir web install --frozen-lockfile
           corepack pnpm --dir web build
-          NANOKVM_XTHEADVECTOR_PREFIX="$CROSS_PREFIX" server-rust/scripts/build-linked-libkvm.sh
+          HNANOKVM_XTHEADVECTOR_PREFIX="$CROSS_PREFIX" server-rust/scripts/build-linked-libkvm.sh
           grep -q "Poly1305 for RISC-V, CRYPTOGAMS" \
             server-rust/target/riscv64gc-unknown-linux-musl/release/nanokvm-rust-server
           RUST_TARGET=riscv64gc-unknown-linux-musl \

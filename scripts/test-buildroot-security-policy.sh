@@ -67,7 +67,7 @@ grep -Fq 'EXPECTED_RUST_RUNPATH=' "$POST_BUILD"
 grep -Fq 'restore_rust_elf server/hnanokvm-server' "$POST_BUILD"
 reject_text '/tmp/server/dl_lib' "$ROOT/server-rust/scripts/build-linked-libkvm.sh"
 reject_text '/tmp/server/dl_lib' "$ROOT/kvmapp/system/init.d/S95nanokvm"
-require_line 'NANOKVM_NATIVE_LIBRARY_PATH=/kvmapp/server/dl_lib:/mnt/system/usr/lib:/mnt/system/usr/lib/3rd' \
+require_line 'HNANOKVM_NATIVE_LIBRARY_PATH=/kvmapp/server/dl_lib:/mnt/system/usr/lib:/mnt/system/usr/lib/3rd' \
 	"$ROOT/kvmapp/system/init.d/S95nanokvm"
 # /tmp and /dev/shm are noexec: nothing may be staged there to run.
 FSTAB="$ROOT/buildroot-external/hnanokvm/board/sg2002/overlay/etc/fstab"

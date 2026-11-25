@@ -15,9 +15,9 @@ SERVER_SOURCE_DIR=/kvmapp/server
 SERVER_LOG=/tmp/hnanokvm-server.log
 SERVER_PID_FILE=/tmp/hnanokvm-server.pid
 INIT_SELF="$0"
-NANOKVM_NATIVE_LIBRARY_PATH=/kvmapp/server/dl_lib:/mnt/system/usr/lib:/mnt/system/usr/lib/3rd
+HNANOKVM_NATIVE_LIBRARY_PATH=/kvmapp/server/dl_lib:/mnt/system/usr/lib:/mnt/system/usr/lib/3rd
 # Buildroot's musl 1.2.6 (the vendor T-Head loader misaligned thread stacks).
-NANOKVM_LOADER=/lib/ld-musl-riscv64.so.1
+HNANOKVM_LOADER=/lib/ld-musl-riscv64.so.1
 SYSTEM_UPDATE_WATCHDOG_PID_FILE=/tmp/system-update-watchdog.pid
 SYSTEM_UPDATE_LOG=/tmp/system-update-watchdog.log
 SYSTEM_VERSION_FILE=/etc/kvm/system-version.json
@@ -245,7 +245,7 @@ start_server_runtime() {
 
     : > "$SERVER_LOG" 2>/dev/null || SERVER_LOG=/dev/null
     runtime_log "starting hnanokvm-server from $server_bin"
-    nohup "$NANOKVM_LOADER" --library-path "$NANOKVM_NATIVE_LIBRARY_PATH" \
+    nohup "$HNANOKVM_LOADER" --library-path "$HNANOKVM_NATIVE_LIBRARY_PATH" \
         "$server_bin" >>"$SERVER_LOG" 2>&1 &
     echo $! > "$SERVER_PID_FILE"
 }
