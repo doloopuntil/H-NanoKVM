@@ -1597,9 +1597,17 @@ boot, reboot restarts on both clock profiles, MJPEG and H.264 show a picture. Le
 
 1. Flash the image with `dfa05678` (`sample_common_sensor.c` as a `cvi_mpi` patch instead of
    a copy) and check MJPEG, H.264 and one `reboot`. A local build matched the copy's library.
-2. LT6911C address: `S15kvmhwd` reads an answer at `0x2c` as an LT6911C, but the server, like
-   libkvm before it, always talks to the bridge at `0x2b`. Needs a Full or PCIe board with that
-   chip. A chip-ID check would also need the UXC's and D's IDs: the vendor probe knew only
+2. LT6911C address (checked against Sipeed's `NanoKVM` and `NanoKVM-OS`, 2026-11-25):
+   `S15kvmhwd` calls an answer at `0x2c` an LT6911C, while the server, like libkvm before it,
+   always talks to the bridge at `0x2b`. Sipeed's and NanoKVM-OS's own code do the same:
+   both probe `0x2c` first and hard-code `0x2b` for every register access, the LT6911C
+   included. Sipeed's `S95nanokvm` (`0e5bb59`) settles the apparent contradiction: it
+   classifies the receiver by which of `0x2b`, `0x2c`, `0x44` and `0x41` answer, and
+   `2b 2c -- --` is the LT6911C, `2b -- 44 --` the UXC and `2b -- -- --` the D. So an
+   LT6911C also answers at `0x2b`, and `0x2c` only tells it apart. This is Sipeed's own
+   reading, not a measurement of ours: NanoKVM-OS lists its C boards as untested. Left to
+   confirm on a Full or PCIe board with that chip: `i2cdetect -ry 4` shows `2b` and `2c`.
+   A chip-ID check would also need the UXC's and D's IDs: the vendor probe knew only
    `0x1605` (LT6911C).
 3. The update channels still point at `woffko/Hardened_NanoKVM`: an open decision
    ([Updates](../guide/updates.md)), not a bug.
