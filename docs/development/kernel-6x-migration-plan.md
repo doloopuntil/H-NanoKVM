@@ -22,7 +22,7 @@ Nothing here has been run on hardware.
 
 | Topic | Decision |
 | --- | --- |
-| Target kernel | Mainline **6.18 LTS**, the version the licheerv tree pins (6.18.29). 5.10 LTS ends in December 2026. |
+| Target kernel | Mainline **6.18 LTS**. The licheerv tree pins 6.18.29; we build the newest 6.18.x (6.18.65 on 2026-11-25), from our fork of the licheerv tree, whose patches also apply to the newer stable series (`9fa9c023`). 5.10 LTS ends in December 2026. |
 | Hardware to support | NanoKVM **Lite**, **Cube (Full)** and **PCIe**. **Not alpha** (early access, no longer sold). |
 | Hardware available | **Lite only.** Cube and PCIe work is done by review and by testers. |
 | Mailbox | Keep the **mainline `cv1800` mailbox driver**. Drop the vendor `soph_rtos_cmdqu`. |
@@ -288,7 +288,7 @@ records a hardware run on 2026-06-02; the TPU DT patch still says unverified).
 | Linux | 6.18.29 |
 | U-Boot / OpenSBI | 2025.10 / 1.8.1 |
 | varyhin/licheervnano | `3bf6e4d22956d8d36644abac4b514d68ef8f0e81` |
-| lone0/buildroot-external-licheervnano | `019ffc864bb9353f823afc98f7dd9fdacfa935cb` (HEAD on 2026-11-05) |
+| doloopuntil/buildroot-external-licheervnano (fork of lone0's) | `9fa9c023ef1a9c30585955aeb22c9c8d83ade0bd` (branch `dmac-compatible-in-board-dts`; lone0's `019ffc86` was HEAD on 2026-11-05) |
 
 osdrv and cvi_mpi must stay on the same Sophgo release; the ioctl ABI between
 them is what keeps the prebuilt closed libraries working.

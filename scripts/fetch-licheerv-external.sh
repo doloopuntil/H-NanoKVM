@@ -3,8 +3,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REPO="${LICHEERV_EXTERNAL_REPO:-https://github.com/lone0/buildroot-external-licheervnano.git}"
-EXPECTED_SHA="${LICHEERV_EXTERNAL_SHA:-019ffc864bb9353f823afc98f7dd9fdacfa935cb}"
+REPO="${LICHEERV_EXTERNAL_REPO:-https://github.com/doloopuntil/buildroot-external-licheervnano.git}"
+EXPECTED_SHA="${LICHEERV_EXTERNAL_SHA:-9fa9c023ef1a9c30585955aeb22c9c8d83ade0bd}"
 DIR="${LICHEERV_EXTERNAL_DIR:-$ROOT/build/buildroot-external-licheervnano}"
 
 if [ ! -d "$DIR/.git" ]; then

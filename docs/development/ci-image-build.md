@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
-last-checked: 2026-11-24
+last-checked: 2026-11-25
 source: .github/workflows/system-image-6x.yml
 ---
 
@@ -38,9 +38,12 @@ set them).
 `scripts/fetch-licheerv-external.sh`), builds:
 
 - the musl toolchain and the userland;
-- Linux 6.18.29 with licheerv's patch series and our board patches 0001-0007, configured from
+- Linux 6.18.65 with licheerv's patch series and our board patches 0001-0007, configured from
   `board/sg2002/linux-6.18/nanokvm_defconfig` plus `nanokvm.fragment`, and the
   `sg2002-nanokvm-lite.dts` device tree;
+  Moving to a newer 6.18.x means the version in the defconfig, the two hash directories under
+  `board/sg2002/patches`, `EXPECTED_KERNEL_RELEASE` in the workflow and the build script, and a
+  check that every patch still applies, including licheerv's, which come from our fork;
 - the 11 Sophgo media modules (`hardened-soph-media`, `sophgo/osdrv` at `SOPHGO_OSDRV_SHA`);
 - OpenSBI 1.8.1 (licheerv's reset driver with our warm-reset patch), U-Boot 2025.10, and the
   FSBL from `sophgo/fsbl` (branch `sg200x-dev`, pinned as `SOPHGO_FSBL_SHA`), packed into
@@ -75,7 +78,7 @@ image.
   release string and patches 0001-0007, `DEVMEM` off, signed modules only, lockdown and the memory-safety
   options in the kernel `.config`, a signature on every `.ko`, no `devmem` in BusyBox, U-Boot's `BOOTDELAY=0` and its TRNG seed options,
   the 11 modules in
-  `/lib/modules/6.18.29/extra`, Buildroot's `libstdc++` and `libgcc_s` in `/usr/lib` and no
+  `/lib/modules/6.18.65/extra`, Buildroot's `libstdc++` and `libgcc_s` in `/usr/lib` and no
   GCC runtime, OpenCV or `libgomp` in `dl_lib`, a `libsys.so` that maps through
   `/dev/cvi-sys` and not `/dev/mem`, the `sg2002-hnanokvm-sd` target and
   kernel version in `system-version.json`, `scripts/validate-nanokvm-rootfs.sh`, and
@@ -99,7 +102,7 @@ All jobs run in the `sg2002-image-build-6x` concurrency group
 | Content | 5.10 pipeline | 6.18 pipeline |
 | --- | --- | --- |
 | Toolchain for kernel and modules | `sophgo/host-tools` GCC | Buildroot's own musl GCC |
-| Kernel | vendor 5.10 rehydrated to 5.10.265 from `git.kernel.org` stable | Linux 6.18.29 from kernel.org through Buildroot, licheerv patches plus 0001-0007 |
+| Kernel | vendor 5.10 rehydrated to 5.10.265 from `git.kernel.org` stable | Linux 6.18.65 from kernel.org through Buildroot, licheerv patches plus 0001-0007 |
 | Kernel modules | 57 in-tree, external and media modules into the `/mnt/system/ko` skeleton | built in except the 11 media modules (`hardened-soph-media`) and the Wi-Fi/BT modules |
 | FSBL, OpenSBI, U-Boot | vendor SDK stock build (U-Boot 2021.10) | FSBL from `sophgo/fsbl`, OpenSBI 1.8.1 and U-Boot 2025.10 from Buildroot |
 | Boot payload | `boot.sd` | `boot.scr` and the verified FIT `boot.itb` |
@@ -251,7 +254,7 @@ Every external source the 6.18 build fetches, all pinned to a commit or a releas
 | External source | What it provides |
 | --- | --- |
 | `buildroot.org` | The Buildroot release, and through it the cross-compiler (GCC 14.4, musl 1.2.6) that builds the whole image, native code included, and the Linux 6.18 source from kernel.org |
-| `lone0/buildroot-external-licheervnano` | The licheerv patch series and board files for Linux 6.18 |
+| `doloopuntil/buildroot-external-licheervnano` | The licheerv patch series and board files for Linux 6.18: a fork of `lone0/buildroot-external-licheervnano` whose patches apply to 6.18.29 and 6.18.65 |
 | `sophgo/fsbl` | The FSBL source |
 | `sophgo/osdrv` and `sophgo/cvi_mpi` (one dated release) | The media kernel modules and the middleware libraries; one release for both keeps the user/kernel structs consistent |
 | `sophgo/SensorSupportList` | The sensor list the middleware build needs |

@@ -20,7 +20,7 @@ env:
   SOPHGO_OSDRV_SHA: 1b3a49649d18488ecf54fb4fcb6c27599e433fdc
   SOPHGO_CVI_MPI_SHA: 693a72a1d52f2e08ea767e0a72905e81f10572a5
   SOPHGO_SENSOR_LIST_SHA: e2824e1d07f516c41238e123fefbab71a34843bc
-  LICHEERV_EXTERNAL_SHA: 019ffc864bb9353f823afc98f7dd9fdacfa935cb
+  LICHEERV_EXTERNAL_SHA: 9fa9c023ef1a9c30585955aeb22c9c8d83ade0bd
 
 jobs:
   # The long part: Buildroot without its post-image step. Its handoff artifact lets
@@ -34,8 +34,8 @@ jobs:
       RUN_ROOT: ${{ github.workspace }}/build/rc12-run
       EXPECTED_SYSTEM_VERSION: 1.0.0
       EXPECTED_KVMAPP_VERSION: 3.0.0
-      EXPECTED_KERNEL_RELEASE: 6.18.29
-      EXPECTED_SECURITY_PATCH_LEVEL: Buildroot 2026.05.1 security maintenance Linux 6.18.29
+      EXPECTED_KERNEL_RELEASE: 6.18.65
+      EXPECTED_SECURITY_PATCH_LEVEL: Buildroot 2026.05.1 security maintenance Linux 6.18.65
       NANOKVM_KVMAPP_SOURCE_DIR: ${{ github.workspace }}/build/kvmapp-rust/kvmapp
     steps:
       - name: Checkout
@@ -262,8 +262,8 @@ jobs:
       RUN_ROOT: ${{ github.workspace }}/build/rc12-run
       EXPECTED_SYSTEM_VERSION: 1.0.0
       EXPECTED_KVMAPP_VERSION: 3.0.0
-      EXPECTED_KERNEL_RELEASE: 6.18.29
-      EXPECTED_SECURITY_PATCH_LEVEL: Buildroot 2026.05.1 security maintenance Linux 6.18.29
+      EXPECTED_KERNEL_RELEASE: 6.18.65
+      EXPECTED_SECURITY_PATCH_LEVEL: Buildroot 2026.05.1 security maintenance Linux 6.18.65
     steps:
       - name: Checkout
         uses: actions/checkout@v4
