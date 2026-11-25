@@ -47,7 +47,7 @@ const ko = {
       setupButtonText: '계정 만들기',
       tips: {
         noPasswordReset:
-          '이 H-NanoKVM 이미지는 BOOT 버튼을 통한 암호 재설정을 지원하지 않습니다. 암호를 잃어버리면 SD 카드를 다시 기록하고 새 계정을 만드세요.',
+          '이 이미지는 BOOT 버튼을 통한 암호 재설정을 지원하지 않습니다. 암호를 잃어버리면 SD 카드를 다시 기록하고 새 계정을 만드세요.',
         change1: '이 작업을 수행하면 다음 비밀번호가 변경됩니다:',
         change2: '웹 로그인 비밀번호',
         change3: 'SSH 로그인용 시스템 루트 비밀번호'
@@ -71,8 +71,8 @@ const ko = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'NanoKVM Wi-Fi 설정',
-      success: 'NanoKVM의 네트워크 상태를 확인하고 새 IP 주소로 접속하세요',
+      description: '기기 Wi-Fi 설정',
+      success: '기기의 네트워크 상태를 확인하고 새 IP 주소로 접속하세요',
       failed: '작업에 실패했으니 다시 시도하세요',
       invalidMode:
         '현재 모드는 네트워크 설정을 지원하지 않습니다. 장치로 이동하여 Wi-Fi 구성 모드를 활성화하십시오.',
@@ -213,10 +213,10 @@ const ko = {
       resetHid: 'HID 초기화',
       hidOnly: {
         title: 'HID-Only 모드',
-        desc: '마우스나 키보드가 응답하지 않고 HID를 재설정해도 해결되지 않으면 NanoKVM과 호스트 간의 호환성 문제일 수 있습니다.',
+        desc: '마우스나 키보드가 응답하지 않고 HID를 재설정해도 해결되지 않으면 기기와 호스트 간의 호환성 문제일 수 있습니다.',
         tip1: 'HID-Only 모드를 활성화하면 가상 디스크와 가상 네트워크가 마운트 해제됩니다',
         tip2: 'HID-Only 모드에서는 이미지 마운트가 비활성화됩니다',
-        tip3: '모드 전환 후 NanoKVM이 자동으로 재부팅됩니다',
+        tip3: '모드 전환 후 기기가 자동으로 재부팅됩니다',
         enable: 'HID-Only 모드 활성화',
         disable: 'HID-Only 모드 비활성화'
       }
@@ -262,18 +262,18 @@ const ko = {
       deleteConfirm: '이 이미지를 제거하시겠습니까?',
       tips: {
         title: '업로드 방법',
-        usb1: 'USB를 통해 NanoKVM을 컴퓨터에 연결하세요.',
+        usb1: 'USB를 통해 기기를 컴퓨터에 연결하세요.',
         usb2: '설정 > 장치 > 가상 디스크에서 가상 디스크가 마운트되었는지 확인하세요.',
         usb3: '컴퓨터에서 가상 디스크를 열고 이미지 파일을 가상 디스크의 루트 디렉토리로 복사하세요.',
-        scp1: 'NanoKVM과 컴퓨터가 동일한 로컬 네트워크에 있는지 확인하세요.',
-        scp2: '컴퓨터에서 터미널을 열고 SCP 명령을 사용하여 이미지 파일을 NanoKVM의 /data 디렉터리에 업로드하세요.',
-        scp3: '예시: scp [이미지 파일 경로] root@[NanoKVM IP 주소]:/data',
+        scp1: '기기와 컴퓨터가 동일한 로컬 네트워크에 있는지 확인하세요.',
+        scp2: '컴퓨터에서 터미널을 열고 SCP 명령을 사용하여 이미지 파일을 기기의 /data 디렉터리에 업로드하세요.',
+        scp3: '예시: scp [이미지 파일 경로] root@[기기 IP 주소]:/data',
         tfCard: 'SD 카드',
         tf1: '이 방법은 Linux 시스템에서 지원됩니다',
-        tf2: 'NanoKVM에서 SD 카드를 꺼냅니다. FULL 버전은 먼저 케이스를 분해하세요.',
+        tf2: '기기에서 SD 카드를 꺼냅니다. FULL 버전은 먼저 케이스를 분해하세요.',
         tf3: 'SD 카드를 카드 리더기에 삽입하고 컴퓨터에 연결하세요.',
         tf4: '이미지 파일을 SD 카드의 /data 디렉터리에 복사하세요.',
-        tf5: 'SD 카드를 NanoKVM에 삽입하세요.'
+        tf5: 'SD 카드를 기기에 삽입하세요.'
       }
     },
     script: {
@@ -286,7 +286,7 @@ const ko = {
       delete: '삭제',
       close: '닫기',
       unlockDesc:
-        '스크립트는 NanoKVM에서 root로 실행됩니다. 스크립트를 교체하거나 실행하려면 웹 계정 비밀번호를 입력하세요.',
+        '스크립트는 기기에서 root로 실행됩니다. 스크립트를 교체하거나 실행하려면 웹 계정 비밀번호를 입력하세요.',
       unreviewedTitle: '확인하지 않은 스크립트',
       unreviewedDesc:
         '이 스크립트는 새로 추가되었거나 마지막 실행 이후 교체되었습니다. 세션을 가진 누구나 업로드했을 수 있으므로 root로 실행하기 전에 터미널에서 내용을 확인하세요.',
@@ -295,7 +295,7 @@ const ko = {
     },
     terminal: {
       title: '터미널',
-      nanokvm: 'NanoKVM 터미널',
+      device: '기기 터미널',
       serial: '시리얼 포트 터미널',
       unlockTitle: '터미널 잠금 해제',
       unlockDesc: '터미널 세션을 시작하려면 웹 계정 암호를 입력하세요',
@@ -413,7 +413,7 @@ const ko = {
           remoteDownload: '원격 ISO 다운로드',
           remoteDownloadWarningTitle: '원격 ISO 다운로드를 활성화할까요?',
           remoteDownloadWarningDesc:
-            'NanoKVM은 URL에서 ISO를 가져와 /data에 기록합니다. 신뢰할 수 있는 URL에만 활성화하고 완료 후 끄세요.',
+            '기기는 URL에서 ISO를 가져와 /data에 기록합니다. 신뢰할 수 있는 URL에만 활성화하고 완료 후 끄세요.',
           remoteDownloadWarningConfirm: '활성화'
         }
       },
@@ -526,9 +526,9 @@ const ko = {
           systemUpdate: '시스템 업데이트'
         },
         reboot: '재부팅',
-        rebootDesc: 'NanoKVM을 재부팅하시겠습니까?',
+        rebootDesc: '기기를 재부팅하시겠습니까?',
         poweroff: '전원 끄기',
-        poweroffDesc: 'NanoKVM의 전원을 끄시겠습니까?'
+        poweroffDesc: '기기의 전원을 끄시겠습니까?'
       },
       network: {
         title: 'IP & DNS',
@@ -620,7 +620,7 @@ const ko = {
         },
         dns: {
           title: 'DNS',
-          description: 'NanoKVM의 DNS 서버 설정',
+          description: '기기의 DNS 서버 설정',
           ipv4Title: 'IPv4',
           ipv4Description: '유선 인터페이스의 IPv4 주소를 설정합니다',
           servers: '서버',
@@ -814,7 +814,7 @@ const ko = {
             apply: '베이스라인으로 전환',
             confirmTitle: '개방형 베이스라인 모드로 전환할까요?',
             confirmDesc:
-              '방화벽 서비스는 계속 활성화되지만 로컬 전용 소스 범위 제한이 해제됩니다. 네트워크가 라우팅하는 경우 공용 소스 범위에서 노출된 NanoKVM 서비스에 접근할 수 있습니다.'
+              '방화벽 서비스는 계속 활성화되지만 로컬 전용 소스 범위 제한이 해제됩니다. 네트워크가 라우팅하는 경우 공용 소스 범위에서 노출된 기기 서비스에 접근할 수 있습니다.'
           },
           rules: {
             title: '현재 규칙',
@@ -981,8 +981,8 @@ const ko = {
         download: '다운로드 중 :',
         package: '패키지 설치',
         unzip: '압축 해제',
-        upTailscale: 'tailscale을 NanoKVM의 /usr/bin/ 경로에 업로드하세요',
-        upTailscaled: 'tailscaled를 NanoKVM의 /usr/sbin/ 경로에 업로드하세요',
+        upTailscale: 'tailscale을 기기의 /usr/bin/ 경로에 업로드하세요',
+        upTailscaled: 'tailscaled를 기기의 /usr/sbin/ 경로에 업로드하세요',
         refresh: '현재 페이지 새로고침',
         notRunning: 'Tailscale이 실행되고 있지 않습니다. 계속하려면 시작해 주세요.',
         run: '시작',
@@ -1175,7 +1175,7 @@ const ko = {
         defaultTitle: '일반 어시스턴트',
         defaultDescription: '일반 대화, 검색, 작업 공간 지원',
         kvmTitle: '원격 제어',
-        kvmDescription: 'NanoKVM을 통한 원격 호스트 제어',
+        kvmDescription: '기기를 통한 원격 호스트 제어',
         switched: '에이전트 역할 변경됨',
         switchFailed: '에이전트 역할 변경에 실패했습니다'
       },

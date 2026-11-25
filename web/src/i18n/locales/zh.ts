@@ -46,7 +46,7 @@ const zh = {
       setupButtonText: '创建账户',
       tips: {
         noPasswordReset:
-          '此 H-NanoKVM 镜像不支持通过 BOOT 按钮重置密码。如果密码丢失，请重新写入 SD 卡并创建新账户。',
+          '此镜像不支持通过 BOOT 按钮重置密码。如果密码丢失，请重新写入 SD 卡并创建新账户。',
         change1: '请注意，此操作将同时更新以下密码：',
         change2: '网页的登录密码',
         change3: '用于 SSH 登录的系统 root 用户密码'
@@ -70,8 +70,8 @@ const zh = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: '配置 NanoKVM Wi-Fi 信息',
-      success: '请前往设备检查 NanoKVM 的网络状态',
+      description: '配置设备 Wi-Fi 信息',
+      success: '请前往设备检查网络状态',
       failed: '操作失败，请重试',
       invalidMode: '当前模式不支持配置网络。请先前往设备启用 Wi-Fi 配置模式。',
       confirmBtn: '确定',
@@ -205,10 +205,10 @@ const zh = {
       resetHid: '重置 HID',
       hidOnly: {
         title: 'HID-Only 模式',
-        desc: '如果鼠标或键盘停止响应，且重置 HID 无效，可能是 NanoKVM 与主机之间存在兼容性问题。',
+        desc: '如果鼠标或键盘停止响应，且重置 HID 无效，可能是 设备与主机之间存在兼容性问题。',
         tip1: '启用 HID-Only 模式将卸载虚拟磁盘和虚拟网络',
         tip2: '在 HID-Only 模式下，镜像挂载被禁用',
-        tip3: '切换模式后将自动重启 NanoKVM',
+        tip3: '切换模式后将自动重启设备',
         enable: '启用 HID-Only 模式',
         disable: '停用 HID-Only 模式'
       }
@@ -251,18 +251,18 @@ const zh = {
       deleteConfirm: '确定要删除该镜像吗？',
       tips: {
         title: '如何上传',
-        usb1: '将 NanoKVM 通过 USB 连接到您的电脑。',
+        usb1: '将设备通过 USB 连接到您的电脑。',
         usb2: '确保已在 设置 > 设备 > 虚拟磁盘 中挂载虚拟磁盘。',
         usb3: '在电脑上打开虚拟硬盘，将镜像文件拷贝到虚拟硬盘的根目录下。',
-        scp1: '确保 NanoKVM 和您的电脑在同一个局域网内。',
-        scp2: '在电脑上打开终端软件，使用 SCP 命令将镜像文件上传到 NanoKVM 的 /data 目录。',
-        scp3: '示例：scp your-image-path root@your-nanokvm-ip:/data',
+        scp1: '确保设备和您的电脑在同一个局域网内。',
+        scp2: '在电脑上打开终端软件，使用 SCP 命令将镜像文件上传到 设备的 /data 目录。',
+        scp3: '示例：scp your-image-path root@your-device-ip:/data',
         tfCard: 'SD 卡',
         tf1: '该方式适用于 Linux 系统',
-        tf2: '将 SD 卡从 NanoKVM 中取出。FULL 版本需要先拆开外壳。',
+        tf2: '将 SD 卡从设备中取出。FULL 版本需要先拆开外壳。',
         tf3: '将 SD 卡插入读卡器并连接到您的电脑。',
         tf4: '从电脑上拷贝镜像文件到 SD 卡的 /data 目录下。',
-        tf5: '将 SD 卡重新插入 NanoKVM。'
+        tf5: '将 SD 卡重新插入设备。'
       }
     },
     script: {
@@ -274,7 +274,7 @@ const zh = {
       delDesc: '确定要删除该文件吗？',
       delete: '删除',
       close: '关闭',
-      unlockDesc: '脚本在 NanoKVM 上以 root 身份运行。请输入 Web 账户密码以替换或运行脚本。',
+      unlockDesc: '脚本在设备上以 root 身份运行。请输入 Web 账户密码以替换或运行脚本。',
       unreviewedTitle: '未检查的脚本',
       unreviewedDesc:
         '此脚本是新增的，或自你上次运行后被替换。任何拥有你会话的人都可能上传了它，因此请先在终端中查看，再以 root 身份运行。',
@@ -282,7 +282,7 @@ const zh = {
     },
     terminal: {
       title: '终端',
-      nanokvm: 'NanoKVM 终端',
+      device: '设备终端',
       serial: '串口终端',
       unlockTitle: '解锁终端',
       unlockDesc: '输入网页账户密码以启动终端会话',
@@ -399,7 +399,7 @@ const zh = {
           remoteDownload: '远程 ISO 下载',
           remoteDownloadWarningTitle: '启用远程 ISO 下载？',
           remoteDownloadWarningDesc:
-            'NanoKVM 将从 URL 获取 ISO 并写入 /data。仅对可信 URL 启用，用完后请关闭。',
+            '设备将从 URL 获取 ISO 并写入 /data。仅对可信 URL 启用，用完后请关闭。',
           remoteDownloadWarningConfirm: '启用'
         }
       },
@@ -509,9 +509,9 @@ const zh = {
           systemUpdate: '系统更新'
         },
         reboot: '重新启动',
-        rebootDesc: '您确定要重新启动 NanoKVM 吗？',
+        rebootDesc: '您确定要重新启动设备吗？',
         poweroff: '关机',
-        poweroffDesc: '确定要关闭 NanoKVM 吗？'
+        poweroffDesc: '确定要关闭设备吗？'
       },
       network: {
         title: 'IP & DNS',
@@ -599,7 +599,7 @@ const zh = {
         },
         dns: {
           title: 'DNS',
-          description: '配置 NanoKVM 使用的 DNS 服务器',
+          description: '配置设备使用的 DNS 服务器',
           ipv4Title: 'IPv4',
           ipv4Description: '配置有线接口的 IPv4 地址',
           servers: '服务器',
@@ -788,7 +788,7 @@ const zh = {
             apply: '切换到基线',
             confirmTitle: '切换到开放的基线模式？',
             confirmDesc:
-              '防火墙服务保持启用，但会取消仅限本地来源范围的限制。如果网络会路由，公共来源范围可能访问暴露的 NanoKVM 服务。'
+              '防火墙服务保持启用，但会取消仅限本地来源范围的限制。如果网络会路由，公共来源范围可能访问暴露的设备服务。'
           },
           rules: {
             title: '当前规则',
@@ -953,8 +953,8 @@ const zh = {
         download: '下载',
         package: '安装包',
         unzip: '并解压',
-        upTailscale: '将 tailscale 上传到 NanoKVM 的 /usr/bin/ 目录',
-        upTailscaled: '将 tailscaled 上传到 NanoKVM 的 /usr/sbin/ 目录',
+        upTailscale: '将 tailscale 上传到设备的 /usr/bin/ 目录',
+        upTailscaled: '将 tailscaled 上传到设备的 /usr/sbin/ 目录',
         refresh: '刷新页面',
         notRunning: 'Tailscale 尚未运行。请先执行启动操作。',
         run: '启动',
@@ -1137,7 +1137,7 @@ const zh = {
         defaultTitle: '通用助手',
         defaultDescription: '适合普通问答、搜索和工作区辅助',
         kvmTitle: '远程控制',
-        kvmDescription: '通过 NanoKVM 操作下游远程主机',
+        kvmDescription: '通过设备操作下游远程主机',
         switched: '角色已切换',
         switchFailed: '切换角色失败'
       },

@@ -48,7 +48,7 @@ const da = {
       setupButtonText: 'Opret konto',
       tips: {
         noPasswordReset:
-          'Dette H-NanoKVM image understøtter ikke nulstilling af adgangskode med BOOT-knappen. Hvis adgangskoden mistes, skriv SD-kortet igen og opret en ny konto.',
+          'Dette image understøtter ikke nulstilling af adgangskode med BOOT-knappen. Hvis adgangskoden mistes, skriv SD-kortet igen og opret en ny konto.',
         change1: 'Bemærk, at denne handling ændrer følgende adgangskoder:',
         change2: 'Adgangskode til weblogin',
         change3: 'Systemets root-adgangskode til SSH-login'
@@ -72,8 +72,8 @@ const da = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'Konfigurer Wi-Fi for NanoKVM',
-      success: "Gå hen til enheden og kontrollér NanoKVM's netværksstatus",
+      description: 'Konfigurer Wi-Fi for enheden',
+      success: 'Gå hen til enheden og kontrollér dens netværksstatus',
       failed: 'Handlingen mislykkedes, prøv igen',
       invalidMode:
         'Den aktuelle tilstand understøtter ikke netværksopsætning. Gå til din enhed og aktiver Wi-Fi konfigurationstilstand.',
@@ -216,10 +216,10 @@ const da = {
       resetHid: 'Nulstil HID',
       hidOnly: {
         title: 'HID-Only-tilstand',
-        desc: 'Hvis mus eller tastatur holder op med at reagere, og nulstilling af HID ikke hjælper, kan det være et kompatibilitetsproblem mellem NanoKVM og værten.',
+        desc: 'Hvis mus eller tastatur holder op med at reagere, og nulstilling af HID ikke hjælper, kan det være et kompatibilitetsproblem mellem enheden og værten.',
         tip1: 'Aktivering af HID-Only-tilstand afmonterer den virtuelle disk og det virtuelle netværk',
         tip2: 'I HID-Only-tilstand er montering af billeder deaktiveret',
-        tip3: 'NanoKVM genstarter automatisk efter at have skiftet tilstand',
+        tip3: 'Enheden genstarter automatisk efter at have skiftet tilstand',
         enable: 'Aktivér HID-Only-tilstand',
         disable: 'Deaktivér HID-Only-tilstand'
       }
@@ -266,18 +266,18 @@ const da = {
       deleteConfirm: 'Er du sikker på, at du vil slette dette billede?',
       tips: {
         title: 'Sådan uploader du',
-        usb1: 'Forbind din NanoKVM til din computer via USB.',
+        usb1: 'Forbind enheden til din computer via USB.',
         usb2: 'Sørg for, at den virtuelle disk er monteret under Indstillinger > Enhed > Virtuel disk.',
         usb3: 'Åben den virtuelle disk på din computer og kopier diskbilledet til roden af den virtuelle disk.',
-        scp1: 'Kontroller at din NanoKVM og din computer er på samme lokale netværk.',
-        scp2: 'Åben en terminal på din computer og brug SCP-kommandoen for at uploade diskbilledet til /data mappen på din NanoKVM.',
-        scp3: 'Eksempel: scp sti-til-dit-diskbillede root@din-nanokvm-ip:/data',
+        scp1: 'Kontroller at enheden og din computer er på samme lokale netværk.',
+        scp2: 'Åben en terminal på din computer og brug SCP-kommandoen for at uploade diskbilledet til /data mappen på enheden.',
+        scp3: 'Eksempel: scp sti-til-dit-diskbillede root@din-enheds-ip:/data',
         tfCard: 'microSD-kort',
         tf1: 'Denne metode er understøttet af Linux systemer',
-        tf2: 'Tag SD-kortet ud af din NanoKVM. På FULL-versionen skal du først åbne enheden.',
+        tf2: 'Tag SD-kortet ud af enheden. På FULL-versionen skal du først åbne kabinettet.',
         tf3: 'Indsæt microSD-kortet i en kortlæser og tilslut den til en computer.',
         tf4: 'Kopier diskbilledet til /data mappen på microSD-kortet.',
-        tf5: 'Skub microSD-kortet ud og indsæt microSD-kortet i din NanoKVM.'
+        tf5: 'Skub microSD-kortet ud og indsæt microSD-kortet i enheden.'
       }
     },
     script: {
@@ -290,7 +290,7 @@ const da = {
       delete: 'Slet',
       close: 'Luk',
       unlockDesc:
-        'Scripts kører som root på NanoKVM. Indtast adgangskoden til webkontoen for at erstatte eller køre et script.',
+        'Scripts kører som root på enheden. Indtast adgangskoden til webkontoen for at erstatte eller køre et script.',
       unreviewedTitle: 'Ugennemgået script',
       unreviewedDesc:
         'Dette script er nyt eller blev erstattet, siden du sidst kørte det. Alle med din session kan have uploadet det, så se det i terminalen, før du kører det som root.',
@@ -299,7 +299,7 @@ const da = {
     },
     terminal: {
       title: 'Terminal',
-      nanokvm: 'Terminal til NanoKVM',
+      device: 'Enhedsterminal',
       serial: 'Terminal til seriel port',
       unlockTitle: 'Lås terminal op',
       unlockDesc: 'Indtast adgangskoden til webkontoen for at starte en terminalsession',
@@ -418,7 +418,7 @@ const da = {
           remoteDownload: 'Hent ekstern ISO',
           remoteDownloadWarningTitle: 'Aktivér ekstern ISO-download?',
           remoteDownloadWarningDesc:
-            "NanoKVM henter en ISO fra en URL og skriver den til /data. Aktivér kun for betroede URL'er og slå fra, når du er færdig.",
+            "Enheden henter en ISO fra en URL og skriver den til /data. Aktivér kun for betroede URL'er og slå fra, når du er færdig.",
           remoteDownloadWarningConfirm: 'Aktivér'
         }
       },
@@ -535,9 +535,9 @@ const da = {
           systemUpdate: 'Systemopdatering'
         },
         reboot: 'Genstart',
-        rebootDesc: 'Er du sikker på, at du vil genstarte NanoKVM?',
+        rebootDesc: 'Er du sikker på, at du vil genstarte enheden?',
         poweroff: 'Sluk',
-        poweroffDesc: 'Er du sikker på, at du vil slukke NanoKVM?'
+        poweroffDesc: 'Er du sikker på, at du vil slukke enheden?'
       },
       network: {
         title: 'IP & DNS',
@@ -631,7 +631,7 @@ const da = {
         },
         dns: {
           title: 'DNS',
-          description: 'Konfigurer DNS-servere til NanoKVM',
+          description: 'Konfigurer DNS-servere til enheden',
           ipv4Title: 'IPv4',
           ipv4Description: 'Konfigurer IPv4-adressering for det kablede interface',
           servers: 'Servere',
@@ -827,7 +827,7 @@ const da = {
             apply: 'Skift til Basis',
             confirmTitle: 'Skifte til den åbne tilstand Basis?',
             confirmDesc:
-              'Firewalltjenesten forbliver aktiv, men begrænsningen til lokale kildeintervaller fjernes. Offentlige kildeintervaller kan nå eksponerede NanoKVM-tjenester, hvis netværket router dem.'
+              'Firewalltjenesten forbliver aktiv, men begrænsningen til lokale kildeintervaller fjernes. Offentlige kildeintervaller kan nå eksponerede tjenester på enheden, hvis netværket router dem.'
           },
           rules: {
             title: 'Aktuelle regler',
@@ -997,8 +997,8 @@ const da = {
         download: 'Download',
         package: 'installationspakken',
         unzip: 'og udpak den',
-        upTailscale: 'Upload tailscale til NanoKVM-mappen /usr/bin/',
-        upTailscaled: 'Upload tailscaled til NanoKVM-mappen /usr/sbin/',
+        upTailscale: 'Upload tailscale til mappen /usr/bin/ på enheden',
+        upTailscaled: 'Upload tailscaled til mappen /usr/sbin/ på enheden',
         refresh: 'Opdater siden',
         notRunning: 'Tailscale kører ikke. Start det for at fortsætte.',
         run: 'Start',
@@ -1196,7 +1196,7 @@ const da = {
         defaultTitle: 'Generel assistent',
         defaultDescription: 'Generel hjælp til chat, søgning og arbejdsområde',
         kvmTitle: 'Fjernstyring',
-        kvmDescription: 'Betjen fjernværten gennem NanoKVM',
+        kvmDescription: 'Betjen fjernværten gennem enheden',
         switched: 'Agentrolle skiftet',
         switchFailed: 'Kunne ikke skifte agentrolle'
       },

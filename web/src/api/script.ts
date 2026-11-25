@@ -2,7 +2,7 @@ import { http } from '@/lib/http.ts';
 
 // A terminal unlock ticket for exactly one run, or one replacement of an existing script:
 // scripts run as root. Adding a script under a new name needs none.
-const UNLOCK_HEADER = 'X-NanoKVM-Terminal-Ticket';
+const UNLOCK_HEADER = 'X-HNanoKVM-Terminal-Ticket';
 
 export function uploadScript(formData: FormData, ticket?: string) {
   return http.request({

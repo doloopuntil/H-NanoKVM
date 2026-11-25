@@ -48,7 +48,7 @@ const tr = {
       setupButtonText: 'Hesap oluştur',
       tips: {
         noPasswordReset:
-          'Bu H-NanoKVM imajı BOOT düğmesinden parola sıfırlamayı desteklemez. Parola kaybolursa SD kartı yeniden yazın ve yeni hesap oluşturun.',
+          'Bu imajı BOOT düğmesinden parola sıfırlamayı desteklemez. Parola kaybolursa SD kartı yeniden yazın ve yeni hesap oluşturun.',
         change1: 'Bu işlem şu şifreleri değiştiricektir:',
         change2: 'Arayüz giriş şifresi',
         change3: 'SSH girişi için root sistem şifresi'
@@ -72,8 +72,8 @@ const tr = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'NanoKVM için Wi-Fi ayarlarını ayarlayın',
-      success: "NanoKVM'in ağ durumunu kontrol etmek için cihazın başına gidin",
+      description: 'Cihaz için Wi-Fi ayarlarını ayarlayın',
+      success: 'Ağ durumunu kontrol etmek için cihazın başına gidin',
       failed: 'İşlem başarısız oldu, lütfen tekrar deneyiniz',
       invalidMode:
         'Geçerli mod ağ kurulumunu desteklemiyor. Lütfen cihazınıza gidin ve Wi-Fi yapılandırma modunu etkinleştirin.',
@@ -215,10 +215,10 @@ const tr = {
       resetHid: "HID'yi sıfırla",
       hidOnly: {
         title: 'HID-Only modu',
-        desc: "Fare veya klavye yanıt vermeyi bırakır ve HID'i sıfırlamak yardımcı olmazsa, NanoKVM ile ana bilgisayar arasında bir uyumluluk sorunu olabilir.",
+        desc: "Fare veya klavye yanıt vermeyi bırakır ve HID'i sıfırlamak yardımcı olmazsa, cihaz ile ana bilgisayar arasında bir uyumluluk sorunu olabilir.",
         tip1: 'HID-Only modunu etkinleştirmek sanal diski ve sanal ağı bağlantıdan çıkarır',
         tip2: 'HID-Only modunda imaj bağlama devre dışıdır',
-        tip3: 'NanoKVM mod değişiminden sonra kendiliğinden yeniden başlatılacaktır',
+        tip3: 'Cihaz mod değişiminden sonra kendiliğinden yeniden başlatılacaktır',
         enable: 'HID-Only modunu etkinleştir',
         disable: 'HID-Only modunu devre dışı bırak'
       }
@@ -265,18 +265,18 @@ const tr = {
       deleteConfirm: 'Bu resmi silmek istediğinizden emin misiniz?',
       tips: {
         title: 'Nasıl yüklenir',
-        usb1: "NanoKVM'i bilgisayarınıza USB ile bağlayın.",
+        usb1: 'Cihazı bilgisayarınıza USB ile bağlayın.',
         usb2: 'Sanal diskin Ayarlar > Cihaz > Sanal Disk bölümünde bağlı olduğundan emin olun.',
         usb3: 'Sanal diski bilgisayarınızda açın ve disk imajı dosyanızı sanal diskin kök dizinine kopyalayın.',
-        scp1: 'NanoKVM ve bilgisayarınızın aynı yerel ağda bulunduğundan emin olun.',
-        scp2: "Bilgisayarınızda uçbirimi açın ve disk imajı dosyanızı SCP komutunu kullanarak NanoKVM'in /data dizinine yükleyin.",
-        scp3: 'Örnek: scp disk-imajı-yolu root@nanokvm-ip:/data',
+        scp1: 'Cihaz ve bilgisayarınızın aynı yerel ağda bulunduğundan emin olun.',
+        scp2: 'Bilgisayarınızda uçbirimi açın ve disk imajı dosyanızı SCP komutunu kullanarak cihazın /data dizinine yükleyin.',
+        scp3: 'Örnek: scp disk-imajı-yolu root@cihaz-ip:/data',
         tfCard: 'micro SD kart',
         tf1: 'Bu yöntem Linux sistemlerde desteklenmektedir',
-        tf2: "NanoKVM'den SD kartı çıkarın. FULL sürümde önce kutuyu sökün.",
+        tf2: 'Cihazdan SD kartı çıkarın. FULL sürümde önce kutuyu sökün.',
         tf3: 'micro SD kartı kart okuyucusuna takın ve bilgisayarınıza bağlayın.',
         tf4: 'Disk imajı dosyanızı micro SD kartın /data dizinine kopyalayın.',
-        tf5: "micro SD kartı NanoKVM'e geri yerleştirin."
+        tf5: 'micro SD kartı cihaza geri yerleştirin.'
       }
     },
     script: {
@@ -289,7 +289,7 @@ const tr = {
       delete: 'Sil',
       close: 'Kapat',
       unlockDesc:
-        'Betikler NanoKVM üzerinde root olarak çalışır. Bir betiği değiştirmek veya çalıştırmak için web hesabı parolasını girin.',
+        'Betikler cihaz üzerinde root olarak çalışır. Bir betiği değiştirmek veya çalıştırmak için web hesabı parolasını girin.',
       unreviewedTitle: 'İncelenmemiş betik',
       unreviewedDesc:
         'Bu betik yeni ya da en son çalıştırmanızdan sonra değiştirilmiş. Oturumunuza sahip herkes yüklemiş olabilir, bu yüzden root olarak çalıştırmadan önce terminalde inceleyin.',
@@ -298,7 +298,7 @@ const tr = {
     },
     terminal: {
       title: 'Uçbirim',
-      nanokvm: 'NanoKVM uçbirimi',
+      device: 'Cihaz uçbirimi',
       serial: 'Seri port uçbirimi',
       unlockTitle: 'Terminal kilidini aç',
       unlockDesc: 'Terminal oturumu başlatmak için web hesabı parolanızı girin',
@@ -417,7 +417,7 @@ const tr = {
           remoteDownload: 'Uzak ISO indir',
           remoteDownloadWarningTitle: 'Uzak ISO indirme etkinleştirilsin mi?',
           remoteDownloadWarningDesc:
-            "NanoKVM bir URL'den ISO alıp /data içine yazar. Yalnızca güvenilir URL'ler için etkinleştirin ve işiniz bitince kapatın.",
+            "Cihaz bir URL'den ISO alıp /data içine yazar. Yalnızca güvenilir URL'ler için etkinleştirin ve işiniz bitince kapatın.",
           remoteDownloadWarningConfirm: 'Etkinleştir'
         }
       },
@@ -533,9 +533,9 @@ const tr = {
           systemUpdate: 'Sistem güncellemesi'
         },
         reboot: 'Yeniden başlat',
-        rebootDesc: "NanoKVM'i yeniden başlatmak istediğinizden emin misiniz?",
+        rebootDesc: 'Cihazı yeniden başlatmak istediğinizden emin misiniz?',
         poweroff: 'Kapat',
-        poweroffDesc: "NanoKVM'i kapatmak istediğinize emin misiniz?"
+        poweroffDesc: 'Cihazı kapatmak istediğinize emin misiniz?'
       },
       network: {
         title: 'IP & DNS',
@@ -630,7 +630,7 @@ const tr = {
         },
         dns: {
           title: 'DNS',
-          description: 'NanoKVM için DNS sunucularını yapılandır',
+          description: 'Cihaz için DNS sunucularını yapılandır',
           ipv4Title: 'IPv4',
           ipv4Description: 'Kablolu arayüz için IPv4 adreslemeyi yapılandır',
           servers: 'Sunucular',
@@ -826,7 +826,7 @@ const tr = {
             apply: 'Temel moda geç',
             confirmTitle: 'Açık Temel moduna geçilsin mi?',
             confirmDesc:
-              "Güvenlik duvarı hizmeti etkin kalır, ancak yalnızca yerel kaynak aralığı kısıtlaması kaldırılır. Ağ yönlendiriyorsa genel kaynak aralıkları NanoKVM'in açıkta kalan hizmetlerine ulaşabilir."
+              'Güvenlik duvarı hizmeti etkin kalır, ancak yalnızca yerel kaynak aralığı kısıtlaması kaldırılır. Ağ yönlendiriyorsa genel kaynak aralıkları cihazın açıkta kalan hizmetlerine ulaşabilir.'
           },
           rules: {
             title: 'Geçerli kurallar',
@@ -997,8 +997,8 @@ const tr = {
         download: 'İndir',
         package: 'yükleme paketi',
         unzip: 'sıkışmış dosyayı açın',
-        upTailscale: "tailscale dosyasını NanoKVM'in /usr/bin dizinine yükleyin",
-        upTailscaled: "tailscaled dosyasını NanoKVM'in /usr/sbin dizinine yükleyin",
+        upTailscale: 'tailscale dosyasını cihazın /usr/bin dizinine yükleyin',
+        upTailscaled: 'tailscaled dosyasını cihazın /usr/sbin dizinine yükleyin',
         refresh: 'İçinde bulunduğunuz sayfayı yenileyin',
         notRunning: 'Tailscale çalışmıyor. Devam etmek için lütfen başlatın.',
         run: 'Başlat',
@@ -1196,7 +1196,7 @@ const tr = {
         defaultTitle: 'Genel asistan',
         defaultDescription: 'Genel sohbet, arama ve çalışma alanı yardımı',
         kvmTitle: 'Uzaktan kontrol',
-        kvmDescription: 'Uzak ana bilgisayarı NanoKVM aracılığıyla çalıştırın',
+        kvmDescription: 'Uzak ana bilgisayarı cihaz aracılığıyla çalıştırın',
         switched: 'Temsilci rolü değiştirildi',
         switchFailed: 'Temsilci rolü değiştirilemedi'
       },

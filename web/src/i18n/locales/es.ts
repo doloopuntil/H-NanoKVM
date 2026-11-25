@@ -50,7 +50,7 @@ const es = {
       setupButtonText: 'Crear cuenta',
       tips: {
         noPasswordReset:
-          'Esta imagen H-NanoKVM no permite restablecer la contraseña con el botón BOOT. Si se pierde la contraseña, vuelve a grabar la tarjeta SD y crea una cuenta nueva.',
+          'Esta imagen no permite restablecer la contraseña con el botón BOOT. Si se pierde la contraseña, vuelve a grabar la tarjeta SD y crea una cuenta nueva.',
         change1: 'Ten en cuenta que esta acción cambiará las siguientes contraseñas:',
         change2: 'Contraseña de acceso web',
         change3: 'Contraseña root del sistema para el acceso por SSH'
@@ -74,8 +74,8 @@ const es = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'Configura el Wi-Fi para el NanoKVM',
-      success: 'Comprueba el estado de red del NanoKVM y accede a la nueva dirección IP',
+      description: 'Configura el Wi-Fi del dispositivo',
+      success: 'Comprueba el estado de red del dispositivo y accede a la nueva dirección IP',
       failed: 'La operación ha fallado, vuelve a intentarlo',
       invalidMode:
         'El modo actual no admite la configuración de red. Ve a tu dispositivo y habilita el modo de configuración Wi-Fi.',
@@ -219,10 +219,10 @@ const es = {
       resetHid: 'Restablecer HID',
       hidOnly: {
         title: 'Modo HID-Only',
-        desc: 'Si el ratón o el teclado dejan de responder y restablecer el HID no ayuda, podría tratarse de un problema de compatibilidad entre el NanoKVM y el host.',
+        desc: 'Si el ratón o el teclado dejan de responder y restablecer el HID no ayuda, podría tratarse de un problema de compatibilidad entre el dispositivo y el host.',
         tip1: 'Al activar el modo HID-Only se desmontarán el disco virtual y la red virtual',
         tip2: 'En el modo HID-Only, el montaje de imágenes está desactivado',
-        tip3: 'El NanoKVM se reiniciará automáticamente después de cambiar de modo',
+        tip3: 'El dispositivo se reiniciará automáticamente después de cambiar de modo',
         enable: 'Activar el modo HID-Only',
         disable: 'Desactivar el modo HID-Only'
       }
@@ -269,18 +269,18 @@ const es = {
       deleteConfirm: '¿Estás seguro de que deseas eliminar esta imagen?',
       tips: {
         title: 'Cómo subir imágenes',
-        usb1: 'Conecta el NanoKVM a tu computadora mediante USB.',
+        usb1: 'Conecta el dispositivo a tu computadora mediante USB.',
         usb2: 'Asegúrate de que el disco virtual esté montado en Ajustes > Dispositivo > Disco virtual.',
         usb3: 'Abre el disco virtual en tu computadora y copia el archivo de imagen en el directorio raíz del disco virtual.',
-        scp1: 'Asegúrate de que el NanoKVM y tu computadora estén en la misma red local.',
-        scp2: 'Abre una terminal en tu computadora y usa el comando SCP para subir el archivo de imagen al directorio /data en el NanoKVM.',
-        scp3: 'Ejemplo: scp tu-ruta-de-imagen root@tu-ip-del-nanokvm:/data',
+        scp1: 'Asegúrate de que el dispositivo y tu computadora estén en la misma red local.',
+        scp2: 'Abre una terminal en tu computadora y usa el comando SCP para subir el archivo de imagen al directorio /data en el dispositivo.',
+        scp3: 'Ejemplo: scp tu-ruta-de-imagen root@tu-ip-del-dispositivo:/data',
         tfCard: 'Tarjeta SD',
         tf1: 'Este método es compatible con el sistema Linux',
-        tf2: 'Obtén la tarjeta SD del NanoKVM. En la versión FULL, desmonta primero la carcasa.',
+        tf2: 'Obtén la tarjeta SD del dispositivo. En la versión FULL, desmonta primero la carcasa.',
         tf3: 'Inserta la tarjeta SD en un lector de tarjetas y conéctalo a tu computadora.',
         tf4: 'Copia el archivo de imagen en el directorio /data de la tarjeta SD.',
-        tf5: 'Inserta la tarjeta SD en el NanoKVM.'
+        tf5: 'Inserta la tarjeta SD en el dispositivo.'
       }
     },
     script: {
@@ -293,7 +293,7 @@ const es = {
       delete: 'Eliminar',
       close: 'Cerrar',
       unlockDesc:
-        'Los scripts se ejecutan como root en el NanoKVM. Introduzca la contraseña de la cuenta web para reemplazar o ejecutar uno.',
+        'Los scripts se ejecutan como root en el dispositivo. Introduzca la contraseña de la cuenta web para reemplazar o ejecutar uno.',
       unreviewedTitle: 'Script sin revisar',
       unreviewedDesc:
         'Este script es nuevo o se reemplazó desde la última vez que lo ejecutó. Cualquiera con su sesión pudo subirlo, así que revíselo en el terminal antes de ejecutarlo como root.',
@@ -302,7 +302,7 @@ const es = {
     },
     terminal: {
       title: 'Consola',
-      nanokvm: 'Consola del NanoKVM',
+      device: 'Consola del dispositivo',
       serial: 'Consola del puerto serie',
       unlockTitle: 'Desbloquear terminal',
       unlockDesc: 'Introduce la contraseña de tu cuenta web para iniciar una sesión de terminal',
@@ -422,7 +422,7 @@ const es = {
           remoteDownload: 'Descargar ISO remota',
           remoteDownloadWarningTitle: '¿Activar descarga remota de ISO?',
           remoteDownloadWarningDesc:
-            'NanoKVM descargará una ISO desde una URL y la escribirá en /data. Actívalo solo para URL de confianza y desactívalo al terminar.',
+            'El dispositivo descargará una ISO desde una URL y la escribirá en /data. Actívalo solo para URL de confianza y desactívalo al terminar.',
           remoteDownloadWarningConfirm: 'Activar'
         }
       },
@@ -540,9 +540,9 @@ const es = {
           systemUpdate: 'Actualización del sistema'
         },
         reboot: 'Reiniciar',
-        rebootDesc: '¿Estás seguro de que deseas reiniciar el NanoKVM?',
+        rebootDesc: '¿Estás seguro de que deseas reiniciar el dispositivo?',
         poweroff: 'Apagar',
-        poweroffDesc: '¿Seguro que quieres apagar NanoKVM?'
+        poweroffDesc: '¿Seguro que quieres apagar el dispositivo?'
       },
       network: {
         title: 'IP & DNS',
@@ -637,7 +637,7 @@ const es = {
         },
         dns: {
           title: 'DNS',
-          description: 'Configura los servidores DNS para NanoKVM',
+          description: 'Configura los servidores DNS del dispositivo',
           ipv4Title: 'IPv4',
           ipv4Description: 'Configurar direccionamiento IPv4 para la interfaz cableada',
           servers: 'Servidores',
@@ -833,7 +833,7 @@ const es = {
             apply: 'Cambiar a Base',
             confirmTitle: '¿Cambiar al modo Base abierto?',
             confirmDesc:
-              'El servicio de firewall sigue activo, pero se elimina la restricción a rangos de origen solo locales. Los rangos de origen públicos pueden llegar a los servicios expuestos de NanoKVM si la red los enruta.'
+              'El servicio de firewall sigue activo, pero se elimina la restricción a rangos de origen solo locales. Los rangos de origen públicos pueden llegar a los servicios expuestos del dispositivo si la red los enruta.'
           },
           rules: {
             title: 'Reglas actuales',
@@ -1003,8 +1003,8 @@ const es = {
         download: 'Descargar el',
         package: 'paquete de instalación',
         unzip: 'y descomprimirlo',
-        upTailscale: 'Sube tailscale al directorio /usr/bin/ del NanoKVM',
-        upTailscaled: 'Sube tailscaled al directorio /usr/sbin/ del NanoKVM',
+        upTailscale: 'Sube tailscale al directorio /usr/bin/ del dispositivo',
+        upTailscaled: 'Sube tailscaled al directorio /usr/sbin/ del dispositivo',
         refresh: 'Actualizar la página actual',
         notRunning: 'Tailscale no se está ejecutando. Por favor, inícialo para continuar.',
         run: 'Iniciar',
@@ -1207,7 +1207,7 @@ const es = {
         defaultTitle: 'Asistente general',
         defaultDescription: 'Ayuda general para chat, búsqueda y espacio de trabajo',
         kvmTitle: 'Control remoto',
-        kvmDescription: 'Opere el host remoto a través de NanoKVM',
+        kvmDescription: 'Opere el host remoto a través del dispositivo',
         switched: 'Rol de agente cambiado',
         switchFailed: 'No se pudo cambiar la función del agente'
       },

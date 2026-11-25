@@ -1,4 +1,4 @@
-export const INPUT_ID = 'nanokvm-mobile-local-keyboard';
+export const INPUT_ID = 'hnanokvm-mobile-local-keyboard';
 
 export function focusMobileLocalKeyboard() {
   const input = document.getElementById(INPUT_ID) as HTMLTextAreaElement | null;

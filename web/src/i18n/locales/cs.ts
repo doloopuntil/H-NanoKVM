@@ -48,7 +48,7 @@ const cz = {
       setupButtonText: 'Vytvořit účet',
       tips: {
         noPasswordReset:
-          'Tento H-NanoKVM image nepodporuje reset hesla tlačítkem BOOT. Pokud heslo ztratíte, přepište SD kartu a vytvořte nový účet.',
+          'Tento image nepodporuje reset hesla tlačítkem BOOT. Pokud heslo ztratíte, přepište SD kartu a vytvořte nový účet.',
         change1: 'Upozorňujeme, že tato akce změní následující hesla:',
         change2: 'Heslo pro webové přihlášení',
         change3: 'Heslo systémového uživatele root pro přihlášení přes SSH'
@@ -72,8 +72,8 @@ const cz = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'Nastavit Wi-Fi pro NanoKVM',
-      success: 'Přejděte k zařízení a zkontrolujte stav sítě NanoKVM',
+      description: 'Nastavit Wi-Fi pro zařízení',
+      success: 'Přejděte k zařízení a zkontrolujte jeho stav sítě',
       failed: 'Operace selhala, zkuste to znovu',
       invalidMode:
         'Aktuální režim nepodporuje nastavení sítě. Přejděte do svého zařízení a povolte konfigurační režim Wi-Fi.',
@@ -216,10 +216,10 @@ const cz = {
       resetHid: 'Resetovat HID',
       hidOnly: {
         title: 'Režim HID-Only',
-        desc: 'Pokud myš nebo klávesnice přestanou reagovat a reset HID nepomůže, může jít o problém s kompatibilitou mezi NanoKVM a hostitelem.',
+        desc: 'Pokud myš nebo klávesnice přestanou reagovat a reset HID nepomůže, může jít o problém s kompatibilitou mezi zařízením a hostitelem.',
         tip1: 'Zapnutím režimu HID-Only se odpojí virtuální disk a virtuální síť',
         tip2: 'V režimu HID-Only je připojování obrazů zakázáno',
-        tip3: 'NanoKVM se po přepnutí režimů automaticky restartuje',
+        tip3: 'Zařízení se po přepnutí režimů automaticky restartuje',
         enable: 'Zapnout režim HID-Only',
         disable: 'Vypnout režim HID-Only'
       }
@@ -266,18 +266,18 @@ const cz = {
       deleteConfirm: 'Opravdu chcete smazat tento obrázek?',
       tips: {
         title: 'Jak nahrát',
-        usb1: 'Připojte NanoKVM k vašemu počítači přes USB.',
+        usb1: 'Připojte zařízení k vašemu počítači přes USB.',
         usb2: 'Ujistěte se, že je virtuální disk připojen v Nastavení > Zařízení > Virtuální disk.',
         usb3: 'Otevřete virtuální disk na vašem počítači a zkopírujte soubor s obrazem do kořenového adresáře virtuálního disku.',
-        scp1: 'Ujistěte se, že jsou NanoKVM a váš počítač ve stejné místní síti.',
-        scp2: 'Otevřete terminál na vašem počítači a použijte příkaz SCP pro nahrání souboru s obrazem do adresáře /data na zařízení NanoKVM.',
-        scp3: 'Příklad: scp cesta-k-vašemu-obrazu root@ip-nanokvm:/data',
+        scp1: 'Ujistěte se, že jsou zařízení a váš počítač ve stejné místní síti.',
+        scp2: 'Otevřete terminál na vašem počítači a použijte příkaz SCP pro nahrání souboru s obrazem do adresáře /data na zařízení.',
+        scp3: 'Příklad: scp cesta-k-vašemu-obrazu root@ip-zařízení:/data',
         tfCard: 'SD karta',
         tf1: 'Tato metoda je podporována na systémech Linux',
-        tf2: 'Vyjměte kartu SD z NanoKVM. U verze FULL nejprve rozeberte pouzdro.',
+        tf2: 'Vyjměte kartu SD ze zařízení. U verze FULL nejprve rozeberte pouzdro.',
         tf3: 'Vložte SD kartu do čtečky karet a připojte ji k vašemu počítači.',
         tf4: 'Zkopírujte soubor s obrazem do adresáře /data na SD kartě.',
-        tf5: 'Vložte SD kartu zpět do NanoKVM.'
+        tf5: 'Vložte SD kartu zpět do zařízení.'
       }
     },
     script: {
@@ -290,7 +290,7 @@ const cz = {
       delete: 'Smazat',
       close: 'Zavřít',
       unlockDesc:
-        'Skripty běží na NanoKVM jako root. Zadejte heslo webového účtu, abyste mohli skript nahradit nebo spustit.',
+        'Skripty běží na zařízení jako root. Zadejte heslo webového účtu, abyste mohli skript nahradit nebo spustit.',
       unreviewedTitle: 'Neprověřený skript',
       unreviewedDesc:
         'Tento skript je nový nebo byl nahrazen od vašeho posledního spuštění. Mohl ho nahrát kdokoli s vaší relací, proto si ho před spuštěním jako root prohlédněte v terminálu.',
@@ -299,7 +299,7 @@ const cz = {
     },
     terminal: {
       title: 'Terminál',
-      nanokvm: 'Terminál NanoKVM',
+      device: 'Terminál zařízení',
       serial: 'Terminál sériového portu',
       unlockTitle: 'Odemknout terminál',
       unlockDesc: 'Pro spuštění terminálové relace zadejte heslo webového účtu',
@@ -417,7 +417,7 @@ const cz = {
           remoteDownload: 'Stáhnout vzdálené ISO',
           remoteDownloadWarningTitle: 'Povolit vzdálené stahování ISO?',
           remoteDownloadWarningDesc:
-            'NanoKVM stáhne ISO z URL a zapíše ho do /data. Povolujte jen pro důvěryhodné URL a po dokončení vypněte.',
+            'Zařízení stáhne ISO z URL a zapíše ho do /data. Povolujte jen pro důvěryhodné URL a po dokončení vypněte.',
           remoteDownloadWarningConfirm: 'Povolit'
         }
       },
@@ -533,9 +533,9 @@ const cz = {
           systemUpdate: 'Aktualizace systému'
         },
         reboot: 'Restartujte',
-        rebootDesc: 'Opravdu chcete restartovat NanoKVM?',
+        rebootDesc: 'Opravdu chcete restartovat zařízení?',
         poweroff: 'Vypnout',
-        poweroffDesc: 'Opravdu chcete vypnout NanoKVM?'
+        poweroffDesc: 'Opravdu chcete vypnout zařízení?'
       },
       network: {
         title: 'IP & DNS',
@@ -629,7 +629,7 @@ const cz = {
         },
         dns: {
           title: 'DNS',
-          description: 'Nastavit DNS servery pro NanoKVM',
+          description: 'Nastavit DNS servery pro zařízení',
           ipv4Title: 'IPv4',
           ipv4Description: 'Nastavte adresaci IPv4 pro kabelové rozhraní',
           servers: 'Servery',
@@ -823,7 +823,7 @@ const cz = {
             apply: 'Přepnout na Základní',
             confirmTitle: 'Přepnout na otevřený režim Základní?',
             confirmDesc:
-              'Služba firewallu zůstane aktivní, ale odstraní se omezení pouze na lokální zdrojové rozsahy. Veřejné zdrojové rozsahy se mohou dostat k vystaveným službám NanoKVM, pokud je síť směruje.'
+              'Služba firewallu zůstane aktivní, ale odstraní se omezení pouze na lokální zdrojové rozsahy. Veřejné zdrojové rozsahy se mohou dostat k vystaveným službám zařízení, pokud je síť směruje.'
           },
           rules: {
             title: 'Aktuální pravidla',
@@ -991,8 +991,8 @@ const cz = {
         download: 'Stáhnout',
         package: 'instalační balíček',
         unzip: 'a rozbalit ho',
-        upTailscale: 'Nahrajte Tailscale do adresáře NanoKVM /usr/bin/',
-        upTailscaled: 'Nahrajte Tailscaled do adresáře NanoKVM /usr/sbin/',
+        upTailscale: 'Nahrajte Tailscale do adresáře /usr/bin/ na zařízení',
+        upTailscaled: 'Nahrajte Tailscaled do adresáře /usr/sbin/ na zařízení',
         refresh: 'Obnovit stránku',
         notRunning: 'Tailscale neběží. Chcete-li pokračovat, spusťte jej.',
         run: 'Spustit',
@@ -1191,7 +1191,7 @@ const cz = {
         defaultTitle: 'Obecný asistent',
         defaultDescription: 'Obecná nápověda pro chat, vyhledávání a pracovní prostor',
         kvmTitle: 'Vzdálené ovládání',
-        kvmDescription: 'Ovládejte vzdáleného hostitele prostřednictvím NanoKVM',
+        kvmDescription: 'Ovládejte vzdáleného hostitele prostřednictvím zařízení',
         switched: 'Role agenta změněna',
         switchFailed: 'Přepnutí role agenta se nezdařilo'
       },

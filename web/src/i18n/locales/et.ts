@@ -48,7 +48,7 @@ const et = {
       setupButtonText: 'Loo konto',
       tips: {
         noPasswordReset:
-          'See H-NanoKVM image ei toeta parooli lähtestamist BOOT-nupuga. Kui parool kaob, kirjuta SD-kaart uuesti ja loo uus konto.',
+          'See image ei toeta parooli lähtestamist BOOT-nupuga. Kui parool kaob, kirjuta SD-kaart uuesti ja loo uus konto.',
         change1: 'Pane tähele, et see toiming muudab järgmisi paroole:',
         change2: 'Veebi sisselogimise parool',
         change3: 'Süsteemi root-parool SSH-sisselogimiseks'
@@ -72,8 +72,8 @@ const et = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'NanoKVM-i Wi-Fi seadistamine',
-      success: 'Mine seadme juurde ja kontrolli NanoKVM-i võrgu olekut',
+      description: 'Seadme Wi-Fi seadistamine',
+      success: 'Mine seadme juurde ja kontrolli selle võrgu olekut',
       failed: 'Toiming nurjus, proovi uuesti',
       invalidMode:
         'Praegune režiim ei toeta võrgu seadistamist. Mine seadme juurde ja luba Wi-Fi seadistusrežiim.',
@@ -213,10 +213,10 @@ const et = {
       resetHid: 'Lähtesta HID',
       hidOnly: {
         title: 'HID-Only režiim',
-        desc: 'Kui hiir või klaviatuur lakkab reageerimast ning HID lähtestamine ei aita, võib tegu olla NanoKVM-i ja hosti ühilduvusprobleemiga.',
+        desc: 'Kui hiir või klaviatuur lakkab reageerimast ning HID lähtestamine ei aita, võib tegu olla seadme ja hosti ühilduvusprobleemiga.',
         tip1: 'HID-Only režiimi lubamine haagib lahti virtuaalse ketta ja virtuaalvõrgu',
         tip2: 'HID-Only režiimis on kujutiste haakimine keelatud',
-        tip3: 'NanoKVM taaskäivitub pärast režiimi vahetust automaatselt',
+        tip3: 'Seade taaskäivitub pärast režiimi vahetust automaatselt',
         enable: 'Luba HID-Only režiim',
         disable: 'Keela HID-Only režiim'
       }
@@ -262,18 +262,18 @@ const et = {
       deleteConfirm: 'Kas oled kindel, et soovid selle image kustutada?',
       tips: {
         title: 'Kuidas üles laadida',
-        usb1: 'Ühenda NanoKVM arvutiga USB kaudu.',
+        usb1: 'Ühenda seade arvutiga USB kaudu.',
         usb2: 'Veendu, et virtuaalne ketas on ühendatud kohas Seaded > Seade > Virtuaalne ketas.',
         usb3: 'Ava arvutis virtuaalne ketas ja kopeeri image fail virtuaalse ketta juurkausta.',
-        scp1: 'Veendu, et NanoKVM ja arvuti on samas kohalikus võrgus.',
-        scp2: 'Ava arvutis terminal ja kasuta SCP käsku image faili üleslaadimiseks NanoKVM-i /data kausta.',
-        scp3: 'Näide: scp sinu-image-tee root@nanoKVM-ip:/data',
+        scp1: 'Veendu, et seade ja arvuti on samas kohalikus võrgus.',
+        scp2: 'Ava arvutis terminal ja kasuta SCP käsku image faili üleslaadimiseks seadme /data kausta.',
+        scp3: 'Näide: scp sinu-image-tee root@seadme-ip:/data',
         tfCard: 'SD-kaart',
         tf1: 'See meetod on toetatud Linuxi süsteemis',
-        tf2: 'Võta SD-kaart NanoKVM-ist välja. FULL versiooni puhul võta enne korpus lahti.',
+        tf2: 'Võta SD-kaart seadmest välja. FULL versiooni puhul võta enne korpus lahti.',
         tf3: 'Sisesta SD-kaart kaardilugejasse ja ühenda see arvutiga.',
         tf4: 'Kopeeri image fail SD-kaardi /data kausta.',
-        tf5: 'Sisesta SD-kaart NanoKVM-i.'
+        tf5: 'Sisesta SD-kaart seadmesse.'
       }
     },
     script: {
@@ -286,7 +286,7 @@ const et = {
       delete: 'Kustuta',
       close: 'Sulge',
       unlockDesc:
-        'Skriptid töötavad NanoKVM-is root-õigustes. Skripti asendamiseks või käivitamiseks sisestage veebikonto parool.',
+        'Skriptid töötavad seadmes root-õigustes. Skripti asendamiseks või käivitamiseks sisestage veebikonto parool.',
       unreviewedTitle: 'Kontrollimata skript',
       unreviewedDesc:
         'See skript on uus või asendati pärast viimast käivitamist. Selle võis üles laadida igaüks, kellel on teie seanss, nii et vaadake see enne root-õigustes käivitamist terminalis üle.',
@@ -295,7 +295,7 @@ const et = {
     },
     terminal: {
       title: 'Terminal',
-      nanokvm: 'NanoKVM terminal',
+      device: 'Seadme terminal',
       serial: 'Jadapordi terminal',
       unlockTitle: 'Ava terminal',
       unlockDesc: 'Terminaliseansi alustamiseks sisesta veebikonto parool',
@@ -412,7 +412,7 @@ const et = {
           remoteDownload: 'Laadi kaug-ISO alla',
           remoteDownloadWarningTitle: 'Kas lubada ISO kaugallalaadimine?',
           remoteDownloadWarningDesc:
-            'NanoKVM laadib ISO URL-ilt alla ja kirjutab selle asukohta /data. Luba ainult usaldusväärsete URL-ide jaoks ja keela pärast kasutamist.',
+            'Seade laadib ISO URL-ilt alla ja kirjutab selle asukohta /data. Luba ainult usaldusväärsete URL-ide jaoks ja keela pärast kasutamist.',
           remoteDownloadWarningConfirm: 'Luba'
         }
       },
@@ -527,9 +527,9 @@ const et = {
           systemUpdate: 'Süsteemiuuendus'
         },
         reboot: 'Taaskäivita',
-        rebootDesc: 'Kas oled kindel, et soovid NanoKVM-i taaskäivitada?',
+        rebootDesc: 'Kas oled kindel, et soovid seadme taaskäivitada?',
         poweroff: 'Lülita välja',
-        poweroffDesc: 'Kas oled kindel, et soovid NanoKVM-i välja lülitada?'
+        poweroffDesc: 'Kas oled kindel, et soovid seadme välja lülitada?'
       },
       network: {
         title: 'IP & DNS',
@@ -624,7 +624,7 @@ const et = {
         },
         dns: {
           title: 'DNS',
-          description: 'NanoKVM-i DNS-serverite seadistamine',
+          description: 'Seadme DNS-serverite seadistamine',
           ipv4Title: 'IPv4',
           ipv4Description: 'Juhtmega liidese IPv4-aadressi seadistamine',
           servers: 'Serverid',
@@ -818,7 +818,7 @@ const et = {
             apply: 'Lülitu režiimile Baas',
             confirmTitle: 'Lülituda avatud režiimile Baas?',
             confirmDesc:
-              'Tulemüüri teenus jääb aktiivseks, kuid kohalike lähtevahemike piirang eemaldatakse. Avalikud lähtevahemikud võivad jõuda NanoKVM-i avatud teenusteni, kui võrk neid marsruudib.'
+              'Tulemüüri teenus jääb aktiivseks, kuid kohalike lähtevahemike piirang eemaldatakse. Avalikud lähtevahemikud võivad jõuda seadme avatud teenusteni, kui võrk neid marsruudib.'
           },
           rules: {
             title: 'Praegused reeglid',
@@ -986,8 +986,8 @@ const et = {
         download: 'Laadi alla',
         package: 'paigalduspakett',
         unzip: 'ja paki see lahti',
-        upTailscale: 'Laadi tailscale NanoKVM-i kausta /usr/bin/',
-        upTailscaled: 'Laadi tailscaled NanoKVM-i kausta /usr/sbin/',
+        upTailscale: 'Laadi tailscale seadme kausta /usr/bin/',
+        upTailscaled: 'Laadi tailscaled seadme kausta /usr/sbin/',
         refresh: 'Värskenda praegust lehte',
         notRunning: 'Tailscale ei tööta. Jätkamiseks käivita see.',
         run: 'Käivita',
@@ -1184,7 +1184,7 @@ const et = {
         defaultTitle: 'Üldassistent',
         defaultDescription: 'Üldvestlus, otsing ja tööruumi abi',
         kvmTitle: 'Kaugjuhtimine',
-        kvmDescription: 'Juhi kaugmasinat NanoKVM-i kaudu',
+        kvmDescription: 'Juhi kaugmasinat seadme kaudu',
         switched: 'Agendi roll vahetatud',
         switchFailed: 'Agendi rolli vahetamine nurjus'
       },

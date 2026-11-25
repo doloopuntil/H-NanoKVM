@@ -50,7 +50,7 @@ const nl = {
       setupButtonText: 'Account maken',
       tips: {
         noPasswordReset:
-          'Deze H-NanoKVM-image ondersteunt geen wachtwoordreset via de BOOT-knop. Als het wachtwoord verloren gaat, schrijf de SD-kaart opnieuw en maak een nieuw account.',
+          'Deze image ondersteunt geen wachtwoordreset via de BOOT-knop. Als het wachtwoord verloren gaat, schrijf de SD-kaart opnieuw en maak een nieuw account.',
         change1: 'Houd er rekening mee dat deze actie de volgende wachtwoorden zal wijzigen:',
         change2: 'Web login wachtwoord',
         change3: 'Systeem root-wachtwoord voor SSH-inlog'
@@ -74,8 +74,8 @@ const nl = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'Wi-Fi configureren voor NanoKVM',
-      success: 'Controleer de netwerkstatus van NanoKVM en bezoek het nieuwe IP-adres',
+      description: 'Wi-Fi configureren voor het apparaat',
+      success: 'Controleer de netwerkstatus van het apparaat en bezoek het nieuwe IP-adres',
       failed: 'De bewerking is mislukt, probeer het opnieuw',
       invalidMode:
         'De huidige modus ondersteunt geen netwerkconfiguratie. Ga naar uw apparaat en schakel de configuratiemodus Wi-Fi in.',
@@ -220,10 +220,10 @@ const nl = {
       resetHid: 'HID resetten',
       hidOnly: {
         title: 'HID-Only-modus',
-        desc: 'Als muis of toetsenbord niet meer reageren en het resetten van HID niet helpt, kan het gaan om een compatibiliteitsprobleem tussen de NanoKVM en de host.',
+        desc: 'Als muis of toetsenbord niet meer reageren en het resetten van HID niet helpt, kan het gaan om een compatibiliteitsprobleem tussen het apparaat en de host.',
         tip1: 'Als u de HID-Only-modus inschakelt, worden de virtuele schijf en het virtuele netwerk ontkoppeld',
         tip2: 'In de HID-Only-modus is het koppelen van images uitgeschakeld',
-        tip3: 'NanoKVM wordt automatisch opnieuw opgestart na het wisselen van modus',
+        tip3: 'Het apparaat wordt automatisch opnieuw opgestart na het wisselen van modus',
         enable: 'HID-Only-modus inschakelen',
         disable: 'HID-Only-modus uitschakelen'
       }
@@ -271,18 +271,18 @@ const nl = {
       deleteConfirm: 'Weet u zeker dat u deze afbeelding wilt verwijderen?',
       tips: {
         title: 'Hoe te uploaden',
-        usb1: 'Verbind de NanoKVM met uw computer via USB.',
+        usb1: 'Verbind het apparaat met uw computer via USB.',
         usb2: 'Zorg ervoor dat de virtuele schijf is gekoppeld in Instellingen > Apparaat > Virtuele schijf.',
         usb3: 'Open de virtuele schijf op uw computer en kopieer het imagebestand naar de hoofdmap van de virtuele schijf.',
-        scp1: 'Zorg ervoor dat de NanoKVM en uw computer zich in hetzelfde lokale netwerk bevinden.',
-        scp2: 'Open een terminal op uw computer en gebruik het SCP-commando om het imagebestand te uploaden naar de /data directory op de NanoKVM.',
-        scp3: 'Voorbeeld: scp uw-image-pad root@uw-nanokvm-ip:/data',
+        scp1: 'Zorg ervoor dat het apparaat en uw computer zich in hetzelfde lokale netwerk bevinden.',
+        scp2: 'Open een terminal op uw computer en gebruik het SCP-commando om het imagebestand te uploaden naar de /data directory op het apparaat.',
+        scp3: 'Voorbeeld: scp uw-image-pad root@uw-apparaat-ip:/data',
         tfCard: 'SD-kaart',
         tf1: 'Deze methode wordt ondersteund op Linux-systemen',
-        tf2: 'Haal de SD-kaart uit de NanoKVM. Demonteer bij de FULL-versie eerst de behuizing.',
+        tf2: 'Haal de SD-kaart uit het apparaat. Demonteer bij de FULL-versie eerst de behuizing.',
         tf3: 'Plaats de SD-kaart in een kaartlezer en verbind deze met uw computer.',
         tf4: 'Kopieer het imagebestand naar de /data directory op de SD-kaart.',
-        tf5: 'Plaats de SD-kaart terug in de NanoKVM.'
+        tf5: 'Plaats de SD-kaart terug in het apparaat.'
       }
     },
     script: {
@@ -295,7 +295,7 @@ const nl = {
       delete: 'Verwijderen',
       close: 'Sluiten',
       unlockDesc:
-        'Scripts draaien als root op de NanoKVM. Voer het wachtwoord van het webaccount in om een script te vervangen of uit te voeren.',
+        'Scripts draaien als root op het apparaat. Voer het wachtwoord van het webaccount in om een script te vervangen of uit te voeren.',
       unreviewedTitle: 'Niet gecontroleerd script',
       unreviewedDesc:
         'Dit script is nieuw of is vervangen sinds je het voor het laatst uitvoerde. Iedereen met jouw sessie kan het hebben geüpload, dus bekijk het in de terminal voordat je het als root uitvoert.',
@@ -304,7 +304,7 @@ const nl = {
     },
     terminal: {
       title: 'Terminal',
-      nanokvm: 'NanoKVM-terminal',
+      device: 'Apparaatterminal',
       serial: 'Seriële poort terminal',
       unlockTitle: 'Terminal ontgrendelen',
       unlockDesc: 'Voer het wachtwoord van uw webaccount in om een terminalsessie te starten',
@@ -424,7 +424,7 @@ const nl = {
           remoteDownload: 'ISO op afstand downloaden',
           remoteDownloadWarningTitle: 'ISO-download op afstand inschakelen?',
           remoteDownloadWarningDesc:
-            "NanoKVM haalt een ISO op van een URL en schrijft die naar /data. Schakel alleen in voor vertrouwde URL's en schakel daarna weer uit.",
+            "Het apparaat haalt een ISO op van een URL en schrijft die naar /data. Schakel alleen in voor vertrouwde URL's en schakel daarna weer uit.",
           remoteDownloadWarningConfirm: 'Inschakelen'
         }
       },
@@ -542,9 +542,9 @@ const nl = {
           systemUpdate: 'Systeemupdate'
         },
         reboot: 'Opnieuw opstarten',
-        rebootDesc: 'Weet u zeker dat u NanoKVM opnieuw wilt opstarten?',
+        rebootDesc: 'Weet u zeker dat u het apparaat opnieuw wilt opstarten?',
         poweroff: 'Uitschakelen',
-        poweroffDesc: 'Weet je zeker dat je NanoKVM wilt uitschakelen?'
+        poweroffDesc: 'Weet je zeker dat je het apparaat wilt uitschakelen?'
       },
       network: {
         title: 'IP & DNS',
@@ -639,7 +639,7 @@ const nl = {
         },
         dns: {
           title: 'DNS',
-          description: 'Configureer DNS-servers voor NanoKVM',
+          description: 'Configureer DNS-servers voor het apparaat',
           ipv4Title: 'IPv4',
           ipv4Description: 'Configureer IPv4-adressering voor de bekabelde interface',
           servers: 'Servers',
@@ -835,7 +835,7 @@ const nl = {
             apply: 'Overschakelen naar Basis',
             confirmTitle: 'Overschakelen naar de open modus Basis?',
             confirmDesc:
-              'De firewalldienst blijft actief, maar de beperking tot lokale bronbereiken vervalt. Openbare bronbereiken kunnen blootgestelde NanoKVM-diensten bereiken als het netwerk ze routeert.'
+              'De firewalldienst blijft actief, maar de beperking tot lokale bronbereiken vervalt. Openbare bronbereiken kunnen blootgestelde diensten van het apparaat bereiken als het netwerk ze routeert.'
           },
           rules: {
             title: 'Huidige regels',
@@ -1005,8 +1005,8 @@ const nl = {
         download: 'Download het',
         package: 'installatiepakket',
         unzip: 'en pak het uit',
-        upTailscale: 'Upload tailscale naar NanoKVM directory /usr/bin/',
-        upTailscaled: 'Upload tailscaled naar NanoKVM directory /usr/sbin/',
+        upTailscale: 'Upload tailscale naar de directory /usr/bin/ op het apparaat',
+        upTailscaled: 'Upload tailscaled naar de directory /usr/sbin/ op het apparaat',
         refresh: 'Vernieuw huidige pagina',
         notRunning: 'Tailscale is niet actief. Start het programma om door te gaan.',
         run: 'Start',
@@ -1207,7 +1207,7 @@ const nl = {
         defaultTitle: 'Algemene assistent',
         defaultDescription: 'Algemene hulp bij chatten, zoeken en werkruimte',
         kvmTitle: 'Bediening op afstand',
-        kvmDescription: 'Bedien de externe host via NanoKVM',
+        kvmDescription: 'Bedien de externe host via het apparaat',
         switched: 'Agentrol gewijzigd',
         switchFailed: 'Kan agentrol niet wisselen'
       },

@@ -48,7 +48,7 @@ const hu = {
       setupButtonText: 'Fiók létrehozása',
       tips: {
         noPasswordReset:
-          'Ez a H-NanoKVM image nem támogatja a jelszó visszaállítását a BOOT gombbal. Ha a jelszó elveszik, írja újra az SD-kártyát és hozzon létre új fiókot.',
+          'Ez a image nem támogatja a jelszó visszaállítását a BOOT gombbal. Ha a jelszó elveszik, írja újra az SD-kártyát és hozzon létre új fiókot.',
         change1: 'Vegye figyelembe, hogy ez a művelet a következő jelszavakat módosítja:',
         change2: 'Webes bejelentkezési jelszó',
         change3: 'Rendszer root jelszava az SSH-bejelentkezéshez'
@@ -72,8 +72,8 @@ const hu = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'Wi-Fi beállítása a NanoKVM-hez',
-      success: 'Menjen az eszközhöz, és ellenőrizze a NanoKVM hálózati állapotát',
+      description: 'Wi-Fi beállítása az eszközhöz',
+      success: 'Menjen az eszközhöz, és ellenőrizze annak hálózati állapotát',
       failed: 'A művelet sikertelen, próbálja újra',
       invalidMode:
         'Az aktuális mód nem támogatja a hálózat beállítását. Kérjük, lépjen az eszközére, és engedélyezze a Wi-Fi konfigurációs módot.',
@@ -218,10 +218,10 @@ const hu = {
       resetHid: 'HID alaphelyzetbe állítása',
       hidOnly: {
         title: 'HID-Only mód',
-        desc: 'Ha az egér vagy a billentyűzet nem válaszol, és a HID alaphelyzetbe állítása nem segít, a NanoKVM és a gazdagép közötti kompatibilitási probléma állhat fenn.',
+        desc: 'Ha az egér vagy a billentyűzet nem válaszol, és a HID alaphelyzetbe állítása nem segít, az eszköz és a gazdagép közötti kompatibilitási probléma állhat fenn.',
         tip1: 'A HID-Only mód engedélyezése leválasztja a virtuális lemezt és a virtuális hálózatot',
         tip2: 'HID-Only módban a képfájlok csatolása le van tiltva',
-        tip3: 'A NanoKVM automatikusan újraindul az üzemmódváltás után',
+        tip3: 'Az eszköz automatikusan újraindul az üzemmódváltás után',
         enable: 'HID-Only mód engedélyezése',
         disable: 'HID-Only mód letiltása'
       }
@@ -268,18 +268,18 @@ const hu = {
       deleteConfirm: 'Biztosan törli ezt a képet?',
       tips: {
         title: 'Hogyan tölts fel képeket',
-        usb1: 'Csatlakoztassa a NanoKVM-t a számítógépéhez USB-n keresztül.',
+        usb1: 'Csatlakoztassa az eszközt a számítógépéhez USB-n keresztül.',
         usb2: 'Győződjön meg róla, hogy a virtuális lemez csatlakoztatva van itt: Beállítások > Eszköz > Virtuális lemez.',
         usb3: 'Nyissa meg a virtuális lemezt a számítógépén, és másolja a kép fájlt a virtuális lemez gyökérkönyvtárába.',
-        scp1: 'Győződjön meg róla, hogy a NanoKVM és a számítógépe ugyanazon a helyi hálózaton van.',
-        scp2: 'Nyisson meg egy terminált a számítógépén, és használja az SCP parancsot a kép fájl feltöltésére a /data könyvtárba a NanoKVM-en.',
-        scp3: 'Példa: scp your-image-path root@your-nanokvm-ip:/data',
+        scp1: 'Győződjön meg róla, hogy az eszköz és a számítógépe ugyanazon a helyi hálózaton van.',
+        scp2: 'Nyisson meg egy terminált a számítógépén, és használja az SCP parancsot a kép fájl feltöltésére a /data könyvtárba az eszközön.',
+        scp3: 'Példa: scp your-image-path root@your-device-ip:/data',
         tfCard: 'SD kártya',
         tf1: 'Ez a módszer támogatott Linux rendszeren',
-        tf2: 'Vegye ki a SD kártyát a NanoKVM-ből. A FULL verziónál először szedje szét a házat.',
+        tf2: 'Vegye ki a SD kártyát az eszközből. A FULL verziónál először szedje szét a házat.',
         tf3: 'Helyezze a SD kártyát egy kártyaolvasóba, és csatlakoztassa a számítógépéhez.',
         tf4: 'Másolja a képfájlt a SD kártya /data könyvtárába.',
-        tf5: 'Helyezze vissza a SD kártyát a NanoKVM-be.'
+        tf5: 'Helyezze vissza a SD kártyát az eszközbe.'
       }
     },
     script: {
@@ -292,7 +292,7 @@ const hu = {
       delete: 'Törlés',
       close: 'Bezárás',
       unlockDesc:
-        'A szkriptek rootként futnak a NanoKVM-en. Szkript cseréjéhez vagy futtatásához adja meg a webes fiók jelszavát.',
+        'A szkriptek rootként futnak az eszközön. Szkript cseréjéhez vagy futtatásához adja meg a webes fiók jelszavát.',
       unreviewedTitle: 'Átnézetlen szkript',
       unreviewedDesc:
         'Ez a szkript új, vagy az utolsó futtatás óta le lett cserélve. Bárki feltölthette, akinek megvan a munkamenete, ezért rootként való futtatás előtt nézze meg a terminálban.',
@@ -301,7 +301,7 @@ const hu = {
     },
     terminal: {
       title: 'Terminál',
-      nanokvm: 'NanoKVM terminál',
+      device: 'Eszközterminál',
       serial: 'Soros port terminál',
       unlockTitle: 'Terminál feloldása',
       unlockDesc: 'Terminálmunkamenet indításához adja meg a webes fiók jelszavát',
@@ -421,7 +421,7 @@ const hu = {
           remoteDownload: 'Távoli ISO letöltése',
           remoteDownloadWarningTitle: 'Engedélyezi a távoli ISO-letöltést?',
           remoteDownloadWarningDesc:
-            'A NanoKVM ISO-t tölt le egy URL-ről és a /data alá írja. Csak megbízható URL-ekhez engedélyezze, majd kapcsolja ki.',
+            'Az eszköz ISO-t tölt le egy URL-ről és a /data alá írja. Csak megbízható URL-ekhez engedélyezze, majd kapcsolja ki.',
           remoteDownloadWarningConfirm: 'Engedélyezés'
         }
       },
@@ -541,9 +541,9 @@ const hu = {
           systemUpdate: 'Rendszerfrissítés'
         },
         reboot: 'Újraindítás',
-        rebootDesc: 'Biztos, hogy újra akarja indítani a NanoKVM-t?',
+        rebootDesc: 'Biztos, hogy újra akarja indítani az eszközt?',
         poweroff: 'Kikapcsolás',
-        poweroffDesc: 'Biztosan kikapcsolja a NanoKVM-et?'
+        poweroffDesc: 'Biztosan kikapcsolja az eszközt?'
       },
       network: {
         title: 'IP & DNS',
@@ -638,7 +638,7 @@ const hu = {
         },
         dns: {
           title: 'DNS',
-          description: 'DNS-kiszolgálók beállítása a NanoKVM számára',
+          description: 'DNS-kiszolgálók beállítása az eszközhöz',
           ipv4Title: 'IPv4',
           ipv4Description: 'IPv4-címzés beállítása a vezetékes interfészhez',
           servers: 'Kiszolgálók',
@@ -833,7 +833,7 @@ const hu = {
             apply: 'Váltás Alap módra',
             confirmTitle: 'Átvált a nyitott Alap módra?',
             confirmDesc:
-              'A tűzfalszolgáltatás aktív marad, de megszűnik a csak helyi forrástartományokra vonatkozó korlátozás. A nyilvános forrástartományok elérhetik a NanoKVM nyilvános szolgáltatásait, ha a hálózat továbbítja őket.'
+              'A tűzfalszolgáltatás aktív marad, de megszűnik a csak helyi forrástartományokra vonatkozó korlátozás. A nyilvános forrástartományok elérhetik az eszköz nyilvános szolgáltatásait, ha a hálózat továbbítja őket.'
           },
           rules: {
             title: 'Aktuális szabályok',
@@ -1005,8 +1005,8 @@ const hu = {
         download: 'Letöltés a',
         package: 'telepítési csomag',
         unzip: 'és kicsomagolás',
-        upTailscale: 'Töltsön fel tailscale-t a NanoKVM /usr/bin/ könyvtárába',
-        upTailscaled: 'Töltsön fel tailscaled-t a NanoKVM /usr/sbin/ könyvtárába',
+        upTailscale: 'Töltsön fel tailscale-t az eszköz /usr/bin/ könyvtárába',
+        upTailscaled: 'Töltsön fel tailscaled-t az eszköz /usr/sbin/ könyvtárába',
         refresh: 'Frissítse az aktuális oldalt',
         notRunning: 'Tailscale nem fut. Kérjük, indítsa el a folytatáshoz.',
         run: 'Indítás',
@@ -1207,7 +1207,7 @@ const hu = {
         defaultTitle: 'Általános asszisztens',
         defaultDescription: 'Általános csevegési, keresési és munkaterületi súgó',
         kvmTitle: 'Távoli vezérlés',
-        kvmDescription: 'Működtesse a távoli gazdagépet az NanoKVM segítségével',
+        kvmDescription: 'Működtesse a távoli gazdagépet az eszköz segítségével',
         switched: 'Ügynöki szerepkör megváltozott',
         switchFailed: 'Nem sikerült váltani az ügynöki szerepkört'
       },

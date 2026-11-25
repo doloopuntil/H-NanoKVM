@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/vm.ts';
 import { attempt } from '@/lib/feedback.ts';
+import { HNANOKVM_NAME } from '@/lib/hnanokvm.ts';
 import { webTitleAtom } from '@/jotai/settings.ts';
 import { useSettingsLoad } from '@/hooks/useSettingsLoad.ts';
 import { SettingRow } from '@/components/setting-rows.tsx';
@@ -43,7 +44,7 @@ export const WebTitle = () => {
         onChange={(e) => setWebTitle(e.target.value)}
         onPressEnter={submit}
         onBlur={submit}
-        placeholder="NanoKVM"
+        placeholder={HNANOKVM_NAME}
       />
     </SettingRow>
   );

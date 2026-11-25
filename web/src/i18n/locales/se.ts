@@ -48,7 +48,7 @@ const se = {
       setupButtonText: 'Skapa konto',
       tips: {
         noPasswordReset:
-          'Denna H-NanoKVM-image stöder inte lösenordsåterställning via BOOT-knappen. Om lösenordet förloras, skriv om SD-kortet och skapa ett nytt konto.',
+          'Denna image stöder inte lösenordsåterställning via BOOT-knappen. Om lösenordet förloras, skriv om SD-kortet och skapa ett nytt konto.',
         change1: 'Observera att denna åtgärd ändrar följande lösenord:',
         change2: 'Webbinloggningslösenord',
         change3: 'Systemets root-lösenord för SSH-inloggning'
@@ -72,8 +72,8 @@ const se = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'Konfigurera Wi-Fi för NanoKVM',
-      success: 'Kontrollera nätverksstatusen för NanoKVM och besök den nya IP-adressen',
+      description: 'Konfigurera Wi-Fi för enheten',
+      success: 'Kontrollera nätverksstatusen för enheten och besök den nya IP-adressen',
       failed: 'Åtgärden misslyckades, försök igen',
       invalidMode:
         'Det aktuella läget stöder inte nätverksinstallation. Gå till din enhet och aktivera Wi-Fi konfigurationsläge.',
@@ -216,10 +216,10 @@ const se = {
       resetHid: 'Återställ HID',
       hidOnly: {
         title: 'HID-Only-läge',
-        desc: 'Om musen eller tangentbordet slutar svara och det inte hjälper att återställa HID kan det vara ett kompatibilitetsproblem mellan NanoKVM och värden.',
+        desc: 'Om musen eller tangentbordet slutar svara och det inte hjälper att återställa HID kan det vara ett kompatibilitetsproblem mellan enheten och värden.',
         tip1: 'När HID-Only-läge aktiveras avmonteras den virtuella disken och det virtuella nätverket',
         tip2: 'I HID-Only-läge är montering av avbildningar inaktiverad',
-        tip3: 'NanoKVM kommer automatiskt att starta om efter lägesbyte',
+        tip3: 'Enheten kommer automatiskt att starta om efter lägesbyte',
         enable: 'Aktivera HID-Only-läge',
         disable: 'Inaktivera HID-Only-läge'
       }
@@ -266,18 +266,18 @@ const se = {
       deleteConfirm: 'Är du säker på att du vill ta bort denna avbildning?',
       tips: {
         title: 'Hur man laddar upp',
-        usb1: 'Anslut NanoKVM till din dator via USB.',
+        usb1: 'Anslut enheten till din dator via USB.',
         usb2: 'Säkerställ att den virtuella disken är monterad under Inställningar > Enhet > Virtuell disk.',
         usb3: 'Öppna den virtuella disken på din dator och kopiera avbildningsfilen till rotkatalogen.',
-        scp1: 'Säkerställ att NanoKVM och din dator är på samma lokala nätverk.',
-        scp2: 'Öppna en terminal på din dator och använd SCP-kommandot för att ladda upp avbildningen till /data på NanoKVM.',
-        scp3: 'Exempel: scp din-avbildningssökväg root@din-nanokvm-ip:/data',
+        scp1: 'Säkerställ att enheten och din dator är på samma lokala nätverk.',
+        scp2: 'Öppna en terminal på din dator och använd SCP-kommandot för att ladda upp avbildningen till /data på enheten.',
+        scp3: 'Exempel: scp din-avbildningssökväg root@din-enhets-ip:/data',
         tfCard: 'SD-kort',
         tf1: 'Denna metod stöds på Linux-system',
-        tf2: 'Ta ut SD-kortet från NanoKVM. På FULL-versionen öppnar du chassit först.',
+        tf2: 'Ta ut SD-kortet från enheten. På FULL-versionen öppnar du chassit först.',
         tf3: 'Sätt in SD-kortet i en kortläsare och anslut till din dator.',
         tf4: 'Kopiera avbildningsfilen till /data på SD-kortet.',
-        tf5: 'Sätt in SD-kortet i NanoKVM.'
+        tf5: 'Sätt in SD-kortet i enheten.'
       }
     },
     script: {
@@ -290,7 +290,7 @@ const se = {
       delete: 'Ta bort',
       close: 'Stäng',
       unlockDesc:
-        'Skript körs som root på NanoKVM. Ange webbkontots lösenord för att ersätta eller köra ett skript.',
+        'Skript körs som root på enheten. Ange webbkontots lösenord för att ersätta eller köra ett skript.',
       unreviewedTitle: 'Ogranskat skript',
       unreviewedDesc:
         'Det här skriptet är nytt eller byttes ut sedan du senast körde det. Vem som helst med din session kan ha laddat upp det, så titta på det i terminalen innan du kör det som root.',
@@ -299,7 +299,7 @@ const se = {
     },
     terminal: {
       title: 'Terminal',
-      nanokvm: 'NanoKVM-terminal',
+      device: 'Enhetsterminal',
       serial: 'Serieport-terminal',
       unlockTitle: 'Lås upp terminal',
       unlockDesc: 'Ange lösenordet för webbkonto för att starta en terminalsession',
@@ -419,7 +419,7 @@ const se = {
           remoteDownload: 'Hämta ISO på distans',
           remoteDownloadWarningTitle: 'Aktivera fjärrnedladdning av ISO?',
           remoteDownloadWarningDesc:
-            'NanoKVM hämtar en ISO från en URL och skriver den till /data. Aktivera endast för betrodda URL:er och stäng av när du är klar.',
+            'Enheten hämtar en ISO från en URL och skriver den till /data. Aktivera endast för betrodda URL:er och stäng av när du är klar.',
           remoteDownloadWarningConfirm: 'Aktivera'
         }
       },
@@ -537,9 +537,9 @@ const se = {
           systemUpdate: 'Systemuppdatering'
         },
         reboot: 'Starta om',
-        rebootDesc: 'Är du säker på att du vill starta om NanoKVM?',
+        rebootDesc: 'Är du säker på att du vill starta om enheten?',
         poweroff: 'Stäng av',
-        poweroffDesc: 'Vill du verkligen stänga av NanoKVM?'
+        poweroffDesc: 'Vill du verkligen stänga av enheten?'
       },
       network: {
         title: 'IP & DNS',
@@ -633,7 +633,7 @@ const se = {
         },
         dns: {
           title: 'DNS',
-          description: 'Konfigurera DNS-servrar för NanoKVM',
+          description: 'Konfigurera DNS-servrar för enheten',
           ipv4Title: 'IPv4',
           ipv4Description: 'Konfigurera IPv4-adressering för det trådbundna gränssnittet',
           servers: 'Servrar',
@@ -828,7 +828,7 @@ const se = {
             apply: 'Byt till Bas',
             confirmTitle: 'Byta till öppet läge Bas?',
             confirmDesc:
-              'Brandväggstjänsten förblir aktiv, men begränsningen till lokala källintervall tas bort. Offentliga källintervall kan nå exponerade NanoKVM-tjänster om nätverket routar dem.'
+              'Brandväggstjänsten förblir aktiv, men begränsningen till lokala källintervall tas bort. Offentliga källintervall kan nå exponerade tjänster på enheten om nätverket routar dem.'
           },
           rules: {
             title: 'Aktuella regler',
@@ -999,8 +999,8 @@ const se = {
         download: 'Ladda ner',
         package: 'installationspaketet',
         unzip: 'och packa upp det',
-        upTailscale: 'Ladda upp tailscale till NanoKVM-katalogen /usr/bin/',
-        upTailscaled: 'Ladda upp tailscaled till NanoKVM-katalogen /usr/sbin/',
+        upTailscale: 'Ladda upp tailscale till katalogen /usr/bin/ på enheten',
+        upTailscaled: 'Ladda upp tailscaled till katalogen /usr/sbin/ på enheten',
         refresh: 'Uppdatera sidan',
         notRunning: 'Tailscale körs inte. Starta den för att fortsätta.',
         run: 'Start',
@@ -1198,7 +1198,7 @@ const se = {
         defaultTitle: 'Allmän assistent',
         defaultDescription: 'Allmän hjälp för chatt, sökning och arbetsyta',
         kvmTitle: 'Fjärrstyrning',
-        kvmDescription: 'Manövrera fjärrvärden genom NanoKVM',
+        kvmDescription: 'Manövrera fjärrvärden genom enheten',
         switched: 'Agentroll bytte',
         switchFailed: 'Det gick inte att byta agentroll'
       },

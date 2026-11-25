@@ -30,10 +30,10 @@ describe('toolCallsFromPayload', () => {
         {
           id: 'toolu_1',
           type: 'function',
-          function: { name: 'mcp_nanokvm_kvm_screenshot', arguments: '{}' }
+          function: { name: 'mcp_hnanokvm_kvm_screenshot', arguments: '{}' }
         },
         {
-          function: { name: 'mcp_nanokvm_kvm_actions', arguments: '{"actions":[' },
+          function: { name: 'mcp_hnanokvm_kvm_actions', arguments: '{"actions":[' },
           extra_content: { tool_feedback_explanation: '  List the logs  ' }
         }
       ]
@@ -42,13 +42,13 @@ describe('toolCallsFromPayload', () => {
     expect(calls).toEqual([
       {
         id: 'toolu_1',
-        name: 'mcp_nanokvm_kvm_screenshot',
+        name: 'mcp_hnanokvm_kvm_screenshot',
         arguments: '{}',
         explanation: undefined
       },
       {
         id: '1',
-        name: 'mcp_nanokvm_kvm_actions',
+        name: 'mcp_hnanokvm_kvm_actions',
         arguments: '{"actions":[',
         explanation: 'List the logs'
       }

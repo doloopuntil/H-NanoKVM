@@ -14,7 +14,7 @@ type KvmAction = {
 // is a long line of its thinking, and PicoClaw fills it in with a fallback sentence): "Taking a screenshot", "Typing
 // `ls -la`" or "Pressing `Enter`". A call to the keyboard and mouse can hold several actions.
 export function summarizeToolCall(call: GatewayToolCall, t: Translate): string {
-  const name = call.name.replace(/^mcp_nanokvm_/, '');
+  const name = call.name.replace(/^mcp_hnanokvm_/, '');
 
   let summary: string;
   switch (name) {

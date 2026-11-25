@@ -48,7 +48,7 @@ const vi = {
       setupButtonText: 'Tạo tài khoản',
       tips: {
         noPasswordReset:
-          'Image H-NanoKVM này không hỗ trợ đặt lại mật khẩu bằng nút BOOT. Nếu mất mật khẩu, hãy ghi lại thẻ SD và tạo tài khoản mới.',
+          'Image này không hỗ trợ đặt lại mật khẩu bằng nút BOOT. Nếu mất mật khẩu, hãy ghi lại thẻ SD và tạo tài khoản mới.',
         change1: 'Lưu ý rằng thao tác này sẽ thay đổi các mật khẩu sau:',
         change2: 'Mật khẩu đăng nhập web',
         change3: 'Mật khẩu root hệ thống để đăng nhập SSH'
@@ -72,8 +72,8 @@ const vi = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'Cấu hình Wi-Fi cho NanoKVM',
-      success: 'Hãy đến thiết bị để kiểm tra trạng thái mạng của NanoKVM',
+      description: 'Cấu hình Wi-Fi cho thiết bị',
+      success: 'Hãy đến thiết bị để kiểm tra trạng thái mạng',
       failed: 'Thao tác thất bại, vui lòng thử lại',
       invalidMode:
         'Chế độ hiện tại không hỗ trợ thiết lập mạng. Vui lòng truy cập thiết bị của bạn và bật chế độ cấu hình Wi-Fi.',
@@ -215,10 +215,10 @@ const vi = {
       resetHid: 'Đặt lại HID',
       hidOnly: {
         title: 'Chế độ HID-Only',
-        desc: 'Nếu chuột hoặc bàn phím ngừng phản hồi và việc đặt lại HID không có tác dụng, có thể là sự cố tương thích giữa NanoKVM và máy chủ.',
+        desc: 'Nếu chuột hoặc bàn phím ngừng phản hồi và việc đặt lại HID không có tác dụng, có thể là sự cố tương thích giữa thiết bị và máy chủ.',
         tip1: 'Bật chế độ HID-Only sẽ gỡ đĩa ảo và mạng ảo',
         tip2: 'Trong chế độ HID-Only, tính năng gắn image bị tắt',
-        tip3: 'NanoKVM sẽ tự động khởi động lại sau khi chuyển chế độ',
+        tip3: 'Thiết bị sẽ tự động khởi động lại sau khi chuyển chế độ',
         enable: 'Bật chế độ HID-Only',
         disable: 'Tắt chế độ HID-Only'
       }
@@ -263,18 +263,18 @@ const vi = {
       deleteConfirm: 'Bạn có chắc chắn muốn xóa hình ảnh này không?',
       tips: {
         title: 'Cách tải lên',
-        usb1: 'Kết nối NanoKVM với máy tính của bạn qua USB.',
+        usb1: 'Kết nối thiết bị với máy tính của bạn qua USB.',
         usb2: 'Đảm bảo rằng đĩa ảo đã được gắn kết trong Cài đặt > Thiết bị > Đĩa ảo.',
         usb3: 'Mở đĩa ảo trên máy tính của bạn và sao chép vào thư mục gốc của đĩa ảo.',
-        scp1: 'Đảm bảo NanoKVM và máy tính của bạn đang trên cùng một mạng nội bộ.',
-        scp2: 'Mở terminal trên máy tính và sử dụng lệnh SCP để tải đĩa ảo lên thư mục /data trên NanoKVM.',
-        scp3: 'Ví dụ: scp đường-dẫn-image root@ip-của-nanokvm:/data',
+        scp1: 'Đảm bảo thiết bị và máy tính của bạn đang trên cùng một mạng nội bộ.',
+        scp2: 'Mở terminal trên máy tính và sử dụng lệnh SCP để tải đĩa ảo lên thư mục /data trên thiết bị.',
+        scp3: 'Ví dụ: scp đường-dẫn-image root@ip-của-thiết-bị:/data',
         tfCard: 'Thẻ SD',
         tf1: 'Phương pháp này được hỗ trợ trên hệ thống Linux',
-        tf2: 'Lấy thẻ SD ra khỏi NanoKVM. Với phiên bản FULL, hãy tháo vỏ trước.',
+        tf2: 'Lấy thẻ SD ra khỏi thiết bị. Với phiên bản FULL, hãy tháo vỏ trước.',
         tf3: 'Chèn thẻ SD vào đầu đọc thẻ và kết nối với máy tính của bạn.',
         tf4: 'Sao chép tệp hình ảnh vào thư mục /data trên thẻ SD.',
-        tf5: 'Chèn thẻ SD vào NanoKVM.'
+        tf5: 'Chèn thẻ SD vào thiết bị.'
       }
     },
     script: {
@@ -287,7 +287,7 @@ const vi = {
       delete: 'Xóa',
       close: 'Đóng',
       unlockDesc:
-        'Các script chạy với quyền root trên NanoKVM. Nhập mật khẩu tài khoản web để thay thế hoặc chạy script.',
+        'Các script chạy với quyền root trên thiết bị. Nhập mật khẩu tài khoản web để thay thế hoặc chạy script.',
       unreviewedTitle: 'Script chưa được xem xét',
       unreviewedDesc:
         'Script này là script mới hoặc đã bị thay thế kể từ lần bạn chạy gần nhất. Bất kỳ ai có phiên của bạn đều có thể đã tải nó lên, vì vậy hãy xem nó trong terminal trước khi chạy với quyền root.',
@@ -296,7 +296,7 @@ const vi = {
     },
     terminal: {
       title: 'Terminal',
-      nanokvm: 'Terminal NanoKVM',
+      device: 'Terminal thiết bị',
       serial: 'Terminal cổng nối tiếp',
       unlockTitle: 'Mở khóa terminal',
       unlockDesc: 'Nhập mật khẩu tài khoản web để bắt đầu phiên terminal',
@@ -414,7 +414,7 @@ const vi = {
           remoteDownload: 'Tải ISO từ xa',
           remoteDownloadWarningTitle: 'Bật tải ISO từ xa?',
           remoteDownloadWarningDesc:
-            'NanoKVM sẽ tải ISO từ URL và ghi vào /data. Chỉ bật cho URL tin cậy và tắt khi hoàn tất.',
+            'Thiết bị sẽ tải ISO từ URL và ghi vào /data. Chỉ bật cho URL tin cậy và tắt khi hoàn tất.',
           remoteDownloadWarningConfirm: 'Bật'
         }
       },
@@ -530,9 +530,9 @@ const vi = {
           systemUpdate: 'Cập nhật hệ thống'
         },
         reboot: 'Khởi động lại',
-        rebootDesc: 'Bạn có chắc chắn muốn khởi động lại NanoKVM không?',
+        rebootDesc: 'Bạn có chắc chắn muốn khởi động lại thiết bị không?',
         poweroff: 'Tắt nguồn',
-        poweroffDesc: 'Bạn có chắc muốn tắt NanoKVM?'
+        poweroffDesc: 'Bạn có chắc muốn tắt thiết bị?'
       },
       network: {
         title: 'IP & DNS',
@@ -625,7 +625,7 @@ const vi = {
         },
         dns: {
           title: 'DNS',
-          description: 'Cấu hình máy chủ DNS cho NanoKVM',
+          description: 'Cấu hình máy chủ DNS cho thiết bị',
           ipv4Title: 'IPv4',
           ipv4Description: 'Cấu hình địa chỉ IPv4 cho giao diện có dây',
           servers: 'Máy chủ',
@@ -820,7 +820,7 @@ const vi = {
             apply: 'Chuyển sang Cơ bản',
             confirmTitle: 'Chuyển sang chế độ Cơ bản mở?',
             confirmDesc:
-              'Dịch vụ tường lửa vẫn hoạt động nhưng bỏ hạn chế chỉ cho dải nguồn cục bộ. Các dải nguồn công khai có thể truy cập các dịch vụ NanoKVM đang mở nếu mạng định tuyến cho chúng.'
+              'Dịch vụ tường lửa vẫn hoạt động nhưng bỏ hạn chế chỉ cho dải nguồn cục bộ. Các dải nguồn công khai có thể truy cập các dịch vụ của thiết bị đang mở nếu mạng định tuyến cho chúng.'
           },
           rules: {
             title: 'Quy tắc hiện tại',
@@ -989,8 +989,8 @@ const vi = {
         download: 'Tải xuống',
         package: 'gói cài đặt',
         unzip: 'và giải nén nó',
-        upTailscale: 'Tải tailscale lên thư mục /usr/bin/ của NanoKVM',
-        upTailscaled: 'Tải tailscaled lên thư mục /usr/sbin/ của NanoKVM',
+        upTailscale: 'Tải tailscale lên thư mục /usr/bin/ của thiết bị',
+        upTailscaled: 'Tải tailscaled lên thư mục /usr/sbin/ của thiết bị',
         refresh: 'Làm mới trang hiện tại',
         notRunning: 'Tailscale không chạy. Hãy bắt đầu nó để tiếp tục.',
         run: 'Bắt đầu',
@@ -1188,7 +1188,7 @@ const vi = {
         defaultTitle: 'Trợ lý chung',
         defaultDescription: 'Trợ giúp chung về trò chuyện, tìm kiếm và không gian làm việc',
         kvmTitle: 'Điều khiển từ xa',
-        kvmDescription: 'Vận hành máy chủ từ xa thông qua NanoKVM',
+        kvmDescription: 'Vận hành máy chủ từ xa thông qua thiết bị',
         switched: 'Vai trò đại lý đã chuyển đổi',
         switchFailed: 'Chuyển đổi vai trò đại lý không thành công'
       },

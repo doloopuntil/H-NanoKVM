@@ -48,7 +48,7 @@ const id = {
       setupButtonText: 'Buat akun',
       tips: {
         noPasswordReset:
-          'Image H-NanoKVM ini tidak mendukung reset kata sandi dari tombol BOOT. Jika kata sandi hilang, tulis ulang kartu SD dan buat akun baru.',
+          'Image ini tidak mendukung reset kata sandi dari tombol BOOT. Jika kata sandi hilang, tulis ulang kartu SD dan buat akun baru.',
         change1: 'Perhatikan bahwa tindakan ini akan mengubah kata sandi berikut:',
         change2: 'Kata sandi login web',
         change3: 'Kata sandi root sistem untuk login SSH'
@@ -72,8 +72,8 @@ const id = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'Konfigurasi Wi-Fi untuk NanoKVM',
-      success: 'Silakan periksa status jaringan NanoKVM langsung pada perangkat',
+      description: 'Konfigurasi Wi-Fi untuk perangkat',
+      success: 'Silakan periksa status jaringan langsung pada perangkat',
       failed: 'Operasi gagal, silakan coba lagi',
       invalidMode:
         'Mode saat ini tidak mendukung pengaturan jaringan. Silakan buka perangkat Anda dan aktifkan mode konfigurasi Wi-Fi.',
@@ -217,10 +217,10 @@ const id = {
       resetHid: 'Setel ulang HID',
       hidOnly: {
         title: 'Mode HID-Only',
-        desc: 'Jika mouse atau keyboard berhenti merespons dan mereset HID tidak membantu, mungkin ada masalah kompatibilitas antara NanoKVM dan host.',
+        desc: 'Jika mouse atau keyboard berhenti merespons dan mereset HID tidak membantu, mungkin ada masalah kompatibilitas antara perangkat dan host.',
         tip1: 'Mengaktifkan mode HID-Only akan melepas disk virtual dan jaringan virtual',
         tip2: 'Dalam mode HID-Only, pemasangan image dinonaktifkan',
-        tip3: 'NanoKVM akan otomatis reboot setelah berpindah mode',
+        tip3: 'Perangkat akan otomatis reboot setelah berpindah mode',
         enable: 'Aktifkan mode HID-Only',
         disable: 'Nonaktifkan mode HID-Only'
       }
@@ -267,18 +267,18 @@ const id = {
       deleteConfirm: 'Apakah Anda yakin ingin menghapus gambar ini?',
       tips: {
         title: 'Cara mengunggah',
-        usb1: 'Hubungkan NanoKVM ke komputer Anda melalui USB.',
+        usb1: 'Hubungkan perangkat ke komputer Anda melalui USB.',
         usb2: 'Pastikan disk virtual telah terpasang di Pengaturan > Perangkat > Disk virtual.',
         usb3: 'Buka disk virtual di komputer Anda dan salin file gambar ke direktori root disk virtual.',
-        scp1: 'Pastikan NanoKVM dan komputer Anda berada di jaringan lokal yang sama.',
-        scp2: 'Buka terminal di komputer Anda dan gunakan perintah SCP untuk mengunggah file gambar ke direktori /data di NanoKVM.',
-        scp3: 'Contoh: scp jalur-gambar-anda root@ip-nanokvm-anda:/data',
+        scp1: 'Pastikan perangkat dan komputer Anda berada di jaringan lokal yang sama.',
+        scp2: 'Buka terminal di komputer Anda dan gunakan perintah SCP untuk mengunggah file gambar ke direktori /data di perangkat.',
+        scp3: 'Contoh: scp jalur-gambar-anda root@ip-perangkat-anda:/data',
         tfCard: 'Kartu SD',
         tf1: 'Metode ini didukung di sistem linux',
-        tf2: 'Ambil kartu SD dari NanoKVM. Pada versi FULL, bongkar casingnya terlebih dahulu.',
+        tf2: 'Ambil kartu SD dari perangkat. Pada versi FULL, bongkar casingnya terlebih dahulu.',
         tf3: 'Masukkan Kartu SD ke pembaca kartu dan hubungkan ke komputer Anda.',
         tf4: 'Salin berkas gambar ke direktori /data pada Kartu SD.',
-        tf5: 'Masukkan Kartu SD ke dalam NanoKVM.'
+        tf5: 'Masukkan Kartu SD ke dalam perangkat.'
       }
     },
     script: {
@@ -291,7 +291,7 @@ const id = {
       delete: 'Hapus',
       close: 'Tutup',
       unlockDesc:
-        'Skrip berjalan sebagai root di NanoKVM. Masukkan kata sandi akun web untuk mengganti atau menjalankan skrip.',
+        'Skrip berjalan sebagai root di perangkat. Masukkan kata sandi akun web untuk mengganti atau menjalankan skrip.',
       unreviewedTitle: 'Skrip belum ditinjau',
       unreviewedDesc:
         'Skrip ini baru atau telah diganti sejak terakhir kali Anda menjalankannya. Siapa pun dengan sesi Anda bisa mengunggahnya, jadi lihat dulu di terminal sebelum menjalankannya sebagai root.',
@@ -300,7 +300,7 @@ const id = {
     },
     terminal: {
       title: 'Terminal',
-      nanokvm: 'Terminal NanoKVM',
+      device: 'Terminal perangkat',
       serial: 'Terminal port serial',
       unlockTitle: 'Buka kunci terminal',
       unlockDesc: 'Masukkan kata sandi akun web untuk memulai sesi terminal',
@@ -420,7 +420,7 @@ const id = {
           remoteDownload: 'Unduh ISO jarak jauh',
           remoteDownloadWarningTitle: 'Aktifkan unduhan ISO jarak jauh?',
           remoteDownloadWarningDesc:
-            'NanoKVM akan mengambil ISO dari URL dan menulisnya ke /data. Aktifkan hanya untuk URL tepercaya dan matikan setelah selesai.',
+            'Perangkat akan mengambil ISO dari URL dan menulisnya ke /data. Aktifkan hanya untuk URL tepercaya dan matikan setelah selesai.',
           remoteDownloadWarningConfirm: 'Aktifkan'
         }
       },
@@ -537,9 +537,9 @@ const id = {
           systemUpdate: 'Pembaruan sistem'
         },
         reboot: 'Mulai ulang',
-        rebootDesc: 'Apakah Anda yakin ingin me-reboot NanoKVM?',
+        rebootDesc: 'Apakah Anda yakin ingin me-reboot perangkat?',
         poweroff: 'Matikan',
-        poweroffDesc: 'Yakin ingin mematikan NanoKVM?'
+        poweroffDesc: 'Yakin ingin mematikan perangkat?'
       },
       network: {
         title: 'IP & DNS',
@@ -634,7 +634,7 @@ const id = {
         },
         dns: {
           title: 'DNS',
-          description: 'Konfigurasi server DNS untuk NanoKVM',
+          description: 'Konfigurasi server DNS untuk perangkat',
           ipv4Title: 'IPv4',
           ipv4Description: 'Konfigurasikan pengalamatan IPv4 untuk antarmuka kabel',
           servers: 'Server',
@@ -829,7 +829,7 @@ const id = {
             apply: 'Beralih ke Dasar',
             confirmTitle: 'Beralih ke mode Dasar terbuka?',
             confirmDesc:
-              'Layanan firewall tetap aktif, tetapi pembatasan rentang sumber khusus lokal dihapus. Rentang sumber publik dapat menjangkau layanan NanoKVM yang terbuka jika jaringan merutekannya.'
+              'Layanan firewall tetap aktif, tetapi pembatasan rentang sumber khusus lokal dihapus. Rentang sumber publik dapat menjangkau layanan perangkat yang terbuka jika jaringan merutekannya.'
           },
           rules: {
             title: 'Aturan saat ini',
@@ -998,8 +998,8 @@ const id = {
         download: 'Mengunduh',
         package: 'paket instalasi',
         unzip: 'dan unzip itu',
-        upTailscale: 'Unggah tailscale ke direktori NanoKVM /usr/bin/',
-        upTailscaled: 'Unggah tailscaled ke direktori NanoKVM /usr/sbin/',
+        upTailscale: 'Unggah tailscale ke direktori /usr/bin/ di perangkat',
+        upTailscaled: 'Unggah tailscaled ke direktori /usr/sbin/ di perangkat',
         refresh: 'Segarkan halaman ini',
         notRunning: 'Tailscale tidak berjalan. Silakan mulai untuk melanjutkan.',
         run: 'Mulai',
@@ -1199,7 +1199,7 @@ const id = {
         defaultTitle: 'Asisten umum',
         defaultDescription: 'Obrolan umum, pencarian, dan bantuan ruang kerja',
         kvmTitle: 'Kontrol jarak jauh',
-        kvmDescription: 'Operasikan host jarak jauh melalui NanoKVM',
+        kvmDescription: 'Operasikan host jarak jauh melalui perangkat',
         switched: 'Peran agen dialihkan',
         switchFailed: 'Gagal mengganti peran agen'
       },

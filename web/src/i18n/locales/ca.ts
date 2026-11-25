@@ -49,7 +49,7 @@ const ca = {
       setupButtonText: 'Crea el compte',
       tips: {
         noPasswordReset:
-          'Aquesta imatge H-NanoKVM no admet restablir la contrasenya amb el botó BOOT. Si es perd la contrasenya, torna a gravar la targeta SD i crea un compte nou.',
+          'Aquesta imatge no admet restablir la contrasenya amb el botó BOOT. Si es perd la contrasenya, torna a gravar la targeta SD i crea un compte nou.',
         change1: 'Aquesta acció canviarà les següents contrasenyes:',
         change2: "Contrasenya d'inici de sessió web",
         change3: "Contrasenya root del sistema per a l'inici de sessió SSH"
@@ -73,8 +73,8 @@ const ca = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'Configura Wi-Fi per al NanoKVM',
-      success: "Comprova l'estat de la xarxa del NanoKVM i visita la nova adreça IP",
+      description: 'Configura el Wi-Fi del dispositiu',
+      success: "Comprova l'estat de la xarxa del dispositiu i visita la nova adreça IP",
       failed: "L'operació ha fallat, torna-ho a intentar",
       invalidMode:
         'El mode actual no admet la configuració de xarxa. Ves al teu dispositiu i activa el mode de configuració Wi-Fi.',
@@ -217,10 +217,10 @@ const ca = {
       resetHid: 'Restablir HID',
       hidOnly: {
         title: 'Mode HID-Only',
-        desc: "Si el ratolí o el teclat deixen de respondre i restablir el HID no ajuda, pot ser un problema de compatibilitat entre el NanoKVM i l'amfitrió.",
+        desc: "Si el ratolí o el teclat deixen de respondre i restablir el HID no ajuda, pot ser un problema de compatibilitat entre el dispositiu i l'amfitrió.",
         tip1: 'En activar el mode HID-Only es desmuntaran el disc virtual i la xarxa virtual',
         tip2: "En el mode HID-Only, el muntatge d'imatges està desactivat",
-        tip3: 'El NanoKVM es reiniciarà automàticament en canviar de mode',
+        tip3: 'El dispositiu es reiniciarà automàticament en canviar de mode',
         enable: 'Activa el mode HID-Only',
         disable: 'Desactiva el mode HID-Only'
       }
@@ -266,18 +266,18 @@ const ca = {
       deleteConfirm: 'Estàs segur que vols suprimir aquesta imatge?',
       tips: {
         title: 'Com pujar imatges',
-        usb1: 'Connecta el NanoKVM al teu ordinador via USB.',
+        usb1: 'Connecta el dispositiu al teu ordinador via USB.',
         usb2: "Assegura't que el disc virtual està muntat a Configuració > Dispositiu > Disc virtual.",
         usb3: "Obre el disc virtual i copia la imatge a l'arrel.",
-        scp1: 'Comprova que el NanoKVM i el teu ordinador estan a la mateixa xarxa.',
-        scp2: 'Obre un terminal i usa SCP per pujar la imatge al directori /data del NanoKVM.',
-        scp3: 'Exemple: scp ruta-de-la-imatge root@ip-del-nanokvm:/data',
+        scp1: 'Comprova que el dispositiu i el teu ordinador estan a la mateixa xarxa.',
+        scp2: 'Obre un terminal i usa SCP per pujar la imatge al directori /data del dispositiu.',
+        scp3: 'Exemple: scp ruta-de-la-imatge root@ip-del-dispositiu:/data',
         tfCard: 'Targeta SD',
         tf1: 'Mètode disponible a sistemes GNU/Linux',
-        tf2: 'Extreu la targeta SD del NanoKVM. A la versió FULL, obre primer la carcassa.',
+        tf2: 'Extreu la targeta SD del dispositiu. A la versió FULL, obre primer la carcassa.',
         tf3: "Introdueix la targeta en un lector i connecta'l a l'ordinador.",
         tf4: 'Copia la imatge al directori /data de la targeta.',
-        tf5: 'Reintrodueix la targeta al NanoKVM.'
+        tf5: 'Reintrodueix la targeta al dispositiu.'
       }
     },
     script: {
@@ -290,7 +290,7 @@ const ca = {
       delete: 'Esborra',
       close: 'Tanca',
       unlockDesc:
-        "Els scripts s'executen com a root al NanoKVM. Introduïu la contrasenya del compte web per substituir-ne o executar-ne un.",
+        "Els scripts s'executen com a root al dispositiu. Introduïu la contrasenya del compte web per substituir-ne o executar-ne un.",
       unreviewedTitle: 'Script sense revisar',
       unreviewedDesc:
         "Aquest script és nou o s'ha substituït des de l'última vegada que el vau executar. Qualsevol persona amb la vostra sessió podria haver-lo pujat, així que reviseu-lo al terminal abans d'executar-lo com a root.",
@@ -299,7 +299,7 @@ const ca = {
     },
     terminal: {
       title: 'Terminal',
-      nanokvm: 'Terminal NanoKVM',
+      device: 'Terminal del dispositiu',
       serial: 'Terminal de port sèrie',
       unlockTitle: 'Desbloqueja el terminal',
       unlockDesc: 'Introdueix la contrasenya del compte web per iniciar una sessió de terminal',
@@ -419,7 +419,7 @@ const ca = {
           remoteDownload: 'Descarrega ISO remota',
           remoteDownloadWarningTitle: "Vols activar la descàrrega remota d'ISO?",
           remoteDownloadWarningDesc:
-            "NanoKVM baixarà una ISO des d'un URL i l'escriurà a /data. Activa'l només per a URL de confiança i desactiva'l en acabar.",
+            "El dispositiu baixarà una ISO des d'un URL i l'escriurà a /data. Activa'l només per a URL de confiança i desactiva'l en acabar.",
           remoteDownloadWarningConfirm: 'Activa'
         }
       },
@@ -537,9 +537,9 @@ const ca = {
           systemUpdate: 'Actualització del sistema'
         },
         reboot: 'Reinicia',
-        rebootDesc: 'Segur que vols reiniciar el NanoKVM?',
+        rebootDesc: 'Segur que vols reiniciar el dispositiu?',
         poweroff: 'Apaga',
-        poweroffDesc: 'Segur que vols apagar NanoKVM?'
+        poweroffDesc: 'Segur que vols apagar el dispositiu?'
       },
       network: {
         title: 'IP & DNS',
@@ -634,7 +634,7 @@ const ca = {
         },
         dns: {
           title: 'DNS',
-          description: 'Configura els servidors DNS per a NanoKVM',
+          description: 'Configura els servidors DNS del dispositiu',
           ipv4Title: 'IPv4',
           ipv4Description: "Configura l'adreçament IPv4 per a la interfície cablejada",
           servers: 'Servidors',
@@ -831,7 +831,7 @@ const ca = {
             apply: 'Canvia a Base',
             confirmTitle: 'Canviar al mode Base obert?',
             confirmDesc:
-              "El servei de tallafoc continua actiu, però se suprimeix la restricció d'intervals d'origen només locals. Els intervals d'origen públics poden arribar als serveis exposats de NanoKVM si la xarxa els encamina."
+              "El servei de tallafoc continua actiu, però se suprimeix la restricció d'intervals d'origen només locals. Els intervals d'origen públics poden arribar als serveis exposats del dispositiu si la xarxa els encamina."
           },
           rules: {
             title: 'Regles actuals',
@@ -1002,8 +1002,8 @@ const ca = {
         download: 'Descarrega el',
         package: "paquet d'instal·lació",
         unzip: 'i descomprimeix-lo',
-        upTailscale: 'Puja tailscale al directori /usr/bin/ del NanoKVM',
-        upTailscaled: 'Puja tailscaled al directori /usr/sbin/ del NanoKVM',
+        upTailscale: 'Puja tailscale al directori /usr/bin/ del dispositiu',
+        upTailscaled: 'Puja tailscaled al directori /usr/sbin/ del dispositiu',
         refresh: 'Actualitza la pàgina',
         notRunning: "Tailscale no s'està executant. Si us plau, inicia'l per continuar.",
         run: 'Comença',
@@ -1205,7 +1205,7 @@ const ca = {
         defaultTitle: 'Assistent general',
         defaultDescription: 'Ajuda general de xat, cerca i espai de treball',
         kvmTitle: 'Control remot',
-        kvmDescription: "Opera l'amfitrió remot mitjançant NanoKVM",
+        kvmDescription: "Opera l'amfitrió remot mitjançant el dispositiu",
         switched: "Rol d'agent canviat",
         switchFailed: "No s'ha pogut canviar la funció d'agent"
       },

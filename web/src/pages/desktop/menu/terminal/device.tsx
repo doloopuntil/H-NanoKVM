@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { MenuRow } from '@/components/menu-rows.tsx';
 
-export const Nanokvm = () => {
+export const DeviceTerminal = () => {
   const { t } = useTranslation();
 
   function openTerminal() {
@@ -12,7 +12,7 @@ export const Nanokvm = () => {
 
   return (
     <MenuRow icon={<SquareTerminalIcon size={16} />} onClick={openTerminal}>
-      {t('terminal.nanokvm')}
+      {t('terminal.device')}
     </MenuRow>
   );
 };

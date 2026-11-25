@@ -2,7 +2,7 @@
 
 export type GatewayToolCall = {
   id: string;
-  // the name of the tool, such as mcp_nanokvm_kvm_actions
+  // the name of the tool, such as mcp_hnanokvm_kvm_actions
   name: string;
   // a preview of the arguments, cut after a few hundred characters, so not always valid JSON
   arguments: string;

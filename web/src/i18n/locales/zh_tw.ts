@@ -46,7 +46,7 @@ const zh_tw = {
       setupButtonText: '建立帳戶',
       tips: {
         noPasswordReset:
-          '此 H-NanoKVM 映像檔不支援透過 BOOT 按鈕重設密碼。如果密碼遺失，請重新寫入 SD 卡並建立新帳戶。',
+          '此映像檔不支援透過 BOOT 按鈕重設密碼。如果密碼遺失，請重新寫入 SD 卡並建立新帳戶。',
         change1: '請注意，此操作將同時更新下列密碼：',
         change2: '網頁登入密碼',
         change3: '用於 SSH 登入的系統 root 密碼'
@@ -70,8 +70,8 @@ const zh_tw = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: '設定 NanoKVM Wi-Fi',
-      success: '請檢查 NanoKVM 的網路狀態，並存取新的 IP 位址',
+      description: '設定裝置 Wi-Fi',
+      success: '請檢查裝置的網路狀態，並存取新的 IP 位址',
       failed: '操作失敗，請重試',
       invalidMode: '目前模式不支援設定網路。請先前往裝置啟用 Wi-Fi 配置模式。',
       confirmBtn: '確定',
@@ -206,10 +206,10 @@ const zh_tw = {
       resetHid: '重設 HID',
       hidOnly: {
         title: 'HID-Only 模式',
-        desc: '如果滑鼠或鍵盤停止回應，且重設 HID 無效，可能是 NanoKVM 與主機之間存在相容性問題。',
+        desc: '如果滑鼠或鍵盤停止回應，且重設 HID 無效，可能是 裝置與主機之間存在相容性問題。',
         tip1: '啟用 HID-Only 模式將卸載虛擬磁碟和虛擬網路',
         tip2: '在 HID-Only 模式下，映像檔掛載會被停用',
-        tip3: 'NanoKVM 將在切換模式後自動重新啟動',
+        tip3: '裝置將在切換模式後自動重新啟動',
         enable: '啟用 HID-Only 模式',
         disable: '停用 HID-Only 模式'
       }
@@ -252,18 +252,18 @@ const zh_tw = {
       deleteConfirm: '確定要刪除該映像檔嗎？',
       tips: {
         title: '如何上傳',
-        usb1: '透過 USB 將 NanoKVM 連接到您的電腦。',
+        usb1: '透過 USB 將裝置連接到您的電腦。',
         usb2: '確保已在 設定 > 設備 > 虛擬磁碟 中掛載虛擬磁碟。',
         usb3: '開啟電腦上的虛擬磁碟，將映象檔案複製到虛擬磁碟的根目錄下。',
-        scp1: '確保 NanoKVM 和您的電腦位於同一區域網路。',
-        scp2: '開啟電腦上的終端機，使用 SCP 指令將映像檔案上傳到 NanoKVM 的 /data 目錄下。',
-        scp3: '範例：scp your-image-path root@your-nanokvm-ip:/data',
+        scp1: '確保裝置和您的電腦位於同一區域網路。',
+        scp2: '開啟電腦上的終端機，使用 SCP 指令將映像檔案上傳到 裝置的 /data 目錄下。',
+        scp3: '範例：scp your-image-path root@your-device-ip:/data',
         tfCard: 'microSD 卡',
         tf1: '此方法適用於 Linux 系統',
-        tf2: '從 NanoKVM 取出 SD 卡。FULL 版本請先拆開外殼。',
+        tf2: '從裝置取出 SD 卡。FULL 版本請先拆開外殼。',
         tf3: '使用 USB 讀卡機將 microSD 卡連接至電腦。',
         tf4: '將映像檔複製到 microSD 卡的 /data 目錄下。',
-        tf5: '將 microSD 卡重新插回 NanoKVM。'
+        tf5: '將 microSD 卡重新插回裝置。'
       }
     },
     script: {
@@ -275,7 +275,7 @@ const zh_tw = {
       delDesc: '確定要刪除該檔案嗎？',
       delete: '刪除',
       close: '關閉',
-      unlockDesc: '腳本在 NanoKVM 上以 root 身分執行。請輸入 Web 帳戶密碼以取代或執行腳本。',
+      unlockDesc: '腳本在裝置上以 root 身分執行。請輸入 Web 帳戶密碼以取代或執行腳本。',
       unreviewedTitle: '未檢查的腳本',
       unreviewedDesc:
         '此腳本是新增的，或自你上次執行後被取代。任何擁有你工作階段的人都可能上傳了它，因此請先在終端機中查看，再以 root 身分執行。',
@@ -283,7 +283,7 @@ const zh_tw = {
     },
     terminal: {
       title: '終端機',
-      nanokvm: 'NanoKVM 終端機',
+      device: '裝置終端機',
       serial: 'Serial Port 終端機',
       unlockTitle: '解鎖終端機',
       unlockDesc: '輸入網頁帳戶密碼以啟動終端機工作階段',
@@ -400,7 +400,7 @@ const zh_tw = {
           remoteDownload: '遠端 ISO 下載',
           remoteDownloadWarningTitle: '啟用遠端 ISO 下載？',
           remoteDownloadWarningDesc:
-            'NanoKVM 將從 URL 取得 ISO 並寫入 /data。僅對可信 URL 啟用，完成後請關閉。',
+            '裝置將從 URL 取得 ISO 並寫入 /data。僅對可信 URL 啟用，完成後請關閉。',
           remoteDownloadWarningConfirm: '啟用'
         }
       },
@@ -510,9 +510,9 @@ const zh_tw = {
           systemUpdate: '系統更新'
         },
         reboot: '重新啟動',
-        rebootDesc: '您確定要重新啟動 NanoKVM?',
+        rebootDesc: '您確定要重新啟動裝置?',
         poweroff: '關機',
-        poweroffDesc: '確定要關閉 NanoKVM 嗎？'
+        poweroffDesc: '確定要關閉裝置嗎？'
       },
       network: {
         title: 'IP & DNS',
@@ -600,7 +600,7 @@ const zh_tw = {
         },
         dns: {
           title: 'DNS',
-          description: '設定 NanoKVM 使用的 DNS 伺服器',
+          description: '設定裝置使用的 DNS 伺服器',
           ipv4Title: 'IPv4',
           ipv4Description: '設定有線介面的 IPv4 位址',
           servers: '伺服器',
@@ -790,7 +790,7 @@ const zh_tw = {
             apply: '切換到基準',
             confirmTitle: '切換到開放的基準模式？',
             confirmDesc:
-              '防火牆服務維持啟用，但會取消僅限本機來源範圍的限制。若網路會路由，公開來源範圍可能存取暴露的 NanoKVM 服務。'
+              '防火牆服務維持啟用，但會取消僅限本機來源範圍的限制。若網路會路由，公開來源範圍可能存取暴露的裝置服務。'
           },
           rules: {
             title: '目前規則',
@@ -955,8 +955,8 @@ const zh_tw = {
         download: '下載',
         package: '安裝包',
         unzip: '並解壓縮它',
-        upTailscale: '將 Tailscale 上傳到 NanoKVM 的 /usr/bin/ 資料夾',
-        upTailscaled: '將 tailscaled 上傳到 NanoKVM 的 /usr/sbin/ 資料夾',
+        upTailscale: '將 Tailscale 上傳到裝置的 /usr/bin/ 資料夾',
+        upTailscaled: '將 tailscaled 上傳到裝置的 /usr/sbin/ 資料夾',
         refresh: '重新整理頁面',
         notRunning: 'Tailscale 尚未執行。請先啟動以繼續。',
         run: '啟動',
@@ -1139,7 +1139,7 @@ const zh_tw = {
         defaultTitle: '通用助理',
         defaultDescription: '一般聊天、搜尋和工作區域幫助',
         kvmTitle: '遠端控制',
-        kvmDescription: '透過 NanoKVM 操作遠端主機',
+        kvmDescription: '透過裝置操作遠端主機',
         switched: '代理角色已切換',
         switchFailed: '代理角色切換失敗'
       },

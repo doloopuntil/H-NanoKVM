@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { MenuItem } from '@/components/menu-item.tsx';
 import { MenuHeader } from '@/components/menu-rows.tsx';
 
-import { Nanokvm } from './nanokvm';
+import { DeviceTerminal } from './device';
 import { SerialPort } from './serial-port';
 
 export const Terminal = () => {
@@ -14,7 +14,7 @@ export const Terminal = () => {
     <div className="min-w-50">
       <MenuHeader title={t('terminal.title')} />
 
-      <Nanokvm />
+      <DeviceTerminal />
       <SerialPort />
     </div>
   );

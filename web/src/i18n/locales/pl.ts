@@ -49,7 +49,7 @@ const pl = {
       setupButtonText: 'Utwórz konto',
       tips: {
         noPasswordReset:
-          'Ten obraz H-NanoKVM nie obsługuje resetu hasła przyciskiem BOOT. Jeśli hasło zostanie utracone, zapisz ponownie kartę SD i utwórz nowe konto.',
+          'Ten obraz nie obsługuje resetu hasła przyciskiem BOOT. Jeśli hasło zostanie utracone, zapisz ponownie kartę SD i utwórz nowe konto.',
         change1: 'Pamiętaj, że ta operacja zmieni następujące hasła:',
         change2: 'Hasło logowania web',
         change3: 'Hasło roota systemu do logowania przez SSH'
@@ -73,8 +73,8 @@ const pl = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'Skonfiguruj Wi-Fi dla NanoKVM',
-      success: 'Podejdź do urządzenia, aby sprawdzić stan sieci NanoKVM',
+      description: 'Skonfiguruj Wi-Fi dla urządzenia',
+      success: 'Podejdź do urządzenia, aby sprawdzić stan jego sieci',
       failed: 'Operacja nie powiodła się, spróbuj ponownie',
       invalidMode:
         'Bieżący tryb nie obsługuje konfiguracji sieci. Przejdź do swojego urządzenia i włącz tryb konfiguracji Wi-Fi.',
@@ -218,10 +218,10 @@ const pl = {
       resetHid: 'Zresetuj HID',
       hidOnly: {
         title: 'Tryb HID-Only',
-        desc: 'Jeśli mysz lub klawiatura przestaną reagować, a reset HID nie pomaga, może to być problem ze zgodnością między NanoKVM a hostem.',
+        desc: 'Jeśli mysz lub klawiatura przestaną reagować, a reset HID nie pomaga, może to być problem ze zgodnością między urządzeniem a hostem.',
         tip1: 'Włączenie trybu HID-Only odmontuje dysk wirtualny i sieć wirtualną',
         tip2: 'W trybie HID-Only montowanie obrazów jest wyłączone',
-        tip3: 'NanoKVM automatycznie uruchomi się ponownie po przełączeniu trybów',
+        tip3: 'Urządzenie automatycznie uruchomi się ponownie po przełączeniu trybów',
         enable: 'Włącz tryb HID-Only',
         disable: 'Wyłącz tryb HID-Only'
       }
@@ -268,18 +268,18 @@ const pl = {
       deleteConfirm: 'Czy na pewno chcesz usunąć ten obraz?',
       tips: {
         title: 'Jak przesłać obrazy',
-        usb1: 'Podłącz urządzenie NanoKVM do komputera przez USB.',
+        usb1: 'Podłącz urządzenie do komputera przez USB.',
         usb2: 'Upewnij się, że dysk wirtualny jest zamontowany w Ustawienia > Urządzenie > Dysk wirtualny.',
         usb3: 'Otwórz dysk wirtualny na swoim komputerze i skopiuj plik obrazu do katalogu głównego dysku wirtualnego.',
-        scp1: 'Upewnij się, że NanoKVM i twój komputer są w tej samej sieci lokalnej.',
-        scp2: 'Otwórz terminal na komputerze i użyj komendę SCP aby przesłać obraz do katalogu /data na NanoKVM.',
-        scp3: 'Przykład: scp lokalizacja-zrodlowego-obrazu root@ip-twojego-nanokvm:/data',
+        scp1: 'Upewnij się, że urządzenie i twój komputer są w tej samej sieci lokalnej.',
+        scp2: 'Otwórz terminal na komputerze i użyj komendę SCP aby przesłać obraz do katalogu /data na urządzeniu.',
+        scp3: 'Przykład: scp lokalizacja-zrodlowego-obrazu root@ip-twojego-urządzenia:/data',
         tfCard: 'Karta SD',
         tf1: 'Ta metoda jest obsługiwana w systemie Linux',
-        tf2: 'Wyjmij kartę SD z NanoKVM. W wersji FULL najpierw zdemontuj obudowę.',
+        tf2: 'Wyjmij kartę SD z urządzenia. W wersji FULL najpierw zdemontuj obudowę.',
         tf3: 'Włóż kartę SD do czytnika kart i podłącz do twojego komputera.',
         tf4: 'Kopjuj obraz do katalogu /data na karcie SD.',
-        tf5: 'Włóż kartę SD do NanoKVM.'
+        tf5: 'Włóż kartę SD do urządzenia.'
       }
     },
     script: {
@@ -292,7 +292,7 @@ const pl = {
       delete: 'Usuń',
       close: 'Zamknij',
       unlockDesc:
-        'Skrypty działają na NanoKVM jako root. Wprowadź hasło konta webowego, aby zastąpić lub uruchomić skrypt.',
+        'Skrypty działają na urządzeniu jako root. Wprowadź hasło konta webowego, aby zastąpić lub uruchomić skrypt.',
       unreviewedTitle: 'Niezweryfikowany skrypt',
       unreviewedDesc:
         'Ten skrypt jest nowy lub został zastąpiony od ostatniego uruchomienia. Mógł go przesłać każdy, kto ma Twoją sesję, więc obejrzyj go w terminalu, zanim uruchomisz go jako root.',
@@ -301,7 +301,7 @@ const pl = {
     },
     terminal: {
       title: 'Terminal',
-      nanokvm: 'Terminal NanoKVM',
+      device: 'Terminal urządzenia',
       serial: 'Terminal portu szeregowego',
       unlockTitle: 'Odblokuj terminal',
       unlockDesc: 'Wprowadź dane konta web, aby otworzyć powłokę roota',
@@ -422,7 +422,7 @@ const pl = {
           remoteDownload: 'Pobierz zdalne ISO',
           remoteDownloadWarningTitle: 'Włączyć zdalne pobieranie ISO?',
           remoteDownloadWarningDesc:
-            'NanoKVM pobierze obraz ISO z adresu URL i zapisze go w /data. Włączaj tylko dla zaufanych adresów URL i wyłącz po zakończeniu pracy.',
+            'Urządzenie pobierze obraz ISO z adresu URL i zapisze go w /data. Włączaj tylko dla zaufanych adresów URL i wyłącz po zakończeniu pracy.',
           remoteDownloadWarningConfirm: 'Włącz'
         }
       },
@@ -537,9 +537,9 @@ const pl = {
           systemUpdate: 'Aktualizacja systemu'
         },
         reboot: 'Uruchom ponownie',
-        rebootDesc: 'Czy na pewno chcesz ponownie uruchomić NanoKVM?',
+        rebootDesc: 'Czy na pewno chcesz ponownie uruchomić urządzenie?',
         poweroff: 'Wyłącz',
-        poweroffDesc: 'Czy na pewno wyłączyć NanoKVM?'
+        poweroffDesc: 'Czy na pewno wyłączyć urządzenie?'
       },
       network: {
         title: 'IP & DNS',
@@ -633,7 +633,7 @@ const pl = {
         },
         dns: {
           title: 'DNS',
-          description: 'Skonfiguruj serwery DNS dla NanoKVM',
+          description: 'Skonfiguruj serwery DNS dla urządzenia',
           ipv4Title: 'IPv4',
           ipv4Description: 'Skonfiguruj adresację IPv4 dla interfejsu przewodowego',
           servers: 'Serwery',
@@ -828,7 +828,7 @@ const pl = {
             apply: 'Przełącz na Podstawowy',
             confirmTitle: 'Przełączyć na otwarty tryb Podstawowy?',
             confirmDesc:
-              'Usługa zapory pozostanie aktywna, ale ograniczenie local-only dla zakresów źródłowych zostanie zdjęte. Publiczne zakresy źródłowe mogą dotrzeć do wystawionych usług NanoKVM, jeśli sieć je routuje.'
+              'Usługa zapory pozostanie aktywna, ale ograniczenie local-only dla zakresów źródłowych zostanie zdjęte. Publiczne zakresy źródłowe mogą dotrzeć do wystawionych usług urządzenia, jeśli sieć je routuje.'
           },
           rules: {
             title: 'Aktualne reguły',
@@ -998,8 +998,8 @@ const pl = {
         download: 'Pobierz',
         package: 'pakiet instalacyjny',
         unzip: 'i wypakuj pliki',
-        upTailscale: 'Prześlij tailscale do NanoKVM w katalogu /usr/bin/',
-        upTailscaled: 'Prześlij tailscaled do NanoKVM w katalogu /usr/sbin/',
+        upTailscale: 'Prześlij tailscale do katalogu /usr/bin/ na urządzeniu',
+        upTailscaled: 'Prześlij tailscaled do katalogu /usr/sbin/ na urządzeniu',
         refresh: 'Odśwież obecną stronę',
         notRunning: 'Tailscale nie działa. Rozpocznij, aby kontynuować.',
         run: 'Rozpocznij',
@@ -1201,7 +1201,7 @@ const pl = {
         defaultTitle: 'Asystent ogólny',
         defaultDescription: 'Ogólna pomoc dotycząca czatu, wyszukiwania i przestrzeni roboczej',
         kvmTitle: 'Zdalne sterowanie',
-        kvmDescription: 'Sterowanie zdalnym hostem poprzez NanoKVM',
+        kvmDescription: 'Sterowanie zdalnym hostem poprzez urządzenie',
         switched: 'Rola agenta została zmieniona',
         switchFailed: 'Nie udało się zmienić roli agenta'
       },

@@ -48,7 +48,7 @@ const en = {
       setupButtonText: 'Create account',
       tips: {
         noPasswordReset:
-          'This H-NanoKVM image does not support password reset from the BOOT button. If the password is lost, reflash the SD card and create a new account.',
+          'This image does not support password reset from the BOOT button. If the password is lost, reflash the SD card and create a new account.',
         change1: 'Please note that this action will change the following passwords:',
         change2: 'Web login password',
         change3: 'System root password for SSH login'
@@ -72,8 +72,8 @@ const en = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'Configure Wi-Fi for NanoKVM',
-      success: 'Please go to the device to check the network status of NanoKVM',
+      description: 'Configure Wi-Fi for the device',
+      success: 'Please go to the device to check its network status',
       failed: 'Operation failed, please try again',
       invalidMode:
         'The current mode does not support network setup. Please go to your device and enable Wi-Fi configuration mode.',
@@ -216,10 +216,10 @@ const en = {
       resetHid: 'Reset HID',
       hidOnly: {
         title: 'HID-Only mode',
-        desc: "If your mouse or keyboard stop responding and resetting HID doesn't help, it could be a compatibility issue between the NanoKVM and the host.",
+        desc: "If your mouse or keyboard stop responding and resetting HID doesn't help, it could be a compatibility issue between the device and the host.",
         tip1: 'Enabling HID-Only mode will unmount the virtual disk and virtual network',
         tip2: 'In HID-Only mode, image mounting is disabled',
-        tip3: 'NanoKVM will automatically reboot after switching modes',
+        tip3: 'The device will automatically reboot after switching modes',
         enable: 'Enable HID-Only mode',
         disable: 'Disable HID-Only mode'
       }
@@ -266,18 +266,18 @@ const en = {
       deleteConfirm: 'Are you sure you want to delete this image?',
       tips: {
         title: 'How to upload',
-        usb1: 'Connect the NanoKVM to your computer via USB.',
+        usb1: 'Connect the device to your computer via USB.',
         usb2: 'Ensure that the virtual disk is mounted in Settings > Device > Virtual disk.',
         usb3: 'Open the virtual disk on your computer and copy the image file to the root directory of the virtual disk.',
-        scp1: 'Make sure the NanoKVM and your computer are on the same local network.',
-        scp2: 'Open a terminal on your computer and use the SCP command to upload the image file to the /data directory on the NanoKVM.',
-        scp3: 'Example: scp your-image-path root@your-nanokvm-ip:/data',
+        scp1: 'Make sure the device and your computer are on the same local network.',
+        scp2: 'Open a terminal on your computer and use the SCP command to upload the image file to the /data directory on the device.',
+        scp3: 'Example: scp your-image-path root@your-device-ip:/data',
         tfCard: 'SD card',
         tf1: 'This method is supported on Linux system',
-        tf2: 'Get the SD card from the NanoKVM. On the FULL version, disassemble the case first.',
+        tf2: 'Get the SD card from the device. On the FULL version, disassemble the case first.',
         tf3: 'Insert the SD card into a card reader and connect it to your computer.',
         tf4: 'Copy the image file to the /data directory on the SD card.',
-        tf5: 'Insert the SD card into the NanoKVM.'
+        tf5: 'Insert the SD card into the device.'
       }
     },
     script: {
@@ -290,7 +290,7 @@ const en = {
       delete: 'Delete',
       close: 'Close',
       unlockDesc:
-        'Scripts run as root on NanoKVM. Enter your web account password to replace or run one.',
+        'Scripts run as root on the device. Enter your web account password to replace or run one.',
       unreviewedTitle: 'Unreviewed script',
       unreviewedDesc:
         'This script is new or was replaced since you last ran it. Anyone with your session could have uploaded it, so look at it in the terminal before you run it as root.',
@@ -298,7 +298,7 @@ const en = {
     },
     terminal: {
       title: 'Terminal',
-      nanokvm: 'NanoKVM terminal',
+      device: 'Device terminal',
       serial: 'Serial port terminal',
       unlockTitle: 'Unlock terminal',
       unlockDesc: 'Enter your web account password to start a terminal session',
@@ -415,7 +415,7 @@ const en = {
           remoteDownload: 'Remote ISO download',
           remoteDownloadWarningTitle: 'Enable remote ISO download?',
           remoteDownloadWarningDesc:
-            'NanoKVM will fetch an ISO from a URL and write it to /data. Enable it only for trusted URLs and turn it off when you are done.',
+            'The device will fetch an ISO from a URL and write it to /data. Enable it only for trusted URLs and turn it off when you are done.',
           remoteDownloadWarningConfirm: 'Enable'
         }
       },
@@ -529,9 +529,9 @@ const en = {
           systemUpdate: 'System update'
         },
         reboot: 'Reboot',
-        rebootDesc: 'Are you sure you want to reboot NanoKVM?',
+        rebootDesc: 'Are you sure you want to reboot the device?',
         poweroff: 'Power off',
-        poweroffDesc: 'Are you sure you want to power off NanoKVM?'
+        poweroffDesc: 'Are you sure you want to power off the device?'
       },
       network: {
         title: 'IP & DNS',
@@ -625,7 +625,7 @@ const en = {
         },
         dns: {
           title: 'DNS',
-          description: 'Configure DNS servers for NanoKVM',
+          description: 'Configure DNS servers for the device',
           ipv4Title: 'IPv4',
           ipv4Description: 'Configure IPv4 addressing for the wired interface',
           servers: 'Servers',
@@ -819,7 +819,7 @@ const en = {
             apply: 'Switch to Baseline',
             confirmTitle: 'Switch to open Baseline mode?',
             confirmDesc:
-              'This keeps the firewall service active but removes the local-only source-range restriction. Public source ranges may reach exposed NanoKVM services if the network routes them.'
+              'This keeps the firewall service active but removes the local-only source-range restriction. Public source ranges may reach exposed services on the device if the network routes them.'
           },
           rules: {
             title: 'Current rules',
@@ -985,8 +985,8 @@ const en = {
         download: 'Download the',
         package: 'installation package',
         unzip: 'and unzip it',
-        upTailscale: 'Upload tailscale to NanoKVM directory /usr/bin/',
-        upTailscaled: 'Upload tailscaled to NanoKVM directory /usr/sbin/',
+        upTailscale: 'Upload tailscale to the device directory /usr/bin/',
+        upTailscaled: 'Upload tailscaled to the device directory /usr/sbin/',
         refresh: 'Refresh current page',
         notRunning: 'Tailscale is not running. Please start it to continue.',
         run: 'Start',
@@ -1185,7 +1185,7 @@ const en = {
         defaultTitle: 'General assistant',
         defaultDescription: 'General chat, search, and workspace help',
         kvmTitle: 'Remote control',
-        kvmDescription: 'Operate the remote host through NanoKVM',
+        kvmDescription: 'Operate the remote host through the device',
         switched: 'Agent role switched',
         switchFailed: 'Failed to switch agent role'
       },

@@ -1,7 +1,7 @@
 import { getCsrfToken, removeToken } from '@/lib/cookie.ts';
 import { capitalizeFirst } from '@/lib/text.ts';
 
-// The browser side of an upload to the NanoKVM, shared by the image and the update bundle
+// The browser side of an upload to the device, shared by the image and the update bundle
 // uploads: a multipart POST with the session's CSRF token, progress, an abort, and a stall
 // watchdog instead of a fixed timeout, so that a slow upload that still moves goes on and a dead
 // one stops. What an upload is for (which URL, which checks before and after) is the caller's.

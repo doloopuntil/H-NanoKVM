@@ -220,7 +220,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
     );
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'nanokvm-backup-codes.txt';
+    link.download = 'hnanokvm-backup-codes.txt';
     document.body.appendChild(link);
     link.click();
     link.remove();

@@ -48,7 +48,7 @@ const fi = {
       setupButtonText: 'Luo tili',
       tips: {
         noPasswordReset:
-          'Tämä H-NanoKVM-image ei tue salasanan palautusta BOOT-painikkeella. Jos salasana katoaa, kirjoita SD-kortti uudelleen ja luo uusi tili.',
+          'Tämä image ei tue salasanan palautusta BOOT-painikkeella. Jos salasana katoaa, kirjoita SD-kortti uudelleen ja luo uusi tili.',
         change1: 'Huomaa, että tämä toiminto muuttaa seuraavat salasanat:',
         change2: 'Verkkokirjautumisen salasana',
         change3: 'Järjestelmän root-salasana SSH-kirjautumiseen'
@@ -72,8 +72,8 @@ const fi = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'Määritä NanoKVM:n Wi-Fi',
-      success: 'Tarkista NanoKVM:n verkon tila laitteen luona',
+      description: 'Määritä laitteen Wi-Fi',
+      success: 'Tarkista verkon tila laitteen luona',
       failed: 'Toiminto epäonnistui, yritä uudelleen',
       invalidMode:
         'Nykyinen tila ei tue verkon määritystä. Mene laitteen luo ja ota Wi-Fi-määritystila käyttöön.',
@@ -219,10 +219,10 @@ const fi = {
       resetHid: 'Nollaa HID',
       hidOnly: {
         title: 'HID-Only-tila',
-        desc: 'Jos hiiri tai näppäimistö lakkaa reagoimasta eikä HID:n nollaus auta, kyseessä voi olla NanoKVM:n ja isäntälaitteen yhteensopivuusongelma.',
+        desc: 'Jos hiiri tai näppäimistö lakkaa reagoimasta eikä HID:n nollaus auta, kyseessä voi olla laitteen ja isäntälaitteen yhteensopivuusongelma.',
         tip1: 'HID-Only-tilan käyttöönotto irrottaa virtuaalilevyn ja virtuaaliverkon',
         tip2: 'HID-Only-tilassa levykuvien liittäminen on pois käytöstä',
-        tip3: 'NanoKVM käynnistyy automaattisesti uudelleen tilan vaihdon jälkeen',
+        tip3: 'Laite käynnistyy automaattisesti uudelleen tilan vaihdon jälkeen',
         enable: 'Ota HID-Only-tila käyttöön',
         disable: 'Poista HID-Only-tila käytöstä'
       }
@@ -269,18 +269,18 @@ const fi = {
       deleteConfirm: 'Haluatko varmasti poistaa tämän levykuvan?',
       tips: {
         title: 'Latausohje',
-        usb1: 'Yhdistä NanoKVM tietokoneeseen USB:llä.',
+        usb1: 'Yhdistä laite tietokoneeseen USB:llä.',
         usb2: 'Varmista, että virtuaalilevy on liitetty kohdassa Asetukset > Laite > Virtuaalilevy.',
         usb3: 'Avaa virtuaalilevy tietokoneella ja kopioi levykuvatiedosto virtuaalilevyn juurihakemistoon.',
-        scp1: 'Varmista, että NanoKVM ja tietokone ovat samassa lähiverkossa.',
-        scp2: 'Avaa tietokoneella pääte ja lataa levykuvatiedosto NanoKVM:n /data-hakemistoon SCP-komennolla.',
-        scp3: 'Esimerkki: scp levykuvan-polku root@nanoKVM-ip:/data',
+        scp1: 'Varmista, että laite ja tietokone ovat samassa lähiverkossa.',
+        scp2: 'Avaa tietokoneella pääte ja lataa levykuvatiedosto laitteen /data-hakemistoon SCP-komennolla.',
+        scp3: 'Esimerkki: scp levykuvan-polku root@laitteen-ip:/data',
         tfCard: 'SD-kortti',
         tf1: 'Tätä menetelmää tuetaan Linux-järjestelmissä',
-        tf2: 'Ota SD-kortti NanoKVM:stä. FULL-versiossa pura ensin kotelo.',
+        tf2: 'Ota SD-kortti laitteesta. FULL-versiossa pura ensin kotelo.',
         tf3: 'Aseta SD-kortti kortinlukijaan ja yhdistä se tietokoneeseen.',
         tf4: 'Kopioi levykuvatiedosto SD-kortin /data-hakemistoon.',
-        tf5: 'Aseta SD-kortti NanoKVM:ään.'
+        tf5: 'Aseta SD-kortti laitteeseen.'
       }
     },
     script: {
@@ -293,7 +293,7 @@ const fi = {
       delete: 'Poista',
       close: 'Sulje',
       unlockDesc:
-        'Skriptit suoritetaan NanoKVM:ssä root-oikeuksin. Anna verkkotilin salasana korvataksesi tai suorittaaksesi skriptin.',
+        'Skriptit suoritetaan laitteessa root-oikeuksin. Anna verkkotilin salasana korvataksesi tai suorittaaksesi skriptin.',
       unreviewedTitle: 'Tarkistamaton skripti',
       unreviewedDesc:
         'Tämä skripti on uusi tai se korvattiin viimeisen suorituskerran jälkeen. Sen on voinut ladata kuka tahansa, jolla on istuntosi, joten katso se päätteessä ennen kuin suoritat sen root-oikeuksin.',
@@ -302,7 +302,7 @@ const fi = {
     },
     terminal: {
       title: 'Pääte',
-      nanokvm: 'NanoKVM-pääte',
+      device: 'Laitteen pääte',
       serial: 'Sarjaporttipääte',
       unlockTitle: 'Avaa terminaali',
       unlockDesc: 'Anna verkkotilin salasana käynnistääksesi terminaali-istunnon',
@@ -421,7 +421,7 @@ const fi = {
           remoteDownload: 'Lataa ISO etänä',
           remoteDownloadWarningTitle: 'Otetaanko ISO-etälataus käyttöön?',
           remoteDownloadWarningDesc:
-            'NanoKVM lataa ISO:n URL-osoitteesta ja kirjoittaa sen hakemistoon /data. Ota käyttöön vain luotetuille URL-osoitteille ja poista käytöstä lopuksi.',
+            'Laite lataa ISO:n URL-osoitteesta ja kirjoittaa sen hakemistoon /data. Ota käyttöön vain luotetuille URL-osoitteille ja poista käytöstä lopuksi.',
           remoteDownloadWarningConfirm: 'Ota käyttöön'
         }
       },
@@ -537,9 +537,9 @@ const fi = {
           systemUpdate: 'Järjestelmäpäivitys'
         },
         reboot: 'Käynnistä uudelleen',
-        rebootDesc: 'Haluatko varmasti käynnistää NanoKVM:n uudelleen?',
+        rebootDesc: 'Haluatko varmasti käynnistää laitteen uudelleen?',
         poweroff: 'Sammuta',
-        poweroffDesc: 'Haluatko varmasti sammuttaa NanoKVM:n?'
+        poweroffDesc: 'Haluatko varmasti sammuttaa laitteen?'
       },
       network: {
         title: 'IP & DNS',
@@ -634,7 +634,7 @@ const fi = {
         },
         dns: {
           title: 'DNS',
-          description: 'Määritä NanoKVM:n DNS-palvelimet',
+          description: 'Määritä laitteen DNS-palvelimet',
           ipv4Title: 'IPv4',
           ipv4Description: 'Määritä langallisen liitännän IPv4-osoite',
           servers: 'Palvelimet',
@@ -830,7 +830,7 @@ const fi = {
             apply: 'Siirry tilaan Perus',
             confirmTitle: 'Siirrytäänkö avoimeen tilaan Perus?',
             confirmDesc:
-              'Palomuuripalvelu pysyy käytössä, mutta vain paikallisiin lähdealueisiin rajoittava sääntö poistuu. Julkiset lähdealueet voivat tavoittaa NanoKVM:n julkaistut palvelut, jos verkko reitittää ne.'
+              'Palomuuripalvelu pysyy käytössä, mutta vain paikallisiin lähdealueisiin rajoittava sääntö poistuu. Julkiset lähdealueet voivat tavoittaa laitteen julkaistut palvelut, jos verkko reitittää ne.'
           },
           rules: {
             title: 'Nykyiset säännöt',
@@ -999,8 +999,8 @@ const fi = {
         download: 'Lataa',
         package: 'asennuspaketti',
         unzip: 'ja pura se',
-        upTailscale: 'Lataa tailscale NanoKVM:n hakemistoon /usr/bin/',
-        upTailscaled: 'Lataa tailscaled NanoKVM:n hakemistoon /usr/sbin/',
+        upTailscale: 'Lataa tailscale laitteen hakemistoon /usr/bin/',
+        upTailscaled: 'Lataa tailscaled laitteen hakemistoon /usr/sbin/',
         refresh: 'Päivitä nykyinen sivu',
         notRunning: 'Tailscale ei ole käynnissä. Käynnistä se jatkaaksesi.',
         run: 'Käynnistä',
@@ -1198,7 +1198,7 @@ const fi = {
         defaultTitle: 'Yleisavustaja',
         defaultDescription: 'Yleinen keskustelu, haku ja työtilan apu',
         kvmTitle: 'Etäohjaus',
-        kvmDescription: 'Ohjaa etäkonetta NanoKVM:n kautta',
+        kvmDescription: 'Ohjaa etäkonetta laitteen kautta',
         switched: 'Agentin rooli vaihdettu',
         switchFailed: 'Agentin roolin vaihto epäonnistui'
       },

@@ -47,7 +47,7 @@ const ja = {
       setupButtonText: 'アカウントを作成',
       tips: {
         noPasswordReset:
-          'この H-NanoKVM イメージは BOOT ボタンによるパスワードリセットに対応していません。パスワードを失った場合は SD カードを書き直して新しいアカウントを作成してください。',
+          'このイメージは BOOT ボタンによるパスワードリセットに対応していません。パスワードを失った場合は SD カードを書き直して新しいアカウントを作成してください。',
         change1: 'この操作により、以下のパスワードも更新されることに注意してください：',
         change2: 'ウェブログインパスワード',
         change3: 'SSH ログイン用のシステム root パスワード'
@@ -71,8 +71,8 @@ const ja = {
     },
     wifi: {
       title: 'Wi-Fi',
-      description: 'NanoKVM の Wi-Fi を設定する',
-      success: 'NanoKVM のネットワークステータスを確認するにはデバイスにアクセスしてください',
+      description: 'デバイスの Wi-Fi を設定する',
+      success: 'ネットワークステータスを確認するにはデバイスにアクセスしてください',
       failed: '操作に失敗したため、もう一度お試しください',
       invalidMode:
         '現在のモードではネットワーク設定はサポートされていません。デバイスで Wi-Fi 設定モードを有効にしてください。',
@@ -217,10 +217,10 @@ const ja = {
       resetHid: 'HID をリセット',
       hidOnly: {
         title: 'HID-Only モード',
-        desc: 'マウスやキーボードが反応しなくなり、HID のリセットでも改善しない場合は、NanoKVM とホストの互換性の問題かもしれません。',
+        desc: 'マウスやキーボードが反応しなくなり、HID のリセットでも改善しない場合は、デバイスとホストの互換性の問題かもしれません。',
         tip1: 'HID-Only モードを有効にすると、仮想ディスクと仮想ネットワークがアンマウントされます',
         tip2: 'HID-Only モードでは、イメージのマウントは無効です',
-        tip3: 'モードを切り替えると、NanoKVM は自動的に再起動します',
+        tip3: 'モードを切り替えると、デバイスは自動的に再起動します',
         enable: 'HID-Only モードを有効化',
         disable: 'HID-Only モードを無効化'
       }
@@ -267,18 +267,18 @@ const ja = {
       deleteConfirm: 'このイメージを削除してもよろしいですか？',
       tips: {
         title: 'アップロード方法',
-        usb1: 'NanoKVM を USB 経由でコンピュータに接続します。',
+        usb1: 'デバイスを USB 経由でコンピュータに接続します。',
         usb2: '設定 > デバイス > 仮想ディスク で仮想ディスクがマウントされていることを確認してください。',
         usb3: 'コンピュータ上で仮想ディスクを開き、イメージファイルを仮想ディスクのルートディレクトリにコピーします。',
-        scp1: 'NanoKVM とコンピュータが同じローカルエリアネットワークに接続されていることを確認します。',
-        scp2: 'コンピュータでターミナルを開き、SCP コマンドを使用してイメージファイルを NanoKVM の /data ディレクトリにアップロードします。',
-        scp3: '例：scp your-image-path root@your-nanokvm-ip:/data',
+        scp1: 'デバイスとコンピュータが同じローカルエリアネットワークに接続されていることを確認します。',
+        scp2: 'コンピュータでターミナルを開き、SCP コマンドを使用してイメージファイルをデバイスの /data ディレクトリにアップロードします。',
+        scp3: '例：scp your-image-path root@your-device-ip:/data',
         tfCard: 'SD カード',
         tf1: 'この方法は Linux システムでサポートされています',
-        tf2: 'NanoKVM から SD カードを取り出します。FULL バージョンでは、先にケースを分解してください。',
+        tf2: 'デバイスから SD カードを取り出します。FULL バージョンでは、先にケースを分解してください。',
         tf3: 'SD カードをカードリーダーに挿入してコンピュータに接続します。',
         tf4: 'コンピューターから SD カードの /data ディレクトリにイメージファイルをコピーします。',
-        tf5: 'SD カードを NanoKVM に挿入します。'
+        tf5: 'SD カードをデバイスに挿入します。'
       }
     },
     script: {
@@ -291,7 +291,7 @@ const ja = {
       delete: '削除',
       close: '閉じる',
       unlockDesc:
-        'スクリプトは NanoKVM 上で root として実行されます。スクリプトを置き換えるか実行するには、Web アカウントのパスワードを入力してください。',
+        'スクリプトはデバイス上で root として実行されます。スクリプトを置き換えるか実行するには、Web アカウントのパスワードを入力してください。',
       unreviewedTitle: '未確認のスクリプト',
       unreviewedDesc:
         'このスクリプトは新規か、前回の実行後に置き換えられています。あなたのセッションを持つ誰かがアップロードした可能性があるため、root で実行する前にターミナルで内容を確認してください。',
@@ -300,7 +300,7 @@ const ja = {
     },
     terminal: {
       title: 'ターミナル',
-      nanokvm: 'NanoKVM ターミナル',
+      device: 'デバイスターミナル',
       serial: 'シリアルポートターミナル',
       unlockTitle: 'ターミナルを解除',
       unlockDesc: 'ターミナルセッションを開始するには Web アカウントのパスワードを入力してください',
@@ -422,7 +422,7 @@ const ja = {
           remoteDownload: 'リモート ISO をダウンロード',
           remoteDownloadWarningTitle: 'リモート ISO ダウンロードを有効にしますか?',
           remoteDownloadWarningDesc:
-            'NanoKVM は URL から ISO を取得して /data に書き込みます。信頼できる URL のみに有効化し、終了後は無効にしてください。',
+            'デバイスは URL から ISO を取得して /data に書き込みます。信頼できる URL のみに有効化し、終了後は無効にしてください。',
           remoteDownloadWarningConfirm: '有効にする'
         }
       },
@@ -538,9 +538,9 @@ const ja = {
           systemUpdate: 'システム更新'
         },
         reboot: '再起動',
-        rebootDesc: 'NanoKVM を再起動してもよろしいですか?',
+        rebootDesc: 'デバイスを再起動してもよろしいですか?',
         poweroff: '電源オフ',
-        poweroffDesc: 'NanoKVM の電源を切りますか？'
+        poweroffDesc: 'デバイスの電源を切りますか？'
       },
       network: {
         title: 'IP & DNS',
@@ -633,7 +633,7 @@ const ja = {
         },
         dns: {
           title: 'DNS',
-          description: 'NanoKVM の DNS サーバーを設定',
+          description: 'デバイスの DNS サーバーを設定',
           ipv4Title: 'IPv4',
           ipv4Description: '有線インターフェースの IPv4 アドレスを設定します',
           servers: 'サーバー',
@@ -828,7 +828,7 @@ const ja = {
             apply: 'ベースラインに切り替え',
             confirmTitle: 'オープンなベースラインモードに切り替えますか?',
             confirmDesc:
-              'ファイアウォールサービスは有効のままですが、ローカル専用の送信元範囲の制限が解除されます。ネットワークが経路を提供している場合、公開側の送信元範囲から NanoKVM の公開サービスに到達できる可能性があります。'
+              'ファイアウォールサービスは有効のままですが、ローカル専用の送信元範囲の制限が解除されます。ネットワークが経路を提供している場合、公開側の送信元範囲からデバイスの公開サービスに到達できる可能性があります。'
           },
           rules: {
             title: '現在のルール',
@@ -998,8 +998,8 @@ const ja = {
         download: 'ダウンロードして',
         package: 'インストールパッケージを',
         unzip: '解凍してください',
-        upTailscale: 'tailscale ファイルを NanoKVM の /usr/bin ディレクトリにアップロードします',
-        upTailscaled: 'tailscaled ファイルを NanoKVM の /usr/sbin ディレクトリにアップロードします',
+        upTailscale: 'tailscale ファイルをデバイスの /usr/bin ディレクトリにアップロードします',
+        upTailscaled: 'tailscaled ファイルをデバイスの /usr/sbin ディレクトリにアップロードします',
         refresh: 'ページを更新します',
         notRunning: 'Tailscale はまだ実行されていません。起動操作を実行してください。',
         run: '起動',
@@ -1199,7 +1199,7 @@ const ja = {
         defaultTitle: '一般アシスタント',
         defaultDescription: '一般的なチャット、検索、およびワークスペースのヘルプ',
         kvmTitle: 'リモート操作',
-        kvmDescription: 'NanoKVM を通じてリモート ホストを操作します',
+        kvmDescription: 'デバイスを通じてリモート ホストを操作します',
         switched: 'エージェントの役割が切り替わりました',
         switchFailed: 'エージェントの役割を切り替えることができませんでした'
       },
