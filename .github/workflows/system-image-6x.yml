@@ -31,7 +31,7 @@ jobs:
     # 360 minutes is the hard cap on GitHub-hosted runners.
     timeout-minutes: 360
     env:
-      RUN_ROOT: ${{ github.workspace }}/build/rc12-run
+      RUN_ROOT: ${{ github.workspace }}/build/image-run
       EXPECTED_SYSTEM_VERSION: 1.0.0
       EXPECTED_KVMAPP_VERSION: 3.0.0
       EXPECTED_KERNEL_RELEASE: 6.18.65
@@ -86,9 +86,9 @@ jobs:
       - name: Bootstrap Buildroot + security-patched source
         run: |
           mkdir -p build/buildroot-package-dl-cache
-          make latest-buildroot-bootstrap
+          make buildroot-bootstrap
           BUILDROOT_SECURITY_DL_DIR="${{ github.workspace }}/build/buildroot-package-dl-cache" \
-            make latest-buildroot-security-source
+            make buildroot-security-source
 
       # licheerv's external tree (board patches, FSBL patches) and the FSBL source for the FIPs.
       - name: Fetch the licheerv external tree and the FSBL source
@@ -221,7 +221,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: buildroot-6x-handoff
-          path: build/rc12-run/buildroot-6x-handoff.tar.zst
+          path: build/image-run/buildroot-6x-handoff.tar.zst
           retention-days: 7
           if-no-files-found: error
 
@@ -231,10 +231,10 @@ jobs:
         with:
           name: buildroot-6x-diagnostics
           path: |
-            build/rc12-run/buildroot/.config
-            build/rc12-run/buildroot/build/*/config.log
-            build/rc12-run/buildroot/build/linux-*/.config
-            build/rc12-run/_reports/**
+            build/image-run/buildroot/.config
+            build/image-run/buildroot/build/*/config.log
+            build/image-run/buildroot/build/linux-*/.config
+            build/image-run/_reports/**
           retention-days: 7
           if-no-files-found: warn
 
@@ -259,7 +259,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
-      RUN_ROOT: ${{ github.workspace }}/build/rc12-run
+      RUN_ROOT: ${{ github.workspace }}/build/image-run
       EXPECTED_SYSTEM_VERSION: 1.0.0
       EXPECTED_KVMAPP_VERSION: 3.0.0
       EXPECTED_KERNEL_RELEASE: 6.18.65
@@ -300,21 +300,21 @@ jobs:
           BUILDROOT_VERSION="$BUILDROOT_VERSION" \
           REQUIRED_APP_VERSION=2.0.41 \
             scripts/package-local-system-update.sh \
-            "$RUN_ROOT/buildroot/images/hardened-sg2002-6x.img" \
+            "$RUN_ROOT/buildroot/images/hnanokvm-6x.img" \
             "$RUN_ROOT/system-update"
 
       - name: Compress the SD image
         run: |
           mkdir -p "$RUN_ROOT/sd-image"
-          xz -T0 -6 -c "$RUN_ROOT/buildroot/images/hardened-sg2002-6x.img" \
-            > "$RUN_ROOT/sd-image/hardened-sg2002-6x.img.xz"
-          (cd "$RUN_ROOT/sd-image" && sha256sum hardened-sg2002-6x.img.xz > SHA256SUMS)
+          xz -T0 -6 -c "$RUN_ROOT/buildroot/images/hnanokvm-6x.img" \
+            > "$RUN_ROOT/sd-image/hnanokvm-6x.img.xz"
+          (cd "$RUN_ROOT/sd-image" && sha256sum hnanokvm-6x.img.xz > SHA256SUMS)
 
       - name: Upload the system-update archive
         uses: actions/upload-artifact@v4
         with:
           name: system-update-archive-6x
-          path: build/rc12-run/system-update/**
+          path: build/image-run/system-update/**
           retention-days: 14
           if-no-files-found: error
 
@@ -323,7 +323,7 @@ jobs:
         with:
           name: sg2002-6x-sd-image
           path: |
-            build/rc12-run/sd-image/**
-            build/rc12-run/_reports/**
+            build/image-run/sd-image/**
+            build/image-run/_reports/**
           retention-days: 14
           if-no-files-found: error

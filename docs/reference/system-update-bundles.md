@@ -254,7 +254,7 @@ Create a raw boot/rootfs bundle from a Hardened SD image (the CI build also make
 one, the `system-update-archive-6x` artifact):
 
 ```sh
-scripts/extract-sd-raw-images.sh hardened-sg2002-6x.img.xz build/raw
+scripts/extract-sd-raw-images.sh hnanokvm-6x.img.xz build/raw
 scripts/create-raw-system-update-bundle.sh 1.0.0 sg2002-hnanokvm-sd \
   build/raw/boot.vfat build/raw/rootfs.sd build/system-updates
 ```

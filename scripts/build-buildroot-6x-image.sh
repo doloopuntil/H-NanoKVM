@@ -11,9 +11,9 @@ set -euo pipefail
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 STAGE="${1:-all}"
-BUILDROOT_SOURCE="${LATEST_BUILDROOT_SOURCE_DIR:-$ROOT/build/latestbuildroot/buildroot-2026.05.1-raw11-security}"
-OUTPUT_DIR="${HNANOKVM_6X_OUTPUT_DIR:-$ROOT/build/latestbuildroot/sg2002-6x}"
-REPORT_DIR="${HNANOKVM_6X_REPORT_DIR:-$ROOT/build/latestbuildroot/sg2002-6x-report}"
+BUILDROOT_SOURCE="${HNANOKVM_BUILDROOT_SOURCE_DIR:-$ROOT/build/buildroot/buildroot-2026.05.1-raw11-security}"
+OUTPUT_DIR="${HNANOKVM_6X_OUTPUT_DIR:-$ROOT/build/buildroot/sg2002-6x}"
+REPORT_DIR="${HNANOKVM_6X_REPORT_DIR:-$ROOT/build/buildroot/sg2002-6x-report}"
 HANDOFF="${HNANOKVM_6X_HANDOFF:-$OUTPUT_DIR.handoff.tar.zst}"
 KVMAPP_DIR="${NANOKVM_KVMAPP_SOURCE_DIR:-$ROOT/build/kvmapp-rust/kvmapp}"
 LICHEERV_DIR="${LICHEERV_EXTERNAL_DIR:-$ROOT/build/buildroot-external-licheervnano}"
@@ -43,19 +43,19 @@ require_commands() {
 configure() {
 	[ -f "$LICHEERV_DIR/external.desc" ] || die "missing licheerv external: run scripts/fetch-licheerv-external.sh"
 	[ -e "$OUTPUT_DIR" ] && die "refusing to reuse Buildroot output: $OUTPUT_DIR"
-	LATEST_BUILDROOT_SOURCE_DIR="$BUILDROOT_SOURCE" \
+	HNANOKVM_BUILDROOT_SOURCE_DIR="$BUILDROOT_SOURCE" \
 	HNANOKVM_BUILDROOT_OUTPUT_DIR="$OUTPUT_DIR" \
 	HNANOKVM_DEFCONFIG=hnanokvm_6x_defconfig \
 	HNANOKVM_EXTRA_EXTERNALS="$LICHEERV_DIR" \
-		"$ROOT/scripts/configure-latest-buildroot-sg2002.sh"
+		"$ROOT/scripts/configure-buildroot.sh"
 }
 
 toolchain_stage() {
 	configure
-	LATEST_BUILDROOT_SOURCE_DIR="$BUILDROOT_SOURCE" \
+	HNANOKVM_BUILDROOT_SOURCE_DIR="$BUILDROOT_SOURCE" \
 	HNANOKVM_BUILDROOT_OUTPUT_DIR="$OUTPUT_DIR" \
 	BUILDROOT_PORT_TOOLCHAIN_ONLY=1 \
-		"$ROOT/scripts/build-latest-buildroot-sg2002-rootfs.sh"
+		"$ROOT/scripts/build-buildroot-rootfs.sh"
 	"$OUTPUT_DIR/host/bin/riscv64-buildroot-linux-musl-gcc" --version | head -n 1
 	touch "$OUTPUT_DIR/.toolchain-stage"
 }
@@ -75,14 +75,14 @@ build_stage() {
 	mkdir -p "$REPORT_DIR"
 
 	# post-image.sh runs in the assemble stage
-	LATEST_BUILDROOT_SOURCE_DIR="$BUILDROOT_SOURCE" \
+	HNANOKVM_BUILDROOT_SOURCE_DIR="$BUILDROOT_SOURCE" \
 	HNANOKVM_BUILDROOT_OUTPUT_DIR="$OUTPUT_DIR" \
 	NANOKVM_KVMAPP_SOURCE_DIR="$KVMAPP_DIR" \
 	HNANOKVM_RUNTIME_SYSTEM_VERSION="$EXPECTED_SYSTEM_VERSION" \
 	HNANOKVM_RUNTIME_KERNEL_VERSION="$EXPECTED_KERNEL_RELEASE" \
 	HNANOKVM_RUNTIME_SECURITY_PATCH_LEVEL="$EXPECTED_SECURITY_PATCH_LEVEL" \
 	BUILDROOT_PORT_MAKE_ARGS="BR2_ROOTFS_POST_IMAGE_SCRIPT=" \
-		"$ROOT/scripts/build-latest-buildroot-sg2002-rootfs.sh"
+		"$ROOT/scripts/build-buildroot-rootfs.sh"
 
 	IMAGES="$OUTPUT_DIR/images"
 	for file in rootfs.ext4 Image sg2002-nanokvm-lite.dtb fip.bin fip.std.bin fip.od.bin; do
@@ -215,7 +215,7 @@ assemble_stage() {
 	SOURCE_DATE_EPOCH="$(cat "$OUTPUT_DIR/source-date-epoch")" \
 		sh "$BOARD_DIR/post-image.sh" "$IMAGES"
 
-	for file in hardened-sg2002-6x.img boot.vfat; do
+	for file in hnanokvm-6x.img boot.vfat; do
 		[ -f "$IMAGES/$file" ] || die "missing post-image output: $IMAGES/$file"
 	done
 
@@ -229,7 +229,7 @@ assemble_stage() {
 	grep -q "Type:         RAMDisk Image" "$REPORT_DIR/boot-itb.txt" || die "FIT has no initramfs"
 	grep -q "Type:         Flat Device Tree" "$REPORT_DIR/boot-itb.txt" || die "FIT has no DTB"
 
-	sha256sum "$IMAGES/hardened-sg2002-6x.img" "$IMAGES/boot.vfat" "$IMAGES/rootfs.ext4" \
+	sha256sum "$IMAGES/hnanokvm-6x.img" "$IMAGES/boot.vfat" "$IMAGES/rootfs.ext4" \
 		"$IMAGES/boot-input/boot.itb" > "$REPORT_DIR/sha256.txt"
 	cat > "$REPORT_DIR/summary.md" <<EOF
 - target **$EXPECTED_TARGET**, kernel **Linux $EXPECTED_KERNEL_RELEASE**, kernel patches 0001-0007 applied

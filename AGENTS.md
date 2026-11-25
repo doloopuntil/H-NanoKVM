@@ -56,8 +56,7 @@ Details and known failures: [docs/development/testing.md](docs/development/testi
   styles. Keep that order. Style antd's inner parts through its `styles` prop where antd names them.
 - **Image workflow**: do not reintroduce downloads of published Hardened
   artifacts (the raw.12 system, the 2.0.42 app archive); `libkvm_mmf` and
-  the middleware are built from source. The `build/rc12-run` path name is a
-  deliberate leftover. Change the workflow
+  the middleware are built from source. Change the workflow
   only with a real CI run to prove it
   ([docs/development/ci-image-build.md](docs/development/ci-image-build.md)).
 - **Update channels** in `application.rs` and `system_update.rs` still point at

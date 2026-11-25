@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILDROOT_VERSION="${BUILDROOT_VERSION:-2026.05.1}"
 BUILDROOT_DOWNLOAD_BASE="${BUILDROOT_DOWNLOAD_BASE:-https://buildroot.org/downloads}"
-PROBE_ROOT="${LATEST_BUILDROOT_PROBE_ROOT:-$ROOT/build/latestbuildroot}"
+PROBE_ROOT="${HNANOKVM_BUILDROOT_ROOT:-$ROOT/build/buildroot}"
 DOWNLOAD_DIR="${BUILDROOT_DOWNLOAD_DIR:-$ROOT/build/downloads}"
 ARCHIVE="${DOWNLOAD_DIR}/buildroot-${BUILDROOT_VERSION}.tar.xz"
 SOURCE_DIR="${PROBE_ROOT}/buildroot-${BUILDROOT_VERSION}"

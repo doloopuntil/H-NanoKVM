@@ -13,7 +13,7 @@ SYSTEM_UPDATE_PAYLOAD ?= build/system-update-payload
 SYSTEM_UPDATE_OUT ?= build/system-updates
 SYSTEM_UPDATE_TAG ?= hardened-system-$(SYSTEM_UPDATE_VERSION)
 
-.PHONY: help rust-app web-app rust-kvmapp latest-buildroot-bootstrap latest-buildroot-security-source latest-buildroot-sg2002-configure latest-buildroot-sg2002-rootfs system-update-bundle system-update-metadata test-system-update-v2 test-latest-buildroot-security-policy all clean
+.PHONY: help rust-app web-app rust-kvmapp buildroot-bootstrap buildroot-security-source buildroot-configure buildroot-rootfs system-update-bundle system-update-metadata test-system-update-v2 test-buildroot-security-policy all clean
 
 # Default target
 all: rust-kvmapp
@@ -27,14 +27,14 @@ help:
 	@echo "  rust-app      - Build Rust application server"
 	@echo "  web-app       - Build frontend into web/dist"
 	@echo "  rust-kvmapp   - Package Rust backend into build/kvmapp-rust"
-	@echo "  latest-buildroot-bootstrap - Fetch the isolated upstream Buildroot 2026.05.1 port probe"
-	@echo "  latest-buildroot-security-source - Prepare the pinned Buildroot security-patched source"
-	@echo "  latest-buildroot-sg2002-configure - Configure the tracked SG2002 BR2_EXTERNAL port skeleton"
-	@echo "  latest-buildroot-sg2002-rootfs - Build the SG2002 Buildroot 2026.05.1 rootfs candidate"
+	@echo "  buildroot-bootstrap - Fetch the isolated upstream Buildroot 2026.05.1 port probe"
+	@echo "  buildroot-security-source - Prepare the pinned Buildroot security-patched source"
+	@echo "  buildroot-configure - Configure the tracked SG2002 BR2_EXTERNAL port skeleton"
+	@echo "  buildroot-rootfs - Build the SG2002 Buildroot 2026.05.1 rootfs candidate"
 	@echo "  system-update-bundle   - Package a staged system-update payload"
 	@echo "  system-update-metadata - Generate GitHub latest JSON for the system bundle"
 	@echo "  test-system-update-v2 - Test metadata/manifest v2 and minimum-app enforcement artifacts"
-	@echo "  test-latest-buildroot-security-policy - Verify the tracked Buildroot security policy"
+	@echo "  test-buildroot-security-policy - Verify the tracked Buildroot security policy"
 	@echo "  all           - Build Rust kvmapp (default)"
 	@echo "  clean         - Clean build artifacts"
 	@echo ""
@@ -56,17 +56,17 @@ rust-kvmapp: rust-app
 	@RUST_TARGET="$(RUST_TARGET)" scripts/package-rust-kvmapp.sh
 
 # Fetch Buildroot 2026.05.1 and prepare it with the tracked security patches.
-latest-buildroot-bootstrap:
-	@scripts/bootstrap-latest-buildroot-probe.sh
+buildroot-bootstrap:
+	@scripts/bootstrap-buildroot.sh
 
-latest-buildroot-security-source: latest-buildroot-bootstrap
+buildroot-security-source: buildroot-bootstrap
 	@scripts/prepare-buildroot-2026.05.1-security-source.sh
 
-latest-buildroot-sg2002-configure: latest-buildroot-bootstrap
-	@scripts/configure-latest-buildroot-sg2002.sh
+buildroot-configure: buildroot-bootstrap
+	@scripts/configure-buildroot.sh
 
-latest-buildroot-sg2002-rootfs:
-	@scripts/build-latest-buildroot-sg2002-rootfs.sh
+buildroot-rootfs:
+	@scripts/build-buildroot-rootfs.sh
 
 # Package a staged system-update payload.
 # Expected payload layout:
@@ -81,8 +81,8 @@ system-update-metadata:
 test-system-update-v2:
 	@scripts/test-system-update-v2.sh
 
-test-latest-buildroot-security-policy:
-	@scripts/test-latest-buildroot-security-policy.sh
+test-buildroot-security-policy:
+	@scripts/test-buildroot-security-policy.sh
 
 # Clean build artifacts
 clean:

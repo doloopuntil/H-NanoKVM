@@ -3,8 +3,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILDROOT_VERSION="${BUILDROOT_VERSION:-2026.05.1}"
-PROBE_ROOT="${LATEST_BUILDROOT_PROBE_ROOT:-$ROOT/build/latestbuildroot}"
-UPSTREAM_DIR="${LATEST_BUILDROOT_SOURCE_DIR:-$PROBE_ROOT/buildroot-${BUILDROOT_VERSION}-raw11-security}"
+PROBE_ROOT="${HNANOKVM_BUILDROOT_ROOT:-$ROOT/build/buildroot}"
+UPSTREAM_DIR="${HNANOKVM_BUILDROOT_SOURCE_DIR:-$PROBE_ROOT/buildroot-${BUILDROOT_VERSION}-raw11-security}"
 EXTERNAL_DIR="${HNANOKVM_EXTERNAL_DIR:-$ROOT/buildroot-external/hnanokvm}"
 # Further BR2_EXTERNAL trees, colon-separated (the 6.x build adds licheerv's)
 EXTRA_EXTERNALS="${HNANOKVM_EXTRA_EXTERNALS:-}"
@@ -13,7 +13,7 @@ DEFCONFIG="${HNANOKVM_DEFCONFIG:-hnanokvm_6x_defconfig}"
 
 [ -f "$UPSTREAM_DIR/Makefile" ] || {
   echo "missing Buildroot probe source: $UPSTREAM_DIR" >&2
-  echo "run: make latest-buildroot-security-source" >&2
+  echo "run: make buildroot-security-source" >&2
   exit 1
 }
 

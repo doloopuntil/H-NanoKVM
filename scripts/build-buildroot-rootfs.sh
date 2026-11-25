@@ -3,8 +3,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILDROOT_VERSION="${BUILDROOT_VERSION:-2026.05.1}"
-PROBE_ROOT="${LATEST_BUILDROOT_PROBE_ROOT:-$ROOT/build/latestbuildroot}"
-UPSTREAM_DIR="${LATEST_BUILDROOT_SOURCE_DIR:-$PROBE_ROOT/buildroot-${BUILDROOT_VERSION}-raw11-security}"
+PROBE_ROOT="${HNANOKVM_BUILDROOT_ROOT:-$ROOT/build/buildroot}"
+UPSTREAM_DIR="${HNANOKVM_BUILDROOT_SOURCE_DIR:-$PROBE_ROOT/buildroot-${BUILDROOT_VERSION}-raw11-security}"
 OUTPUT_DIR="${HNANOKVM_BUILDROOT_OUTPUT_DIR:-$PROBE_ROOT/sg2002-config-${BUILDROOT_VERSION}-raw11}"
 HOST_DEPS_ROOT="${BUILDROOT_PORT_HOST_DEPS:-$ROOT/build/host-deps}"
 KVMAPP_DIR="${NANOKVM_KVMAPP_SOURCE_DIR:-$ROOT/build/kvmapp-rust/kvmapp}"
@@ -27,7 +27,7 @@ TOOLCHAIN_ONLY="${BUILDROOT_PORT_TOOLCHAIN_ONLY:-}"
 
 [ -f "$OUTPUT_DIR/.config" ] || {
   echo "missing SG2002 port configuration: $OUTPUT_DIR/.config" >&2
-  echo "run: make latest-buildroot-sg2002-configure" >&2
+  echo "run: make buildroot-configure" >&2
   exit 1
 }
 

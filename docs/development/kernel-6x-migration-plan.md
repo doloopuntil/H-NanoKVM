@@ -1663,9 +1663,14 @@ external name `HNANOKVM` (`BR2_EXTERNAL_HNANOKVM_PATH`), the defconfig `hnanokvm
 the packages `hnanokvm-*` (`hnanokvm-sg2002-fip`, `hnanokvm-sg2002-codec-firmware`,
 `hnanokvm-soph-media`, `hnanokvm-kvmapp`, ...) with their `HNANOKVM_*` variables, the script
 variables `HNANOKVM_6X_*` and `fsbl-patches/` for the FSBL patch. The sections above that
-describe the 5.10 work keep the names of their time. Left for the CI and image step: the image
-name `hardened-sg2002-6x.img` (`genimage.cfg`, `post-image.sh`, the workflow, scripts and docs)
-and the `rc12-run` path. Left alone on purpose: release and key names (`hardened-system-*`,
+describe the 5.10 work keep the names of their time.
+
+The CI and image step (same day): the image is `hnanokvm-6x.img` (`genimage.cfg`,
+`post-image.sh`, which also writes it to `/boot/ver`; the workflow, scripts and docs), the run
+path is `build/image-run`, and the "latest Buildroot" scripts, Make targets and variables lose
+the word: `bootstrap-buildroot.sh`, `configure-buildroot.sh`, `build-buildroot-rootfs.sh`,
+`test-buildroot-security-policy.sh`, `make buildroot-bootstrap` and friends,
+`HNANOKVM_BUILDROOT_ROOT`, `HNANOKVM_BUILDROOT_SOURCE_DIR`, `build/buildroot`. Left alone on purpose: release and key names (`hardened-system-*`,
 `hardened-nanokvm-kvmapp-<version>.tar.gz`) that devices and the update channel read.
 
 ## 8. File-level work list

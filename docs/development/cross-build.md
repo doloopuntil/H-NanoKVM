@@ -148,7 +148,7 @@ keep the Buildroot output on a Docker volume, not a bind mount):
    Buildroot source and the licheerv external tree, as in the workflow:
 
    ```sh
-   make latest-buildroot-bootstrap latest-buildroot-security-source
+   make buildroot-bootstrap buildroot-security-source
    LICHEERV_EXTERNAL_SHA=<from the workflow> scripts/fetch-licheerv-external.sh
    HNANOKVM_6X_OUTPUT_DIR=/work/br scripts/build-buildroot-6x-image.sh toolchain
    CROSS=/work/br/host/bin/riscv64-buildroot-linux-musl-
@@ -310,7 +310,7 @@ The SD image and its system-update archive are built by CI from source
 by hand:
 
 ```sh
-scripts/extract-sd-raw-images.sh hardened-sg2002-6x.img.xz build/raw
+scripts/extract-sd-raw-images.sh hnanokvm-6x.img.xz build/raw
 RAW_IMAGE_COMPRESSION=gzip REQUIRED_FREE_BYTES=671088640 \
   scripts/create-raw-system-update-bundle.sh "<system-version>" sg2002-hnanokvm-sd \
   build/raw/boot.vfat build/raw/rootfs.sd build/system-updates

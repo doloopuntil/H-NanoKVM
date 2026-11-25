@@ -49,7 +49,7 @@ sed "s/@KERNEL_COMPRESSION@/$KERNEL_COMPRESSION/" "$BOARD_DIR/boot.its" > "$FIT_
 cp "$BINARIES_DIR/fip.bin" "$BINARIES_DIR/fip.std.bin" "$BINARIES_DIR/fip.od.bin" "$INPUT/"
 # flag files read by the init scripts, as on the 5.10 images
 touch "$INPUT/usb.dev" "$INPUT/usb.disk0" "$INPUT/usb.rndis0"
-printf 'hardened-sg2002-6x.img\n' > "$INPUT/ver"
+printf 'hnanokvm-6x.img\n' > "$INPUT/ver"
 if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
 	find "$INPUT" -print0 | xargs -0 touch -hd "@$SOURCE_DATE_EPOCH"
 fi

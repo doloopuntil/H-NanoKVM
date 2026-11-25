@@ -11,7 +11,7 @@ the device through its first boot. A fresh card is also the recovery path: there
 is no password reset, so lost credentials mean reflashing.
 
 Full SD-card images are `.img` or `.img.xz` files, for example
-`hardened-sg2002-6x.img.xz` from the CI build or
+`hnanokvm-6x.img.xz` from the CI build or
 `Hardened_NanoKVM_*_rust.img.xz` from older releases.
 
 Application update archives such as `hardened-nanokvm-kvmapp-*.tar.gz` are not
@@ -25,7 +25,7 @@ SD-card images. Install those through the web GUI updater instead.
   ("alpha", OLED at I2C address `0x3d`) is not supported from system 1.0.0 on.
 - Get an image. For system `1.0.0`, the image is the `sg2002-6x-sd-image`
   artifact of the **H-NanoKVM system image (Linux 6.18)** workflow (see
-  [CI image build](../development/ci-image-build.md)): `sd-image/hardened-sg2002-6x.img.xz`,
+  [CI image build](../development/ci-image-build.md)): `sd-image/hnanokvm-6x.img.xz`,
   with its checksum in `sd-image/SHA256SUMS`. Published release downloads
   for 1.0.0 are not set up yet. Older images (up to RC12, system `0.3.0-raw.12`)
   are on the woffko release page: <https://github.com/woffko/Hardened_NanoKVM/releases>.

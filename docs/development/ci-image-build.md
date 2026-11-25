@@ -15,7 +15,7 @@ gh workflow run system-image-6x.yml --ref <branch>
 
 The run takes about 40 minutes with warm caches and longer from cold. When it finishes:
 
-- `sg2002-6x-sd-image` (kept 14 days) holds `sd-image/hardened-sg2002-6x.img.xz` with its
+- `sg2002-6x-sd-image` (kept 14 days) holds `sd-image/hnanokvm-6x.img.xz` with its
   `SHA256SUMS`, and `_reports/` with the boot-partition listing, the FIT summary, the module
   list, the hashes and `summary.md`.
 - `system-update-archive-6x` (14 days) holds the unsigned system-update archive made from the
@@ -53,7 +53,7 @@ set them).
 
 `board/sg2002/linux-6.18/post-image.sh` then packs the boot FIT (`boot.itb`: LZ4 kernel,
 DTB and the recovery initramfs, each with a SHA-256 hash U-Boot checks), `boot.scr`, the
-32 MiB boot partition and `hardened-sg2002-6x.img` (`genimage.cfg`: a FAT boot partition and
+32 MiB boot partition and `hnanokvm-6x.img` (`genimage.cfg`: a FAT boot partition and
 an ext4 root partition).
 
 ## Pipeline shape
@@ -235,7 +235,7 @@ Every claim above is backed by one of:
   tracked script, for content removed on the basis of "nothing references
   it."
 - **SHA-256 pinning** throughout the workflow and in the 5.10 rootfs
-  validator (`scripts/validate-latest-buildroot-sg2002-rootfs.sh`, removed with
+  validator (`scripts/validate-buildroot-rootfs.sh`, removed with
   the 5.10 build), which re-checked final image content against pinned hashes
   regardless of which step produced it.
 
