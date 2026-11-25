@@ -141,7 +141,7 @@ Known exceptions:
   script inventory and remains a root-required administrative feature. Running a
   script passes the terminal's gate: terminal access is on, authentication is on,
   and each run consumes a fresh unlock ticket of the same session (header
-  `X-NanoKVM-Terminal-Ticket`), issued after the password, and the code when the
+  `X-HNanoKVM-Terminal-Ticket`), issued after the password, and the code when the
   account has two-factor, was entered again. Listing, deleting and adding a script
   under a new name need only the session, because nothing executes a file in the
   script directory except a run. Replacing an existing script needs the same

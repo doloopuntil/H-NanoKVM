@@ -234,7 +234,7 @@ resolve_session_from_runtime() {
 
   internal_token_header=""
   if base_url_uses_loopback && resolve_internal_token; then
-    internal_token_header="X-NanoKVM-Internal-Token: $INTERNAL_TOKEN"
+    internal_token_header="X-HNanoKVM-Internal-Token: $INTERNAL_TOKEN"
   fi
 
   if [ -n "$internal_token_header" ]; then
@@ -349,7 +349,7 @@ request_json() {
   internal_token_header=""
 
   if base_url_uses_loopback && resolve_internal_token; then
-    internal_token_header="X-NanoKVM-Internal-Token: $INTERNAL_TOKEN"
+    internal_token_header="X-HNanoKVM-Internal-Token: $INTERNAL_TOKEN"
   fi
 
   if [ "$method" = "GET" ]; then
@@ -462,7 +462,7 @@ request_binary() {
   internal_token_header=""
 
   if base_url_uses_loopback && resolve_internal_token; then
-    internal_token_header="X-NanoKVM-Internal-Token: $INTERNAL_TOKEN"
+    internal_token_header="X-HNanoKVM-Internal-Token: $INTERNAL_TOKEN"
   fi
 
   if [ -n "$internal_token_header" ]; then

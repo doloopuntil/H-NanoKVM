@@ -342,7 +342,7 @@ fn parse_config(text: &str) -> WireguardConfig {
 /// per line and only write values that went through `validate_config`.
 fn render_config(config: &WireguardConfig) -> String {
     format!(
-        "# Written by the NanoKVM server; change it in Settings > System > WireGuard.\n\
+        "# Written by the H-NanoKVM server; change it in Settings > System > WireGuard.\n\
          Enabled={}\n\
          Address={}\n\
          PublicKey={}\n\

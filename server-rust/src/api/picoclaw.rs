@@ -79,7 +79,7 @@ const PICOCLAW_READY_POLL: Duration = Duration::from_millis(500);
 const PICOCLAW_LOG_FILE: &str = "/tmp/picoclaw.log";
 const PICOCLAW_STOP_TIMEOUT: Duration = Duration::from_secs(15);
 const PICOCLAW_ONBOARD_TIMEOUT: Duration = Duration::from_secs(60);
-const INTERNAL_TOKEN_HEADER: &str = "X-NanoKVM-Internal-Token";
+const INTERNAL_TOKEN_HEADER: &str = "X-HNanoKVM-Internal-Token";
 const INTERNAL_TOKEN_FILE: &str = "/etc/kvm/.picoclaw_internal_token";
 const SESSION_ID_HEADER: &str = "X-PicoClaw-Session-ID";
 

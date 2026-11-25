@@ -774,7 +774,7 @@ pub(crate) fn restart_nanokvm_after_response() {
         )
         .await
         {
-            tracing::error!(error = %err, "failed to restart NanoKVM after update");
+            tracing::error!(error = %err, "failed to restart H-NanoKVM after update");
         }
     });
 }

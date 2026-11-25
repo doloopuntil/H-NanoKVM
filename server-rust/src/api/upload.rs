@@ -1,4 +1,4 @@
-//! The transfer stage of an upload to the NanoKVM, shared by the image, the system bundle and
+//! The transfer stage of an upload to the device, shared by the image, the system bundle and
 //! the application bundle uploads. A handler does what belongs to its kind before the transfer
 //! (locks, names, who may upload) and after it (validation, unpacking, the rename into place).
 //! Here a file field goes to disk in chunks, with a size cap, an optional SHA-256 and an fsync

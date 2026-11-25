@@ -25,7 +25,7 @@ use crate::{
 
 pub const MAX_SCRIPT_BYTES: usize = 256 * 1024;
 /// Carries a terminal unlock ticket for exactly one script run.
-pub const UNLOCK_HEADER: &str = "x-nanokvm-terminal-ticket";
+pub const UNLOCK_HEADER: &str = "x-hnanokvm-terminal-ticket";
 const MAX_SCRIPT_OUTPUT_BYTES: usize = 64 * 1024;
 const SCRIPT_DIRECTORY: &str = "/etc/kvm/scripts";
 /// The names of the scripts the user has run: a name that is not in it was added or

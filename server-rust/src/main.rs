@@ -115,7 +115,7 @@ fn install_runtime_update_trust(config: &Config) {
 fn install_shutdown_signal_handler() {
     tokio::spawn(async {
         shutdown_signal().await;
-        warn!("shutdown signal received; deinitializing NanoKVM video backend");
+        warn!("shutdown signal received; deinitializing H-NanoKVM video backend");
         let panel = tokio::task::spawn_blocking(|| front_panel::stop(FRONT_PANEL_STOP_TIMEOUT));
 
         match time::timeout(
@@ -124,10 +124,10 @@ fn install_shutdown_signal_handler() {
         )
         .await
         {
-            Ok(Ok(Ok(()))) => info!("deinitialized NanoKVM video backend"),
-            Ok(Ok(Err(err))) => warn!(error = ?err, "NanoKVM video backend deinit failed"),
-            Ok(Err(err)) => warn!(error = ?err, "NanoKVM video backend deinit task failed"),
-            Err(_) => warn!("NanoKVM video backend deinit timed out"),
+            Ok(Ok(Ok(()))) => info!("deinitialized H-NanoKVM video backend"),
+            Ok(Ok(Err(err))) => warn!(error = ?err, "H-NanoKVM video backend deinit failed"),
+            Ok(Err(err)) => warn!(error = ?err, "H-NanoKVM video backend deinit task failed"),
+            Err(_) => warn!("H-NanoKVM video backend deinit timed out"),
         }
         let _ = panel.await;
 
@@ -219,8 +219,8 @@ fn temp_boot_script_path(dst: &Path) -> io::Result<PathBuf> {
 fn initialize_kvm() {
     vm::init_atx_lines();
     match capture::init() {
-        Ok(()) => info!("initialized NanoKVM video backend"),
-        Err(err) => warn!(error = ?err, "NanoKVM video backend initialization failed"),
+        Ok(()) => info!("initialized H-NanoKVM video backend"),
+        Err(err) => warn!(error = ?err, "H-NanoKVM video backend initialization failed"),
     }
 }
 
@@ -241,7 +241,7 @@ async fn run_http(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let listener = LimitedListener::new(TcpListener::bind(addr).await?, limiter);
-    info!(%addr, "starting NanoKVM Rust backend");
+    info!(%addr, "starting H-NanoKVM backend");
     serve::serve(listener, routes::build(state)).await;
     Ok(())
 }
@@ -275,7 +275,7 @@ async fn run_https(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 
     let listener = TcpListener::bind(https_addr).await?;
     let tls_listener = tls::TlsListener::new(listener, tls_config, limiter)?;
-    info!(addr = %https_addr, "starting NanoKVM Rust HTTPS backend");
+    info!(addr = %https_addr, "starting H-NanoKVM HTTPS backend");
     serve::serve(tls_listener, routes::build(state)).await;
     Ok(())
 }

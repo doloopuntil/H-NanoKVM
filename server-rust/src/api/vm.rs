@@ -423,7 +423,7 @@ pub async fn get_web_title() -> Result<impl IntoResponse> {
 }
 
 pub async fn set_web_title(Json(req): Json<SetWebTitleReq>) -> Result<impl IntoResponse> {
-    if req.title.is_empty() || req.title == "NanoKVM" {
+    if req.title.is_empty() || req.title == "H-NanoKVM" {
         match fs::remove_file(WEB_TITLE_FILE) {
             Ok(()) => {}
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}

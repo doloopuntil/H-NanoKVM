@@ -1456,7 +1456,7 @@ fn launch_raw_image_updater(
 
     // libkvm/CVI file descriptors are not guaranteed to be CLOEXEC. If the
     // raw updater inherits them, it can keep device files and sockets open
-    // after NanoKVM is stopped and make the read-only remount unreliable.
+    // after H-NanoKVM is stopped and make the read-only remount unreliable.
     unsafe {
         command.pre_exec(|| {
             for fd in 3..1024 {
@@ -1641,7 +1641,7 @@ root_is_ro() {{\n\
   return $RO\n\
 }}\n\
 stop_update_runtime() {{\n\
-  log 'stopping NanoKVM runtime'\n\
+  log 'stopping H-NanoKVM runtime'\n\
   SERVICES_STOPPED=1\n\
   for INIT in \\\n\
     /etc/init.d/S02watchdog \\\n\

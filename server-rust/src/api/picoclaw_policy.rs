@@ -1,6 +1,6 @@
 //! The local-tool policy of the PicoClaw runtime, which runs as root on the
-//! NanoKVM. Pure: no I/O. Control of the connected computer goes through the
-//! `hnanokvm` MCP server and is untouched. What stays closed is the NanoKVM's
+//! device. Pure: no I/O. Control of the connected computer goes through the
+//! `hnanokvm` MCP server and is untouched. What stays closed is the device's
 //! own shell, its hardware buses, local MCP commands and every file outside
 //! the runtime's workspace.
 use crate::{AppError, Result};
@@ -9,7 +9,7 @@ use std::path::{Component, Path, PathBuf};
 
 /// The MCP server the Startup job configures; the policy never disables it.
 const HNANOKVM_MCP_SERVER: &str = "hnanokvm";
-/// Tools that act on the NanoKVM itself rather than on the connected computer.
+/// Tools that act on the device itself rather than on the connected computer.
 const DISABLED: [&str; 4] = ["exec", "serial", "spi", "i2c"];
 /// Upstream serves these allowlists by raw host access outside the workspace.
 const NO_PATHS: [&str; 2] = ["allow_read_paths", "allow_write_paths"];
