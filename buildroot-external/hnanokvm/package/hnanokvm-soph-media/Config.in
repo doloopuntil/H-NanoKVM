@@ -5,7 +5,7 @@ config BR2_PACKAGE_HNANOKVM_SOPH_MEDIA
 	  The video capture, scaling and codec drivers from sophgo/osdrv
 	  (soph_sys, soph_base, soph_mipi_rx, soph_vi, soph_vpss,
 	  soph_dwa, soph_vo, soph_rgn, soph_vcodec, soph_jpeg,
-	  soph_vc_driver), with the Hardened osdrv patches and the
+	  soph_vc_driver), with the H-NanoKVM osdrv patches and the
 	  Linux 6.18 port. Installed under /lib/modules/<version>/extra.
 
 comment "Sophgo media kernel modules need a Linux kernel"

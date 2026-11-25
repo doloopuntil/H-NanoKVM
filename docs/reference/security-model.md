@@ -6,7 +6,7 @@ last-checked: 2026-11-20
 
 # Security model
 
-What the Hardened server protects, how, and what is still open. User-facing
+What the H-NanoKVM server protects, how, and what is still open. User-facing
 behaviour is in the guides ([sign-in](../guide/sign-in.md),
 [firewall](../guide/firewall.md), [updates](../guide/updates.md)).
 

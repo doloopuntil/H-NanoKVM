@@ -188,7 +188,7 @@ jobs:
           done
 
       # build.rs assembles the XTheadVector TLS code with Buildroot's GNU binutils.
-      - name: Build Hardened kvmapp bridge
+      - name: Build H-NanoKVM kvmapp bridge
         run: |
           cargo test --manifest-path server-rust/Cargo.toml
           corepack pnpm --dir web install --frozen-lockfile

@@ -122,7 +122,7 @@ if tar -tzvf "$ARCHIVE" | awk '
   substr($1, 1, 1) != "-" && substr($1, 1, 1) != "d" { bad = 1 }
   END { exit bad ? 0 : 1 }
 '; then
-  echo "application archive contains an entry type rejected by the hardened updater" >&2
+  echo "application archive contains an entry type rejected by the updater" >&2
   exit 1
 fi
 sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"

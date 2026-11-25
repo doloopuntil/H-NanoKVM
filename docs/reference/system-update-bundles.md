@@ -142,7 +142,7 @@ The current `hardened-system-stable` channel points to the RC9 raw payload
 `hardened-system-0.2.23-raw.1`. The full `hardened-rust-rc9` release also
 carries the matching raw bundle and SD-card image, but deployed device-side URL
 validation trusts raw downloads and release notes from `hardened-system-*`
-tags. The raw payload was built from the RC9 `2.0.32` Hardened SD image and
+tags. The raw payload was built from the RC9 `2.0.32` H-NanoKVM SD image and
 contains gzip-compressed boot/rootfs partition images plus matching channel
 metadata. RC9 keeps the tested raw-update baseline and carries the Hardened
 mobile view for phones and touch tablets: mobile settings navigation, menu
@@ -250,7 +250,7 @@ KERNEL_VERSION=5.10.4-tag-hardened.1 \
 make system-update-bundle SYSTEM_UPDATE_VERSION=0.1.0
 ```
 
-Create a raw boot/rootfs bundle from a Hardened SD image (the CI build also makes
+Create a raw boot/rootfs bundle from an H-NanoKVM SD image (the CI build also makes
 one, the `system-update-archive-6x` artifact):
 
 ```sh
@@ -268,12 +268,12 @@ build/sd-image/raw-system-update/Hardened_NanoKVM_<version>_Rev1_4_2_rust/rootfs
 
 Do not create raw GUI-installable releases directly from
 `build/vendor/LicheeRV-Nano-Build/.../rawimages/rootfs.sd`. That file is a
-stock SDK rootfs and does not contain `/kvmapp`, `/etc/kvm`, the Hardened init
+stock SDK rootfs and does not contain `/kvmapp`, `/etc/kvm`, the H-NanoKVM init
 script, web assets, or Rust-only backend files. The raw bundle helper validates
 the rootfs with `scripts/validate-nanokvm-rootfs.sh` and rejects stock images.
 
 Override `RAW_SYSTEM_UPDATE_BOOT` and `RAW_SYSTEM_UPDATE_ROOTFS` only with
-images extracted from a validated Hardened SD image.
+images extracted from a validated H-NanoKVM SD image.
 
 Create channel metadata:
 
@@ -321,7 +321,7 @@ build/system-updates/system-latest.json.sig.base64
 ## Revoked Experimental Raw Release
 
 Do not use `hardened-system-0.1.0-raw.1`. It was built from the vendor SDK stock
-rootfs instead of the patched Hardened SD image rootfs. A device that installs
+rootfs instead of the patched H-NanoKVM SD image rootfs. A device that installs
 that raw bundle can boot into plain Buildroot without `/kvmapp`, NanoKVM init,
 or the expected network/runtime configuration and therefore may require SD-card
 reflash recovery.

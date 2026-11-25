@@ -319,7 +319,7 @@ RAW_IMAGE_COMPRESSION=gzip REQUIRED_FREE_BYTES=671088640 \
 `scripts/extract-sd-raw-images.sh` accepts either `.img` or `.img.xz`; compressed
 images are decompressed to a temporary file before partition extraction.
 
-The bundle must package boot/rootfs images extracted from a Hardened SD image,
+The bundle must package boot/rootfs images extracted from an H-NanoKVM SD image,
 not a stock rootfs without `/kvmapp`, `/etc/kvm`, NanoKVM init, or web assets.
 
 Raw partition updates overwrite boot and rootfs. The app updater used to launch
