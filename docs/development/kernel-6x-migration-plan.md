@@ -1605,8 +1605,10 @@ boot, reboot restarts on both clock profiles, MJPEG and H.264 show a picture. Le
    classifies the receiver by which of `0x2b`, `0x2c`, `0x44` and `0x41` answer, and
    `2b 2c -- --` is the LT6911C, `2b -- 44 --` the UXC and `2b -- -- --` the D. So an
    LT6911C also answers at `0x2b`, and `0x2c` only tells it apart. This is Sipeed's own
-   reading, not a measurement of ours: NanoKVM-OS lists its C boards as untested. Left to
-   confirm on a Full or PCIe board with that chip: `i2cdetect -ry 4` shows `2b` and `2c`.
+   reading, not a measurement of ours: NanoKVM-OS lists its C boards as untested. Our Lite
+   measured `2b -- 44 --` (2026-11-26, `i2cdetect -ry 4`), so it carries an LT6911UXC and
+   cannot settle the C. Left to confirm on a Full or PCIe board with a C: `i2cdetect -ry 4`
+   shows `2b` and `2c`.
    A chip-ID check would also need the UXC's and D's IDs: the vendor probe knew only
    `0x1605` (LT6911C).
 3. The update channels still point at `woffko/Hardened_NanoKVM`: an open decision
