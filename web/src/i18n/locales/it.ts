@@ -386,7 +386,8 @@ const it = {
         application: 'Versione applicazione',
         uptime: 'Tempo di attività',
         community: 'Comunità',
-        credit: 'Basato su <a1>NanoKVM</a1> di Sipeed e <a2>Hardened NanoKVM</a2> di woffko',
+        credit:
+          'Basato su <a1>NanoKVM</a1> di Sipeed e <a2>Hardened NanoKVM</a2> di woffko, e con contributi alle prestazioni da <a3>NanoKVM OS</a3>',
         hostname: 'Nome dispositivo',
         changeIn: 'Modificabile in {{path}}',
         updateIn: 'Aggiornabile in {{path}}',

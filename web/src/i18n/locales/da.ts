@@ -382,7 +382,8 @@ const da = {
         application: 'Program version',
         uptime: 'Oppetid',
         community: 'Fællesskab',
-        credit: 'Bygget på <a1>NanoKVM</a1> fra Sipeed og <a2>Hardened NanoKVM</a2> af woffko',
+        credit:
+          'Bygget på <a1>NanoKVM</a1> fra Sipeed og <a2>Hardened NanoKVM</a2> af woffko, og med ydeevnebidrag fra <a3>NanoKVM OS</a3>',
         hostname: 'Enhedsnavn',
         changeIn: 'Ændr det i {{path}}',
         updateIn: 'Opdater det i {{path}}',

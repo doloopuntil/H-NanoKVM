@@ -385,7 +385,8 @@ const hu = {
         application: 'Alkalmazás verzió',
         uptime: 'Üzemidő',
         community: 'Közösség',
-        credit: 'A Sipeed <a1>NanoKVM</a1>-jére és woffko <a2>Hardened NanoKVM</a2>-jére épül',
+        credit:
+          'A Sipeed <a1>NanoKVM</a1>-jére és woffko <a2>Hardened NanoKVM</a2>-jére épül, valamint a <a3>NanoKVM OS</a3> teljesítményt javító hozzájárulásaival',
         hostname: 'Eszköznév',
         changeIn: 'Itt módosítható: {{path}}',
         updateIn: 'Itt frissíthető: {{path}}',

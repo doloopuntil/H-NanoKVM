@@ -6,6 +6,7 @@ import { SettingSection } from '@/components/setting-rows.tsx';
 
 const SIPEED_URL = 'https://github.com/sipeed/NanoKVM';
 const WOFFKO_URL = 'https://github.com/woffko/Hardened_NanoKVM';
+const NANOKVM_OS_URL = 'https://github.com/dormancygrace/NanoKVM-OS';
 const creditLinkClass = 'text-neutral-400 hover:text-neutral-200';
 
 export const Community = () => {
@@ -16,13 +17,23 @@ export const Community = () => {
     {
       name: 'GitHub',
       icon: <GithubOutlined style={{ fontSize: '20px' }} width={24} height={24} />,
-      url: 'https://github.com/doloopuntil/Hardened_NanoKVM'
+      url: 'https://github.com/doloopuntil/H-NanoKVM'
     }
   ];
 
   return (
     <SettingSection title={t('settings.about.community')}>
-      <div className="flex flex-wrap gap-3">
+      <p className="text-sm wrap-break-word text-neutral-500">
+        <Trans
+          i18nKey="settings.about.credit"
+          components={{
+            a1: <a className={creditLinkClass} href={SIPEED_URL} target="_blank" />,
+            a2: <a className={creditLinkClass} href={WOFFKO_URL} target="_blank" />,
+            a3: <a className={creditLinkClass} href={NANOKVM_OS_URL} target="_blank" />
+          }}
+        />
+      </p>
+      <div className="flex flex-wrap justify-end gap-3">
         {communities.map((community) => (
           <a
             key={community.name}
@@ -35,15 +46,6 @@ export const Community = () => {
           </a>
         ))}
       </div>
-      <p className="text-xs wrap-break-word text-neutral-500">
-        <Trans
-          i18nKey="settings.about.credit"
-          components={{
-            a1: <a className={creditLinkClass} href={SIPEED_URL} target="_blank" />,
-            a2: <a className={creditLinkClass} href={WOFFKO_URL} target="_blank" />
-          }}
-        />
-      </p>
     </SettingSection>
   );
 };

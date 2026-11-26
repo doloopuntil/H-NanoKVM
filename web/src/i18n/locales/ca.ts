@@ -383,7 +383,8 @@ const ca = {
         application: 'Versió aplicació',
         uptime: 'Temps actiu',
         community: 'Comunitat',
-        credit: 'Basat en <a1>NanoKVM</a1> de Sipeed i <a2>Hardened NanoKVM</a2> de woffko',
+        credit:
+          'Basat en <a1>NanoKVM</a1> de Sipeed i <a2>Hardened NanoKVM</a2> de woffko, i amb contribucions de rendiment de <a3>NanoKVM OS</a3>',
         hostname: 'Nom del dispositiu',
         changeIn: 'Canvia-ho a {{path}}',
         updateIn: 'Actualitza-ho a {{path}}',

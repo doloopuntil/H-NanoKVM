@@ -378,7 +378,8 @@ const ko = {
         application: '애플리케이션 버전',
         uptime: '가동 시간',
         community: '커뮤니티',
-        credit: 'Sipeed의 <a1>NanoKVM</a1>과 woffko의 <a2>Hardened NanoKVM</a2>을 기반으로 합니다',
+        credit:
+          'Sipeed의 <a1>NanoKVM</a1>과 woffko의 <a2>Hardened NanoKVM</a2>을 기반으로 하며, <a3>NanoKVM OS</a3>의 성능 개선 기여가 포함되어 있습니다',
         hostname: '장치 이름',
         changeIn: '{{path}}에서 변경할 수 있습니다',
         updateIn: '{{path}}에서 업데이트할 수 있습니다',

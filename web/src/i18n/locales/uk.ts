@@ -388,7 +388,7 @@ const uk = {
         uptime: 'Час роботи',
         community: 'Спільнота',
         credit:
-          'Створено на основі <a1>NanoKVM</a1> від Sipeed і <a2>Hardened NanoKVM</a2> від woffko',
+          'Створено на основі <a1>NanoKVM</a1> від Sipeed і <a2>Hardened NanoKVM</a2> від woffko, а також з внеском у продуктивність від <a3>NanoKVM OS</a3>',
         hostname: 'Назва пристрою',
         changeIn: 'Змінити можна в {{path}}',
         updateIn: 'Оновити можна в {{path}}',

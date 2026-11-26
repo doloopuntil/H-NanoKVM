@@ -384,7 +384,8 @@ const pt_br = {
         application: 'Versão do aplicativo',
         uptime: 'Tempo ativo',
         community: 'Comunidade',
-        credit: 'Baseado no <a1>NanoKVM</a1> da Sipeed e no <a2>Hardened NanoKVM</a2> de woffko',
+        credit:
+          'Baseado no <a1>NanoKVM</a1> da Sipeed e no <a2>Hardened NanoKVM</a2> de woffko, e com contribuições de desempenho do <a3>NanoKVM OS</a3>',
         hostname: 'Nome do dispositivo',
         changeIn: 'Altere em {{path}}',
         updateIn: 'Atualize em {{path}}',

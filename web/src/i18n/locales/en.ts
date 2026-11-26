@@ -380,7 +380,8 @@ const en = {
         application: 'Application version',
         uptime: 'Uptime',
         community: 'Community',
-        credit: 'Built on <a1>NanoKVM</a1> by Sipeed and <a2>Hardened NanoKVM</a2> by woffko',
+        credit:
+          'Built on <a1>NanoKVM</a1> by Sipeed and <a2>Hardened NanoKVM</a2> by woffko, and with performance contributions from <a3>NanoKVM OS</a3>',
         hostname: 'Device name',
         changeIn: 'Change it in {{path}}',
         updateIn: 'Update it in {{path}}',

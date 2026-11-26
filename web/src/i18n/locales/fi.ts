@@ -386,7 +386,8 @@ const fi = {
         application: 'Sovelluksen versio',
         uptime: 'Käyttöaika',
         community: 'Yhteisö',
-        credit: 'Perustuu Sipeedin <a1>NanoKVM</a1>:ään ja woffkon <a2>Hardened NanoKVM</a2>:ään',
+        credit:
+          'Perustuu Sipeedin <a1>NanoKVM</a1>:ään ja woffkon <a2>Hardened NanoKVM</a2>:ään, sekä suorituskykyparannuksin projektista <a3>NanoKVM OS</a3>',
         hostname: 'Laitteen nimi',
         changeIn: 'Muuta kohdassa {{path}}',
         updateIn: 'Päivitä kohdassa {{path}}',

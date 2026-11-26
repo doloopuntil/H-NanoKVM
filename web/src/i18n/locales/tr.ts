@@ -381,7 +381,7 @@ const tr = {
         uptime: 'Çalışma süresi',
         community: 'Topluluk',
         credit:
-          "Sipeed'in <a1>NanoKVM</a1> ve woffko'nun <a2>Hardened NanoKVM</a2> projeleri üzerine kurulmuştur",
+          "Sipeed'in <a1>NanoKVM</a1> ve woffko'nun <a2>Hardened NanoKVM</a2> projeleri üzerine kurulmuştur ve performans katkıları <a3>NanoKVM OS</a3> projesinden gelmektedir",
         hostname: 'Cihaz adı',
         changeIn: '{{path}} içinden değiştirilebilir',
         updateIn: '{{path}} içinden güncellenebilir',

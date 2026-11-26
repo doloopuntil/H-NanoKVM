@@ -383,7 +383,8 @@ const se = {
         application: 'Applikationsversion',
         uptime: 'Drifttid',
         community: 'Community',
-        credit: 'Byggt på <a1>NanoKVM</a1> från Sipeed och <a2>Hardened NanoKVM</a2> av woffko',
+        credit:
+          'Byggt på <a1>NanoKVM</a1> från Sipeed och <a2>Hardened NanoKVM</a2> av woffko, och med prestandabidrag från <a3>NanoKVM OS</a3>',
         hostname: 'Enhetsnamn',
         changeIn: 'Ändras i {{path}}',
         updateIn: 'Uppdateras i {{path}}',

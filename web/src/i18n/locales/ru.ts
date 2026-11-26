@@ -387,7 +387,8 @@ const ru = {
         application: 'Версия ПО',
         uptime: 'Время работы',
         community: 'Сообщество',
-        credit: 'Основано на <a1>NanoKVM</a1> от Sipeed и <a2>Hardened NanoKVM</a2> от woffko',
+        credit:
+          'Основано на <a1>NanoKVM</a1> от Sipeed и <a2>Hardened NanoKVM</a2> от woffko, а также с улучшениями производительности из <a3>NanoKVM OS</a3>',
         hostname: 'Имя устройства',
         changeIn: 'Изменить можно в {{path}}',
         updateIn: 'Обновить можно в {{path}}',

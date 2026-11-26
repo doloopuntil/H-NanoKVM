@@ -364,7 +364,8 @@ const zh = {
         application: '应用版本',
         uptime: '运行时间',
         community: '社区',
-        credit: '基于 Sipeed 的 <a1>NanoKVM</a1> 和 woffko 的 <a2>Hardened NanoKVM</a2> 构建',
+        credit:
+          '基于 Sipeed 的 <a1>NanoKVM</a1> 和 woffko 的 <a2>Hardened NanoKVM</a2> 构建，并包含来自 <a3>NanoKVM OS</a3> 的性能贡献',
         hostname: '设备名称',
         changeIn: '可在 {{path}} 中更改',
         updateIn: '可在 {{path}} 中更新',

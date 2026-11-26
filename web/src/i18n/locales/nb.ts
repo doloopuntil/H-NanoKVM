@@ -385,7 +385,8 @@ const nb = {
         application: 'Applikasjonsversjon',
         uptime: 'Oppetid',
         community: 'Fellesskap',
-        credit: 'Bygget på <a1>NanoKVM</a1> fra Sipeed og <a2>Hardened NanoKVM</a2> av woffko',
+        credit:
+          'Bygget på <a1>NanoKVM</a1> fra Sipeed og <a2>Hardened NanoKVM</a2> av woffko, og med ytelsesbidrag fra <a3>NanoKVM OS</a3>',
         hostname: 'Enhetsnavn',
         changeIn: 'Endres i {{path}}',
         updateIn: 'Oppdateres i {{path}}',

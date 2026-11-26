@@ -386,7 +386,7 @@ const ja = {
         uptime: '稼働時間',
         community: 'コミュニティ',
         credit:
-          'Sipeed の <a1>NanoKVM</a1> と woffko の <a2>Hardened NanoKVM</a2> をベースにしています',
+          'Sipeed の <a1>NanoKVM</a1> と woffko の <a2>Hardened NanoKVM</a2> をベースにしており、<a3>NanoKVM OS</a3> によるパフォーマンス面の貢献も含まれています',
         hostname: 'デバイス名',
         changeIn: '{{path}} で変更できます',
         updateIn: '{{path}} で更新できます',

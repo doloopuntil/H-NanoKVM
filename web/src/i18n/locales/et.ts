@@ -377,7 +377,8 @@ const et = {
         application: 'Rakenduse versioon',
         uptime: 'Tööaeg',
         community: 'Kogukond',
-        credit: 'Põhineb Sipeedi <a1>NanoKVM-il</a1> ja woffko <a2>Hardened NanoKVM-il</a2>',
+        credit:
+          'Põhineb Sipeedi <a1>NanoKVM-il</a1> ja woffko <a2>Hardened NanoKVM-il</a2>, ning jõudlusparandustega projektist <a3>NanoKVM OS</a3>',
         hostname: 'Seadme nimi',
         changeIn: 'Muuda seda asukohas {{path}}',
         updateIn: 'Uuenda seda asukohas {{path}}',
