@@ -5,7 +5,7 @@ set -eu
 
 if [ "$#" -ne 2 ]; then
   echo "usage: $0 <sd-image> <output-dir>" >&2
-  echo "environment: SYSTEM_VERSION KERNEL_VERSION SECURITY_PATCH_LEVEL BUILDROOT_VERSION" >&2
+  echo "environment: SYSTEM_VERSION KERNEL_VERSION BUILDROOT_VERSION" >&2
   echo "             REQUIRED_APP_VERSION [TARGET]" >&2
   exit 1
 fi
@@ -14,7 +14,7 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 SD_IMAGE="$1"
 OUT_DIR="$2"
 TARGET="${TARGET:-sg2002-hnanokvm-sd}"
-: "${SYSTEM_VERSION:?}" "${KERNEL_VERSION:?}" "${SECURITY_PATCH_LEVEL:?}"
+: "${SYSTEM_VERSION:?}" "${KERNEL_VERSION:?}"
 : "${BUILDROOT_VERSION:?}" "${REQUIRED_APP_VERSION:?}"
 
 [ -f "$SD_IMAGE" ] || { echo "missing SD image: $SD_IMAGE" >&2; exit 1; }
@@ -28,7 +28,6 @@ trap 'rm -rf "$WORK"' EXIT INT TERM
 BASE_VERSION="Buildroot-$BUILDROOT_VERSION-port" \
 ROOTFS_SYSTEM_BASE_VERSION="Buildroot $BUILDROOT_VERSION port" \
 KERNEL_VERSION="$KERNEL_VERSION" \
-SECURITY_PATCH_LEVEL="$SECURITY_PATCH_LEVEL" \
 RAW_IMAGE_COMPRESSION=gzip \
 SYSTEM_UPDATE_FORMAT=2 \
 SYSTEM_UPDATE_REQUIRED_APP_VERSION="$REQUIRED_APP_VERSION" \
@@ -45,7 +44,6 @@ cp "$ROOT/scripts/sign-local-system-update.sh" \
 cat > "$OUT_DIR/update-info.env" <<EOF
 VERSION=$SYSTEM_VERSION
 TARGET=$TARGET
-SECURITY_PATCH_LEVEL=$SECURITY_PATCH_LEVEL
 REQUIRED_APP_VERSION=$REQUIRED_APP_VERSION
 EOF
 

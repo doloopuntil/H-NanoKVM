@@ -6,10 +6,7 @@ const TAG: &str = "hnanokvm-auth";
 pub fn test_message(source: &str) {
     emit(
         14,
-        &format!(
-            "hnanokvm: test syslog message source={}",
-            sanitize(source)
-        ),
+        &format!("hnanokvm: test syslog message source={}", sanitize(source)),
     );
 }
 

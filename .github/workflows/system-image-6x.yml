@@ -35,7 +35,6 @@ jobs:
       EXPECTED_SYSTEM_VERSION: 1.0.0
       EXPECTED_KVMAPP_VERSION: 3.0.0
       EXPECTED_KERNEL_RELEASE: 6.18.65
-      EXPECTED_SECURITY_PATCH_LEVEL: Buildroot 2026.05.1 security maintenance Linux 6.18.65
       HNANOKVM_KVMAPP_SOURCE_DIR: ${{ github.workspace }}/build/kvmapp-rust/kvmapp
     steps:
       - name: Checkout
@@ -179,7 +178,6 @@ jobs:
       EXPECTED_SYSTEM_VERSION: 1.0.0
       EXPECTED_KVMAPP_VERSION: 3.0.0
       EXPECTED_KERNEL_RELEASE: 6.18.65
-      EXPECTED_SECURITY_PATCH_LEVEL: Buildroot 2026.05.1 security maintenance Linux 6.18.65
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -211,7 +209,6 @@ jobs:
         run: |
           SYSTEM_VERSION="${EXPECTED_SYSTEM_VERSION%.*}.${{ github.run_number }}" \
           KERNEL_VERSION="$EXPECTED_KERNEL_RELEASE" \
-          SECURITY_PATCH_LEVEL="$EXPECTED_SECURITY_PATCH_LEVEL" \
           BUILDROOT_VERSION="$BUILDROOT_VERSION" \
           REQUIRED_APP_VERSION=2.0.41 \
             scripts/package-local-system-update.sh \

@@ -85,8 +85,6 @@ pub struct SystemVersion {
     pub base_version: String,
     pub kernel_version: String,
     pub rootfs_version: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub security_patch_level: Option<String>,
     pub model: String,
     pub hardware_version: String,
     pub source: String,
@@ -107,8 +105,6 @@ pub struct SystemLatest {
     pub url: String,
     #[serde(alias = "release_notes_url")]
     pub release_notes_url: String,
-    #[serde(default, alias = "security_patch_level")]
-    pub security_patch_level: Option<String>,
     #[serde(default, alias = "required_app_version")]
     pub required_app_version: Option<String>,
     #[serde(alias = "signature_algorithm")]
@@ -147,8 +143,6 @@ pub struct SystemStagedUpdate {
     pub staged_at: u64,
     pub base_version: String,
     pub kernel_version: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub security_patch_level: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required_app_version: Option<String>,
     pub required_free_bytes: u64,
@@ -253,8 +247,6 @@ struct PersistedSystemVersion {
     kernel_version: Option<String>,
     #[serde(alias = "rootfsVersion")]
     rootfs_version: Option<String>,
-    #[serde(alias = "securityPatchLevel")]
-    security_patch_level: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -273,8 +265,6 @@ struct SystemManifest {
     target: String,
     base_version: String,
     kernel_version: String,
-    #[serde(default)]
-    security_patch_level: Option<String>,
     #[serde(default)]
     required_app_version: Option<String>,
     source_commit: String,
@@ -334,8 +324,6 @@ struct InstalledSystemVersion {
     base_version: String,
     kernel_version: String,
     rootfs_version: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    security_patch_level: Option<String>,
 }
 
 #[derive(Debug)]
@@ -930,7 +918,6 @@ fn read_current_system_version() -> SystemVersion {
         base_version: read_trimmed(BOOT_VERSION_FILE).unwrap_or_default(),
         kernel_version: read_trimmed(KERNEL_RELEASE_FILE).unwrap_or_default(),
         rootfs_version: read_rootfs_version(),
-        security_patch_level: None,
         model: read_trimmed(DEVICE_MODEL_FILE).unwrap_or_default(),
         hardware_version: read_trimmed(HARDWARE_VERSION_FILE).unwrap_or_default(),
         source: "fallback".to_string(),
@@ -954,7 +941,6 @@ fn read_current_system_version() -> SystemVersion {
                 if let Some(value) = non_empty(persisted.rootfs_version) {
                     version.rootfs_version = value;
                 }
-                version.security_patch_level = non_empty(persisted.security_patch_level);
                 version.source = "persisted".to_string();
             }
             Err(err) => {
@@ -2127,7 +2113,6 @@ fn write_installed_system_version(manifest: &SystemManifest) -> Result<()> {
         base_version: manifest.base_version.clone(),
         kernel_version: manifest.kernel_version.clone(),
         rootfs_version: read_rootfs_version(),
-        security_patch_level: non_empty(manifest.security_patch_level.clone()),
     };
     let data = serde_json::to_vec_pretty(&version)
         .map_err(|err| AppError::Internal(format!("encode system version: {err}")))?;
@@ -2589,7 +2574,6 @@ fn staged_summary(record: &SystemStageRecord) -> SystemStagedUpdate {
         staged_at: record.staged_at,
         base_version: record.manifest.base_version.clone(),
         kernel_version: record.manifest.kernel_version.clone(),
-        security_patch_level: non_empty(record.manifest.security_patch_level.clone()),
         required_app_version: record.latest.required_app_version.clone(),
         required_free_bytes: record.manifest.required_free_bytes,
         requires_reboot: record.manifest.requires_reboot,
@@ -3522,7 +3506,6 @@ mod tests {
             size: 1024,
             url: "https://github.com/woffko/Hardened_NanoKVM/releases/download/hardened-system-0.1.0/hardened-nanokvm-system-0.1.0.tar.gz".to_string(),
             release_notes_url: "https://github.com/woffko/Hardened_NanoKVM/releases/tag/hardened-system-0.1.0".to_string(),
-            security_patch_level: None,
             required_app_version: None,
             signature_algorithm: SYSTEM_UPDATE_SIGNATURE_ALGORITHM.to_string(),
             signature_key_id: "hardened-system-test".to_string(),
@@ -3536,7 +3519,6 @@ mod tests {
             target: DEFAULT_SYSTEM_TARGET.to_string(),
             base_version: "2025-02-17-19-08-3649fe.img".to_string(),
             kernel_version: "5.10.4-tag-".to_string(),
-            security_patch_level: None,
             required_app_version: None,
             source_commit: "abcdef1".to_string(),
             created_utc: "2026-06-28T00:00:00Z".to_string(),
@@ -3559,7 +3541,6 @@ mod tests {
             target: DEFAULT_SYSTEM_TARGET.to_string(),
             base_version: "2025-02-17-19-08-3649fe.img".to_string(),
             kernel_version: "5.10.4-tag-hardened.1".to_string(),
-            security_patch_level: None,
             required_app_version: None,
             source_commit: "abcdef1".to_string(),
             created_utc: "2026-06-28T00:00:00Z".to_string(),
@@ -3700,7 +3681,6 @@ mod tests {
             release_notes_url:
                 "https://github.com/woffko/Hardened_NanoKVM/releases/tag/hardened-system-0.1.0"
                     .to_string(),
-            security_patch_level: None,
             required_app_version: None,
             signature_algorithm: SYSTEM_UPDATE_SIGNATURE_ALGORITHM.to_string(),
             signature_key_id: "hardened-system-test".to_string(),
@@ -3776,8 +3756,7 @@ mod tests {
   "target": "sg2002-hnanokvm-sd",
   "base_version": "2026-01-05-1_4_1.img",
   "kernel_version": "5.10.4-tag-",
-  "rootfs_version": "Buildroot 2023.11.2",
-  "security_patch_level": "Buildroot 2023.11.3 package backports"
+  "rootfs_version": "Buildroot 2023.11.2"
 }"#,
         )
         .unwrap();
@@ -3785,10 +3764,6 @@ mod tests {
         assert_eq!(snake.base_version.as_deref(), Some("2026-01-05-1_4_1.img"));
         assert_eq!(snake.kernel_version.as_deref(), Some("5.10.4-tag-"));
         assert_eq!(snake.rootfs_version.as_deref(), Some("Buildroot 2023.11.2"));
-        assert_eq!(
-            snake.security_patch_level.as_deref(),
-            Some("Buildroot 2023.11.3 package backports")
-        );
 
         let camel: PersistedSystemVersion = serde_json::from_str(
             r#"{
@@ -3796,8 +3771,7 @@ mod tests {
   "target": "sg2002-hnanokvm-sd",
   "baseVersion": "2026-01-05-1_4_1.img",
   "kernelVersion": "5.10.4-tag-",
-  "rootfsVersion": "Buildroot 2023.11.2",
-  "securityPatchLevel": "Buildroot 2023.11.3 package backports"
+  "rootfsVersion": "Buildroot 2023.11.2"
 }"#,
         )
         .unwrap();
@@ -3805,10 +3779,6 @@ mod tests {
         assert_eq!(camel.base_version.as_deref(), Some("2026-01-05-1_4_1.img"));
         assert_eq!(camel.kernel_version.as_deref(), Some("5.10.4-tag-"));
         assert_eq!(camel.rootfs_version.as_deref(), Some("Buildroot 2023.11.2"));
-        assert_eq!(
-            camel.security_patch_level.as_deref(),
-            Some("Buildroot 2023.11.3 package backports")
-        );
     }
 
     #[test]
@@ -3843,7 +3813,6 @@ mod tests {
             base_version: String::new(),
             kernel_version: String::new(),
             rootfs_version: String::new(),
-            security_patch_level: None,
             model: String::new(),
             hardware_version: String::new(),
             source: "test".to_string(),
@@ -3932,7 +3901,6 @@ mod tests {
             base_version: String::new(),
             kernel_version: String::new(),
             rootfs_version: String::new(),
-            security_patch_level: None,
             model: String::new(),
             hardware_version: String::new(),
             source: "test".to_string(),
@@ -4098,7 +4066,6 @@ mod tests {
             target: DEFAULT_SYSTEM_TARGET.to_string(),
             base_version: "2025-02-17-19-08-3649fe.img".to_string(),
             kernel_version: "5.10.4-tag-hardened.1".to_string(),
-            security_patch_level: None,
             required_app_version: None,
             source_commit: "abcdef1".to_string(),
             created_utc: "2026-06-28T00:00:00Z".to_string(),
@@ -4143,7 +4110,6 @@ mod tests {
             target: DEFAULT_SYSTEM_TARGET.to_string(),
             base_version: "2025-02-17-19-08-3649fe.img".to_string(),
             kernel_version: "5.10.4-tag-hardened.1".to_string(),
-            security_patch_level: None,
             required_app_version: None,
             source_commit: "abcdef1".to_string(),
             created_utc: "2026-06-28T00:00:00Z".to_string(),
@@ -4185,7 +4151,6 @@ mod tests {
             target: DEFAULT_SYSTEM_TARGET.to_string(),
             base_version: "2025-02-17-19-08-3649fe.img".to_string(),
             kernel_version: "5.10.4-tag-hardened.1".to_string(),
-            security_patch_level: None,
             required_app_version: None,
             source_commit: "abcdef1".to_string(),
             created_utc: "2026-06-28T00:00:00Z".to_string(),

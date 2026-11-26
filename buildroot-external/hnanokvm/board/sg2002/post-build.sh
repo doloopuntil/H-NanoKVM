@@ -12,7 +12,6 @@ KVMAPP_SOURCE="${HNANOKVM_KVMAPP_SOURCE_DIR:-$ROOT/build/kvmapp-rust/kvmapp}"
 PATCHELF="${HOST_DIR:-}/bin/patchelf"
 EXPECTED_RUST_RUNPATH='/kvmapp/server/dl_lib'
 RUNTIME_KERNEL_VERSION="${HNANOKVM_RUNTIME_KERNEL_VERSION:-}"
-RUNTIME_SECURITY_PATCH_LEVEL="${HNANOKVM_RUNTIME_SECURITY_PATCH_LEVEL:-}"
 RUNTIME_SYSTEM_VERSION="${HNANOKVM_RUNTIME_SYSTEM_VERSION:-}"
 
 # Buildroot's per-package accounting files live in package build directories.
@@ -64,8 +63,8 @@ if [ -n "$LINUX_DIR" ] && grep -qx 'CONFIG_MODULE_SIG_ALL=y' "$LINUX_DIR/.config
 	done
 fi
 
-if [ -n "$RUNTIME_SYSTEM_VERSION" ] || [ -n "$RUNTIME_KERNEL_VERSION" ] || [ -n "$RUNTIME_SECURITY_PATCH_LEVEL" ]; then
-	case "$RUNTIME_SYSTEM_VERSION$RUNTIME_KERNEL_VERSION$RUNTIME_SECURITY_PATCH_LEVEL" in
+if [ -n "$RUNTIME_SYSTEM_VERSION" ] || [ -n "$RUNTIME_KERNEL_VERSION" ]; then
+	case "$RUNTIME_SYSTEM_VERSION$RUNTIME_KERNEL_VERSION" in
 		*['&|\\']*)
 			echo "runtime metadata override contains unsupported sed characters" >&2
 			exit 1
@@ -81,14 +80,9 @@ if [ -n "$RUNTIME_SYSTEM_VERSION" ] || [ -n "$RUNTIME_KERNEL_VERSION" ] || [ -n 
 			-e "s|\"version\": \"[^\"]*\"|\"version\": \"$RUNTIME_SYSTEM_VERSION\"|" \
 			"$SYSTEM_VERSION_FILE"
 	fi
-	if [ -n "$RUNTIME_KERNEL_VERSION" ] || [ -n "$RUNTIME_SECURITY_PATCH_LEVEL" ]; then
-		[ -n "$RUNTIME_KERNEL_VERSION" ] && [ -n "$RUNTIME_SECURITY_PATCH_LEVEL" ] || {
-			echo "kernel version and security patch level overrides must be set together" >&2
-			exit 1
-		}
+	if [ -n "$RUNTIME_KERNEL_VERSION" ]; then
 		sed -i \
 			-e "s|\"kernel_version\": \"[^\"]*\"|\"kernel_version\": \"$RUNTIME_KERNEL_VERSION\"|" \
-			-e "s|\"security_patch_level\": \"[^\"]*\"|\"security_patch_level\": \"$RUNTIME_SECURITY_PATCH_LEVEL\"|" \
 			"$SYSTEM_VERSION_FILE"
 	fi
 fi

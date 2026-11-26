@@ -50,7 +50,6 @@ field() {
 TARGET=$(field target)
 BASE_VERSION=$(field base_version)
 KERNEL_VERSION=$(field kernel_version)
-SECURITY_PATCH_LEVEL=$(field security_patch_level)
 REQUIRED_APP_VERSION=$(field required_app_version)
 FORMAT=$(field format | sed 's/.*-v\([0-9][0-9]*\)$/\1/')
 [ -n "$TARGET" ] && [ -n "$FORMAT" ] || die "unreadable manifest in $IN"
@@ -75,7 +74,6 @@ echo "rootfs is now $((FS_BLOCKS * FS_BLOCK_SIZE / 1048576)) MB"
 BASE_VERSION="$BASE_VERSION" \
 ROOTFS_SYSTEM_BASE_VERSION="$ROOTFS_BASE" \
 KERNEL_VERSION="$KERNEL_VERSION" \
-SECURITY_PATCH_LEVEL="$SECURITY_PATCH_LEVEL" \
 RAW_IMAGE_COMPRESSION=gzip \
 SYSTEM_UPDATE_FORMAT="$FORMAT" \
 SYSTEM_UPDATE_REQUIRED_APP_VERSION="$REQUIRED_APP_VERSION" \
@@ -90,7 +88,6 @@ cp "$ROOT_DIR/scripts/sign-local-system-update.sh" \
 cat > "$OUT_DIR/update-info.env" <<EOF
 VERSION=$VERSION
 TARGET=$TARGET
-SECURITY_PATCH_LEVEL=$SECURITY_PATCH_LEVEL
 REQUIRED_APP_VERSION=$REQUIRED_APP_VERSION
 EOF
 ls -l "$OUT_DIR"

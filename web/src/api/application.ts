@@ -8,7 +8,6 @@ export type SystemVersion = {
   baseVersion: string;
   kernelVersion: string;
   rootfsVersion: string;
-  securityPatchLevel?: string | null;
   model: string;
   hardwareVersion: string;
   source: string;
@@ -26,7 +25,6 @@ export type SystemLatest = {
   size: number;
   url: string;
   releaseNotesUrl: string;
-  securityPatchLevel?: string | null;
   requiredAppVersion?: string | null;
 };
 
@@ -41,7 +39,6 @@ export type SystemStagedUpdate = {
   stagedAt: number;
   baseVersion: string;
   kernelVersion: string;
-  securityPatchLevel?: string | null;
   requiredAppVersion?: string | null;
   requiredFreeBytes: number;
   requiresReboot: boolean;

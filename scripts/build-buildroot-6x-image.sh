@@ -63,7 +63,6 @@ toolchain_stage() {
 build_stage() {
 	: "${EXPECTED_SYSTEM_VERSION:?set EXPECTED_SYSTEM_VERSION}"
 	: "${EXPECTED_KVMAPP_VERSION:?set EXPECTED_KVMAPP_VERSION}"
-	: "${EXPECTED_SECURITY_PATCH_LEVEL:?set EXPECTED_SECURITY_PATCH_LEVEL}"
 	require_commands debugfs readelf strings zstd
 	[ -e "$REPORT_DIR" ] && die "refusing to reuse report directory: $REPORT_DIR"
 	# Continue after the toolchain stage, or configure a new output
@@ -80,7 +79,6 @@ build_stage() {
 	HNANOKVM_KVMAPP_SOURCE_DIR="$KVMAPP_DIR" \
 	HNANOKVM_RUNTIME_SYSTEM_VERSION="$EXPECTED_SYSTEM_VERSION" \
 	HNANOKVM_RUNTIME_KERNEL_VERSION="$EXPECTED_KERNEL_RELEASE" \
-	HNANOKVM_RUNTIME_SECURITY_PATCH_LEVEL="$EXPECTED_SECURITY_PATCH_LEVEL" \
 	BUILDROOT_PORT_MAKE_ARGS="BR2_ROOTFS_POST_IMAGE_SCRIPT=" \
 		"$ROOT/scripts/build-buildroot-rootfs.sh"
 

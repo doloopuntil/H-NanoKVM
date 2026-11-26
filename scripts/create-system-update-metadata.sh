@@ -29,7 +29,6 @@ SHA512=$(openssl dgst -sha512 -binary "$ARCHIVE" | base64 | tr -d '\n')
 URL="https://github.com/woffko/Hardened_NanoKVM/releases/download/$TAG/$NAME"
 RELEASE_NOTES_URL="https://github.com/woffko/Hardened_NanoKVM/releases/tag/$TAG"
 SIGNING_KEY="${SYSTEM_UPDATE_SIGNING_KEY:-}"
-SECURITY_PATCH_LEVEL="${SECURITY_PATCH_LEVEL:-}"
 SYSTEM_UPDATE_FORMAT="${SYSTEM_UPDATE_FORMAT:-1}"
 REQUIRED_APP_VERSION="${SYSTEM_UPDATE_REQUIRED_APP_VERSION:-}"
 
@@ -89,19 +88,6 @@ case "$SYSTEM_UPDATE_FORMAT" in
     ;;
 esac
 
-if [ -n "$SECURITY_PATCH_LEVEL" ]; then
-  case "$SECURITY_PATCH_LEVEL" in
-    .* | *..* | *.)
-      echo "invalid security patch level: $SECURITY_PATCH_LEVEL" >&2
-      exit 1
-      ;;
-  esac
-  if ! printf '%s' "$SECURITY_PATCH_LEVEL" | grep -Eq '^[A-Za-z0-9._+:/ -]+$'; then
-    echo "invalid security patch level: $SECURITY_PATCH_LEVEL" >&2
-    exit 1
-  fi
-fi
-
 case "$SIGNATURE_ALGORITHM" in
   sha256-rsa-pkcs1-v1_5 | unsigned) ;;
   *)
@@ -150,7 +136,6 @@ cat > "$OUTPUT" <<EOF
   "size": $SIZE,
   "url": "$URL",
   "release_notes_url": "$RELEASE_NOTES_URL",
-$(if [ -n "$SECURITY_PATCH_LEVEL" ]; then printf '  "security_patch_level": "%s",\n' "$SECURITY_PATCH_LEVEL"; fi)
 $(if [ -n "$REQUIRED_APP_VERSION" ]; then printf '  "required_app_version": "%s",\n' "$REQUIRED_APP_VERSION"; fi)
   "signature_algorithm": "$SIGNATURE_ALGORITHM",
   "signature_key_id": "$SIGNATURE_KEY_ID"

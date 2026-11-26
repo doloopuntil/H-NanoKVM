@@ -10,7 +10,6 @@ const sysVersion = {
   baseVersion: 'buildroot-2026.02',
   kernelVersion: '5.10.265',
   rootfsVersion: '0.4.0',
-  securityPatchLevel: '2026-10-01',
   model: 'NanoKVM',
   hardwareVersion: 'PCIE',
   source: 'raw'
