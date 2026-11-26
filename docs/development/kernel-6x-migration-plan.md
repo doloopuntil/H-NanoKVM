@@ -1488,7 +1488,7 @@ unlocked (`*`, not `!`) while root has a hash, the condition for CVE-2026-123158
 defconfig now runs it, and `scripts/validate-6x-rootfs.sh` keeps the 5.10 validator's checks
 that still apply (BusyBox mode, account locking, empty SSH passwords, the pinned filesystem
 UUID, required and forbidden packages, Avahi limits, T-Head builds without vector, packaged
-and installed init scripts); on the f589f80b image everything passes but BusyBox mode and the
+and installed init scripts); on the ce85d2b8 image everything passes but BusyBox mode and the
 account locking. `test-latest-buildroot-security-policy.sh` now checks the 6.x defconfig.
 Then (also 2026-11-13): `S40firewall` and `S30eth` lost their iptables fallbacks (nftables
 only; the generated rules, ACME commands and status line are byte-identical to before for every
@@ -1510,7 +1510,7 @@ modules, so measure module signing and lockdown alongside. Remaining users, in o
    started; on the Lite all ten read 3 and pinctrl showed RX0N claimed as `cam-mclk1-pins`.
    The DTS now sets all ten to function 3 (`mipi-rx-pins`), and
    `lt6911-sensor-id-probe-removed.patch` drops the writes. The first image with this
-   (e3fce31b) had no video: the 6.18 pinctrl driver accepts only function 0 on the four pads
+   (03cb2e06) had no video: the 6.18 pinctrl driver accepts only function 0 on the four pads
    with a second mux register (MIPIRX4N/4P/3N/3P; `mux2.pfunc` is never set), so it rejected
    the whole group (`group mipi-rx-cfg.mipi-rx-pins pin 0 is invalid`) and `a0c2000.cif`
    never bound. Still so in mainline and linux-next; NanoKVM-OS patches the check. Kernel
@@ -1594,7 +1594,7 @@ middleware builds without the SDK's ION headers, and `libkvm_mmf` has no vendor 
 (`kvm_mmf_noisp.c` holds the receiver settings). All of it is tested on the Lite: both FIPs
 boot, reboot restarts on both clock profiles, MJPEG and H.264 show a picture. Left:
 
-1. Flash the image with `dfa05678` (`sample_common_sensor.c` as a `cvi_mpi` patch instead of
+1. Flash the image with `c056f623` (`sample_common_sensor.c` as a `cvi_mpi` patch instead of
    a copy) and check MJPEG, H.264 and one `reboot`. A local build matched the copy's library.
 2. LT6911C address (checked against Sipeed's `NanoKVM` and `NanoKVM-OS`, 2026-11-25):
    `S15kvmhwd` calls an answer at `0x2c` an LT6911C, while the server, like libkvm before it,
@@ -1615,7 +1615,7 @@ boot, reboot restarts on both clock profiles, MJPEG and H.264 show a picture. Le
 4. Open the pull request from `kernel-6x-migration` to `main`.
 
 Never build the FSBL with `SWITCH_32K_XTAL`: with the RTC on XTAL32K (`RTC_CTRL0` bit 10) a
-reboot powers the Lite off (`b2ae6f74`).
+reboot powers the Lite off (`a23f4ca4`).
 
 ### Phase 7: naming sweep
 

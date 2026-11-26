@@ -68,10 +68,10 @@ near 43 fps where the vector path does not.
 
 ## What was done
 
-0. **MJPEG zero-copy** (commit 335e9081): the JPEG push leases the VPSS frame straight to the encoder,
+0. **MJPEG zero-copy** (commit 28e11c82): the JPEG push leases the VPSS frame straight to the encoder,
    as H.264 already did. Plain HTTP went from 39 to 49.6 fps (CPU ~20 ms a frame instead of ~24).
    HTTPS stayed at 27.5 fps against a same-day 27.9: it is bound by encryption.
-1. **Kernel TLS** (commit 9ac81f1a, `CONFIG_TLS`), **removed again** (see
+1. **Kernel TLS** (`CONFIG_TLS`; the code is not kept in the history), **removed again** (see
    [Kernel TLS removed](#kernel-tls-removed)): rustls did the handshake, then ChaCha20 sessions
    moved to the kernel. On its own it moved the cipher cost into the kernel without making it
    cheaper: 26 fps over Wi-Fi at ~37 ms a frame, against ~36 ms with rustls.
