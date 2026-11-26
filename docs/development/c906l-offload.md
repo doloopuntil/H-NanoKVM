@@ -1,5 +1,5 @@
 ---
-status: current, decided (C906L parked; kTLS and vector ciphers instead)
+status: current, decided (C906L parked; kernel TLS tried and removed, vector ciphers kept for WireGuard)
 applies-to: system 1.0.0 (Linux 6.18) on the Lite
 last-checked: 2026-11-14
 ---
@@ -9,9 +9,10 @@ last-checked: 2026-11-14
 The SG2002 has a second RISC-V core, a C906 at 700 MHz (the C906L), next to the 1 GHz C906 that
 runs Linux. It sits idle: the FIP carries no image for it
 ([migration plan, section 6.3](kernel-6x-migration-plan.md)). This page records what it could take
-off the main core, measured against where the main core's time goes, and why we parked it: kernel
-TLS with vector ciphers on the main core, and the SoC's fixed-function blocks, cover the same work
-for less.
+off the main core, measured against where the main core's time goes, and why we parked it: vector
+ciphers on the main core and the SoC's fixed-function blocks cover the same work for less. Kernel
+TLS, the way the web server reached those ciphers, was tried and removed for security
+([below](#kernel-tls-removed)).
 
 ## Where the main core's time goes
 
@@ -50,7 +51,7 @@ self-contained arithmetic on a buffer.
 
 | Work | Share | C906L | What we do instead |
 | --- | --- | --- | --- |
-| TLS encryption of the video | ~40% of an HTTPS MJPEG frame | yes, ~15 MB/s (estimate) | kTLS plus XTheadVector ChaCha20-Poly1305 on the main core |
+| TLS encryption of the video | ~40% of an HTTPS MJPEG frame | yes, ~15 MB/s (estimate) | tried: kTLS plus XTheadVector ChaCha20-Poly1305 on the main core; now rustls |
 | TLS decryption of uploads | ~40% of the CPU at 9 MB/s | yes | the same |
 | SHA-256 of an upload (optional) | ~35% of the CPU at 9 MB/s | yes, keeps up at 700 MHz | the CryptoDMA engine (below) |
 | MJPEG frame fetch, encoder calls, JPEG copies | ~13 ms a frame, ~7.5 ms after zero-copy | no: Linux driver calls on Linux buffers | zero-copy done; VENC driver patches (below) |
@@ -70,10 +71,10 @@ near 43 fps where the vector path does not.
 0. **MJPEG zero-copy** (commit 335e9081): the JPEG push leases the VPSS frame straight to the encoder,
    as H.264 already did. Plain HTTP went from 39 to 49.6 fps (CPU ~20 ms a frame instead of ~24).
    HTTPS stayed at 27.5 fps against a same-day 27.9: it is bound by encryption.
-1. **Kernel TLS** (`server-rust/src/http/ktls.rs`, `CONFIG_TLS`): rustls does the handshake, then
-   ChaCha20 sessions move to the kernel; AES suites and kernels without TLS stay on rustls. On its
-   own it moves the cipher cost into the kernel without making it cheaper: 26 fps over Wi-Fi at
-   ~37 ms a frame, against ~36 ms with rustls.
+1. **Kernel TLS** (commit 9ac81f1a, `CONFIG_TLS`), **removed again** (see
+   [Kernel TLS removed](#kernel-tls-removed)): rustls did the handshake, then ChaCha20 sessions
+   moved to the kernel. On its own it moved the cipher cost into the kernel without making it
+   cheaper: 26 fps over Wi-Fi at ~37 ms a frame, against ~36 ms with rustls.
 2. **XTheadVector ChaCha20 and Poly1305 in the kernel**, from NanoKVM-OS (kernel patches 0008-0016,
    with the vector context-switch fixes they need). NanoKVM-OS measures about 56 MB/s for
    ChaCha20-Poly1305, against ~22 MB/s generic. The 6.18 GhostWrite mitigation turned XTheadVector
@@ -114,6 +115,15 @@ near 43 fps where the vector path does not.
    The web UI also drops the stream after the page has been hidden for 5 s, because browsers keep
    loading MJPEG in a background tab (~93% CPU before, 7.8% after).
 
+## Kernel TLS removed
+
+With kernel TLS, the records of any client that finished a handshake, signed in or not, were
+parsed by the kernel's `tls_sw.c` and the imported vector assembly instead of rustls. A memory
+bug there is a remote one in the kernel, below lockdown and module signing. The web server is
+back on rustls for every session (`CONFIG_TLS` is off), and HTTPS MJPEG and HTTPS uploads give up
+the vector gain measured in step 2. H.264 Direct sends too little for the cipher to matter. The
+vector patches stay: WireGuard uses the same `lib/crypto` ChaCha20 and Poly1305.
+
 ## Candidates next
 
 All on the main core or in fixed-function blocks; none needs the C906L.
@@ -131,7 +141,7 @@ All on the main core or in fixed-function blocks; none needs the C906L.
   core does not fix starvation on the first.
 - **Splice uploads to the file** with kTLS receive, to skip the copy through the server. The upload
   is still CPU-bound (2-5 MB/s next to a streaming viewer), but a copy costs ~1.6 ms per MB here, so
-  this saves a few percent at most.
+  this saves a few percent at most. Not while kernel TLS is out.
 
 ## Measured and left alone
 

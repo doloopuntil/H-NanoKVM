@@ -474,7 +474,7 @@ remoteproc would need Sophgo's `cvitek_remoteproc` driver, which mainline lacks.
 Future use (video-stream encryption on the C906L): messages must use
 `ip_id < IP_LIMIT` and `cmd_id < SYS_CMD_INFO_LIMIT` if the vendor protocol is
 kept, shared buffers must be below 4 GiB, and cache maintenance is manual on both
-cores. Parked: kernel TLS with vector ciphers covers the same work; see
+cores. Parked; see
 [Offloading work to the C906L](c906l-offload.md).
 
 ### 6.4 Userland-visible kernel interfaces (ABI inventory)
