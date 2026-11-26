@@ -245,8 +245,8 @@ mkdir -p build/system-update-payload/rootfs/etc
 Create the bundle:
 
 ```sh
-BASE_VERSION=2025-02-17-19-08-3649fe.img \
-KERNEL_VERSION=5.10.4-tag-hardened.1 \
+BASE_VERSION=Buildroot-2026.05.1-port \
+KERNEL_VERSION=6.18.65 \
 make system-update-bundle SYSTEM_UPDATE_VERSION=0.1.0
 ```
 

@@ -11,22 +11,22 @@ H-NanoKVM (Hardened NanoKVM) is a security-focused firmware for the
 [Sipeed NanoKVM](https://github.com/sipeed/NanoKVM) (Cube Lite, Cube Full and
 PCIe, all SG2002 based). It keeps the NanoKVM hardware support, the native video
 pipeline and the familiar web UI, and replaces the rest: a Rust web server
-instead of the Go one, a current Buildroot and Linux 5.10.265 base, signed
+instead of the Go one, a current Buildroot and Linux 6.18 base, signed
 updates, and a locked-down default configuration. It builds on
 [woffko/Hardened_NanoKVM](https://github.com/woffko/Hardened_NanoKVM).
 
 > [!NOTE]
-> This is beta firmware. The current version is **system 0.4.0 with
-> application 2.1.0**. It is not published as a release yet: build the SD image
+> This is beta firmware. The current version is **system 1.0.0 with
+> application 3.0.0**. It is not published as a release yet: build the SD image
 > in CI and flash it ([Install](docs/guide/install.md)). Online update channels
-> for 0.4.0 are still to be set up.
+> for 1.0.0 are still to be set up.
 
 ## Coming from sipeed/NanoKVM
 
 | | sipeed/NanoKVM | H-NanoKVM |
 | --- | --- | --- |
 | Web server | Go (`server/`) | Rust (`server-rust/`), same API and UI |
-| Base system | Vendor SDK, Buildroot 2023.11, Linux 5.10.4 | Buildroot 2026.05.1, Linux 5.10.265 with kernel hardening |
+| Base system | Vendor SDK, Buildroot 2023.11, Linux 5.10.4 | Buildroot 2026.05.1, Linux 6.18 with kernel hardening |
 | How it is built | Vendor build | Whole SD image rebuilt from source in GitHub Actions |
 | First sign-in | `admin`/`admin` | You create the account on first boot; no default password, no reset |
 | Sign-in security | Password | Argon2id, CSRF and origin checks, lockout, optional TOTP two-factor |

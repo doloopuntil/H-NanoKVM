@@ -1,6 +1,6 @@
 {
-  "version": "0.3.0-raw.11",
+  "version": "1.0.0",
   "target": "sg2002-hnanokvm-sd",
   "base_version": "Buildroot 2026.05.1 port",
-  "kernel_version": "5.10.4-tag-"
+  "kernel_version": "6.18.65"
 }
