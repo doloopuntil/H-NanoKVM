@@ -41,7 +41,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install host build dependencies
+      # Rust is pinned: the runner's moving `stable` changed the link behaviour once already.
+      - name: Install the build tools
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -49,17 +50,11 @@ jobs:
             libncurses-dev python3 perl bison flex device-tree-compiler \
             dosfstools mtools file libssl-dev pkg-config e2fsprogs \
             u-boot-tools zstd xz-utils util-linux cmake patch
-
-      # Pinned: the runner's moving `stable` changed the link behaviour once already.
-      - name: Install Rust ${{ env.RUST_VERSION }} with the riscv64gc-unknown-linux-musl target
-        run: |
           rustup toolchain install "$RUST_VERSION" --profile minimal \
             --target riscv64gc-unknown-linux-musl
           rustup default "$RUST_VERSION"
           rustc --version
-
-      - name: Enable Corepack
-        run: corepack enable
+          corepack enable
 
       - name: Cache Buildroot source download
         uses: actions/cache@v4
@@ -83,57 +78,18 @@ jobs:
           key: buildroot-6x-ccache-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: buildroot-6x-ccache-
 
-      - name: Bootstrap Buildroot + security-patched source
+      # Buildroot with its security-patched source; licheerv's external tree (board patches, FSBL
+      # patches) and the FSBL source for the FIPs; the Sophgo middleware, the uapi headers of the
+      # same release and the sensor list.
+      - name: Fetch the sources
         run: |
           mkdir -p build/buildroot-package-dl-cache
           make buildroot-bootstrap
           BUILDROOT_SECURITY_DL_DIR="${{ github.workspace }}/build/buildroot-package-dl-cache" \
             make buildroot-security-source
-
-      # licheerv's external tree (board patches, FSBL patches) and the FSBL source for the FIPs.
-      - name: Fetch the licheerv external tree and the FSBL source
-        run: |
           LICHEERV_EXTERNAL_SHA="$LICHEERV_EXTERNAL_SHA" scripts/fetch-licheerv-external.sh
           SOPHGO_FSBL_SHA="$SOPHGO_FSBL_SHA" scripts/fetch-sg2002-boot-source.sh
-
-      # The middleware, the uapi headers of the same Sophgo release, and the sensor list.
-      - name: Fetch the Sophgo middleware source
-        run: |
-          sparse_fetch() {
-            dir="$1" url="$2" sha="$3"
-            shift 3
-            git init -q "$dir"
-            git -C "$dir" remote add origin "$url"
-            git -C "$dir" sparse-checkout set --no-cone "$@"
-            git -C "$dir" fetch -q --depth 1 --filter=blob:none origin "$sha"
-            git -C "$dir" checkout -q FETCH_HEAD
-            [ "$(git -C "$dir" rev-parse HEAD)" = "$sha" ]
-          }
-          sparse_fetch "$RUNNER_TEMP/cvi_mpi" https://github.com/sophgo/cvi_mpi.git \
-            "$SOPHGO_CVI_MPI_SHA" \
-            /Makefile.param /include/ /sample/common/ /component/panel/cv181x/ \
-            /modules/sys/ /modules/venc/ /modules/vdec/ /modules/vi/ /modules/vpss/ /modules/vo/ \
-            /modules/gdc/ /modules/rgn/ /modules/bin/include/ /modules/isp/include/cv181x/ \
-            /modules/ive/include/ /3rdparty/inih/
-          sparse_fetch "$RUNNER_TEMP/osdrv-uapi" https://github.com/sophgo/osdrv.git \
-            "$SOPHGO_OSDRV_SHA" /interdrv/include/
-          sparse_fetch "$RUNNER_TEMP/sensor-list" https://github.com/sophgo/SensorSupportList.git \
-            "$SOPHGO_SENSOR_LIST_SHA" /common/
-          patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
-            < support/sg2002/middleware-patches/cvi-mpi-693a72a-no-vi-dbg-thread.patch
-          ! grep -q vi_dbg_handler "$RUNNER_TEMP/cvi_mpi/modules/vi/src/cvi_vi.c"
-          patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
-            < support/sg2002/middleware-patches/cvi-mpi-693a72a-map-through-cvi-sys.patch
-          ! grep -q '"/dev/mem"' "$RUNNER_TEMP/cvi_mpi/modules/sys/src/devmem.c"
-          patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
-            < support/sg2002/middleware-patches/cvi-mpi-693a72a-venc-persistent-pack-mappings.patch
-          grep -q VENC_MAP_WINDOWS "$RUNNER_TEMP/cvi_mpi/modules/venc/src/cvi_venc.c"
-          patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
-            < support/sg2002/middleware-patches/cvi-mpi-693a72a-no-devmem-commands.patch
-          ! grep -q 'system("devmem' "$RUNNER_TEMP/cvi_mpi/modules/sys/src/cvi_sys.c"
-          patch -d "$RUNNER_TEMP/cvi_mpi" -p1 --forward --fuzz=0 \
-            < support/sg2002/middleware-patches/cvi-mpi-693a72a-sensor-live-size-and-ini-bounds.patch
-          grep -q kvm_read_dimension "$RUNNER_TEMP/cvi_mpi/sample/common/sample_common_sensor.c"
+          scripts/fetch-sophgo-middleware.sh "$RUNNER_TEMP"
 
       - name: Build Buildroot's cross-compiler and musl
         run: |
@@ -141,51 +97,11 @@ jobs:
             scripts/build-buildroot-6x-image.sh toolchain
           echo "CROSS_PREFIX=$RUN_ROOT/buildroot/host/bin/riscv64-buildroot-linux-musl-" >> "$GITHUB_ENV"
 
-      # libsys/libvenc/libvdec/libvi/libvpss/libvo/libgdc/librgn/libini: libkvm_mmf.so links
-      # against these and the image ships them.
-      - name: Build the Sophgo middleware from source
-        run: |
-          SDK_MIDDLEWARE_OPT_FLAGS=-O2 scripts/build-sdk-middleware.sh "$RUNNER_TEMP/cvi_mpi" \
-            "$RUNNER_TEMP/osdrv-uapi" \
-            "$GITHUB_WORKSPACE/build/native-libkvm/middleware" "$CROSS_PREFIX"
-
-      # kvm_mmf compiles against these headers and sample code, so they match the libraries above.
-      - name: Stage the headers and sample code for libkvm_mmf
-        run: |
-          scripts/stage-sg2002-sdk.sh "$RUNNER_TEMP/cvi_mpi" "$RUNNER_TEMP/osdrv-uapi" \
-            "$RUNNER_TEMP/sensor-list" \
-            "$GITHUB_WORKSPACE/build/native-libkvm/middleware" "$RUNNER_TEMP/sg2002-sdk"
-
-      # Plain CMake (support/sg2002/CMakeLists.txt) with Buildroot's GCC: scalar xthead, stack
-      # protector, full RELRO.
-      # The script also checks SSP, RPATH, the loader and libkvm_mmf's exports.
-      - name: Build libkvm_mmf.so
-        run: |
-          # The sources must carry the native changes this image relies on.
-          grep -q "no stale sys state to release" support/sg2002/additional/kvm_mmf/src/kvm_mmf.cpp
-          grep -q "mmf_vi_frame_release" support/sg2002/additional/kvm_mmf/src/kvm_mmf.cpp
-          grep -q 'extern "C"' support/sg2002/additional/kvm_mmf/include/kvm_mmf.hpp
-          scripts/build-sg2002-native.sh "$CROSS_PREFIX" "$RUNNER_TEMP/sg2002-sdk" \
-            "$GITHUB_WORKSPACE/build/native-libkvm"
-          file build/native-libkvm/libkvm_mmf.so
-
-      # The server links against the same musl it runs on.
-      - name: Stage the server's link-time sysroot from Buildroot
-        run: |
-          SYSROOT=$("${CROSS_PREFIX}gcc" -print-sysroot)
-          mkdir -p server-rust/sysroot/lib
-          cp "$SYSROOT/lib/libc.so" "$SYSROOT/lib/libgcc_s.so.1" server-rust/sysroot/lib/
-          cp -R "$SYSROOT/usr/include" server-rust/sysroot/include
-
-      # dl_lib is not in git: the server links against and packages this run's builds only.
-      - name: Use freshly-built libkvm_mmf.so and middleware
-        run: |
-          mkdir -p server-rust/native/dl_lib
-          cp build/native-libkvm/libkvm_mmf.so server-rust/native/dl_lib/libkvm_mmf.so
-          for lib in libsys.so libvenc.so libvdec.so libvi.so libvpss.so libvo.so libgdc.so librgn.so \
-            libini.so; do
-            cp "build/native-libkvm/middleware/$lib" "server-rust/native/dl_lib/$lib"
-          done
+      # The Sophgo middleware, libkvm_mmf.so, the server's link-time sysroot (the same musl it
+      # runs on) and dl_lib, which is not in git: the server links against and packages this
+      # run's builds only.
+      - name: Build the native libraries
+        run: scripts/build-native-6x.sh "$CROSS_PREFIX" "$RUNNER_TEMP"
 
       # build.rs assembles the XTheadVector TLS code with Buildroot's GNU binutils.
       - name: Build H-NanoKVM kvmapp bridge
@@ -279,20 +195,19 @@ jobs:
           name: buildroot-6x-handoff
           path: ${{ runner.temp }}/handoff
 
-      # Same absolute path as in build-buildroot: Buildroot's host tools carry it in their RPATH.
-      - name: Unpack the Buildroot handoff
+      # The handoff is unpacked at the same absolute path as in build-buildroot: Buildroot's host
+      # tools carry it in their RPATH.
+      - name: Unpack the handoff and assemble the boot partition and the SD image
         run: |
           mkdir -p "$RUN_ROOT/buildroot"
           zstd -dc "$RUNNER_TEMP/handoff/buildroot-6x-handoff.tar.zst" | tar -xf - -C "$RUN_ROOT/buildroot"
-
-      - name: Assemble the boot partition and the SD image
-        run: |
           HNANOKVM_6X_OUTPUT_DIR="$RUN_ROOT/buildroot" \
           HNANOKVM_6X_REPORT_DIR="$RUN_ROOT/_reports/image" \
             scripts/build-buildroot-6x-image.sh assemble
 
-      # The unsigned raw update archive, plus the script that signs it with a local key.
-      - name: Package the unsigned system-update archive
+      # The unsigned raw update archive (plus the script that signs it with a local key), and the
+      # compressed SD image with its checksum.
+      - name: Package the update archive and the SD image
         run: |
           SYSTEM_VERSION="${EXPECTED_SYSTEM_VERSION%.*}.${{ github.run_number }}" \
           KERNEL_VERSION="$EXPECTED_KERNEL_RELEASE" \
@@ -302,9 +217,6 @@ jobs:
             scripts/package-local-system-update.sh \
             "$RUN_ROOT/buildroot/images/hnanokvm-6x.img" \
             "$RUN_ROOT/system-update"
-
-      - name: Compress the SD image
-        run: |
           mkdir -p "$RUN_ROOT/sd-image"
           xz -T0 -6 -c "$RUN_ROOT/buildroot/images/hnanokvm-6x.img" \
             > "$RUN_ROOT/sd-image/hnanokvm-6x.img.xz"
