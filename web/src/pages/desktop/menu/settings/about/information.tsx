@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 
 import { getSystemVersion } from '@/api/application.ts';
 import * as api from '@/api/vm.ts';
-import { formatHNanoKvmVersion } from '@/lib/hnanokvm.ts';
 import { formatUptime } from '@/lib/uptime.ts';
 import { useSettingsLoad } from '@/hooks/useSettingsLoad.ts';
 import { LabelTip } from '@/components/label-tip.tsx';
@@ -103,7 +102,7 @@ export const Information = () => {
               tip={tip('settings.about.updateIn', ...updatesPath)}
             />
           }
-          value={information ? formatHNanoKvmVersion(information.application) : undefined}
+          value={information?.application}
         />
 
         <InfoRow

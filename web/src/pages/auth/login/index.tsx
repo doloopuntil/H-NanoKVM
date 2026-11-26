@@ -8,12 +8,7 @@ import { getCurrentVersion } from '@/api/application.ts';
 import * as totpApi from '@/api/auth-totp.ts';
 import * as api from '@/api/auth.ts';
 import { existToken, setCsrfToken } from '@/lib/cookie.ts';
-import {
-  formatHNanoKvmVersion,
-  HNANOKVM_LOGO_SRC,
-  HNANOKVM_NAME,
-  HNANOKVM_VERSION
-} from '@/lib/hnanokvm.ts';
+import { HNANOKVM_LOGO_SRC, HNANOKVM_NAME } from '@/lib/hnanokvm.ts';
 import { Head } from '@/components/head.tsx';
 
 import { Tips } from './tips.tsx';
@@ -27,7 +22,7 @@ export const Login = (): ReactElement => {
   const [setupRequired, setSetupRequired] = useState<boolean | null>(null);
   const [totpRequired, setTotpRequired] = useState(false);
   const [useBackupCode, setUseBackupCode] = useState(false);
-  const [displayVersion, setDisplayVersion] = useState(HNANOKVM_VERSION);
+  const [displayVersion, setDisplayVersion] = useState('');
   const [logoPressed, setLogoPressed] = useState(false);
   const logoTimerRef = useRef<number | null>(null);
 
@@ -53,7 +48,7 @@ export const Login = (): ReactElement => {
     getCurrentVersion()
       .then((rsp: any) => {
         if (rsp.code === 0) {
-          setDisplayVersion(formatHNanoKvmVersion(rsp.data?.current));
+          setDisplayVersion(rsp.data?.current ?? '');
         }
       })
       .catch(() => undefined);
