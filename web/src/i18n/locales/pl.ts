@@ -386,7 +386,8 @@ const pl = {
         uptime: 'Czas działania',
         community: 'Społeczność',
         credit:
-          'Oparty na <a1>NanoKVM</a1> firmy Sipeed i <a2>Hardened NanoKVM</a2> autorstwa woffko, oraz z wkładem w wydajność od <a3>NanoKVM OS</a3>',
+          'Oparty na <a1>NanoKVM</a1> firmy Sipeed i <a2>Hardened NanoKVM</a2> autorstwa woffko',
+        creditPerformance: 'Usprawnienia wydajności z <a1>NanoKVM OS</a1> autorstwa dormancygrace',
         hostname: 'Nazwa urządzenia',
         changeIn: 'Zmienisz to w {{path}}',
         updateIn: 'Zaktualizujesz to w {{path}}',

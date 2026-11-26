@@ -381,8 +381,8 @@ const cz = {
         application: 'Verze aplikace',
         uptime: 'Doba běhu',
         community: 'Komunita',
-        credit:
-          'Postaveno na <a1>NanoKVM</a1> od Sipeed a <a2>Hardened NanoKVM</a2> od woffko, a s příspěvky k výkonu od <a3>NanoKVM OS</a3>',
+        credit: 'Postaveno na <a1>NanoKVM</a1> od Sipeed a <a2>Hardened NanoKVM</a2> od woffko',
+        creditPerformance: 'Zlepšení výkonu od <a1>NanoKVM OS</a1> od dormancygrace',
         hostname: 'Název zařízení',
         changeIn: 'Změníte to v {{path}}',
         updateIn: 'Aktualizujete to v {{path}}',

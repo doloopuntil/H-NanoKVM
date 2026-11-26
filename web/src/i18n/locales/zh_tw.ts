@@ -365,8 +365,8 @@ const zh_tw = {
         application: '應用程式版本',
         uptime: '執行時間',
         community: '社群',
-        credit:
-          '基於 Sipeed 的 <a1>NanoKVM</a1> 和 woffko 的 <a2>Hardened NanoKVM</a2> 建置，並包含來自 <a3>NanoKVM OS</a3> 的效能貢獻',
+        credit: '基於 Sipeed 的 <a1>NanoKVM</a1> 和 woffko 的 <a2>Hardened NanoKVM</a2> 建置',
+        creditPerformance: '來自 dormancygrace 的 <a1>NanoKVM OS</a1> 的效能改進',
         hostname: '裝置名稱',
         changeIn: '可在 {{path}} 中變更',
         updateIn: '可在 {{path}} 中更新',

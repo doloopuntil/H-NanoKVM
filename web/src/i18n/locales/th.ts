@@ -376,8 +376,8 @@ const th = {
         application: 'เวอร์ชันแอปพลิเคชัน',
         uptime: 'เวลาทำงาน',
         community: 'ชุมชน',
-        credit:
-          'สร้างบน <a1>NanoKVM</a1> โดย Sipeed และ <a2>Hardened NanoKVM</a2> โดย woffko และมีส่วนร่วมด้านประสิทธิภาพจาก <a3>NanoKVM OS</a3>',
+        credit: 'สร้างบน <a1>NanoKVM</a1> โดย Sipeed และ <a2>Hardened NanoKVM</a2> โดย woffko',
+        creditPerformance: 'การปรับปรุงประสิทธิภาพจาก <a1>NanoKVM OS</a1> โดย dormancygrace',
         hostname: 'ชื่ออุปกรณ์',
         changeIn: 'เปลี่ยนได้ที่ {{path}}',
         updateIn: 'อัปเดตได้ที่ {{path}}',

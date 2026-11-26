@@ -384,7 +384,8 @@ const id = {
         uptime: 'Waktu aktif',
         community: 'Komunitas',
         credit:
-          'Dibangun di atas <a1>NanoKVM</a1> dari Sipeed dan <a2>Hardened NanoKVM</a2> oleh woffko, dan dengan kontribusi kinerja dari <a3>NanoKVM OS</a3>',
+          'Dibangun di atas <a1>NanoKVM</a1> dari Sipeed dan <a2>Hardened NanoKVM</a2> oleh woffko',
+        creditPerformance: 'Peningkatan kinerja dari <a1>NanoKVM OS</a1> oleh dormancygrace',
         hostname: 'Nama perangkat',
         changeIn: 'Ubah di {{path}}',
         updateIn: 'Perbarui di {{path}}',

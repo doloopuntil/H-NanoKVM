@@ -387,8 +387,8 @@ const fr = {
         application: "Version de l'application",
         uptime: 'Temps de fonctionnement',
         community: 'Communauté',
-        credit:
-          'Basé sur <a1>NanoKVM</a1> de Sipeed et <a2>Hardened NanoKVM</a2> de woffko, et avec des contributions de performance de <a3>NanoKVM OS</a3>',
+        credit: 'Basé sur <a1>NanoKVM</a1> de Sipeed et <a2>Hardened NanoKVM</a2> de woffko',
+        creditPerformance: 'Améliorations de performance de <a1>NanoKVM OS</a1> par dormancygrace',
         hostname: "Nom de l'appareil",
         changeIn: 'À modifier dans {{path}}',
         updateIn: 'À mettre à jour dans {{path}}',

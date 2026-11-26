@@ -23,28 +23,39 @@ export const Community = () => {
 
   return (
     <SettingSection title={t('settings.about.community')}>
-      <p className="text-sm wrap-break-word text-neutral-500">
-        <Trans
-          i18nKey="settings.about.credit"
-          components={{
-            a1: <a className={creditLinkClass} href={SIPEED_URL} target="_blank" />,
-            a2: <a className={creditLinkClass} href={WOFFKO_URL} target="_blank" />,
-            a3: <a className={creditLinkClass} href={NANOKVM_OS_URL} target="_blank" />
-          }}
-        />
-      </p>
-      <div className="flex flex-wrap justify-end gap-3">
-        {communities.map((community) => (
-          <a
-            key={community.name}
-            className="flex h-16 w-24 flex-col items-center justify-center gap-2 rounded-lg text-neutral-300 outline outline-1 outline-neutral-800 hover:bg-neutral-800 hover:text-white focus:bg-neutral-800"
-            href={community.url}
-            target="_blank"
-          >
-            {community.icon}
-            <span className="text-xs">{community.name}</span>
-          </a>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0 flex-1 basis-72 space-y-1 text-sm wrap-break-word text-neutral-500">
+          <p>
+            <Trans
+              i18nKey="settings.about.credit"
+              components={{
+                a1: <a className={creditLinkClass} href={SIPEED_URL} target="_blank" />,
+                a2: <a className={creditLinkClass} href={WOFFKO_URL} target="_blank" />
+              }}
+            />
+          </p>
+          <p>
+            <Trans
+              i18nKey="settings.about.creditPerformance"
+              components={{
+                a1: <a className={creditLinkClass} href={NANOKVM_OS_URL} target="_blank" />
+              }}
+            />
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-3">
+          {communities.map((community) => (
+            <a
+              key={community.name}
+              className="flex h-16 w-24 flex-col items-center justify-center gap-2 rounded-lg text-neutral-300 outline outline-1 outline-neutral-800 hover:bg-neutral-800 hover:text-white focus:bg-neutral-800"
+              href={community.url}
+              target="_blank"
+            >
+              {community.icon}
+              <span className="text-xs">{community.name}</span>
+            </a>
+          ))}
+        </div>
       </div>
     </SettingSection>
   );

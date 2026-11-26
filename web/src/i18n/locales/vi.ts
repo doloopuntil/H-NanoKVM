@@ -378,8 +378,8 @@ const vi = {
         application: 'Phiên bản ứng dụng',
         uptime: 'Thời gian hoạt động',
         community: 'Cộng đồng',
-        credit:
-          'Xây dựng trên <a1>NanoKVM</a1> của Sipeed và <a2>Hardened NanoKVM</a2> của woffko, cùng các đóng góp về hiệu năng từ <a3>NanoKVM OS</a3>',
+        credit: 'Xây dựng trên <a1>NanoKVM</a1> của Sipeed và <a2>Hardened NanoKVM</a2> của woffko',
+        creditPerformance: 'Cải thiện hiệu năng từ <a1>NanoKVM OS</a1> của dormancygrace',
         hostname: 'Tên thiết bị',
         changeIn: 'Thay đổi tại {{path}}',
         updateIn: 'Cập nhật tại {{path}}',

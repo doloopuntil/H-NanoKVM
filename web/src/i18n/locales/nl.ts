@@ -388,8 +388,8 @@ const nl = {
         application: 'Applicatieversie',
         uptime: 'Uptime',
         community: 'Community',
-        credit:
-          'Gebouwd op <a1>NanoKVM</a1> van Sipeed en <a2>Hardened NanoKVM</a2> van woffko, en met prestatiebijdragen van <a3>NanoKVM OS</a3>',
+        credit: 'Gebouwd op <a1>NanoKVM</a1> van Sipeed en <a2>Hardened NanoKVM</a2> van woffko',
+        creditPerformance: 'Prestatieverbeteringen van <a1>NanoKVM OS</a1> door dormancygrace',
         hostname: 'Apparaatnaam',
         changeIn: 'Te wijzigen in {{path}}',
         updateIn: 'Te updaten in {{path}}',
