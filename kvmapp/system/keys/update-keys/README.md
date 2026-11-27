@@ -16,3 +16,7 @@ Rotation sequence:
 
 The RC12 bridge policy deliberately permits both historical key IDs and
 `hardened-system-prod-2026q3`. It must not retire legacy IDs during RC12.
+
+The application installs the policy at every start, before it serves a
+request. Verification refuses every key ID while the installed policy file is
+missing, so a lost policy never widens the trust set.

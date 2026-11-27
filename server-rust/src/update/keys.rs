@@ -195,7 +195,12 @@ fn enforce_update_key_policy(parent: &Path, key_id: &str) -> Result<()> {
     let path = parent.join(UPDATE_KEY_POLICY_FILE);
     let metadata = match fs::symlink_metadata(&path) {
         Ok(metadata) => metadata,
-        Err(error) if error.kind() == ErrorKind::NotFound => return Ok(()),
+        // Every start installs the policy, so a missing one is damage; allowing all keys would widen trust.
+        Err(error) if error.kind() == ErrorKind::NotFound => {
+            return Err(AppError::Config(
+                "the update key policy is missing; restart the device to restore it".to_string(),
+            ));
+        }
         Err(error) => return Err(error.into()),
     };
     if !metadata.file_type().is_file() || metadata.permissions().mode() & 0o022 != 0 {
@@ -412,6 +417,11 @@ mod tests {
         std::fs::create_dir_all(&keyring).unwrap();
         let production = keyring.join("hardened-system-prod-2026.pub.pem");
         std::fs::write(&production, b"production").unwrap();
+        std::fs::write(
+            temp.path().join(UPDATE_KEY_POLICY_FILE),
+            b"hardened-system-dev\nhardened-system-test\nhardened-system-prod-2026\n",
+        )
+        .unwrap();
 
         assert_eq!(
             resolve_update_public_key(&configured, LEGACY_UPDATE_KEY_ID).unwrap(),
@@ -425,6 +435,25 @@ mod tests {
             resolve_update_public_key(&configured, "hardened-system-prod-2026").unwrap(),
             production
         );
+    }
+
+    #[test]
+    fn refuses_every_key_while_the_policy_is_missing() {
+        let temp = tempfile::tempdir().unwrap();
+        let configured = temp.path().join("system-update-signing.pub.pem");
+        std::fs::write(&configured, b"legacy").unwrap();
+        let keyring = temp.path().join(UPDATE_KEYRING_DIR);
+        std::fs::create_dir_all(&keyring).unwrap();
+        std::fs::write(
+            keyring.join("hardened-system-prod-2026.pub.pem"),
+            b"production",
+        )
+        .unwrap();
+
+        for key_id in [LEGACY_UPDATE_KEY_ID, "hardened-system-prod-2026"] {
+            let error = resolve_update_public_key(&configured, key_id).unwrap_err();
+            assert!(error.to_string().contains("policy is missing"), "{error}");
+        }
     }
 
     #[test]
