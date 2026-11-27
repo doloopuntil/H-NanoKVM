@@ -61,6 +61,39 @@ pub fn write_0600_atomic(path: &Path, data: &[u8]) -> Result<()> {
     write_result
 }
 
+/// Make the entry changes in `dir` (create, rename, unlink) durable. /data (exFAT) and
+/// /boot (FAT) have no journal, so an unsynced change is rolled back by a power cut.
+pub fn sync_dir(dir: &Path) -> std::io::Result<()> {
+    fs::File::open(dir)?.sync_all()
+}
+
+/// [`sync_dir`] on the directory holding `path`, off the runtime. A failure is logged,
+/// not returned: the change already happened, it may just not survive a power cut.
+pub async fn sync_parent_logged(path: &Path, what: &'static str) {
+    let Some(dir) = path.parent().map(Path::to_path_buf) else {
+        return;
+    };
+    let result = tokio::task::spawn_blocking(move || sync_dir(&dir)).await;
+    match result {
+        Ok(Ok(())) => {}
+        Ok(Err(error)) => {
+            tracing::warn!(%error, path = %path.display(), "{what}: directory sync failed")
+        }
+        Err(error) => {
+            tracing::warn!(%error, path = %path.display(), "{what}: directory sync task failed")
+        }
+    }
+}
+
+/// Flush a finished file's bytes to the medium before a rename publishes it.
+pub async fn sync_file(path: &Path) -> Result<()> {
+    let path = path.to_path_buf();
+    tokio::task::spawn_blocking(move || fs::File::open(&path)?.sync_all())
+        .await
+        .map_err(|error| AppError::Internal(format!("file sync task failed: {error}")))??;
+    Ok(())
+}
+
 fn ensure_no_symlink_components(path: &Path) -> Result<()> {
     let mut current = PathBuf::new();
     for component in path.components() {

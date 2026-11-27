@@ -316,6 +316,7 @@ pub async fn upload_image_file(
         fs::rename(temp.path(), &target)?;
         fs::set_permissions(&target, fs::Permissions::from_mode(0o644))?;
         temp.keep();
+        crate::fsutil::sync_parent_logged(&target, "install uploaded image").await;
         uploaded = true;
     }
 
@@ -392,10 +393,13 @@ async fn download_remote_iso(
         ));
     }
 
+    // curl leaves the bytes in the page cache; flush them before the name is published.
+    crate::fsutil::sync_file(temp.path()).await?;
     ensure_not_mounted(&target)?;
     fs::rename(temp.path(), &target)?;
     fs::set_permissions(&target, fs::Permissions::from_mode(0o644))?;
     temp.keep();
+    crate::fsutil::sync_parent_logged(&target, "install downloaded image").await;
     Ok(())
 }
 

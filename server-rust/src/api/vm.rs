@@ -739,6 +739,8 @@ pub async fn update_virtual_device(
             .append(true)
             .open(flag)?;
     }
+    // FAT has no journal: without this a power cut brings the old marker back.
+    crate::fsutil::sync_parent_logged(Path::new(flag), "virtual device marker").await;
     run_usbdev("start").await?;
 
     // The disk is gone from the host, so the KVM writes /data itself again.

@@ -240,7 +240,8 @@ pub async fn delete_image(
         ));
     }
     ensure_writable(&state.config.paths.image_directory)?;
-    fs::remove_file(image)?;
+    fs::remove_file(&image)?;
+    crate::fsutil::sync_parent_logged(&image, "delete image").await;
 
     Ok(Json(ApiResponse::<()>::ok_empty()))
 }
