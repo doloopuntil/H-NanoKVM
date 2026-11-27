@@ -8,9 +8,13 @@ use axum::{
 };
 use bytes::Bytes;
 use rtc::{
+    crypto::SignatureScheme,
     ice::{mdns::MulticastDnsMode, network_type::NetworkType},
     interceptor::{Attribute, Interceptor, Packet, Slot, StreamInfo, TaggedPacket},
-    peer_connection::configuration::media_engine::MIME_TYPE_H264,
+    peer_connection::{
+        certificate::{CertificateParams, RTCCertificate},
+        configuration::media_engine::MIME_TYPE_H264,
+    },
     rtcp,
     rtcp::payload_feedbacks::{
         full_intra_request::FullIntraRequest, picture_loss_indication::PictureLossIndication,
@@ -489,6 +493,7 @@ impl WebRtcClient {
                 .with_configuration(
                     RTCConfigurationBuilder::new()
                         .with_ice_servers(rtc_ice_servers(config))
+                        .with_certificates(shared_dtls_certificate().into_iter().collect())
                         .build(),
                 )
                 .with_media_engine(media_engine)
@@ -712,6 +717,34 @@ impl Interceptor for KeyframeRequestForwarder {
     fn unbind_local_stream(&mut self, _info: &StreamInfo) {}
     fn bind_remote_stream(&mut self, _info: &StreamInfo) {}
     fn unbind_remote_stream(&mut self, _info: &StreamInfo) {}
+}
+
+/// One DTLS certificate for every peer, made on first use. Browsers check it only against
+/// the SDP fingerprint; without it each connection generates a P-256 key on the single core.
+fn shared_dtls_certificate() -> Option<RTCCertificate> {
+    static CERTIFICATE: OnceLock<Option<RTCCertificate>> = OnceLock::new();
+    CERTIFICATE
+        .get_or_init(|| {
+            let generated = rtc::crypto::default_provider()
+                .map_err(|err| err.to_string())
+                .and_then(|provider| {
+                    let params =
+                        CertificateParams::new(vec![rtc::shared::util::math_rand_alpha(16)])
+                            .map_err(|err| err.to_string())?;
+                    RTCCertificate::generate(
+                        provider.crypto(),
+                        SignatureScheme::EcdsaP256Sha256,
+                        params,
+                    )
+                    .map_err(|err| err.to_string())
+                });
+            generated
+                .inspect_err(|error| {
+                    warn!(%error, "shared WebRTC certificate failed; each peer makes its own")
+                })
+                .ok()
+        })
+        .clone()
 }
 
 fn rtc_ice_servers(config: &Config) -> Vec<RTCIceServer> {
