@@ -124,7 +124,7 @@ stop_dhcpv6() {
 }
 
 find_udhcpc6() {
-    for path in /kvmapp/system/bin/udhcpc6 /usr/sbin/udhcpc6 /sbin/udhcpc6 /usr/bin/udhcpc6 /bin/udhcpc6
+    for path in /usr/bin/udhcpc6 /usr/sbin/udhcpc6 /sbin/udhcpc6 /bin/udhcpc6
     do
         [ -x "$path" ] && echo "$path" && return 0
     done

@@ -6,3 +6,7 @@
 # gzip, gunzip and zcat are in the image, but tar did not call them: `tar -czf` and `tar -xzf` failed.
 CONFIG_FEATURE_SEAMLESS_GZ=y
 CONFIG_FEATURE_TAR_AUTODETECT=y
+
+# DHCPv6 client for the IPv6 "DHCPv6" mode (S30eth); RFC 3646 gives its hook the DNS servers and search list.
+CONFIG_UDHCPC6=y
+CONFIG_FEATURE_UDHCPC6_RFC3646=y

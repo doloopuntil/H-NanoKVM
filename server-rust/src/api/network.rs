@@ -58,11 +58,11 @@ const IPV6_MODE_MANUAL: &str = "manual";
 const IPV6_MODE_FILE: &str = "/boot/eth.ipv6.mode";
 const IPV6_CONFIG_FILE: &str = "/boot/eth.ipv6";
 const DHCPV6_SCRIPT_FILE: &str = "/kvmapp/system/network/udhcpc6.script";
+// BusyBox installs the applet in /usr/bin.
 const DHCPV6_CLIENT_PATHS: &[&str] = &[
-    "/kvmapp/system/bin/udhcpc6",
+    "/usr/bin/udhcpc6",
     "/usr/sbin/udhcpc6",
     "/sbin/udhcpc6",
-    "/usr/bin/udhcpc6",
     "/bin/udhcpc6",
 ];
 

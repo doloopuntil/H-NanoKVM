@@ -56,7 +56,8 @@ printf '%s\n' "$stats" | grep -Eq "^Directory Hash Seed:[[:space:]]+$EXPECTED_RO
 
 for path in /etc/ssl/certs/ca-certificates.crt /usr/lib/libz.so.1 /usr/sbin/sshd /usr/sbin/avahi-daemon \
 	/usr/sbin/hostapd /usr/sbin/wpa_supplicant /usr/sbin/wpa_passphrase /usr/bin/curl /usr/bin/openssl \
-	/usr/bin/ntpdate /usr/sbin/parted /usr/sbin/mkfs.exfat /usr/sbin/resize2fs /usr/sbin/nft; do
+	/usr/bin/ntpdate /usr/sbin/parted /usr/sbin/mkfs.exfat /usr/sbin/resize2fs /usr/sbin/nft \
+	/usr/bin/udhcpc6; do
 	exists "$path" || fail "missing $path"
 done
 for path in /usr/bin/python /usr/bin/python3 /usr/bin/ffmpeg /usr/bin/ffprobe /usr/sbin/dnsmasq \
