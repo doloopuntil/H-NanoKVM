@@ -13,6 +13,7 @@ export BASE_UID_FILE="$TEST_ROOT/base_uid"
 
 # The device has sha256sum; macOS only has shasum.
 command -v sha256sum >/dev/null 2>&1 || sha256sum() { shasum -a 256; }
+command -v sha512sum >/dev/null 2>&1 || sha512sum() { shasum -a 512; }
 
 fail() {
     echo "FAIL: $*" >&2
@@ -61,8 +62,12 @@ done
 
 # shellcheck source=/dev/null
 . "$INIT_D/S30eth"
-expect "eth0 mac" "$(make_eth_mac "$SEED")" "02:2d:b1:aa:9f:ec"
-expect "eth0 mac, other chip" "$(make_eth_mac 0011223344556677)" "02:00:ef:11:be:bc"
+# Sipeed's S10uuid scheme; the test Lite's value was computed on the device from its base_uid.
+expect "eth0 mac" "$(make_eth_mac "$SEED")" "48:da:35:6f:c2:1d"
+expect "eth0 mac, other chip" "$(make_eth_mac 0011223344556677)" "48:da:35:6f:7f:36"
+expect "eth0 mac, test Lite" "$(make_eth_mac e5c9da251519c372)" "48:da:35:6f:22:6a"
+expect "eth0 mac, upper-case chip ID" "$(make_eth_mac E5C9DA251519C372)" "48:da:35:6f:22:6a"
+make_eth_mac 0011223344 >/dev/null && fail "eth0 mac from a short chip ID"
 
 # shellcheck source=/dev/null
 . "$INIT_D/S03usbdev"
@@ -83,7 +88,8 @@ set_usb_function_macs "$FUNC"
 expect "dev_addr file" "$(cat "$FUNC/dev_addr")" "$(make_usb_mac 02 "$FUNC-dev" "$SEED")"
 expect "host_addr file" "$(cat "$FUNC/host_addr")" "$(make_usb_mac 06 "$FUNC-host" "$SEED")"
 
-# Locally administered unicast, and no two interfaces share a MAC.
+# eth0 has Sipeed's (universal) prefix; the USB MACs are locally administered unicast.
+# No two interfaces share a MAC.
 macs="$(make_eth_mac "$SEED")
 $(make_usb_mac 02 functions/rndis.usb0-dev "$SEED")
 $(make_usb_mac 06 functions/rndis.usb0-host "$SEED")
@@ -91,7 +97,7 @@ $(make_usb_mac 02 functions/ncm.usb0-dev "$SEED")
 $(make_usb_mac 06 functions/ncm.usb0-host "$SEED")"
 echo "$macs" | grep -qE '^[0-9a-f]{2}(:[0-9a-f]{2}){5}$' || fail "malformed MAC in: $macs"
 [ "$(echo "$macs" | sort -u | wc -l | tr -d ' ')" = 5 ] || fail "MAC collision in: $macs"
-echo "$macs" | while read -r m; do
+echo "$macs" | tail -n +2 | while read -r m; do
     first=$((16#${m%%:*}))
     [ $((first & 3)) -eq 2 ] || fail "$m is not locally administered unicast"
 done

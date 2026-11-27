@@ -77,9 +77,14 @@ hw_mac_seed() {
     echo "$(echo "$uid" | cut -d_ -f1)$(echo "$uid" | cut -d_ -f2)" | tr -cd 'A-Fa-f0-9' | head -c 32
 }
 
+# Sipeed's scheme (their S10uuid): 48:da:35:6f and 4 hex digits of the SHA-512 of the base_uid
+# text, so a board has the same MAC under Sipeed's firmware.
 make_eth_mac() {
-    hash=$(printf '%s:eth0\n' "$1" | sha256sum | awk '{print $1}')
-    printf '%s\n' "$hash" | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*/02:\1:\2:\3:\4:\5/'
+    seed=$(printf '%s' "$1" | tr 'A-F' 'a-f')
+    [ "${#seed}" -eq 16 ] || return 1
+    hash=$(printf 'UID: %s_%s\n' "$(echo "$seed" | cut -c1-8)" "$(echo "$seed" | cut -c9-16)" |
+        sha512sum | cut -c1-4)
+    printf '48:da:35:6f:%s:%s\n' "$(echo "$hash" | cut -c1-2)" "$(echo "$hash" | cut -c3-4)"
 }
 
 ensure_eth_mac() {
@@ -92,7 +97,10 @@ ensure_eth_mac() {
         return
     fi
 
-    mac=$(make_eth_mac "$seed")
+    mac=$(make_eth_mac "$seed") || {
+        echo "unexpected chip ID length for the eth0 MAC; keeping the random one" >&2
+        return
+    }
     [ "$(cat /sys/class/net/eth0/address)" = "$mac" ] && return
     ip link set dev eth0 down 2>/dev/null || true
     ip link set dev eth0 address "$mac" 2>/dev/null || true
