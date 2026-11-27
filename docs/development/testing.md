@@ -118,12 +118,13 @@ For logic that builds firewall rules or parses config files, source the function
 with stubbed commands, or point the script at a fake `nft` that records its input, and
 compare the output for a few inputs.
 
-Four scripts already do this for the init scripts and need no device; run them
+Five scripts already do this for the init scripts and need no device; run them
 with `bash` from the repository root:
 
 ```sh
 bash scripts/test-hardware-macs.sh
 bash scripts/test-hid-only-mode.sh
+bash scripts/test-s30eth.sh
 bash scripts/test-s30eth-rx-batching.sh
 bash scripts/test-s30eth-static-dns.sh
 ```
