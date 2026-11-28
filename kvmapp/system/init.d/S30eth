@@ -107,6 +107,47 @@ ensure_eth_mac() {
     ip link set dev eth0 up 2>/dev/null || true
 }
 
+IPV6_CONF_DIR="${IPV6_CONF_DIR:-/proc/sys/net/ipv6/conf}"
+IPV6_SECRET_FILE="${IPV6_SECRET_FILE:-/etc/kvm/network/ipv6.stable_secret}"
+
+is_stable_secret() {
+    [ "${#1}" -eq 39 ] && printf '%s\n' "$1" | grep -qxE '[0-9a-f]{4}(:[0-9a-f]{4}){7}'
+}
+
+# Made once and kept, so the addresses stay the same across reboots.
+ipv6_stable_secret() {
+    secret=$(cat "$IPV6_SECRET_FILE" 2>/dev/null) || secret=""
+    if ! is_stable_secret "$secret"; then
+        secret=$(od -An -tx1 -N16 /dev/urandom | tr -d ' \n' | sed 's/..../&:/g;s/:$//')
+        is_stable_secret "$secret" || return 1
+        mkdir -p "$(dirname "$IPV6_SECRET_FILE")" || return 1
+        new="$IPV6_SECRET_FILE.tmp.$$"
+        if ! (umask 077 && echo "$secret" > "$new") || ! mv "$new" "$IPV6_SECRET_FILE"; then
+            rm -f "$new"
+            return 1
+        fi
+    fi
+    echo "$secret"
+}
+
+# RFC 7217 interface IDs, so IPv6 addresses do not carry the MAC.
+apply_ipv6_stable_privacy() {
+    eth="$IPV6_CONF_DIR/eth0"
+    [ -w "$IPV6_CONF_DIR/default/stable_secret" ] && [ -d "$eth" ] || return 0
+    secret=$(ipv6_stable_secret) || {
+        echo "no IPv6 stable secret; IPv6 addresses keep the MAC" >&2
+        return 0
+    }
+    [ "$(cat "$eth/stable_secret" 2>/dev/null)" = "$secret" ] && return 0
+    echo "$secret" > "$IPV6_CONF_DIR/default/stable_secret" 2>/dev/null || return 0
+    echo "$secret" > "$eth/stable_secret" 2>/dev/null || return 0
+    # Cycling IPv6 replaces the MAC-based link-local address; apply_ipv6 sets the final state.
+    if [ "$(cat "$eth/disable_ipv6" 2>/dev/null)" = 0 ]; then
+        echo 1 > "$eth/disable_ipv6" 2>/dev/null
+        echo 0 > "$eth/disable_ipv6" 2>/dev/null || true
+    fi
+}
+
 write_ipv6_conf() {
     name="$1"
     value="$2"
@@ -343,6 +384,7 @@ render_static_dns() {
 }
 
 start() {
+    apply_ipv6_stable_privacy
     ensure_eth_mac
     ip -4 addr flush dev eth0
     if [ -e /boot/eth.nodhcp ]; then

@@ -1,7 +1,7 @@
 ---
 status: current
 applies-to: system 1.0.0 / app 3.0.0 (Linux 6.18)
-last-checked: 2026-11-20
+last-checked: 2026-11-28
 source: constants in server-rust/src and kvmapp/system/init.d
 ---
 
@@ -49,6 +49,7 @@ The boot files:
 | `usb_management` | An empty file the operator creates to let the computer under control open connections to the NanoKVM over `usb0`; without it the firewall drops them in every mode. |
 | `wireguard/kvm.conf`, `wireguard/private.key` | WireGuard settings and private key (0600). |
 | `network/dns.mode`, `network/dns.servers` | DNS mode (`dhcp`/`manual`) and fixed DNS servers. |
+| `network/ipv6.stable_secret` | The secret behind the IPv6 stable privacy addresses (RFC 7217), in IPv6 address form. `S30eth` creates it (0600) when it is missing or malformed; removing it gives the device new IPv6 addresses at the next start. |
 | `network/eth.rx-batching-off` | An empty file the operator creates to turn off Ethernet receive batching (`gro_flush_timeout` 200 µs, no interrupt deferral), which is on by default; uploads move more data with it. `S30eth` reads it at the next start. |
 | `time.json` | NTP servers and time zone. |
 | `syslog.json` | Remote syslog and log buffer settings. |
