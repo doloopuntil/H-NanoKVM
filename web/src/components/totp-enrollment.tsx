@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Alert, Button, Input, Modal, Spin, Switch, Tag, type InputRef } from 'antd';
-import { QRCodeSVG } from 'qrcode.react';
 import { useTranslation } from 'react-i18next';
 
 import * as api from '@/api/auth-totp.ts';
@@ -52,7 +51,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
   const [isBusy, setIsBusy] = useState(false);
 
   const [secret, setSecret] = useState('');
-  const [otpauthUri, setOtpauthUri] = useState('');
+  const [qrSvg, setQrSvg] = useState('');
   const [code, setCode] = useState('');
 
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
@@ -75,7 +74,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
     if (open) ref.current?.focus();
   };
 
-  const isEnrolling = Boolean(otpauthUri);
+  const isEnrolling = Boolean(qrSvg);
 
   useSettingsLoad(api.getStatus, (rsp) => setStatus(rsp.data as TotpStatus));
 
@@ -112,7 +111,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
         setIsStartingEnrolment(false);
         setPassword('');
         setSecret(rsp.data.secret);
-        setOtpauthUri(rsp.data.otpauthUri);
+        setQrSvg(rsp.data.qrSvg);
         setCode('');
       })
       .catch((err) => toast.error(errorText(err, t('settings.account.totp.enrollFailed'))))
@@ -131,7 +130,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
           return;
         }
         setBackupCodes(rsp.data.backupCodes || []);
-        setOtpauthUri('');
+        setQrSvg('');
         setSecret('');
         setCode('');
         setEnrolmentNeedsAck(true);
@@ -142,7 +141,7 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
   }
 
   function cancelEnrollment() {
-    setOtpauthUri('');
+    setQrSvg('');
     setSecret('');
     setCode('');
   }
@@ -283,7 +282,11 @@ export const TotpEnrollment = ({ setIsLocked, onEnrolled }: Props) => {
       <div className="flex flex-col gap-3">
         <span className="text-sm text-neutral-400">{t('settings.account.totp.scan')}</span>
         <div className="flex justify-center rounded-sm bg-white p-3">
-          <QRCodeSVG value={otpauthUri} size={180} />
+          <img
+            src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}`}
+            alt=""
+            className="size-[180px]"
+          />
         </div>
         <span className="text-xs text-neutral-500">{t('settings.account.totp.manualEntry')}</span>
         <code className="rounded-sm bg-neutral-800 p-2 text-xs break-all">{secret}</code>

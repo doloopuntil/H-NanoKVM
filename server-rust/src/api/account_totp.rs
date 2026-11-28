@@ -45,7 +45,8 @@ pub struct TotpStatusRsp {
 #[serde(rename_all = "camelCase")]
 pub struct TotpEnrollRsp {
     secret: String,
-    otpauth_uri: String,
+    /// The `otpauth://` URI as an SVG QR code.
+    qr_svg: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -123,15 +124,14 @@ pub async fn enroll(
 
     let secret = totp::generate_secret();
     let uri = totp::otpauth_uri(TOTP_ISSUER, &session.username, &secret);
+    let qr_svg = totp::qr_svg(&uri)
+        .ok_or_else(|| AppError::Internal("the enrolment QR code could not be made".into()))?;
     state
         .pending_enrolment
         .put(&session.username, &secret)
         .await;
 
-    Ok(Json(ApiResponse::ok(TotpEnrollRsp {
-        secret,
-        otpauth_uri: uri,
-    })))
+    Ok(Json(ApiResponse::ok(TotpEnrollRsp { secret, qr_svg })))
 }
 
 /// Finish enrolment by proving the authenticator produces matching codes.

@@ -27,7 +27,6 @@
     "jotai": "^3.0.1",
     "js-cookie": "^3.0.8",
     "lucide-react": "^1.66.0",
-    "qrcode.react": "^4.2.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-draggable": "^4.7.2",

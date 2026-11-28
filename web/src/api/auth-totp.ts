@@ -12,7 +12,8 @@ export type TotpStatus = {
 
 export type TotpEnrollment = {
   secret: string;
-  otpauthUri: string;
+  /** The otpauth:// URI as an SVG QR code. */
+  qrSvg: string;
 };
 
 export type BackupCodes = {

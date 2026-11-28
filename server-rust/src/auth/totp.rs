@@ -116,6 +116,36 @@ pub fn otpauth_uri(issuer: &str, account: &str, secret: &str) -> String {
     )
 }
 
+/// The enrolment QR code as SVG, dark modules on white without a quiet zone (the page adds it).
+/// Low error correction, raised by qrcodegen when the size allows, as the web library had.
+pub fn qr_svg(text: &str) -> Option<String> {
+    use qrcodegen::{QrCode, QrCodeEcc};
+    use std::fmt::Write;
+
+    let qr = QrCode::encode_text(text, QrCodeEcc::Low).ok()?;
+    let size = qr.size();
+    // One rectangle per horizontal run of dark modules.
+    let mut path = String::new();
+    for y in 0..size {
+        let mut x = 0;
+        while x < size {
+            if !qr.get_module(x, y) {
+                x += 1;
+                continue;
+            }
+            let start = x;
+            while x < size && qr.get_module(x, y) {
+                x += 1;
+            }
+            let run = x - start;
+            let _ = write!(path, "M{start},{y}h{run}v1h-{run}z");
+        }
+    }
+    Some(format!(
+        r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}" shape-rendering="crispEdges"><rect width="{size}" height="{size}" fill="#fff"/><path d="{path}" fill="#000"/></svg>"##
+    ))
+}
+
 /// Remembers the most recent step accepted for each account, so a code cannot
 /// be used twice inside its validity window.
 ///
@@ -332,6 +362,47 @@ mod tests {
 
         assert_eq!(guard.last_step("operator").await, None);
         assert!(guard.try_use("operator", 100).await);
+    }
+
+    #[test]
+    fn qr_svg_draws_every_dark_module() {
+        let uri = otpauth_uri("H-NanoKVM", "admin", &generate_secret());
+        let qr = qrcodegen::QrCode::encode_text(&uri, qrcodegen::QrCodeEcc::Low).unwrap();
+        let svg = qr_svg(&uri).unwrap();
+        let size = qr.size();
+        assert!(svg.starts_with(&format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}""#
+        )));
+        // Paint the rectangles back onto a grid and compare with the code.
+        let path = svg
+            .split(r#"d=""#)
+            .nth(1)
+            .unwrap()
+            .split('"')
+            .next()
+            .unwrap();
+        let mut grid = vec![vec![false; size as usize]; size as usize];
+        for rect in path.split('z').filter(|r| !r.is_empty()) {
+            let (pos, rest) = rect.trim_start_matches('M').split_once('h').unwrap();
+            let (x, y) = pos.split_once(',').unwrap();
+            let (x, y): (usize, usize) = (x.parse().unwrap(), y.parse().unwrap());
+            let run: usize = rest.split_once('v').unwrap().0.parse().unwrap();
+            for cell in &mut grid[y][x..x + run] {
+                assert!(!*cell, "rectangles overlap");
+                *cell = true;
+            }
+        }
+        for y in 0..size {
+            for x in 0..size {
+                assert_eq!(
+                    grid[y as usize][x as usize],
+                    qr.get_module(x, y),
+                    "module {x},{y}"
+                );
+            }
+        }
+        // The finder pattern's top row is a run of seven.
+        assert!(svg.contains(r#"d="M0,0h7v1h-7z"#));
     }
 
     #[test]
