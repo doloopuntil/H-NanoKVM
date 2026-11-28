@@ -22,7 +22,7 @@ Nothing here has been run on hardware.
 
 | Topic | Decision |
 | --- | --- |
-| Target kernel | Mainline **6.18 LTS**. The licheerv tree pins 6.18.29; we build the newest 6.18.x (6.18.65 on 2026-11-25), from our fork of the licheerv tree, whose patches also apply to the newer stable series (`9fa9c023`). 5.10 LTS ends in December 2026. |
+| Target kernel | Mainline **6.18 LTS**. The licheerv tree pins 6.18.29; we build the newest 6.18.x (6.18.65 on 2026-11-25), from our fork of the licheerv tree, whose patches also apply to the newer stable series (`1e7b8dd2`). 5.10 LTS ends in December 2026. |
 | Hardware to support | NanoKVM **Lite**, **Cube (Full)** and **PCIe**. **Not alpha** (early access, no longer sold). |
 | Hardware available | **Lite only.** Cube and PCIe work is done by review and by testers. |
 | Mailbox | Keep the **mainline `cv1800` mailbox driver**. Drop the vendor `soph_rtos_cmdqu`. |
@@ -288,7 +288,7 @@ records a hardware run on 2026-06-02; the TPU DT patch still says unverified).
 | Linux | 6.18.29 |
 | U-Boot / OpenSBI | 2025.10 / 1.8.1 |
 | varyhin/licheervnano | `3bf6e4d22956d8d36644abac4b514d68ef8f0e81` |
-| doloopuntil/buildroot-external-licheervnano (fork of lone0's) | `9fa9c023ef1a9c30585955aeb22c9c8d83ade0bd` (branch `dmac-compatible-in-board-dts`; lone0's `019ffc86` was HEAD on 2026-11-05) |
+| doloopuntil/buildroot-external-licheervnano (fork of lone0's) | `1e7b8dd2e6a034c7f282b66470c5d064e53b3ac8` (branch `dmac-compatible-in-board-dts`; lone0's `019ffc86` was HEAD on 2026-11-05) |
 
 osdrv and cvi_mpi must stay on the same Sophgo release; the ioctl ABI between
 them is what keeps the prebuilt closed libraries working.
@@ -1536,7 +1536,7 @@ modules, so measure module signing and lockdown alongside. Remaining users, in o
    through `BR2_GLOBAL_PATCH_DIR`, matched by the `sophgo,cv1800b-sysreset` node in the FDT
    embedded in `fip.bin`), which copies the FSBL's `__system_reset()`: it arms the watchdog
    and lets it bite. The 5.10 vendor kernel asked the RTC for a warm reset (`cvi-reboot`).
-   Our OpenSBI patch `0001-cv1800b-sysreset-request-the-rtc-warm-reset` makes licheerv's
+   The licheerv tree's OpenSBI patch `0002-cv1800b-sysreset-request-the-rtc-warm-reset` makes licheerv's
    driver request that warm reset first and bite the watchdog only if the chip is still
    running 100 ms later. Kernel patch `0007` adds the same sequence as a restart handler
    in `cv1800-rtcsys`, for firmware without SBI system reset; with ours, SRST has the

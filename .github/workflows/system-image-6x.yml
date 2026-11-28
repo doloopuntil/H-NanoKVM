@@ -20,7 +20,7 @@ env:
   SOPHGO_OSDRV_SHA: 1b3a49649d18488ecf54fb4fcb6c27599e433fdc
   SOPHGO_CVI_MPI_SHA: 693a72a1d52f2e08ea767e0a72905e81f10572a5
   SOPHGO_SENSOR_LIST_SHA: e2824e1d07f516c41238e123fefbab71a34843bc
-  LICHEERV_EXTERNAL_SHA: 9fa9c023ef1a9c30585955aeb22c9c8d83ade0bd
+  LICHEERV_EXTERNAL_SHA: 1e7b8dd2e6a034c7f282b66470c5d064e53b3ac8
 
 jobs:
   # The long part: Buildroot without its post-image step. Its handoff artifact lets

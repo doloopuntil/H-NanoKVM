@@ -21,13 +21,13 @@ BOARD_DIR="$ROOT/buildroot-external/hnanokvm/board/sg2002/linux-6.18"
 EXPECTED_KERNEL_RELEASE="${EXPECTED_KERNEL_RELEASE:-6.18.65}"
 EXPECTED_TARGET="${EXPECTED_SYSTEM_TARGET:-sg2002-hnanokvm-sd}"
 MEDIA_MODULES="soph_sys soph_base soph_mipi_rx soph_vi soph_vpss soph_dwa soph_vo soph_rgn soph_vcodec soph_jpeg soph_vc_driver"
-KERNEL_PATCHES="0001-usb-dwc2-gadget-read-DTXFSTS-by-endpoint-index.patch
-0002-usb-dwc2-use-DMA-on-Sophgo-CV18xx.patch
-0003-riscv-mm-reserve-the-DTB-before-reserved-memory.patch
+KERNEL_PATCHES="0003-riscv-mm-reserve-the-DTB-before-reserved-memory.patch
 0004-pinctrl-sophgo-cv18xx-allow-plain-functions-on-dual-mux-pins.patch
 0005-pinctrl-sophgo-cv18xx-support-bias-disable.patch
 0006-rtc-cv1800-expose-info-and-reason-registers-as-nvmem.patch
-0007-soc-sophgo-cv1800-rtcsys-restart-through-the-rtc-warm-reset.patch"
+0024-usb-dwc2-gadget-read-DTXFSTS-by-endpoint-index.patch
+0025-usb-dwc2-use-DMA-on-Sophgo-CV18xx.patch
+0026-soc-sophgo-cv1800-rtcsys-restart-through-the-rtc-warm-reset.patch"
 
 die() {
 	echo "error: $*" >&2

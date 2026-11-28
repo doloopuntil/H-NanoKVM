@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO="${LICHEERV_EXTERNAL_REPO:-https://github.com/doloopuntil/buildroot-external-licheervnano.git}"
-EXPECTED_SHA="${LICHEERV_EXTERNAL_SHA:-9fa9c023ef1a9c30585955aeb22c9c8d83ade0bd}"
+EXPECTED_SHA="${LICHEERV_EXTERNAL_SHA:-1e7b8dd2e6a034c7f282b66470c5d064e53b3ac8}"
 DIR="${LICHEERV_EXTERNAL_DIR:-$ROOT/build/buildroot-external-licheervnano}"
 
 if [ ! -d "$DIR/.git" ]; then
