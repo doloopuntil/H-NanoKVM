@@ -64,7 +64,6 @@ export const Information = () => {
         )}
 
         <InfoRow
-          alignStart={(information?.ips.length ?? 0) > 1}
           label={
             <LabelTip
               text={t('settings.about.ip')}

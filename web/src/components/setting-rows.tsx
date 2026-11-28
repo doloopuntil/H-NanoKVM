@@ -4,25 +4,21 @@ import { LoaderCircleIcon } from 'lucide-react';
 
 // A read-only "label ... value" row, as used on the Network page. It is as tall as the
 // editable row, so switching between the two does not move the rows around. The value stays on
-// the label's row, also on a phone, and a value of several lines can start at the top of the row.
+// the label's row, also on a phone; the label is centred on a value of several lines.
 // The hairline between two sections; the page column's gap spaces it.
 export const SectionDivider = () => <Divider className="my-0 opacity-50" />;
 
 export const InfoRow = ({
   label,
   description,
-  value,
-  alignStart = false
+  value
 }: {
   label: ReactNode;
   // a caption under the label; the value then keeps to its own width and the caption gets the rest
   description?: ReactNode;
   value?: ReactNode;
-  alignStart?: boolean;
 }) => (
-  <div
-    className={`flex min-h-8 flex-row justify-between gap-4 ${alignStart ? 'items-start' : 'items-center'}`}
-  >
+  <div className="flex min-h-8 flex-row items-center justify-between gap-4">
     {description ? (
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-sm text-neutral-300">{label}</span>
